@@ -1,7 +1,12 @@
 <script>
+  import { onMount } from "svelte";
   import { open } from "@tauri-apps/plugin-dialog";
   import { readDir, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
   import { join } from "@tauri-apps/api/path";
+  import { load } from "@tauri-apps/plugin-store";
+
+  const STORE_FILE = "settings.json";
+  const LAST_FOLDER_KEY = "lastFolder";
 
   let folderPath = $state("");
   let entries = $state([]);
@@ -46,24 +51,46 @@
     }
   }
 
-  async function openFolder() {
-    error = "";
-    const selected = await open({ directory: true, multiple: false });
-    if (!selected) return;
-
-    folderPath = selected;
+  // Load a folder into the sidebar. Throws if the path can't be read,
+  // leaving existing state untouched (entries are read before committing).
+  async function loadFolder(path) {
+    const newEntries = await readEntries(path);
+    folderPath = path;
+    entries = newEntries;
     activeFile = "";
     activeFilePath = "";
     content = "";
     savedContent = "";
     creatingFile = false;
     newFileName = "";
+  }
+
+  async function openFolder() {
+    error = "";
+    const selected = await open({ directory: true, multiple: false });
+    if (!selected) return;
+
     try {
-      await refreshEntries();
+      await loadFolder(selected);
+      // Remember this folder so it reopens on next launch.
+      const store = await load(STORE_FILE);
+      await store.set(LAST_FOLDER_KEY, selected);
+      await store.save();
     } catch (e) {
       error = `Could not read folder: ${e}`;
     }
   }
+
+  // On startup, reopen the last folder if it's still accessible.
+  onMount(async () => {
+    try {
+      const store = await load(STORE_FILE);
+      const last = await store.get(LAST_FOLDER_KEY);
+      if (last) await loadFolder(last);
+    } catch {
+      // No stored folder, or it can't be read anymore — show empty state.
+    }
+  });
 
   function startNewFile() {
     // Only meaningful once a folder is open.
