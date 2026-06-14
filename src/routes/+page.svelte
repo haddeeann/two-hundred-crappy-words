@@ -15,15 +15,35 @@
 
   const dirty = $derived(activeFilePath !== "" && content !== savedContent);
 
-  // Read the open folder and precompute each entry's full path.
-  async function refreshEntries() {
-    const dirEntries = await readDir(folderPath);
-    entries = await Promise.all(
+  // Read a directory into entry objects, precomputing each full path.
+  // Folders start collapsed with unloaded (null) children.
+  async function readEntries(dirPath) {
+    const dirEntries = await readDir(dirPath);
+    return await Promise.all(
       dirEntries.map(async (entry) => ({
         ...entry,
-        path: await join(folderPath, entry.name),
+        path: await join(dirPath, entry.name),
+        expanded: false,
+        children: null,
       })),
     );
+  }
+
+  async function refreshEntries() {
+    entries = await readEntries(folderPath);
+  }
+
+  async function toggleFolder(entry) {
+    error = "";
+    try {
+      // Lazily load children the first time the folder is expanded.
+      if (!entry.expanded && entry.children === null) {
+        entry.children = await readEntries(entry.path);
+      }
+      entry.expanded = !entry.expanded;
+    } catch (e) {
+      error = `Could not read ${entry.name}: ${e}`;
+    }
   }
 
   async function openFolder() {
@@ -131,6 +151,40 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
+{#snippet tree(items, depth)}
+  <ul class="tree">
+    {#each items as entry (entry.path)}
+      <li>
+        {#if entry.isDirectory}
+          <button
+            class="file-item"
+            style="padding-left: {0.5 + depth * 0.75}rem"
+            onclick={() => toggleFolder(entry)}
+          >
+            <span class="arrow">{entry.expanded ? "▼" : "▶"}</span>
+            {entry.name}
+          </button>
+          {#if entry.expanded && entry.children}
+            {@render tree(entry.children, depth + 1)}
+          {/if}
+        {:else}
+          <button
+            class="file-item"
+            class:active={entry.path === activeFilePath}
+            style="padding-left: {0.5 + depth * 0.75}rem"
+            onclick={() => openFile(entry)}
+          >
+            📄 {entry.name}
+            {#if dirty && entry.path === activeFilePath}
+              <span class="dirty-dot">●</span>
+            {/if}
+          </button>
+        {/if}
+      </li>
+    {/each}
+  </ul>
+{/snippet}
+
 <div class="titlebar" data-tauri-drag-region>200 Crappy Words</div>
 
 <div class="app">
@@ -162,23 +216,7 @@
       {#if entries.length === 0}
         <p class="placeholder">No files yet</p>
       {:else}
-        <ul>
-          {#each entries as entry (entry.name)}
-            <li>
-              <button
-                class="file-item"
-                class:active={entry.name === activeFile}
-                onclick={() => openFile(entry)}
-              >
-                {entry.isDirectory ? "📁" : "📄"}
-                {entry.name}
-                {#if dirty && entry.name === activeFile}
-                  <span class="dirty-dot">●</span>
-                {/if}
-              </button>
-            </li>
-          {/each}
-        </ul>
+        {@render tree(entries, 0)}
       {/if}
     </nav>
   </aside>
@@ -296,10 +334,17 @@
     word-break: break-word;
   }
 
-  .files ul {
+  .tree {
     list-style: none;
     margin: 0;
     padding: 0;
+  }
+
+  .arrow {
+    display: inline-block;
+    width: 1rem;
+    font-size: 0.7rem;
+    color: #808080;
   }
 
   .file-item {
