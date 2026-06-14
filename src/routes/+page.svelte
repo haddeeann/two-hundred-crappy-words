@@ -131,6 +131,8 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
+<div class="titlebar" data-tauri-drag-region>200 Crappy Words</div>
+
 <div class="app">
   <aside class="sidebar">
     <h1 class="app-title">200 Crappy Words</h1>
@@ -208,9 +210,23 @@
     font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   }
 
+  .titlebar {
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #181818;
+    color: #cccccc;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-bottom: 1px solid #3c3c3c;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
   .app {
     display: flex;
-    height: 100vh;
+    height: calc(100vh - 32px);
     width: 100vw;
   }
 
