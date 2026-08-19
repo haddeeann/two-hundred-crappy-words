@@ -12,8 +12,9 @@ The name describes the direction of the project, but the app does not count word
 - Open and edit plain-text files
 - Create files in the root of the selected folder
 - Add a `.txt` extension when a new filename has no extension
+- Autosave shortly after typing pauses
 - Save the active file with `Command+S` on macOS or `Ctrl+S` elsewhere
-- Indicate when the active file has unsaved changes
+- Show dirty, saving, saved, and failed save states
 - Display filesystem errors in the interface
 
 ## Current limitations

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { open } from "@tauri-apps/plugin-dialog";
   import { readDir, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
   import type { DirEntry } from "@tauri-apps/plugin-fs";
@@ -13,6 +13,10 @@
     saveSucceeded,
     startSave,
   } from "$lib/editor/save-state";
+  import {
+    AutosaveController,
+    type AutosaveRequest,
+  } from "$lib/editor/autosave";
 
   interface TreeEntry extends DirEntry {
     path: string;
@@ -22,6 +26,7 @@
 
   const STORE_FILE = "settings.json";
   const LAST_FOLDER_KEY = "lastFolder";
+  const AUTOSAVE_DELAY_MS = 750;
 
   let folderPath = $state("");
   let entries = $state<TreeEntry[]>([]);
@@ -36,6 +41,50 @@
   const dirty = $derived(
     activeFilePath !== "" && hasUnsavedChanges(saveState),
   );
+  const saveStatus = $derived.by(() => {
+    if (!activeFilePath) return "";
+    if (saveState.phase === "saving") return "Saving…";
+    if (saveState.phase === "error") return "Save failed";
+    if (dirty) return "Unsaved";
+    return "Saved";
+  });
+
+  const autosave = new AutosaveController({
+    delayMs: AUTOSAVE_DELAY_MS,
+    save: ({ path, content }: AutosaveRequest) =>
+      writeTextFile(path, content),
+    onStart: (request) => {
+      if (activeFilePath !== request.path) return;
+      error = "";
+      saveState = startSave(saveState, request.revision);
+    },
+    onSuccess: (request) => {
+      if (activeFilePath !== request.path) return;
+      saveState = saveSucceeded(saveState, request.revision);
+    },
+    onError: (request, cause) => {
+      const message = `Could not save: ${formatError(cause)}`;
+      if (activeFilePath === request.path) {
+        saveState = saveFailed(saveState, request.revision, message);
+      }
+      error = message;
+    },
+  });
+
+  onDestroy(() => autosave.dispose());
+
+  function formatError(cause: unknown): string {
+    return cause instanceof Error ? cause.message : String(cause);
+  }
+
+  function currentSaveRequest(): AutosaveRequest | null {
+    if (!activeFilePath || !dirty) return null;
+    return {
+      path: activeFilePath,
+      content,
+      revision: saveState.currentRevision,
+    };
+  }
 
   // Read a directory into entry objects, precomputing each full path.
   // Folders start collapsed with unloaded (null) children.
@@ -175,26 +224,17 @@
   }
 
   async function saveFile() {
-    if (!activeFilePath || !dirty) return;
-    error = "";
-    saveState = startSave(saveState);
-    const revision = saveState.inFlightRevision;
-    const contentToSave = content;
-    if (revision === null) return;
-
-    try {
-      await writeTextFile(activeFilePath, contentToSave);
-      saveState = saveSucceeded(saveState, revision);
-    } catch (e) {
-      const message = `Could not save: ${e}`;
-      saveState = saveFailed(saveState, revision, message);
-      error = message;
-    }
+    const request = currentSaveRequest();
+    if (!request) return;
+    autosave.schedule(request);
+    await autosave.flush();
   }
 
   function handleContentInput(event: Event) {
     content = (event.currentTarget as HTMLTextAreaElement).value;
     saveState = markEdited(saveState);
+    const request = currentSaveRequest();
+    if (request) autosave.schedule(request);
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -281,8 +321,17 @@
 
   <main class="editor">
     <div class="editor-header">
-      {activeFile ? activeFile : "No file open"}
-      {#if dirty}<span class="dirty-dot">●</span>{/if}
+      <span>
+        {activeFile ? activeFile : "No file open"}
+        {#if dirty}<span class="dirty-dot">●</span>{/if}
+      </span>
+      {#if activeFile}
+        <span
+          class="save-status"
+          class:save-error={saveState.phase === "error"}
+          aria-live="polite"
+        >{saveStatus}</span>
+      {/if}
     </div>
     <textarea
       class="editor-input"
@@ -453,6 +502,18 @@
     font-size: 0.8rem;
     color: #808080;
     border-bottom: 1px solid #3c3c3c;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .save-status {
+    flex: 0 0 auto;
+  }
+
+  .save-status.save-error {
+    color: #f48771;
   }
 
   .editor-input {

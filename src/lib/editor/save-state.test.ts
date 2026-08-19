@@ -46,6 +46,16 @@ describe("save state", () => {
     expect(hasUnsavedChanges(firstSaveCompleted)).toBe(true);
   });
 
+  it("can mark an earlier queued revision as saving", () => {
+    const firstEdit = markEdited(createSaveState());
+    const secondEdit = markEdited(firstEdit);
+    const savingFirst = startSave(secondEdit, 1);
+
+    expect(savingFirst.phase).toBe("saving");
+    expect(savingFirst.inFlightRevision).toBe(1);
+    expect(savingFirst.currentRevision).toBe(2);
+  });
+
   it("retains unsaved state and the error after a failed save", () => {
     const saving = startSave(markEdited(createSaveState()));
     const failed = saveFailed(saving, 1, "Disk is full");

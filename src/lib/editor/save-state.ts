@@ -31,13 +31,16 @@ export function markEdited(state: SaveState): SaveState {
   };
 }
 
-export function startSave(state: SaveState): SaveState {
-  if (!hasUnsavedChanges(state)) return state;
+export function startSave(
+  state: SaveState,
+  revision = state.currentRevision,
+): SaveState {
+  if (!hasUnsavedChanges(state) || revision > state.currentRevision) return state;
 
   return {
     ...state,
     phase: "saving",
-    inFlightRevision: state.currentRevision,
+    inFlightRevision: revision,
     error: null,
   };
 }
