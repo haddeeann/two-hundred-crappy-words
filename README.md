@@ -21,6 +21,7 @@ The name describes the direction of the project, but the app does not count word
 - Keep private app-local recovery drafts and offer them after an interruption
 - Provide accessible macOS-style close and minimize controls
 - Limit filesystem access to folders explicitly chosen in the native picker
+- Block remote scripts and network origins in the packaged webview
 - Display filesystem errors in the interface
 
 ## Current limitations

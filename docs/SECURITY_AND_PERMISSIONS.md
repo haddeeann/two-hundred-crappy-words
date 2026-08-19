@@ -2,6 +2,10 @@
 
 200 Crappy Words is a local-first desktop application. Its current writing workflow makes no network requests and has no telemetry, account, cloud-sync, or URL-opening capability.
 
+## Webview content policy
+
+The production webview uses a restrictive Content Security Policy: bundled application resources are the default, IPC is limited to Tauri's local transport, images are local or inline data, frames/objects/forms are disabled, and inline styles remain enabled only because the current Svelte interface uses dynamic indentation styles. Development adds only the local Vite HTTP/WebSocket origin needed for hot reload. Remote scripts and remote network connections are not allowed.
+
 ## Writing-folder access
 
 The frontend is permitted to call only the filesystem operations it currently uses: list a directory, read a text file, and write a text file. The application does not ship with a static whole-filesystem (`**`) scope.
@@ -22,4 +26,4 @@ The main window has only the native window permissions needed for its current in
 
 Any future network access, external URL opening, shell execution, or broader filesystem operation requires an explicit capability review rather than inheriting permission from this milestone.
 
-References: [Tauri dialog scope behavior](https://github.com/tauri-apps/plugins-workspace/blob/v2/plugins/dialog/guest-js/index.ts), [official persisted-scope plugin](https://github.com/tauri-apps/plugins-workspace/tree/v2/plugins/persisted-scope).
+References: [Tauri Content Security Policy guidance](https://v2.tauri.app/security/csp/), [Tauri dialog scope behavior](https://github.com/tauri-apps/plugins-workspace/blob/v2/plugins/dialog/guest-js/index.ts), [official persisted-scope plugin](https://github.com/tauri-apps/plugins-workspace/tree/v2/plugins/persisted-scope).

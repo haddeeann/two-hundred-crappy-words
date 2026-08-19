@@ -118,3 +118,12 @@ Why: this preserves the useful last-folder behavior while removing the prototype
 Before a normal autosave, the app rereads the source and requires it to exactly match the last content known to have persisted. A changed, missing, moved, or unreadable source is not overwritten or recreated. A native dialog can authorize a force write for only the current path and revision after showing an appropriate warning and, for conflicts, bounded previews.
 
 Why: ordinary files can be edited by other tools. Local-first ownership is not meaningful if autosave silently destroys an external revision.
+
+## D-014 — Restrictive production webview policy
+
+- Date: 2026-08-19
+- Status: accepted
+
+The packaged webview allows bundled resources and Tauri's local IPC transport, with no remote scripts or remote network origins. Objects, frames, forms, and base-URL changes are disabled. Development adds only Vite's local HTTP and WebSocket origins; inline styles remain allowed for current dynamic tree indentation.
+
+Why: native command permissions are only a useful boundary if untrusted remote code cannot be loaded into the privileged webview. The starter template's `csp: null` did not enable Tauri's CSP protection.
