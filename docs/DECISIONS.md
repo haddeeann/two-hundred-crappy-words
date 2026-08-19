@@ -91,3 +91,12 @@ Why: the prototype's unchecked JavaScript hid baseline errors, while the save an
 Dirty text is mirrored quickly to a versioned record in Tauri's application-data directory. A record stores the source path, draft, update time, revision, and a non-security fingerprint of the last persisted content. It is never transmitted and is removed only after covered content is persisted or the writer explicitly dismisses it.
 
 Why: an app or machine interruption should not erase the current writing burst, while source-file conflicts must remain visible and under the writer's control.
+
+## D-011 — Portable, non-destructive file creation
+
+- Date: 2026-08-19
+- Status: accepted
+
+The app rejects path separators, control characters, cross-platform-invalid characters, trailing spaces or periods, and reserved device names in its file-creation field. A missing extension still becomes `.txt`, and creation uses the filesystem's atomic create-new mode.
+
+Why: projects are intended to remain portable ordinary folders, and a stale sidebar must never let file creation truncate an existing document.

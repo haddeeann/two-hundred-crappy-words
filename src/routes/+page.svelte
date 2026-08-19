@@ -1,8 +1,11 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { message, open } from "@tauri-apps/plugin-dialog";
-  import { readDir, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
-  import type { DirEntry } from "@tauri-apps/plugin-fs";
+  import {
+    readDir,
+    readTextFile,
+    writeTextFile,
+  } from "@tauri-apps/plugin-fs";
   import { join } from "@tauri-apps/api/path";
   import { load } from "@tauri-apps/plugin-store";
   import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -31,12 +34,13 @@
     RecoveryRepository,
     type RecoveryRecord,
   } from "$lib/editor/recovery";
-
-  interface TreeEntry extends DirEntry {
-    path: string;
-    expanded: boolean;
-    children: TreeEntry[] | null;
-  }
+  import {
+    findTreeEntry,
+    reconcileTreeEntries,
+    updateTreeEntry,
+    validateFileName,
+    type FileTreeEntry,
+  } from "$lib/editor/file-tree";
 
   const STORE_FILE = "settings.json";
   const LAST_FOLDER_KEY = "lastFolder";
@@ -44,7 +48,8 @@
   const RECOVERY_DELAY_MS = 100;
 
   let folderPath = $state("");
-  let entries = $state<TreeEntry[]>([]);
+  let entries = $state<FileTreeEntry[]>([]);
+  let selectedDirectoryPath = $state("");
   let content = $state("");
   let activeFile = $state("");
   let activeFilePath = $state("");
@@ -64,6 +69,12 @@
     if (saveState.phase === "error") return "Save failed";
     if (dirty) return "Unsaved";
     return "Saved";
+  });
+  const selectedDirectoryName = $derived.by(() => {
+    if (!selectedDirectoryPath || selectedDirectoryPath === folderPath) {
+      return "Project root";
+    }
+    return findTreeEntry(entries, selectedDirectoryPath)?.name ?? "Project root";
   });
 
   const autosave = new AutosaveController({
@@ -263,9 +274,12 @@
 
   // Read a directory into entry objects, precomputing each full path.
   // Folders start collapsed with unloaded (null) children.
-  async function readEntries(dirPath: string): Promise<TreeEntry[]> {
+  async function readEntries(
+    dirPath: string,
+    previous: readonly FileTreeEntry[] = [],
+  ): Promise<FileTreeEntry[]> {
     const dirEntries = await readDir(dirPath);
-    return await Promise.all(
+    const discovered = await Promise.all(
       dirEntries.map(async (entry) => ({
         ...entry,
         path: await join(dirPath, entry.name),
@@ -273,20 +287,42 @@
         children: null,
       })),
     );
+    return reconcileTreeEntries(discovered, previous);
   }
 
-  async function refreshEntries() {
-    entries = await readEntries(folderPath);
+  async function refreshDirectory(path: string) {
+    if (path === folderPath) {
+      entries = await readEntries(folderPath, entries);
+      return;
+    }
+
+    const directory = findTreeEntry(entries, path);
+    if (!directory?.isDirectory) return;
+    const children = await readEntries(path, directory.children ?? []);
+    entries = updateTreeEntry(entries, path, (entry) => ({
+      ...entry,
+      expanded: true,
+      children,
+    }));
   }
 
-  async function toggleFolder(entry: TreeEntry) {
+  async function toggleFolder(entry: FileTreeEntry) {
     error = "";
+    selectedDirectoryPath = entry.path;
     try {
-      // Lazily load children the first time the folder is expanded.
       if (!entry.expanded && entry.children === null) {
-        entry.children = await readEntries(entry.path);
+        const children = await readEntries(entry.path);
+        entries = updateTreeEntry(entries, entry.path, (current) => ({
+          ...current,
+          expanded: true,
+          children,
+        }));
+        return;
       }
-      entry.expanded = !entry.expanded;
+      entries = updateTreeEntry(entries, entry.path, (current) => ({
+        ...current,
+        expanded: !current.expanded,
+      }));
     } catch (e) {
       error = `Could not read ${entry.name}: ${e}`;
     }
@@ -297,6 +333,7 @@
   async function loadFolder(path: string) {
     const newEntries = await readEntries(path);
     folderPath = path;
+    selectedDirectoryPath = path;
     entries = newEntries;
     activeFile = "";
     activeFilePath = "";
@@ -351,25 +388,41 @@
 
   async function confirmNewFile() {
     const trimmed = newFileName.trim();
-    if (!folderPath || !trimmed) {
+    if (!folderPath) {
       cancelNewFile();
+      return;
+    }
+    const inputError = validateFileName(trimmed);
+    if (inputError) {
+      error = inputError;
       return;
     }
     // Default to a .txt extension if the user didn't include one.
     const name = /\.[^./\\]+$/.test(trimmed) ? trimmed : `${trimmed}.txt`;
-    // Don't clobber an existing file with empty content.
-    if (entries.some((e) => e.name === name)) {
-      error = `"${name}" already exists`;
+    const nameError = validateFileName(name);
+    if (nameError) {
+      error = nameError;
       return;
     }
     try {
-      const path = await join(folderPath, name);
-      await writeTextFile(path, "");
+      const targetDirectory = selectedDirectoryPath || folderPath;
+      const path = await join(targetDirectory, name);
+      const knownChildren =
+        targetDirectory === folderPath
+          ? entries
+          : (findTreeEntry(entries, targetDirectory)?.children ?? []);
+      if (knownChildren.some((entry) => entry.name === name)) {
+        error = `"${name}" already exists in ${selectedDirectoryName}.`;
+        return;
+      }
+      // createNew makes the final check atomic if the directory changed since
+      // it was read, so an existing file is never truncated.
+      await writeTextFile(path, "", { createNew: true });
       creatingFile = false;
       newFileName = "";
-      await refreshEntries();
+      await refreshDirectory(targetDirectory);
       // Select and open the newly created file.
-      const created = entries.find((e) => e.path === path);
+      const created = findTreeEntry(entries, path);
       if (created) await openFile(created);
     } catch (e) {
       error = `Could not create file: ${e}`;
@@ -386,7 +439,7 @@
     }
   }
 
-  async function openFile(entry: TreeEntry) {
+  async function openFile(entry: FileTreeEntry) {
     if (entry.path === activeFilePath) return;
 
     await navigate(async () => {
@@ -450,15 +503,18 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-{#snippet tree(items: TreeEntry[], depth: number)}
+{#snippet tree(items: FileTreeEntry[], depth: number)}
   <ul class="tree">
     {#each items as entry (entry.path)}
       <li>
         {#if entry.isDirectory}
           <button
             class="file-item"
+            class:selected={entry.path === selectedDirectoryPath}
             style="padding-left: {0.5 + depth * 0.75}rem"
             onclick={() => toggleFolder(entry)}
+            aria-expanded={entry.expanded}
+            title={`Select and ${entry.expanded ? "collapse" : "expand"} ${entry.name}`}
           >
             <span class="arrow">{entry.expanded ? "▼" : "▶"}</span>
             {entry.name}
@@ -492,7 +548,7 @@
 
     <button class="open-btn" onclick={openFolder}>Open Folder</button>
     <button class="open-btn" onclick={startNewFile} disabled={!folderPath}>
-      New File
+      New File in {selectedDirectoryName}
     </button>
 
     {#if creatingFile}
@@ -512,7 +568,19 @@
     {/if}
 
     <nav class="files">
-      {#if entries.length === 0}
+      {#if folderPath}
+        <button
+          class="file-item root-item"
+          class:selected={selectedDirectoryPath === folderPath}
+          onclick={() => (selectedDirectoryPath = folderPath)}
+          title="Select the project root for new files"
+        >
+          ▾ Project root
+        </button>
+      {/if}
+      {#if !folderPath}
+        <p class="placeholder">Open a folder to begin</p>
+      {:else if entries.length === 0}
         <p class="placeholder">No files yet</p>
       {:else}
         {@render tree(entries, 0)}
@@ -678,8 +746,23 @@
     background-color: #2a2d2e;
   }
 
+  .file-item:focus-visible {
+    outline: 2px solid #75beff;
+    outline-offset: -2px;
+  }
+
   .file-item.active {
     background-color: #37373d;
+  }
+
+  .file-item.selected:not(.active) {
+    background-color: #2f3336;
+    color: #ffffff;
+  }
+
+  .root-item {
+    margin-bottom: 0.2rem;
+    font-weight: 600;
   }
 
   .dirty-dot {

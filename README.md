@@ -8,9 +8,9 @@ The name describes the direction of the project, but the app does not count word
 
 - Open a folder from the native folder picker
 - Remember and reopen the last selected folder
-- Browse files and lazily expand subfolders in a sidebar
+- Browse naturally sorted files and lazily expand subfolders in a sidebar
 - Open and edit plain-text files
-- Create files in the root of the selected folder
+- Select a folder and create a file there without overwriting an existing path
 - Add a `.txt` extension when a new filename has no extension
 - Autosave shortly after typing pauses
 - Save the active file with `Command+S` on macOS or `Ctrl+S` elsewhere
@@ -22,7 +22,6 @@ The name describes the direction of the project, but the app does not count word
 ## Current limitations
 
 - There is no word counter or 200-word goal behavior yet
-- New files can only be created in the root of the open folder
 - Files and folders cannot be renamed, moved, or deleted in the app
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
 - The custom frameless window is still a work in progress
