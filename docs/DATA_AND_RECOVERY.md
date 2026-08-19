@@ -10,6 +10,8 @@ The application reads and writes the text files in the folder the writer chooses
 
 The last opened folder is stored in `settings.json` in Tauri's app-data directory for the application.
 
+The same directory can contain `.persisted-scope`, which records filesystem access for folders the writer explicitly chose in the native picker. This lets the last folder reopen without granting static access to the rest of the computer. Permission details and limitations are documented in [`SECURITY_AND_PERMISSIONS.md`](SECURITY_AND_PERMISSIONS.md).
+
 ## Recovery drafts
 
 While a document has unsaved changes, the application maintains a second local copy in `recovery.json` in Tauri's app-data directory. Tauri resolves that directory according to the operating system and the application identifier `com.pat.two-hundred-crappy-words`.

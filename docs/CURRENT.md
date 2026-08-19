@@ -6,30 +6,30 @@ Last updated: 2026-08-19
 
 **0.2 — Trustworthy editor**
 
-The editor now autosaves, protects navigation, and maintains local interruption-recovery drafts. The remaining milestone work makes nested folders predictable, completes the frameless window, narrows permissions, and deliberately exercises failure paths.
+The editor now autosaves, protects navigation, maintains local interruption-recovery drafts, supports predictable nested folders, and limits access to writer-selected locations. The remaining milestone work deliberately exercises failure paths and packages the result.
 
 ## Active slice
 
-**0.2.6 — Window behavior and permission hardening**
+**0.2.7 — Failure-path and milestone QA**
 
 ### Intended outcome
 
-Complete the frameless window's native controls and replace the prototype's broad filesystem grant with selected-folder scope that can be restored safely.
+Deliberately exercise the ways files and folders can fail or change, finish the accessibility pass, and prove a production desktop bundle before activating daily-practice work.
 
 ### Acceptance criteria
 
-- [ ] Accessible minimize and close controls work without becoming drag regions.
-- [ ] Closing through the custom control retains the existing safe-save behavior.
-- [ ] Broad static `**` filesystem scope is replaced by selected-folder access that survives a restart.
-- [ ] Unused Tauri template command and opener plugin are removed.
-- [ ] The resulting native/security behavior is documented.
-- [ ] `npm run check`, `npm test`, `npm run build`, and `cargo check --locked` pass.
+- [ ] Unreadable, deleted, renamed, externally modified, and write-denied files have explicit non-destructive behavior.
+- [ ] Folder removal, rapid navigation, rapid typing, and close-during-save are exercised.
+- [ ] Keyboard access, focus visibility, error announcements, labels, and basic contrast are reviewed.
+- [ ] Recovery and selected-folder restoration are manually demonstrated in the desktop app.
+- [ ] `npm run check`, `npm test`, `npm run build`, `cargo check --locked`, and a production Tauri build pass.
+- [ ] The README is truthful at milestone exit and 0.3 has one executable first slice.
 
 ## Next slices
 
-1. 0.2.7 — Failure-path and milestone QA.
-2. 0.3.1 — Daily-credit semantics and word-count foundation.
-3. 0.3.2 — Live document and daily progress treatment.
+1. 0.3.1 — Daily-credit semantics and word-count foundation.
+2. 0.3.2 — Live document and daily progress treatment.
+3. 0.3.3 — Persist progress by local date and project.
 
 ## Known state
 
@@ -41,12 +41,13 @@ Complete the frameless window's native controls and replace the prototype's broa
 - Slice 0.2.3 flushes edits before file/folder navigation and Tauri window closure. A failed save offers Retry, Discard changes, or Keep writing; navigation-guard coverage brings the suite to eighteen tests.
 - Slice 0.2.4 mirrors dirty text to a private app-local store, detects source-file divergence, shows bounded source and draft previews, and lets the writer recover, dismiss, or cancel without a silent overwrite. Recovery cleanup is revision-aware and documented in `docs/DATA_AND_RECOVERY.md`; twenty-eight tests now pass.
 - Slice 0.2.5 naturally sorts directories before files, preserves expanded subtrees on refresh, gives folders explicit selection, creates only in the selected folder, atomically refuses overwrite, and validates portable names. Five test files now contain forty passing tests.
+- Slice 0.2.6 adds keyboard-labelled close and minimize controls, routes custom close through the safe-save handler, removes the unused greeting and opener plugin, and replaces the static `**` filesystem grant with Tauri's persisted scopes for explicitly selected folders. The model is documented in `docs/SECURITY_AND_PERMISSIONS.md`.
 - Tauri now has the explicit `core:window:allow-destroy` capability required to complete an intercepted safe close without recursively emitting another close request.
 - Baseline `npm run check` originally reported nine implicit-`any` errors and a missing Node type; these are resolved.
-- `npm run check`, `npm test`, `npm run build`, and `cargo check --locked` pass after 0.2.5; a Tauri development smoke launch also succeeds.
+- `npm run check`, `npm test`, `npm run build`, and `cargo check --locked` pass after 0.2.6; a clean Tauri development launch succeeds with the narrowed capability set.
 - A Tauri development smoke launch compiled and opened successfully; interaction-level manual QA remains for the milestone checkpoint.
 - Production dependencies report zero `npm audit --omit=dev` findings. Four current audit findings are confined to development dependencies and must not be blindly auto-fixed.
-- The Tauri capability currently grants read-directory and read/write-text access for `**`; narrowing this is part of 0.2.
+- Because runtime folder scopes were not persisted in earlier builds, the first launch after this change requires choosing the writing folder once; later launches can restore it.
 
 ## Blockers
 

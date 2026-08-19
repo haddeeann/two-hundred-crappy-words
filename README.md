@@ -17,6 +17,8 @@ The name describes the direction of the project, but the app does not count word
 - Show dirty, saving, saved, and failed save states
 - Resolve pending edits before switching files, switching folders, or closing
 - Keep private app-local recovery drafts and offer them after an interruption
+- Provide accessible macOS-style close and minimize controls
+- Limit filesystem access to folders explicitly chosen in the native picker
 - Display filesystem errors in the interface
 
 ## Current limitations
@@ -24,7 +26,7 @@ The name describes the direction of the project, but the app does not count word
 - There is no word counter or 200-word goal behavior yet
 - Files and folders cannot be renamed, moved, or deleted in the app
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
-- The custom frameless window is still a work in progress
+- The frameless window does not yet provide maximize/full-screen controls
 
 ## Tech stack
 
@@ -87,3 +89,5 @@ This is a functional prototype. The core folder-based editing workflow works, wh
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 Local settings and draft-recovery behavior are documented in [`docs/DATA_AND_RECOVERY.md`](docs/DATA_AND_RECOVERY.md).
+
+The current native capability and selected-folder access model is documented in [`docs/SECURITY_AND_PERMISSIONS.md`](docs/SECURITY_AND_PERMISSIONS.md).

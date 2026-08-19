@@ -25,8 +25,8 @@ Goal: make the existing editor safe enough for meaningful writing before expandi
 - [x] Protect unsaved work during file, folder, and window navigation.
 - [x] Add local crash/interruption recovery.
 - [x] Improve file-tree ordering, selection, refresh, and create-in-folder behavior.
-- [ ] Complete the custom window controls and native window behavior.
-- [ ] Review and narrow filesystem capabilities.
+- [x] Complete the custom window controls and native window behavior.
+- [x] Review and narrow filesystem capabilities.
 - [ ] Exercise failure paths and complete milestone QA.
 
 Specification: [`docs/milestones/0.2-trustworthy-editor.md`](docs/milestones/0.2-trustworthy-editor.md)

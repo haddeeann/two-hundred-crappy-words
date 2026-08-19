@@ -158,6 +158,24 @@
     return cause instanceof Error ? cause.message : String(cause);
   }
 
+  async function minimizeWindow(): Promise<void> {
+    try {
+      await getCurrentWindow().minimize();
+    } catch (cause) {
+      error = `Could not minimize the window: ${formatError(cause)}`;
+    }
+  }
+
+  async function closeWindow(): Promise<void> {
+    try {
+      // This emits the same close request handled above, preserving the
+      // pending-save and failure-decision flow.
+      await getCurrentWindow().close();
+    } catch (cause) {
+      error = `Could not close the window: ${formatError(cause)}`;
+    }
+  }
+
   function getRecoveryRepository(): Promise<RecoveryRepository> {
     recoveryRepositoryPromise ??= load(RECOVERY_STORE_FILE, {
       autoSave: false,
@@ -540,7 +558,23 @@
   </ul>
 {/snippet}
 
-<div class="titlebar" data-tauri-drag-region>200 Crappy Words</div>
+<div class="titlebar" data-tauri-drag-region>
+  <div class="window-controls">
+    <button
+      class="window-control close-control"
+      aria-label="Close window"
+      title="Close"
+      onclick={closeWindow}
+    >×</button>
+    <button
+      class="window-control minimize-control"
+      aria-label="Minimize window"
+      title="Minimize"
+      onclick={minimizeWindow}
+    >−</button>
+  </div>
+  <span class="window-title" data-tauri-drag-region>200 Crappy Words</span>
+</div>
 
 <div class="app">
   <aside class="sidebar">
@@ -626,6 +660,7 @@
   }
 
   .titlebar {
+    position: relative;
     height: 32px;
     display: flex;
     align-items: center;
@@ -637,6 +672,51 @@
     border-bottom: 1px solid #3c3c3c;
     user-select: none;
     -webkit-user-select: none;
+  }
+
+  .window-title {
+    pointer-events: none;
+  }
+
+  .window-controls {
+    position: absolute;
+    left: 10px;
+    top: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .window-control {
+    width: 13px;
+    height: 13px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    color: transparent;
+    font-family: inherit;
+    font-size: 11px;
+    line-height: 13px;
+    cursor: default;
+  }
+
+  .window-control:hover,
+  .window-control:focus-visible {
+    color: rgba(0, 0, 0, 0.72);
+  }
+
+  .window-control:focus-visible {
+    outline: 2px solid #75beff;
+    outline-offset: 2px;
+  }
+
+  .close-control {
+    background-color: #ff5f57;
+  }
+
+  .minimize-control {
+    background-color: #febc2e;
   }
 
   .app {

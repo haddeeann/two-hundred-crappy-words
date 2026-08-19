@@ -100,3 +100,12 @@ Why: an app or machine interruption should not erase the current writing burst, 
 The app rejects path separators, control characters, cross-platform-invalid characters, trailing spaces or periods, and reserved device names in its file-creation field. A missing extension still becomes `.txt`, and creation uses the filesystem's atomic create-new mode.
 
 Why: projects are intended to remain portable ordinary folders, and a stale sidebar must never let file creation truncate an existing document.
+
+## D-012 — Persist only explicitly selected folder scopes
+
+- Date: 2026-08-19
+- Status: accepted
+
+Filesystem commands are enabled without a static external-path grant. Tauri's native dialog supplies a recursive runtime scope for each folder the writer explicitly selects, and the official persisted-scope plugin restores those grants across restarts. Previously selected folders can remain in that local scope because Tauri exposes forbidding—not safely removing—an individual allowed pattern.
+
+Why: this preserves the useful last-folder behavior while removing the prototype's `**` access to every path. It also keeps the native picker as the authorization boundary instead of accepting arbitrary paths from frontend code.
