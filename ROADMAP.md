@@ -20,7 +20,7 @@ Status legend: `PLANNED`, `ACTIVE`, `BLOCKED`, `COMPLETE`, `DEFERRED`.
 
 Goal: make the existing editor safe enough for meaningful writing before expanding its scope.
 
-- [ ] Establish a testable application structure and baseline checks.
+- [x] Establish a testable application structure and baseline checks.
 - [ ] Add clear save-state handling and debounced autosave.
 - [ ] Protect unsaved work during file, folder, and window navigation.
 - [ ] Add local crash/interruption recovery.

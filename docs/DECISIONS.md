@@ -73,3 +73,12 @@ Why: chat context is temporary; project intent and execution state must survive 
 Codex may make ordinary, reversible, in-repository implementation decisions and continue across planned slices. It pauses at the decision gates in `AGENTS.md`. Verified local commits may be used as recoverable checkpoints, but publishing, pushing, deploying, and releasing require explicit approval.
 
 Why: the project should keep moving without making the user remember or supervise every technical detail, while respecting privacy and consequential boundaries.
+
+## D-009 — TypeScript and focused Vitest tests
+
+- Date: 2026-08-19
+- Status: accepted
+
+New frontend application logic is written in TypeScript. Pure state and domain behavior is tested with Vitest; component or browser-level tools will be added only when a slice requires them.
+
+Why: the prototype's unchecked JavaScript hid baseline errors, while the save and recovery work needs deterministic race-condition coverage. Vitest uses the existing Vite pipeline and supports the installed Node and Vite versions.

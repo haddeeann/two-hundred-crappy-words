@@ -1,28 +1,45 @@
-<script>
+<script lang="ts">
   import { onMount } from "svelte";
   import { open } from "@tauri-apps/plugin-dialog";
   import { readDir, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+  import type { DirEntry } from "@tauri-apps/plugin-fs";
   import { join } from "@tauri-apps/api/path";
   import { load } from "@tauri-apps/plugin-store";
+  import {
+    createSaveState,
+    hasUnsavedChanges,
+    markEdited,
+    saveFailed,
+    saveSucceeded,
+    startSave,
+  } from "$lib/editor/save-state";
+
+  interface TreeEntry extends DirEntry {
+    path: string;
+    expanded: boolean;
+    children: TreeEntry[] | null;
+  }
 
   const STORE_FILE = "settings.json";
   const LAST_FOLDER_KEY = "lastFolder";
 
   let folderPath = $state("");
-  let entries = $state([]);
+  let entries = $state<TreeEntry[]>([]);
   let content = $state("");
   let activeFile = $state("");
   let activeFilePath = $state("");
-  let savedContent = $state("");
+  let saveState = $state(createSaveState());
   let error = $state("");
   let creatingFile = $state(false);
   let newFileName = $state("");
 
-  const dirty = $derived(activeFilePath !== "" && content !== savedContent);
+  const dirty = $derived(
+    activeFilePath !== "" && hasUnsavedChanges(saveState),
+  );
 
   // Read a directory into entry objects, precomputing each full path.
   // Folders start collapsed with unloaded (null) children.
-  async function readEntries(dirPath) {
+  async function readEntries(dirPath: string): Promise<TreeEntry[]> {
     const dirEntries = await readDir(dirPath);
     return await Promise.all(
       dirEntries.map(async (entry) => ({
@@ -38,7 +55,7 @@
     entries = await readEntries(folderPath);
   }
 
-  async function toggleFolder(entry) {
+  async function toggleFolder(entry: TreeEntry) {
     error = "";
     try {
       // Lazily load children the first time the folder is expanded.
@@ -53,14 +70,14 @@
 
   // Load a folder into the sidebar. Throws if the path can't be read,
   // leaving existing state untouched (entries are read before committing).
-  async function loadFolder(path) {
+  async function loadFolder(path: string) {
     const newEntries = await readEntries(path);
     folderPath = path;
     entries = newEntries;
     activeFile = "";
     activeFilePath = "";
     content = "";
-    savedContent = "";
+    saveState = createSaveState();
     creatingFile = false;
     newFileName = "";
   }
@@ -85,7 +102,7 @@
   onMount(async () => {
     try {
       const store = await load(STORE_FILE);
-      const last = await store.get(LAST_FOLDER_KEY);
+      const last = await store.get<string>(LAST_FOLDER_KEY);
       if (last) await loadFolder(last);
     } catch {
       // No stored folder, or it can't be read anymore — show empty state.
@@ -132,7 +149,7 @@
     }
   }
 
-  function newFileKeydown(event) {
+  function newFileKeydown(event: KeyboardEvent) {
     if (event.key === "Enter") {
       event.preventDefault();
       confirmNewFile();
@@ -142,14 +159,14 @@
     }
   }
 
-  async function openFile(entry) {
+  async function openFile(entry: TreeEntry) {
     error = "";
     // Don't rely on entry.isFile (not always reliable across platforms) —
     // just try to read it. Directories will throw and surface as an error.
     try {
       const text = await readTextFile(entry.path);
       content = text;
-      savedContent = text;
+      saveState = createSaveState();
       activeFile = entry.name;
       activeFilePath = entry.path;
     } catch (e) {
@@ -158,17 +175,29 @@
   }
 
   async function saveFile() {
-    if (!activeFilePath) return;
+    if (!activeFilePath || !dirty) return;
     error = "";
+    saveState = startSave(saveState);
+    const revision = saveState.inFlightRevision;
+    const contentToSave = content;
+    if (revision === null) return;
+
     try {
-      await writeTextFile(activeFilePath, content);
-      savedContent = content;
+      await writeTextFile(activeFilePath, contentToSave);
+      saveState = saveSucceeded(saveState, revision);
     } catch (e) {
-      error = `Could not save: ${e}`;
+      const message = `Could not save: ${e}`;
+      saveState = saveFailed(saveState, revision, message);
+      error = message;
     }
   }
 
-  function handleKeydown(event) {
+  function handleContentInput(event: Event) {
+    content = (event.currentTarget as HTMLTextAreaElement).value;
+    saveState = markEdited(saveState);
+  }
+
+  function handleKeydown(event: KeyboardEvent) {
     if ((event.ctrlKey || event.metaKey) && event.key === "s") {
       event.preventDefault();
       saveFile();
@@ -178,7 +207,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-{#snippet tree(items, depth)}
+{#snippet tree(items: TreeEntry[], depth: number)}
   <ul class="tree">
     {#each items as entry (entry.path)}
       <li>
@@ -258,7 +287,8 @@
     <textarea
       class="editor-input"
       placeholder="Start writing your 200 crappy words..."
-      bind:value={content}
+      value={content}
+      oninput={handleContentInput}
     ></textarea>
   </main>
 </div>

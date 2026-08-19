@@ -10,39 +10,42 @@ The current prototype can open, edit, create, and explicitly save text files, bu
 
 ## Active slice
 
-**0.2.1 — Establish the safety baseline**
+**0.2.2 — Debounced autosave**
 
 ### Intended outcome
 
-Create a small testable foundation for save and navigation behavior without changing the visible writing workflow unnecessarily.
+Save edits after a short idle interval without interrupting typing, while making dirty, saving, saved, and failed states truthful.
 
 ### Acceptance criteria
 
-- [ ] Record the current frontend and Rust check results.
-- [ ] Introduce focused test infrastructure appropriate for Svelte/TypeScript logic.
-- [ ] Extract pure, testable word/file/save helpers only where needed for the next slices.
-- [ ] Define explicit editor save states rather than relying only on content equality.
-- [ ] Add regression tests for the chosen save-state transitions.
-- [ ] Keep opening, editing, creating, and `Command/Ctrl+S` behavior working.
-- [ ] `npm run check` passes.
-- [ ] `npm run build` passes.
+- [ ] Autosave begins after a short, documented idle delay.
+- [ ] Continued typing reschedules the pending save.
+- [ ] `Command/Ctrl+S` still requests an immediate save.
+- [ ] The UI exposes dirty, saving, saved, and failed states without interrupting typing.
+- [ ] Edits made during an in-flight save remain dirty and receive a later save.
+- [ ] A stale completion cannot mark newer content as saved.
+- [ ] Failed saves remain dirty, show a useful error, and can be retried.
+- [ ] Timer and save-race behavior has focused automated coverage.
+- [ ] `npm run check`, `npm test`, `npm run build`, and `cargo check --locked` pass.
 
 ## Next slices
 
-1. 0.2.2 — Debounced autosave with visible saving, saved, dirty, and failed states.
-2. 0.2.3 — Safe file/folder/window navigation and save flushing.
-3. 0.2.4 — Crash/interruption recovery.
-4. 0.2.5 — File-tree usability and create-in-selected-folder.
-5. 0.2.6 — Native window controls and filesystem permission hardening.
-6. 0.2.7 — Failure-path and milestone QA.
+1. 0.2.3 — Safe file/folder/window navigation and save flushing.
+2. 0.2.4 — Crash/interruption recovery.
+3. 0.2.5 — File-tree usability and create-in-selected-folder.
+4. 0.2.6 — Native window controls and filesystem permission hardening.
+5. 0.2.7 — Failure-path and milestone QA.
 
 ## Known state
 
 - Branch: `main`
 - The repository began this milestone at commit `bc77846`.
-- `README.md` contains a truthful prototype description and is currently an uncommitted user-requested change.
-- Most application logic and UI are currently in `src/routes/+page.svelte`.
-- No JavaScript dependencies were installed in `node_modules` when the roadmap was created.
+- The roadmap and README were committed at `13c7658`.
+- Slice 0.2.1 converted the page to TypeScript, introduced an explicit revision-based save-state model, and added Vitest with six regression tests.
+- Baseline `npm run check` originally reported nine implicit-`any` errors and a missing Node type; these are resolved.
+- `npm run check`, `npm test`, `npm run build`, and `cargo check --locked` pass after 0.2.1.
+- A Tauri development smoke launch compiled and opened successfully; interaction-level manual QA remains for the milestone checkpoint.
+- Production dependencies report zero `npm audit --omit=dev` findings. Four current audit findings are confined to development dependencies and must not be blindly auto-fixed.
 - The Tauri capability currently grants read-directory and read/write-text access for `**`; narrowing this is part of 0.2.
 
 ## Blockers
