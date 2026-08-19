@@ -23,7 +23,7 @@ Goal: make the existing editor safe enough for meaningful writing before expandi
 - [x] Establish a testable application structure and baseline checks.
 - [x] Add clear save-state handling and debounced autosave.
 - [x] Protect unsaved work during file, folder, and window navigation.
-- [ ] Add local crash/interruption recovery.
+- [x] Add local crash/interruption recovery.
 - [ ] Improve file-tree ordering, selection, refresh, and create-in-folder behavior.
 - [ ] Complete the custom window controls and native window behavior.
 - [ ] Review and narrow filesystem capabilities.

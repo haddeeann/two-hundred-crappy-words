@@ -16,6 +16,7 @@ The name describes the direction of the project, but the app does not count word
 - Save the active file with `Command+S` on macOS or `Ctrl+S` elsewhere
 - Show dirty, saving, saved, and failed save states
 - Resolve pending edits before switching files, switching folders, or closing
+- Keep private app-local recovery drafts and offer them after an interruption
 - Display filesystem errors in the interface
 
 ## Current limitations
@@ -23,7 +24,6 @@ The name describes the direction of the project, but the app does not count word
 - There is no word counter or 200-word goal behavior yet
 - New files can only be created in the root of the open folder
 - Files and folders cannot be renamed, moved, or deleted in the app
-- Crash/interruption recovery is not implemented yet
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
 - The custom frameless window is still a work in progress
 
@@ -86,3 +86,5 @@ static/                   Static images and icons
 This is a functional prototype. The core folder-based editing workflow works, while the product-specific 200-word experience and several editor safeguards remain to be built.
 
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
+
+Local settings and draft-recovery behavior are documented in [`docs/DATA_AND_RECOVERY.md`](docs/DATA_AND_RECOVERY.md).

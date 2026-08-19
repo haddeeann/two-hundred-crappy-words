@@ -8,6 +8,7 @@
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import {
     createSaveState,
+    createRecoveredSaveState,
     hasUnsavedChanges,
     markEdited,
     saveFailed,
@@ -22,6 +23,14 @@
     resolvePendingChanges,
     type SaveFailureDecision,
   } from "$lib/editor/navigation-guard";
+  import {
+    assessRecovery,
+    createRecoveryRecord,
+    formatRecoveryPreview,
+    RECOVERY_STORE_FILE,
+    RecoveryRepository,
+    type RecoveryRecord,
+  } from "$lib/editor/recovery";
 
   interface TreeEntry extends DirEntry {
     path: string;
@@ -32,12 +41,14 @@
   const STORE_FILE = "settings.json";
   const LAST_FOLDER_KEY = "lastFolder";
   const AUTOSAVE_DELAY_MS = 750;
+  const RECOVERY_DELAY_MS = 100;
 
   let folderPath = $state("");
   let entries = $state<TreeEntry[]>([]);
   let content = $state("");
   let activeFile = $state("");
   let activeFilePath = $state("");
+  let persistedContent = $state("");
   let saveState = $state(createSaveState());
   let error = $state("");
   let creatingFile = $state(false);
@@ -65,8 +76,11 @@
       saveState = startSave(saveState, request.revision);
     },
     onSuccess: (request) => {
-      if (activeFilePath !== request.path) return;
-      saveState = saveSucceeded(saveState, request.revision);
+      if (activeFilePath === request.path) {
+        persistedContent = request.content;
+        saveState = saveSucceeded(saveState, request.revision);
+      }
+      void clearRecoveryAfterSave(request.path, request.revision);
     },
     onError: (request, cause) => {
       const message = `Could not save: ${formatError(cause)}`;
@@ -77,7 +91,21 @@
     },
   });
 
-  onDestroy(() => autosave.dispose());
+  let recoveryRepositoryPromise: Promise<RecoveryRepository> | null = null;
+  const recoveryWriter = new AutosaveController<RecoveryRecord>({
+    delayMs: RECOVERY_DELAY_MS,
+    save: async (record) => {
+      await (await getRecoveryRepository()).put(record);
+    },
+    onError: (_record, cause) => {
+      error = `Could not update the recovery copy: ${formatError(cause)}`;
+    },
+  });
+
+  onDestroy(() => {
+    autosave.dispose();
+    recoveryWriter.dispose();
+  });
 
   onMount(() => {
     let unlisten: (() => void) | undefined;
@@ -117,6 +145,72 @@
 
   function formatError(cause: unknown): string {
     return cause instanceof Error ? cause.message : String(cause);
+  }
+
+  function getRecoveryRepository(): Promise<RecoveryRepository> {
+    recoveryRepositoryPromise ??= load(RECOVERY_STORE_FILE, {
+      autoSave: false,
+      defaults: {},
+    }).then((store) => new RecoveryRepository(store));
+    return recoveryRepositoryPromise;
+  }
+
+  async function clearRecoveryAfterSave(
+    path: string,
+    revision: number,
+  ): Promise<void> {
+    try {
+      recoveryWriter.cancelPendingThrough(path, revision);
+      await recoveryWriter.flush();
+      await (await getRecoveryRepository()).remove(path, revision);
+    } catch (cause) {
+      // The source file is already safe. A leftover recovery record is cleaned
+      // automatically if it exactly matches the file when next opened.
+      error = `The file was saved, but its recovery copy could not be cleared: ${formatError(cause)}`;
+    }
+  }
+
+  async function recoverContent(
+    path: string,
+    fileContent: string,
+  ): Promise<{ content: string; revision: number } | null> {
+    const repository = await getRecoveryRepository();
+    const assessment = assessRecovery(await repository.get(path), fileContent);
+    if (assessment.kind === "none") {
+      return { content: fileContent, revision: 0 };
+    }
+    if (assessment.kind === "identical") {
+      await repository.remove(path, assessment.record.revision);
+      return { content: fileContent, revision: 0 };
+    }
+
+    const externalChangeWarning = assessment.fileChangedSinceRecoveryBegan
+      ? " The file on disk also changed after this recovery draft began."
+      : "";
+    const result = await message(
+      `A recovery draft from ${new Date(assessment.record.updatedAt).toLocaleString()} differs from this file.${externalChangeWarning}\n\n${formatRecoveryPreview(fileContent, assessment.record.content)}`,
+      {
+        title: "Recovery draft found",
+        kind: "warning",
+        buttons: {
+          yes: "Recover draft",
+          no: "Keep file",
+          cancel: "Cancel",
+        },
+      },
+    );
+
+    if (result === "Recover draft") {
+      return {
+        content: assessment.record.content,
+        revision: assessment.record.revision,
+      };
+    }
+    if (result === "Keep file") {
+      await repository.remove(path, assessment.record.revision);
+      return { content: fileContent, revision: 0 };
+    }
+    return null;
   }
 
   function currentSaveRequest(): AutosaveRequest | null {
@@ -207,6 +301,7 @@
     activeFile = "";
     activeFilePath = "";
     content = "";
+    persistedContent = "";
     saveState = createSaveState();
     creatingFile = false;
     newFileName = "";
@@ -299,11 +394,22 @@
       // Don't rely on entry.isFile (not always reliable across platforms) —
       // just try to read it. Directories will throw and surface as an error.
       try {
-        const text = await readTextFile(entry.path);
-        content = text;
-        saveState = createSaveState();
+        const fileContent = await readTextFile(entry.path);
+        const recovered = await recoverContent(entry.path, fileContent);
+        if (!recovered) return;
+
+        persistedContent = fileContent;
+        content = recovered.content;
+        saveState = recovered.revision
+          ? createRecoveredSaveState(recovered.revision)
+          : createSaveState();
         activeFile = entry.name;
         activeFilePath = entry.path;
+
+        if (recovered.revision) {
+          const request = currentSaveRequest();
+          if (request) autosave.schedule(request);
+        }
       } catch (e) {
         error = `Could not open ${entry.name}: ${e}`;
       }
@@ -320,6 +426,16 @@
   function handleContentInput(event: Event) {
     content = (event.currentTarget as HTMLTextAreaElement).value;
     saveState = markEdited(saveState);
+    if (activeFilePath) {
+      recoveryWriter.schedule(
+        createRecoveryRecord({
+          path: activeFilePath,
+          content,
+          persistedContent,
+          revision: saveState.currentRevision,
+        }),
+      );
+    }
     const request = currentSaveRequest();
     if (request) autosave.schedule(request);
   }

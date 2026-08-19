@@ -122,4 +122,19 @@ describe("AutosaveController", () => {
 
     expect(save).toHaveBeenCalledTimes(1);
   });
+
+  it("cancels only pending revisions covered by a completed save", async () => {
+    const save = vi.fn(async () => {});
+    const autosave = new AutosaveController({ delayMs: 750, save });
+
+    autosave.schedule(second);
+    autosave.cancelPendingThrough(second.path, 1);
+    await autosave.flush();
+    expect(save).toHaveBeenCalledWith(second);
+
+    autosave.schedule({ ...second, revision: 3 });
+    autosave.cancelPendingThrough(second.path, 3);
+    await autosave.flush();
+    expect(save).toHaveBeenCalledTimes(1);
+  });
 });

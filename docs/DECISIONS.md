@@ -82,3 +82,12 @@ Why: the project should keep moving without making the user remember or supervis
 New frontend application logic is written in TypeScript. Pure state and domain behavior is tested with Vitest; component or browser-level tools will be added only when a slice requires them.
 
 Why: the prototype's unchecked JavaScript hid baseline errors, while the save and recovery work needs deterministic race-condition coverage. Vitest uses the existing Vite pipeline and supports the installed Node and Vite versions.
+
+## D-010 — Private app-local recovery drafts
+
+- Date: 2026-08-19
+- Status: accepted
+
+Dirty text is mirrored quickly to a versioned record in Tauri's application-data directory. A record stores the source path, draft, update time, revision, and a non-security fingerprint of the last persisted content. It is never transmitted and is removed only after covered content is persisted or the writer explicitly dismisses it.
+
+Why: an app or machine interruption should not erase the current writing burst, while source-file conflicts must remain visible and under the writer's control.

@@ -1,37 +1,42 @@
-export interface AutosaveRequest {
+interface RevisionedRequest {
   path: string;
-  content: string;
   revision: number;
 }
 
-interface AutosaveOptions {
-  delayMs: number;
-  save: (request: AutosaveRequest) => Promise<void>;
-  onStart?: (request: AutosaveRequest) => void;
-  onSuccess?: (request: AutosaveRequest) => void;
-  onError?: (request: AutosaveRequest, error: unknown) => void;
+export interface AutosaveRequest extends RevisionedRequest {
+  content: string;
 }
 
-function isSameRevision(
-  first: AutosaveRequest | null,
-  second: AutosaveRequest,
+interface AutosaveOptions<TRequest extends RevisionedRequest> {
+  delayMs: number;
+  save: (request: TRequest) => Promise<void>;
+  onStart?: (request: TRequest) => void;
+  onSuccess?: (request: TRequest) => void;
+  onError?: (request: TRequest, error: unknown) => void;
+}
+
+function isSameRevision<TRequest extends RevisionedRequest>(
+  first: TRequest | null,
+  second: TRequest,
 ): boolean {
   return first?.path === second.path && first.revision === second.revision;
 }
 
-export class AutosaveController {
-  private readonly options: AutosaveOptions;
+export class AutosaveController<
+  TRequest extends RevisionedRequest = AutosaveRequest,
+> {
+  private readonly options: AutosaveOptions<TRequest>;
   private timer: ReturnType<typeof setTimeout> | null = null;
-  private pending: AutosaveRequest | null = null;
-  private inFlight: AutosaveRequest | null = null;
+  private pending: TRequest | null = null;
+  private inFlight: TRequest | null = null;
   private inFlightPromise: Promise<void> | null = null;
   private disposed = false;
 
-  constructor(options: AutosaveOptions) {
+  constructor(options: AutosaveOptions<TRequest>) {
     this.options = options;
   }
 
-  schedule(request: AutosaveRequest): void {
+  schedule(request: TRequest): void {
     if (this.disposed || isSameRevision(this.inFlight, request)) return;
 
     this.pending = request;
@@ -58,6 +63,15 @@ export class AutosaveController {
   cancelPending(): void {
     this.pending = null;
     this.clearTimer();
+  }
+
+  cancelPendingThrough(path: string, revision: number): void {
+    if (
+      this.pending?.path === path &&
+      this.pending.revision <= revision
+    ) {
+      this.cancelPending();
+    }
   }
 
   dispose(): void {

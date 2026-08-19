@@ -18,6 +18,17 @@ export function createSaveState(): SaveState {
   };
 }
 
+export function createRecoveredSaveState(revision: number): SaveState {
+  const recoveredRevision = Math.max(1, revision);
+  return {
+    phase: "dirty",
+    currentRevision: recoveredRevision,
+    persistedRevision: 0,
+    inFlightRevision: null,
+    error: null,
+  };
+}
+
 export function hasUnsavedChanges(state: SaveState): boolean {
   return state.currentRevision !== state.persistedRevision;
 }

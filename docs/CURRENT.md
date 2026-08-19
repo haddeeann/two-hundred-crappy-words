@@ -6,32 +6,31 @@ Last updated: 2026-08-19
 
 **0.2 — Trustworthy editor**
 
-The current prototype can open, edit, create, and explicitly save text files, but it can lose unsaved edits during navigation and does not yet recover interrupted work. Safety comes before product expansion.
+The editor now autosaves, protects navigation, and maintains local interruption-recovery drafts. The remaining milestone work makes nested folders predictable, completes the frameless window, narrows permissions, and deliberately exercises failure paths.
 
 ## Active slice
 
-**0.2.4 — Crash/interruption recovery**
+**0.2.5 — File-tree usability**
 
 ### Intended outcome
 
-Keep a private local recovery copy of dirty content and offer it when an interrupted edit is newer than the file on disk.
+Make nested folder browsing and file creation predictable without disturbing the writer's current context.
 
 ### Acceptance criteria
 
-- [ ] Dirty content is mirrored to app-local recovery storage without waiting for normal autosave.
-- [ ] Recovery records contain the source path, content, update time, and enough persisted-file identity to detect relevance.
-- [ ] A newer recovery record is offered when its source file is opened or restored at launch.
-- [ ] The writer can restore or dismiss a recovery record without silent overwrite.
-- [ ] A recovery record is removed only after confirmed file persistence or explicit dismissal.
-- [ ] Recovery storage location and privacy behavior are documented.
-- [ ] Forced-interruption and stale-record behavior has focused automated coverage.
+- [ ] Directories are sorted before files with stable, locale-aware names.
+- [ ] Expanded folders and active selection survive a relevant tree refresh.
+- [ ] A new file is created in the selected directory, falling back to the project root.
+- [ ] Invalid names and existing paths are rejected before a write.
+- [ ] Only the affected directory is refreshed after creation.
+- [ ] Folder and file controls expose predictable keyboard and pointer behavior.
 - [ ] `npm run check`, `npm test`, `npm run build`, and `cargo check --locked` pass.
 
 ## Next slices
 
-1. 0.2.5 — File-tree usability and create-in-selected-folder.
-2. 0.2.6 — Native window controls and filesystem permission hardening.
-3. 0.2.7 — Failure-path and milestone QA.
+1. 0.2.6 — Native window controls and filesystem permission hardening.
+2. 0.2.7 — Failure-path and milestone QA.
+3. 0.3.1 — Daily-credit semantics and word-count foundation.
 
 ## Known state
 
@@ -41,9 +40,10 @@ Keep a private local recovery copy of dirty content and offer it when an interru
 - Slice 0.2.1 converted the page to TypeScript, introduced an explicit revision-based save-state model, and added Vitest with six regression tests.
 - Slice 0.2.2 added a 750 ms serialized autosave queue, immediate manual flush, visible save status, retryable failures, and race-condition coverage. Thirteen tests now pass.
 - Slice 0.2.3 flushes edits before file/folder navigation and Tauri window closure. A failed save offers Retry, Discard changes, or Keep writing; navigation-guard coverage brings the suite to eighteen tests.
+- Slice 0.2.4 mirrors dirty text to a private app-local store, detects source-file divergence, shows bounded source and draft previews, and lets the writer recover, dismiss, or cancel without a silent overwrite. Recovery cleanup is revision-aware and documented in `docs/DATA_AND_RECOVERY.md`; twenty-eight tests now pass.
 - Tauri now has the explicit `core:window:allow-destroy` capability required to complete an intercepted safe close without recursively emitting another close request.
 - Baseline `npm run check` originally reported nine implicit-`any` errors and a missing Node type; these are resolved.
-- `npm run check`, `npm test`, `npm run build`, and `cargo check --locked` pass after 0.2.1.
+- `npm run check`, `npm test`, `npm run build`, and `cargo check --locked` pass after 0.2.4.
 - A Tauri development smoke launch compiled and opened successfully; interaction-level manual QA remains for the milestone checkpoint.
 - Production dependencies report zero `npm audit --omit=dev` findings. Four current audit findings are confined to development dependencies and must not be blindly auto-fixed.
 - The Tauri capability currently grants read-directory and read/write-text access for `**`; narrowing this is part of 0.2.

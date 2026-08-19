@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createSaveState,
+  createRecoveredSaveState,
   hasUnsavedChanges,
   markEdited,
   saveFailed,
@@ -14,6 +15,14 @@ describe("save state", () => {
 
     expect(state.phase).toBe("clean");
     expect(hasUnsavedChanges(state)).toBe(false);
+  });
+
+  it("restores a recovery revision as dirty", () => {
+    const state = createRecoveredSaveState(7);
+
+    expect(state.phase).toBe("dirty");
+    expect(state.currentRevision).toBe(7);
+    expect(hasUnsavedChanges(state)).toBe(true);
   });
 
   it("becomes dirty after an edit", () => {
