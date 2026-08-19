@@ -10,28 +10,30 @@ The trustworthy-editor foundation is complete. The active milestone now makes th
 
 ## Active slice
 
-**0.3.1 — Daily-credit semantics and word-count foundation**
+**0.3.2 — Live document and session progress treatment**
 
 ### Intended outcome
 
-Define deterministic word and daily-credit behavior before adding UI or permanent progress storage. Keep document word count distinct from earned daily credit, following accepted decision D-005.
+Bring the tested counting model into the editor so a writer can see the current document count and progress earned during this running session. Keep the presentation compact, calm, keyboard-safe, and truthful that persistence arrives in the following slice.
 
 ### Acceptance criteria
 
-- [ ] Document Unicode-aware tokenization rules with representative examples and edge cases.
-- [ ] Implement a pure document word-count function with fixtures for whitespace, punctuation, contractions, em dashes, numbers, and representative non-English text.
-- [ ] Implement and test gross-positive daily credit: positive count changes earn credit, while deletions do not remove credit already earned.
-- [ ] Specify how opening, switching, pasting, recovery, and external changes affect credit without persisting manuscript text.
-- [ ] Run `npm run check`, `npm test`, and `npm run build` with the new behavior covered.
+- [ ] Show the active document's live word count without affecting typing or saving.
+- [ ] Show session-earned progress toward the default 200-word target without calling it persistent daily history yet.
+- [ ] Establish a no-credit baseline when a file opens, switches, or recovers; apply credit only to active editor input.
+- [ ] Preserve session credit while switching documents and folders within the running app.
+- [ ] Provide concise accessible labels and a progress treatment that does not announce every keystroke.
+- [ ] Add focused integration coverage and pass the full frontend checks.
 
 ## Next slices
 
-1. 0.3.2 — Live document and daily progress treatment.
-2. 0.3.3 — Persist progress by local date and project.
-3. 0.3.4 — Accessible 200-word completion moment and configurable target.
+1. 0.3.3 — Persist progress by local date and project.
+2. 0.3.4 — Accessible 200-word completion moment and configurable target.
+3. 0.3.5 — Writing history and gentle streak information.
 
 ## Completed checkpoint
 
+- Slice 0.3.1 defines deterministic Unicode word tokens and gross-positive edit credit in `docs/WORD_COUNTING.md` and decision D-015. The pure implementation has sixteen focused fixtures; the full frontend suite contains 63 passing tests across nine files, and Svelte/TypeScript checks plus the production frontend build pass.
 - Milestone 0.2 passed its disposable-file macOS walkthrough on 2026-08-19.
 - The run manually demonstrated nested file creation, autosave during navigation, external-change refusal and explicit overwrite, moved-file refusal, write-denied safe close and successful saving after permission restoration, forced-interruption recovery, stale-recovery cleanup, remembered selected-folder scope, whole-folder removal, window controls, title-bar dragging, keyboard traversal, focus visibility, and basic visual legibility.
 - QA exposed a non-recursive native-picker scope for nested files. Commit `1c20728` added the recursive grant and a focused regression test; the nested file was then opened successfully.

@@ -127,3 +127,12 @@ Why: ordinary files can be edited by other tools. Local-first ownership is not m
 The packaged webview allows bundled resources and Tauri's local IPC transport, with no remote scripts or remote network origins. Objects, frames, forms, and base-URL changes are disabled. Development adds only Vite's local HTTP and WebSocket origins; inline styles remain allowed for current dynamic tree indentation.
 
 Why: native command permissions are only a useful boundary if untrusted remote code cannot be loaded into the privileged webview. The starter template's `csp: null` did not enable Tauri's CSP protection.
+
+## D-015 — Deterministic word tokens and edit-based credit
+
+- Date: 2026-08-19
+- Status: accepted, subject to usability testing
+
+Document words use an app-owned Unicode rule: letter/number runs form tokens, combining marks remain attached, internal apostrophes remain within words, numeric periods and commas remain within numbers, and hyphens or dashes split tokens. The rule does not use operating-system dictionary segmentation. Daily credit adds only positive document-count changes from active text edits; loading, switching, recovery, save events, and external reloads establish state without earning credit.
+
+Why: the same text should count consistently across supported machines, daily history must not depend on save timing, and existing or recovered prose must not be counted again merely because it was opened. The transparent rule and its known limitation for unspaced scripts are documented in `docs/WORD_COUNTING.md`.

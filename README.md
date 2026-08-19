@@ -94,6 +94,8 @@ Development follows the repository-backed [product roadmap](ROADMAP.md). The cur
 
 Local settings and draft-recovery behavior are documented in [`docs/DATA_AND_RECOVERY.md`](docs/DATA_AND_RECOVERY.md).
 
+The deterministic word-count and daily-credit rules being implemented for milestone 0.3 are documented in [`docs/WORD_COUNTING.md`](docs/WORD_COUNTING.md).
+
 The current native capability and selected-folder access model is documented in [`docs/SECURITY_AND_PERMISSIONS.md`](docs/SECURITY_AND_PERMISSIONS.md).
 
 The milestone's disposable-file desktop checks are in [`docs/MANUAL_QA.md`](docs/MANUAL_QA.md).
