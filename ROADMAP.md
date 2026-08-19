@@ -8,8 +8,8 @@ Status legend: `PLANNED`, `ACTIVE`, `BLOCKED`, `COMPLETE`, `DEFERRED`.
 
 | Milestone | Outcome | Status |
 | --- | --- | --- |
-| 0.2 Trustworthy editor | A writer can trust the app not to lose work | ACTIVE |
-| 0.3 Daily practice | The 200-words-a-day promise is real and encouraging | PLANNED |
+| 0.2 Trustworthy editor | A writer can trust the app not to lose work | COMPLETE |
+| 0.3 Daily practice | The 200-words-a-day promise is real and encouraging | ACTIVE |
 | 0.4 World projects | A folder becomes a portable, structured science-fiction world | PLANNED |
 | 0.5 Connected lore | Manuscript and world bible can reference each other fluidly | PLANNED |
 | 0.6 Novel structure | Scenes and chapters can be planned, reordered, and exported | PLANNED |
@@ -27,7 +27,7 @@ Goal: make the existing editor safe enough for meaningful writing before expandi
 - [x] Improve file-tree ordering, selection, refresh, and create-in-folder behavior.
 - [x] Complete the custom window controls and native window behavior.
 - [x] Review and narrow filesystem capabilities.
-- [ ] Exercise failure paths and complete milestone QA.
+- [x] Exercise failure paths and complete milestone QA.
 
 Specification: [`docs/milestones/0.2-trustworthy-editor.md`](docs/milestones/0.2-trustworthy-editor.md)
 

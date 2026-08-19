@@ -88,7 +88,7 @@ static/                   Static images and icons
 
 ## Status
 
-This is a functional prototype. The folder-based editor now has its first safety layer; hands-on desktop QA remains before work begins on the product-specific 200-word experience.
+This is a functional prototype. Its trustworthy-editor milestone has passed automated and hands-on macOS QA. Work is now beginning on the product-specific 200-word daily-practice experience.
 
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 

@@ -2,6 +2,12 @@
 
 This checklist uses disposable files and is the human checkpoint for milestone 0.2. Automated tests cover the underlying state and race behavior; these steps confirm the macOS window, native dialogs, focus, and filesystem integration.
 
+## Latest result
+
+Completed successfully on macOS on 2026-08-19. The run covered nested creation and editing, autosave during navigation, external-change protection and explicit overwrite, moved and read-only files, safe close after write failure, forced-interruption recovery, stale-recovery cleanup, selected-folder restoration, whole-folder removal, native window behavior, keyboard traversal, focus visibility, and visual legibility.
+
+The run found that the native picker initially granted only one directory level. Commit `1c20728` requests recursive scope for the explicitly selected project folder and adds a regression test; nested files were reopened successfully after the fix. No known ordinary interaction in this walkthrough silently lost text.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:
