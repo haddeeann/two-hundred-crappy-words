@@ -46,6 +46,7 @@
     guardedWriteText,
     SourceFileUnavailableError,
   } from "$lib/editor/guarded-write";
+  import { folderDialogOptions } from "$lib/editor/folder-access";
 
   interface SaveFailure {
     path: string;
@@ -481,7 +482,7 @@
   async function openFolder() {
     await navigate(async () => {
       error = "";
-      const selected = await open({ directory: true, multiple: false });
+      const selected = await open(folderDialogOptions);
       if (!selected) return;
 
       try {
