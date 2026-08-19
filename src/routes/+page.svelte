@@ -1,10 +1,11 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import { open } from "@tauri-apps/plugin-dialog";
+  import { message, open } from "@tauri-apps/plugin-dialog";
   import { readDir, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
   import type { DirEntry } from "@tauri-apps/plugin-fs";
   import { join } from "@tauri-apps/api/path";
   import { load } from "@tauri-apps/plugin-store";
+  import { getCurrentWindow } from "@tauri-apps/api/window";
   import {
     createSaveState,
     hasUnsavedChanges,
@@ -17,6 +18,10 @@
     AutosaveController,
     type AutosaveRequest,
   } from "$lib/editor/autosave";
+  import {
+    resolvePendingChanges,
+    type SaveFailureDecision,
+  } from "$lib/editor/navigation-guard";
 
   interface TreeEntry extends DirEntry {
     path: string;
@@ -37,6 +42,7 @@
   let error = $state("");
   let creatingFile = $state(false);
   let newFileName = $state("");
+  let navigationPromise: Promise<void> | null = null;
 
   const dirty = $derived(
     activeFilePath !== "" && hasUnsavedChanges(saveState),
@@ -73,6 +79,42 @@
 
   onDestroy(() => autosave.dispose());
 
+  onMount(() => {
+    let unlisten: (() => void) | undefined;
+    let disposed = false;
+    let closing = false;
+
+    void getCurrentWindow()
+      .onCloseRequested(async (event) => {
+        event.preventDefault();
+        if (closing) return;
+        closing = true;
+
+        try {
+          if (navigationPromise) await navigationPromise;
+          if (await prepareToLeave()) {
+            await getCurrentWindow().destroy();
+            return;
+          }
+        } catch (cause) {
+          error = `Could not close safely: ${formatError(cause)}`;
+        }
+
+        if (closing) {
+          closing = false;
+        }
+      })
+      .then((stopListening) => {
+        if (disposed) stopListening();
+        else unlisten = stopListening;
+      });
+
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  });
+
   function formatError(cause: unknown): string {
     return cause instanceof Error ? cause.message : String(cause);
   }
@@ -84,6 +126,45 @@
       content,
       revision: saveState.currentRevision,
     };
+  }
+
+  async function chooseAfterSaveFailure(): Promise<SaveFailureDecision> {
+    const result = await message(
+      "Your latest changes could not be saved. You can retry, discard those changes, or keep the document open.",
+      {
+        title: "200 Crappy Words",
+        kind: "warning",
+        buttons: {
+          yes: "Retry",
+          no: "Discard changes",
+          cancel: "Keep writing",
+        },
+      },
+    );
+
+    if (result === "Retry") return "retry";
+    if (result === "Discard changes") return "discard";
+    return "cancel";
+  }
+
+  function prepareToLeave(): Promise<boolean> {
+    return resolvePendingChanges({
+      hasUnsavedChanges: () => dirty,
+      save: saveFile,
+      chooseAfterFailure: chooseAfterSaveFailure,
+    });
+  }
+
+  async function navigate(action: () => Promise<void>): Promise<void> {
+    if (navigationPromise) return navigationPromise;
+
+    navigationPromise = (async () => {
+      if (await prepareToLeave()) await action();
+    })().finally(() => {
+      navigationPromise = null;
+    });
+
+    return navigationPromise;
   }
 
   // Read a directory into entry objects, precomputing each full path.
@@ -132,19 +213,21 @@
   }
 
   async function openFolder() {
-    error = "";
-    const selected = await open({ directory: true, multiple: false });
-    if (!selected) return;
+    await navigate(async () => {
+      error = "";
+      const selected = await open({ directory: true, multiple: false });
+      if (!selected) return;
 
-    try {
-      await loadFolder(selected);
-      // Remember this folder so it reopens on next launch.
-      const store = await load(STORE_FILE);
-      await store.set(LAST_FOLDER_KEY, selected);
-      await store.save();
-    } catch (e) {
-      error = `Could not read folder: ${e}`;
-    }
+      try {
+        await loadFolder(selected);
+        // Remember this folder so it reopens on next launch.
+        const store = await load(STORE_FILE);
+        await store.set(LAST_FOLDER_KEY, selected);
+        await store.save();
+      } catch (e) {
+        error = `Could not read folder: ${e}`;
+      }
+    });
   }
 
   // On startup, reopen the last folder if it's still accessible.
@@ -209,18 +292,22 @@
   }
 
   async function openFile(entry: TreeEntry) {
-    error = "";
-    // Don't rely on entry.isFile (not always reliable across platforms) —
-    // just try to read it. Directories will throw and surface as an error.
-    try {
-      const text = await readTextFile(entry.path);
-      content = text;
-      saveState = createSaveState();
-      activeFile = entry.name;
-      activeFilePath = entry.path;
-    } catch (e) {
-      error = `Could not open ${entry.name}: ${e}`;
-    }
+    if (entry.path === activeFilePath) return;
+
+    await navigate(async () => {
+      error = "";
+      // Don't rely on entry.isFile (not always reliable across platforms) —
+      // just try to read it. Directories will throw and surface as an error.
+      try {
+        const text = await readTextFile(entry.path);
+        content = text;
+        saveState = createSaveState();
+        activeFile = entry.name;
+        activeFilePath = entry.path;
+      } catch (e) {
+        error = `Could not open ${entry.name}: ${e}`;
+      }
+    });
   }
 
   async function saveFile() {

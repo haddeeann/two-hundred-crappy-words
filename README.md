@@ -15,6 +15,7 @@ The name describes the direction of the project, but the app does not count word
 - Autosave shortly after typing pauses
 - Save the active file with `Command+S` on macOS or `Ctrl+S` elsewhere
 - Show dirty, saving, saved, and failed save states
+- Resolve pending edits before switching files, switching folders, or closing
 - Display filesystem errors in the interface
 
 ## Current limitations
@@ -22,7 +23,7 @@ The name describes the direction of the project, but the app does not count word
 - There is no word counter or 200-word goal behavior yet
 - New files can only be created in the root of the open folder
 - Files and folders cannot be renamed, moved, or deleted in the app
-- There is no protection against losing unsaved edits when opening another file or folder
+- Crash/interruption recovery is not implemented yet
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
 - The custom frameless window is still a work in progress
 

@@ -10,29 +10,28 @@ The current prototype can open, edit, create, and explicitly save text files, bu
 
 ## Active slice
 
-**0.2.3 — Safe navigation**
+**0.2.4 — Crash/interruption recovery**
 
 ### Intended outcome
 
-Ensure file changes, folder changes, and window closure resolve pending edits before leaving the current writing context.
+Keep a private local recovery copy of dirty content and offer it when an interrupted edit is newer than the file on disk.
 
 ### Acceptance criteria
 
-- [ ] Switching files flushes pending edits before reading the destination.
-- [ ] Switching folders flushes pending edits before opening the picker or committing a new folder.
-- [ ] A failed navigation save keeps the current document active and offers a safe retry/cancel/discard decision.
-- [ ] A late write from one file cannot update another file's save state.
-- [ ] Closing the Tauri window flushes pending edits before allowing closure.
-- [ ] Close-save failure keeps the window open and explains the problem.
-- [ ] Navigation and close coordination has focused automated coverage where practical.
+- [ ] Dirty content is mirrored to app-local recovery storage without waiting for normal autosave.
+- [ ] Recovery records contain the source path, content, update time, and enough persisted-file identity to detect relevance.
+- [ ] A newer recovery record is offered when its source file is opened or restored at launch.
+- [ ] The writer can restore or dismiss a recovery record without silent overwrite.
+- [ ] A recovery record is removed only after confirmed file persistence or explicit dismissal.
+- [ ] Recovery storage location and privacy behavior are documented.
+- [ ] Forced-interruption and stale-record behavior has focused automated coverage.
 - [ ] `npm run check`, `npm test`, `npm run build`, and `cargo check --locked` pass.
 
 ## Next slices
 
-1. 0.2.4 — Crash/interruption recovery.
-2. 0.2.5 — File-tree usability and create-in-selected-folder.
-3. 0.2.6 — Native window controls and filesystem permission hardening.
-4. 0.2.7 — Failure-path and milestone QA.
+1. 0.2.5 — File-tree usability and create-in-selected-folder.
+2. 0.2.6 — Native window controls and filesystem permission hardening.
+3. 0.2.7 — Failure-path and milestone QA.
 
 ## Known state
 
@@ -41,6 +40,8 @@ Ensure file changes, folder changes, and window closure resolve pending edits be
 - The roadmap and README were committed at `13c7658`.
 - Slice 0.2.1 converted the page to TypeScript, introduced an explicit revision-based save-state model, and added Vitest with six regression tests.
 - Slice 0.2.2 added a 750 ms serialized autosave queue, immediate manual flush, visible save status, retryable failures, and race-condition coverage. Thirteen tests now pass.
+- Slice 0.2.3 flushes edits before file/folder navigation and Tauri window closure. A failed save offers Retry, Discard changes, or Keep writing; navigation-guard coverage brings the suite to eighteen tests.
+- Tauri now has the explicit `core:window:allow-destroy` capability required to complete an intercepted safe close without recursively emitting another close request.
 - Baseline `npm run check` originally reported nine implicit-`any` errors and a missing Node type; these are resolved.
 - `npm run check`, `npm test`, `npm run build`, and `cargo check --locked` pass after 0.2.1.
 - A Tauri development smoke launch compiled and opened successfully; interaction-level manual QA remains for the milestone checkpoint.
