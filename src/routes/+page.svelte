@@ -649,9 +649,12 @@
             style="padding-left: {0.5 + depth * 0.75}rem"
             onclick={() => toggleFolder(entry)}
             aria-expanded={entry.expanded}
+            aria-pressed={entry.path === selectedDirectoryPath}
             title={`Select and ${entry.expanded ? "collapse" : "expand"} ${entry.name}`}
           >
-            <span class="arrow">{entry.expanded ? "▼" : "▶"}</span>
+            <span class="arrow" aria-hidden="true">
+              {entry.expanded ? "▼" : "▶"}
+            </span>
             {entry.name}
           </button>
           {#if entry.expanded && entry.children}
@@ -663,10 +666,11 @@
             class:active={entry.path === activeFilePath}
             style="padding-left: {0.5 + depth * 0.75}rem"
             onclick={() => openFile(entry)}
+            aria-current={entry.path === activeFilePath ? "page" : undefined}
           >
-            📄 {entry.name}
+            <span aria-hidden="true">📄</span> {entry.name}
             {#if dirty && entry.path === activeFilePath}
-              <span class="dirty-dot">●</span>
+              <span class="dirty-dot" aria-hidden="true">●</span>
             {/if}
           </button>
         {/if}
@@ -725,6 +729,7 @@
           class="file-item root-item"
           class:selected={selectedDirectoryPath === folderPath}
           onclick={() => (selectedDirectoryPath = folderPath)}
+          aria-pressed={selectedDirectoryPath === folderPath}
           title="Select the project root for new files"
         >
           ▾ Project root
@@ -746,7 +751,7 @@
     <div class="editor-header">
       <span>
         {activeFile ? activeFile : "No file open"}
-        {#if dirty}<span class="dirty-dot">●</span>{/if}
+        {#if dirty}<span class="dirty-dot" aria-hidden="true">●</span>{/if}
       </span>
       {#if activeFile}
         <span
@@ -805,20 +810,33 @@
     height: 100%;
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 0;
   }
 
   .window-control {
-    width: 13px;
-    height: 13px;
+    position: relative;
+    width: 24px;
+    height: 24px;
     padding: 0;
     border: none;
-    border-radius: 50%;
+    border-radius: 6px;
+    background: transparent;
     color: transparent;
     font-family: inherit;
     font-size: 11px;
-    line-height: 13px;
+    line-height: 24px;
     cursor: default;
+  }
+
+  .window-control::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
   }
 
   .window-control:hover,
@@ -832,10 +850,14 @@
   }
 
   .close-control {
+    margin-left: -6px;
+  }
+
+  .close-control::before {
     background-color: #ff5f57;
   }
 
-  .minimize-control {
+  .minimize-control::before {
     background-color: #febc2e;
   }
 
