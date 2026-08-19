@@ -16,6 +16,8 @@ The name describes the direction of the project, but the app does not count word
 - Save the active file with `Command+S` on macOS or `Ctrl+S` elsewhere
 - Show dirty, saving, saved, and failed save states
 - Resolve pending edits before switching files, switching folders, or closing
+- Detect external edits, moves, deletion, and unreadable sources before writing
+- Require an explicit choice before overwriting or recreating a conflicted path
 - Keep private app-local recovery drafts and offer them after an interruption
 - Provide accessible macOS-style close and minimize controls
 - Limit filesystem access to folders explicitly chosen in the native picker
@@ -27,6 +29,7 @@ The name describes the direction of the project, but the app does not count word
 - Files and folders cannot be renamed, moved, or deleted in the app
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
 - The frameless window does not yet provide maximize/full-screen controls
+- Distribution signing, notarization, and a finished installer are deferred to release readiness
 
 ## Tech stack
 
@@ -70,8 +73,8 @@ npm run check
 # Build the frontend
 npm run build
 
-# Build the packaged desktop app
-npm run tauri build
+# Build the unsigned macOS application bundle
+npm run tauri build -- --bundles app
 ```
 
 ## Project structure
@@ -84,10 +87,12 @@ static/                   Static images and icons
 
 ## Status
 
-This is a functional prototype. The core folder-based editing workflow works, while the product-specific 200-word experience and several editor safeguards remain to be built.
+This is a functional prototype. The folder-based editor now has its first safety layer; hands-on desktop QA remains before work begins on the product-specific 200-word experience.
 
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 Local settings and draft-recovery behavior are documented in [`docs/DATA_AND_RECOVERY.md`](docs/DATA_AND_RECOVERY.md).
 
 The current native capability and selected-folder access model is documented in [`docs/SECURITY_AND_PERMISSIONS.md`](docs/SECURITY_AND_PERMISSIONS.md).
+
+The milestone's disposable-file desktop checks are in [`docs/MANUAL_QA.md`](docs/MANUAL_QA.md).

@@ -109,3 +109,12 @@ Why: projects are intended to remain portable ordinary folders, and a stale side
 Filesystem commands are enabled without a static external-path grant. Tauri's native dialog supplies a recursive runtime scope for each folder the writer explicitly selects, and the official persisted-scope plugin restores those grants across restarts. Previously selected folders can remain in that local scope because Tauri exposes forbidding—not safely removing—an individual allowed pattern.
 
 Why: this preserves the useful last-folder behavior while removing the prototype's `**` access to every path. It also keeps the native picker as the authorization boundary instead of accepting arbitrary paths from frontend code.
+
+## D-013 — Compare before every source write
+
+- Date: 2026-08-19
+- Status: accepted
+
+Before a normal autosave, the app rereads the source and requires it to exactly match the last content known to have persisted. A changed, missing, moved, or unreadable source is not overwritten or recreated. A native dialog can authorize a force write for only the current path and revision after showing an appropriate warning and, for conflicts, bounded previews.
+
+Why: ordinary files can be edited by other tools. Local-first ownership is not meaningful if autosave silently destroys an external revision.

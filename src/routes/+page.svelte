@@ -41,6 +41,18 @@
     validateFileName,
     type FileTreeEntry,
   } from "$lib/editor/file-tree";
+  import {
+    ExternalFileChangeError,
+    guardedWriteText,
+    SourceFileUnavailableError,
+  } from "$lib/editor/guarded-write";
+
+  interface SaveFailure {
+    path: string;
+    revision: number;
+    kind: "external-change" | "source-unavailable" | "write-failure";
+    diskContent?: string;
+  }
 
   const STORE_FILE = "settings.json";
   const LAST_FOLDER_KEY = "lastFolder";
@@ -59,6 +71,9 @@
   let creatingFile = $state(false);
   let newFileName = $state("");
   let navigationPromise: Promise<void> | null = null;
+  let forcedSave: { path: string; revision: number } | null = null;
+  let lastSaveFailure: SaveFailure | null = null;
+  const persistedContentByPath = new Map<string, string>();
 
   const dirty = $derived(
     activeFilePath !== "" && hasUnsavedChanges(saveState),
@@ -79,14 +94,47 @@
 
   const autosave = new AutosaveController({
     delayMs: AUTOSAVE_DELAY_MS,
-    save: ({ path, content }: AutosaveRequest) =>
-      writeTextFile(path, content),
+    save: async (request: AutosaveRequest) => {
+      const expectedContent = persistedContentByPath.get(request.path);
+      if (expectedContent === undefined) {
+        throw new SourceFileUnavailableError("No known source revision.");
+      }
+      const force =
+        forcedSave?.path === request.path &&
+        forcedSave.revision === request.revision;
+      await guardedWriteText(
+        {
+          path: request.path,
+          content: request.content,
+          expectedContent,
+          force,
+        },
+        {
+          read: readTextFile,
+          write: (path, nextContent) =>
+            writeTextFile(path, nextContent, { create: force }),
+        },
+      );
+    },
     onStart: (request) => {
       if (activeFilePath !== request.path) return;
       error = "";
       saveState = startSave(saveState, request.revision);
     },
     onSuccess: (request) => {
+      persistedContentByPath.set(request.path, request.content);
+      if (
+        forcedSave?.path === request.path &&
+        forcedSave.revision === request.revision
+      ) {
+        forcedSave = null;
+      }
+      if (
+        lastSaveFailure?.path === request.path &&
+        lastSaveFailure.revision <= request.revision
+      ) {
+        lastSaveFailure = null;
+      }
       if (activeFilePath === request.path) {
         persistedContent = request.content;
         saveState = saveSucceeded(saveState, request.revision);
@@ -94,7 +142,27 @@
       void clearRecoveryAfterSave(request.path, request.revision);
     },
     onError: (request, cause) => {
-      const message = `Could not save: ${formatError(cause)}`;
+      const failure: SaveFailure = {
+        path: request.path,
+        revision: request.revision,
+        kind:
+          cause instanceof ExternalFileChangeError
+            ? "external-change"
+            : cause instanceof SourceFileUnavailableError
+              ? "source-unavailable"
+              : "write-failure",
+        diskContent:
+          cause instanceof ExternalFileChangeError
+            ? cause.diskContent
+            : undefined,
+      };
+      lastSaveFailure = failure;
+      const message =
+        failure.kind === "external-change"
+          ? "This file changed outside the app. Your writing is still open and has not overwritten it."
+          : failure.kind === "source-unavailable"
+            ? "This file was moved, deleted, or became unreadable. Your writing is still open and has not recreated it."
+            : `Could not save: ${formatError(cause)}`;
       if (activeFilePath === request.path) {
         saveState = saveFailed(saveState, request.revision, message);
       }
@@ -252,22 +320,66 @@
   }
 
   async function chooseAfterSaveFailure(): Promise<SaveFailureDecision> {
-    const result = await message(
-      "Your latest changes could not be saved. You can retry, discard those changes, or keep the document open.",
-      {
-        title: "200 Crappy Words",
-        kind: "warning",
-        buttons: {
-          yes: "Retry",
-          no: "Discard changes",
-          cancel: "Keep writing",
-        },
+    const failure = lastSaveFailure;
+    const isCurrentFailure =
+      failure?.path === activeFilePath &&
+      failure.revision === saveState.currentRevision;
+    const prompt =
+      isCurrentFailure && failure.kind === "external-change"
+        ? `This file changed outside the app. Your writing has not overwritten it. Choose Overwrite file only if the in-app version should replace the disk version.\n\n${formatRecoveryPreview(failure.diskContent ?? "", content)}`
+        : isCurrentFailure && failure.kind === "source-unavailable"
+          ? "The file was moved, deleted, or became unreadable. Choose Write current text only if the app should try to create or replace the path."
+          : "Your latest changes could not be saved. You can retry, discard those changes, or keep the document open.";
+    const retryLabel =
+      isCurrentFailure && failure.kind === "external-change"
+        ? "Overwrite file"
+        : isCurrentFailure && failure.kind === "source-unavailable"
+          ? "Write current text"
+          : "Retry";
+    const result = await message(prompt, {
+      title: "200 Crappy Words",
+      kind: "warning",
+      buttons: {
+        yes: retryLabel,
+        no: "Discard my changes",
+        cancel: "Keep writing",
       },
-    );
+    });
 
-    if (result === "Retry") return "retry";
-    if (result === "Discard changes") return "discard";
+    if (result === retryLabel) {
+      if (
+        isCurrentFailure &&
+        (failure.kind === "external-change" ||
+          failure.kind === "source-unavailable")
+      ) {
+        forcedSave = {
+          path: activeFilePath,
+          revision: saveState.currentRevision,
+        };
+      }
+      return "retry";
+    }
+    if (result === "Discard my changes") return "discard";
     return "cancel";
+  }
+
+  async function discardActiveChanges(): Promise<void> {
+    const path = activeFilePath;
+    const revision = saveState.currentRevision;
+    if (!path) return;
+
+    autosave.cancelPending();
+    recoveryWriter.cancelPendingThrough(path, revision);
+    await recoveryWriter.flush();
+    await (await getRecoveryRepository()).remove(path, revision);
+    persistedContentByPath.delete(path);
+    forcedSave = null;
+    lastSaveFailure = null;
+    activeFile = "";
+    activeFilePath = "";
+    content = "";
+    persistedContent = "";
+    saveState = createSaveState();
   }
 
   function prepareToLeave(): Promise<boolean> {
@@ -275,6 +387,7 @@
       hasUnsavedChanges: () => dirty,
       save: saveFile,
       chooseAfterFailure: chooseAfterSaveFailure,
+      discard: discardActiveChanges,
     });
   }
 
@@ -357,6 +470,9 @@
     activeFilePath = "";
     content = "";
     persistedContent = "";
+    persistedContentByPath.clear();
+    forcedSave = null;
+    lastSaveFailure = null;
     saveState = createSaveState();
     creatingFile = false;
     newFileName = "";
@@ -386,8 +502,8 @@
       const store = await load(STORE_FILE);
       const last = await store.get<string>(LAST_FOLDER_KEY);
       if (last) await loadFolder(last);
-    } catch {
-      // No stored folder, or it can't be read anymore — show empty state.
+    } catch (cause) {
+      error = `The last folder could not be reopened. Choose Open Folder to select it again: ${formatError(cause)}`;
     }
   });
 
@@ -470,6 +586,7 @@
         if (!recovered) return;
 
         persistedContent = fileContent;
+        persistedContentByPath.set(entry.path, fileContent);
         content = recovered.content;
         saveState = recovered.revision
           ? createRecoveredSaveState(recovered.revision)
@@ -512,9 +629,9 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
-    if ((event.ctrlKey || event.metaKey) && event.key === "s") {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
       event.preventDefault();
-      saveFile();
+      void prepareToLeave();
     }
   }
 </script>
@@ -589,6 +706,7 @@
       <!-- svelte-ignore a11y_autofocus -->
       <input
         class="new-file-input"
+        aria-label="New file name"
         placeholder="filename.txt"
         bind:value={newFileName}
         onkeydown={newFileKeydown}
@@ -598,10 +716,10 @@
     {/if}
 
     {#if error}
-      <p class="error">{error}</p>
+      <p class="error" role="alert">{error}</p>
     {/if}
 
-    <nav class="files">
+    <nav class="files" aria-label="Project files">
       {#if folderPath}
         <button
           class="file-item root-item"
@@ -641,6 +759,8 @@
     <textarea
       class="editor-input"
       placeholder="Start writing your 200 crappy words..."
+      aria-label="Document editor"
+      disabled={!activeFilePath}
       value={content}
       oninput={handleContentInput}
     ></textarea>
@@ -759,6 +879,12 @@
     background-color: #3c3c3c;
   }
 
+  .open-btn:focus-visible,
+  .new-file-input:focus-visible {
+    outline: 2px solid #75beff;
+    outline-offset: 2px;
+  }
+
   .open-btn:disabled {
     opacity: 0.5;
     cursor: default;
@@ -780,7 +906,7 @@
 
   .files .placeholder {
     font-size: 0.85rem;
-    color: #808080;
+    color: #a0a0a0;
     margin: 0;
   }
 
@@ -801,7 +927,7 @@
     display: inline-block;
     width: 1rem;
     font-size: 0.7rem;
-    color: #808080;
+    color: #a0a0a0;
   }
 
   .file-item {
@@ -866,7 +992,7 @@
   .editor-header {
     padding: 0.5rem 1.5rem;
     font-size: 0.8rem;
-    color: #808080;
+    color: #a0a0a0;
     border-bottom: 1px solid #3c3c3c;
     display: flex;
     align-items: center;
@@ -897,6 +1023,15 @@
   }
 
   .editor-input::placeholder {
-    color: #6a6a6a;
+    color: #999999;
+  }
+
+  .editor-input:focus-visible {
+    box-shadow: inset 0 0 0 2px #75beff;
+  }
+
+  .editor-input:disabled {
+    cursor: default;
+    opacity: 0.72;
   }
 </style>

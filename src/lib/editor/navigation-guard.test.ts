@@ -52,13 +52,16 @@ describe("resolvePendingChanges", () => {
   });
 
   it("allows an explicit discard after a failed save", async () => {
+    const discard = vi.fn(async () => {});
     const result = await resolvePendingChanges({
       hasUnsavedChanges: () => true,
       save: vi.fn(async () => {}),
       chooseAfterFailure: vi.fn(async () => "discard" as const),
+      discard,
     });
 
     expect(result).toBe(true);
+    expect(discard).toHaveBeenCalledOnce();
   });
 
   it("cancels navigation after a failed save", async () => {
