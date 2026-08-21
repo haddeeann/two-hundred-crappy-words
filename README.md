@@ -2,7 +2,7 @@
 
 200 Crappy Words is an early-stage desktop writing app for working with plain-text files in a folder. It provides a deliberately small, dark interface: choose a folder, pick a file, and write.
 
-The app now counts words and stores progress toward its default 200-word target by selected project and local calendar date. The current persistence slice is awaiting its final restart-level desktop check.
+The app now counts words and stores progress toward its default 200-word target by selected project and local calendar date. Daily-practice persistence, goals, history, corrections, and restart behavior have passed their desktop checkpoint; the active work is the optional world-project format.
 
 ## Current features
 
@@ -95,7 +95,7 @@ static/                   Static images and icons
 
 ## Status
 
-This is a functional prototype. Its trustworthy-editor milestone has passed automated and hands-on macOS QA. The product-specific daily-practice milestone now has deterministic word counting, a verified live progress footer, and app-local daily persistence awaiting its final restart demonstration.
+This is a functional prototype. Its trustworthy-editor and daily-practice milestones have passed automated and hands-on macOS QA. The active world-project milestone is currently at its required format-proposal decision gate; no new project metadata is written yet.
 
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
@@ -104,6 +104,8 @@ Local settings and draft-recovery behavior are documented in [`docs/DATA_AND_REC
 The deterministic word-count and daily-credit rules being implemented for milestone 0.3 are documented in [`docs/WORD_COUNTING.md`](docs/WORD_COUNTING.md).
 
 The daily ledger's schema, privacy boundaries, and local-date behavior are documented in [`docs/DAILY_PROGRESS.md`](docs/DAILY_PROGRESS.md).
+
+The proposed portable manifest and optional Markdown metadata are documented in [`docs/PROJECT_FORMAT.md`](docs/PROJECT_FORMAT.md). The proposal is not implemented until its decision gate is approved.
 
 The current native capability and selected-folder access model is documented in [`docs/SECURITY_AND_PERMISSIONS.md`](docs/SECURITY_AND_PERMISSIONS.md).
 

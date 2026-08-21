@@ -18,11 +18,11 @@ Define the smallest versioned, human-readable project manifest and the boundary 
 
 ### Acceptance criteria
 
-- [ ] Audit the current folder, persistence, permission, and navigation assumptions that the project model must preserve.
-- [ ] Propose a minimal manifest name, schema, stable project identity, and format-version behavior.
-- [ ] Specify which settings travel with the project and which remain app-local.
-- [ ] Define safe adoption, creation, move/reopen, unknown-version, and future-migration behavior.
-- [ ] Document compatibility with ordinary folders and the no-overwrite rule.
+- [x] Audit the current folder, persistence, permission, and navigation assumptions that the project model must preserve.
+- [x] Propose a minimal manifest name, schema, stable project identity, and format-version behavior.
+- [x] Specify which settings travel with the project and which remain app-local.
+- [x] Define safe adoption, creation, move/reopen, unknown-version, and future-migration behavior.
+- [x] Document compatibility with ordinary folders and the no-overwrite rule.
 - [ ] Present the on-disk format at the milestone decision gate before implementation.
 
 ## Next slices
@@ -33,6 +33,7 @@ Define the smallest versioned, human-readable project manifest and the boundary 
 
 ## Completed checkpoint
 
+- The 0.4.1 audit and format proposal are complete in `docs/PROJECT_FORMAT.md`. The recommendation is one visible `200-crappy-words.project.json` manifest with a local UUID, display name, and semantic folder mapping; personal practice, recovery, permissions, recent locations, and editor state remain app-local. Ordinary folders remain fully supported. Optional YAML frontmatter on newly created structured notes is limited initially to `id`, `type`, and `title`. Decision D-020 remains proposed rather than accepted.
 - Milestone 0.3 passed its full disposable-project macOS walkthrough on 2026-08-21 using Computer Use against a freshly packaged build. The run covered baseline protection, per-project goals, live and persisted daily totals, quiet one-time completion, truthful goal changes, populated history, two restarts, correction validation, append-only audit display, deletion semantics, keyboard traversal, visible focus, and accessible labels.
 - QA exposed two issues before the final pass. The correction editor now receives focus when opened so Enter and Escape work immediately. New ledger revisions now preserve prior correction entries, including through correction, later writing, deletion, and restart. The lifecycle regression test covers the audit across that transition.
 - The frontend suite contains 119 passing tests across fifteen files. Svelte/TypeScript checks report zero errors and zero warnings, the production frontend and macOS application builds pass, Rust formatting/checks pass, and the production dependency audit reports zero vulnerabilities.
@@ -40,7 +41,7 @@ Define the smallest versioned, human-readable project manifest and the boundary 
 
 ## Blockers and decision gates
 
-No implementation blocker. Milestone 0.4 requires review of the proposed on-disk manifest and frontmatter conventions before the app treats them as stable user data.
+The required milestone 0.4 format decision gate is ready. Implementation must pause until the user approves or revises the manifest and frontmatter proposal in `docs/PROJECT_FORMAT.md`.
 
 ## Handoff protocol
 
