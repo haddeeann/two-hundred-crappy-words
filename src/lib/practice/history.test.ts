@@ -44,12 +44,14 @@ describe("writing history", () => {
         creditedWords: 80,
         target: 200,
         completed: false,
+        correctionCount: 0,
       },
       {
         dateKey: "2026-08-19",
         creditedWords: 205,
         target: 200,
         completed: true,
+        correctionCount: 0,
       },
     ]);
   });

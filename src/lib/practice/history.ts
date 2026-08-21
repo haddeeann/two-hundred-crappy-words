@@ -8,6 +8,7 @@ export interface WritingHistoryEntry {
   creditedWords: number;
   target: number;
   completed: boolean;
+  correctionCount: number;
 }
 
 export interface StreakSummary {
@@ -45,6 +46,7 @@ export function createWritingHistory(
       creditedWords: record.creditedWords,
       target: record.target ?? DEFAULT_DAILY_TARGET,
       completed: Boolean(record.completedAt),
+      correctionCount: record.corrections?.length ?? 0,
     }))
     .sort((left, right) => right.dateKey.localeCompare(left.dateKey));
 }

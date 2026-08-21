@@ -7,6 +7,7 @@ import {
   resolveDailyProgress,
   type DailyProgressBackend,
 } from "./daily-ledger";
+import { correctDailyProgressRecord } from "./correction";
 
 class MemoryBackend implements DailyProgressBackend {
   values = new Map<string, unknown>();
@@ -143,6 +144,23 @@ describe("daily progress repository", () => {
     );
   });
 
+  it("retains the correction audit across repository instances", async () => {
+    const backend = new MemoryBackend();
+    const corrected = correctDailyProgressRecord(
+      record(31, 1),
+      24,
+      new Date("2026-08-21T13:00:00.000Z"),
+    );
+    await new DailyProgressRepository(backend).put(corrected);
+
+    expect(
+      await new DailyProgressRepository(backend).get(
+        "/world/andromeda",
+        "2026-08-21",
+      ),
+    ).toEqual(corrected);
+  });
+
   it("serializes rapid writes and keeps the newest revision", async () => {
     const backend = new MemoryBackend();
     const repository = new DailyProgressRepository(backend);
@@ -176,6 +194,24 @@ describe("daily progress repository", () => {
       "/world/andromeda": {
         "2026-08-21": { creditedWords: 999 },
         "2026-08-22": record(5, 1, "/world/orion", "2026-08-22"),
+      },
+    });
+
+    expect(
+      await new DailyProgressRepository(backend).getProject(
+        "/world/andromeda",
+      ),
+    ).toEqual({});
+  });
+
+  it("ignores a record with a malformed correction audit", async () => {
+    const backend = new MemoryBackend();
+    backend.values.set("projects", {
+      "/world/andromeda": {
+        "2026-08-21": {
+          ...record(20, 3),
+          corrections: [{ previousWords: 21, correctedWords: -1 }],
+        },
       },
     });
 

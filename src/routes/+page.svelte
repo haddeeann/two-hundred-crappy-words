@@ -72,6 +72,7 @@
     type DailyProgressRecords,
   } from "$lib/practice/daily-ledger";
   import PracticeHistory from "$lib/practice/PracticeHistory.svelte";
+  import { correctDailyProgressRecord } from "$lib/practice/correction";
 
   interface SaveFailure {
     path: string;
@@ -110,6 +111,7 @@
   let dailyTargetInput = $state("");
   let completionMessage = $state("");
   let dailyProgressError = $state("");
+  let correctingDailyProgress = $state(false);
   let lastDailyProgressFailure: {
     path: string;
     revision: number;
@@ -850,7 +852,7 @@
   }
 
   async function confirmDailyTargetEdit() {
-    if (!editingDailyTarget || !folderPath) return;
+    if (!editingDailyTarget || !folderPath || correctingDailyProgress) return;
     const nextTarget = parseDailyTarget(dailyTargetInput);
     if (nextTarget === null) {
       dailyProgressError = `Daily goal must be a whole number from ${MIN_DAILY_TARGET} to ${MAX_DAILY_TARGET}.`;
@@ -880,6 +882,46 @@
       }
     } catch (cause) {
       dailyProgressError = `The daily goal could not be stored: ${formatError(cause)}`;
+    }
+  }
+
+  async function correctDailyProgress(
+    dateKey: string,
+    correctedWords: number,
+  ): Promise<boolean> {
+    const projectPath = folderPath;
+    const existing = dailyRecordsByDate[dateKey];
+    if (!projectPath || !existing || existing.projectPath !== projectPath) {
+      dailyProgressError = "That writing day is no longer available to correct.";
+      return false;
+    }
+
+    try {
+      correctingDailyProgress = true;
+      await flushDailyProgress();
+      const corrected = correctDailyProgressRecord(existing, correctedWords);
+      if (corrected !== existing) {
+        await (await getDailyProgressRepository()).put(corrected);
+      }
+      if (folderPath !== projectPath) return true;
+
+      dailyRecordsByDate = {
+        ...dailyRecordsByDate,
+        [dateKey]: corrected,
+      };
+      if (dateKey === activeDailyDateKey) {
+        activeDailyRevision = corrected.revision;
+        activeCompletedAt = corrected.completedAt ?? null;
+        practiceState = beginDailyPractice(content, corrected.creditedWords);
+        completionMessage = "";
+      }
+      dailyProgressError = "";
+      return true;
+    } catch (cause) {
+      dailyProgressError = `The writing total could not be corrected: ${formatError(cause)}`;
+      return false;
+    } finally {
+      correctingDailyProgress = false;
     }
   }
 
@@ -1016,6 +1058,7 @@
       <PracticeHistory
         records={dailyRecordsByDate}
         todayKey={activeDailyDateKey}
+        onCorrect={correctDailyProgress}
       />
     {/if}
   </aside>
@@ -1040,7 +1083,7 @@
       class="editor-input"
       placeholder="Start writing your 200 crappy words..."
       aria-label="Document editor"
-      disabled={!activeFilePath}
+      disabled={!activeFilePath || correctingDailyProgress}
       value={content}
       oninput={handleContentInput}
     ></textarea>
@@ -1079,13 +1122,14 @@
               ).value)}
             onkeydown={dailyTargetKeydown}
             onblur={() => void confirmDailyTargetEdit()}
+            disabled={correctingDailyProgress}
             autofocus
           />
         {:else}
           <button
             class="daily-target-button"
             onclick={startDailyTargetEdit}
-            disabled={!folderPath}
+            disabled={!folderPath || correctingDailyProgress}
             aria-label={`Change daily goal, currently ${dailyTarget} words`}
             title="Change daily goal"
           >Goal</button>

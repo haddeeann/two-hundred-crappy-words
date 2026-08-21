@@ -12,6 +12,13 @@ export interface DailyProgressRecord {
   revision: number;
   completedAt?: string | null;
   target?: number;
+  corrections?: DailyProgressCorrection[];
+}
+
+export interface DailyProgressCorrection {
+  previousWords: number;
+  correctedWords: number;
+  correctedAt: string;
 }
 
 export interface DailyProgressBackend {
@@ -136,7 +143,23 @@ function isDailyProgressRecord(value: unknown): value is DailyProgressRecord {
       record.completedAt === null ||
       (typeof record.completedAt === "string" &&
         !Number.isNaN(Date.parse(record.completedAt)))) &&
-    (record.target === undefined || isDailyTarget(record.target))
+    (record.target === undefined || isDailyTarget(record.target)) &&
+    (record.corrections === undefined ||
+      (Array.isArray(record.corrections) &&
+        record.corrections.every(isDailyProgressCorrection)))
+  );
+}
+
+function isDailyProgressCorrection(
+  value: unknown,
+): value is DailyProgressCorrection {
+  if (!value || typeof value !== "object") return false;
+  const correction = value as Partial<DailyProgressCorrection>;
+  return (
+    isNonNegativeInteger(correction.previousWords) &&
+    isNonNegativeInteger(correction.correctedWords) &&
+    typeof correction.correctedAt === "string" &&
+    !Number.isNaN(Date.parse(correction.correctedAt))
   );
 }
 

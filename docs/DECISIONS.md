@@ -163,3 +163,12 @@ Why: 200 remains the product's opinionated identity while writers with different
 History lists only dates that have a local progress record, newest first, with the credited words and the goal last recorded for that day. A completed day is determined by its persisted completion timestamp rather than recalculating it against a later goal. Streak calculations use consecutive completed local calendar dates. The current rhythm may end yesterday while today is still open; after a longer gap the interface says a fresh start is available and preserves the best rhythm instead of displaying a broken or zeroed streak.
 
 Why: absent ledger entries do not prove that a writer failed, and a new day should not make yesterday's accomplishment disappear before the writer has had a chance to begin. Storing each day's goal makes past progress understandable after target changes, while the completion timestamp preserves what the app actually acknowledged at the time.
+
+## D-019 — Explicit corrections preserve an append-only local audit
+
+- Date: 2026-08-21
+- Status: accepted, subject to desktop usability testing
+
+A writer may replace the credited-word total for a recorded date with a non-negative whole number. Each change appends the previous total, corrected total, and correction timestamp to that day's app-local record before advancing its revision. Correcting below that day's recorded goal removes its completion; correcting to or above the goal records completion without replaying the celebratory status. Correcting the active day resets the editing baseline to the corrected total, so existing document text is not recounted.
+
+Why: automatic counting can be misunderstood or affected by an unusual workflow, so private habit data must remain under the writer's control. Keeping prior values makes the change recoverable and understandable without placing app metadata in the manuscript folder. Recalculating completion makes history truthful when the correction specifically says the old total was mistaken.
