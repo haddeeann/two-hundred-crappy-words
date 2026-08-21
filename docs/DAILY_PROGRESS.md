@@ -10,8 +10,9 @@ Tauri stores `daily-progress.json` in the app-data directory for application ide
 - a local `YYYY-MM-DD` date key;
 - credited words for that project and date;
 - an update timestamp; and
-- a monotonic revision used to reject stale writes; and
-- an optional completion timestamp so the quiet completion status occurs only once for that date.
+- a monotonic revision used to reject stale writes;
+- an optional completion timestamp so the quiet completion status occurs only once for that date; and
+- the daily goal at the time of the most recent update, when available.
 
 The same file stores an optional whole-number goal for each selected project. The default remains 200 words. Goals must be from 1 through 100,000 words; the upper bound prevents accidental or corrupted values while leaving ample room for unusual practices.
 
@@ -31,4 +32,4 @@ The word-credit rules are documented in [`WORD_COUNTING.md`](WORD_COUNTING.md). 
 
 Progress writes are debounced briefly, serialized by project and date, and flushed during safe navigation and normal window closing. A persistence failure never blocks manuscript saving; the app displays a separate warning that the writing is safe but progress could not be stored.
 
-Records are retained for future history and streak views. No automatic pruning or remote synchronization occurs in this milestone. Schema migration and user-facing correction/export behavior must be defined before the ledger format changes incompatibly.
+Records are retained for history and streak views. History shows recorded dates rather than manufacturing zero-word entries for missing dates. A completion remains earned after a later target change; consecutive completed local dates form a rhythm, and yesterday's rhythm remains current while today is still open. No automatic pruning or remote synchronization occurs in this milestone. Schema migration and user-facing correction/export behavior must be defined before the ledger format changes incompatibly.

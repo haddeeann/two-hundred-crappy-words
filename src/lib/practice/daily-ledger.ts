@@ -1,3 +1,5 @@
+import { validateDailyTarget } from "./daily-goal";
+
 export const DAILY_PROGRESS_STORE_FILE = "daily-progress.json";
 const DAILY_PROGRESS_PROJECTS_KEY = "projects";
 
@@ -9,6 +11,7 @@ export interface DailyProgressRecord {
   updatedAt: string;
   revision: number;
   completedAt?: string | null;
+  target?: number;
 }
 
 export interface DailyProgressBackend {
@@ -58,6 +61,7 @@ export function createDailyProgressRecord({
   creditedWords,
   revision,
   completedAt = null,
+  target,
   now = new Date(),
 }: {
   projectPath: string;
@@ -65,6 +69,7 @@ export function createDailyProgressRecord({
   creditedWords: number;
   revision: number;
   completedAt?: string | null;
+  target?: number;
   now?: Date;
 }): DailyProgressRecord {
   if (!projectPath) throw new RangeError("A project path is required.");
@@ -81,6 +86,7 @@ export function createDailyProgressRecord({
   ) {
     throw new RangeError("The completion timestamp is invalid.");
   }
+  if (target !== undefined) validateDailyTarget(target);
 
   return {
     version: 1,
@@ -90,6 +96,7 @@ export function createDailyProgressRecord({
     updatedAt: now.toISOString(),
     revision,
     completedAt,
+    ...(target === undefined ? {} : { target }),
   };
 }
 
@@ -128,8 +135,18 @@ function isDailyProgressRecord(value: unknown): value is DailyProgressRecord {
     (record.completedAt === undefined ||
       record.completedAt === null ||
       (typeof record.completedAt === "string" &&
-        !Number.isNaN(Date.parse(record.completedAt))))
+        !Number.isNaN(Date.parse(record.completedAt)))) &&
+    (record.target === undefined || isDailyTarget(record.target))
   );
+}
+
+function isDailyTarget(value: unknown): value is number {
+  try {
+    validateDailyTarget(value as number);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export class DailyProgressRepository {

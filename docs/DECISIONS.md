@@ -154,3 +154,12 @@ Why: progress should survive restart without placing machine-specific habit data
 The daily target defaults to 200 and can be changed per explicitly selected project to a whole number from 1 through 100,000. Reaching the target records one completion timestamp for that project and local date. The interface acknowledges it with a short inline status and a polite screen-reader announcement, without a modal, sound, animation, focus change, or interruption to typing.
 
 Why: 200 remains the product's opinionated identity while writers with different practices retain agency. Persisting a single daily completion state prevents repeated celebration after restart, deletion, file switching, or later target changes, and the motion-free inline treatment follows the calm, non-punitive product direction.
+
+## D-018 — Humane history records practice without inventing failure
+
+- Date: 2026-08-21
+- Status: accepted, subject to visual usability testing
+
+History lists only dates that have a local progress record, newest first, with the credited words and the goal last recorded for that day. A completed day is determined by its persisted completion timestamp rather than recalculating it against a later goal. Streak calculations use consecutive completed local calendar dates. The current rhythm may end yesterday while today is still open; after a longer gap the interface says a fresh start is available and preserves the best rhythm instead of displaying a broken or zeroed streak.
+
+Why: absent ledger entries do not prove that a writer failed, and a new day should not make yesterday's accomplishment disappear before the writer has had a chance to begin. Storing each day's goal makes past progress understandable after target changes, while the completion timestamp preserves what the app actually acknowledged at the time.

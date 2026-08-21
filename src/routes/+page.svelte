@@ -786,6 +786,7 @@
       creditedWords: practiceState.dailyWords,
       revision: activeDailyRevision,
       completedAt: activeCompletedAt,
+      target: dailyTarget,
       now,
     });
     dailyRecordsByDate = {
@@ -872,6 +873,8 @@
       if (completion.completedAt !== activeCompletedAt) {
         activeCompletedAt = completion.completedAt;
         completionMessage = "Daily goal reached. Nicely done.";
+        scheduleDailyProgress(now);
+      } else if (practiceState.dailyWords > 0) {
         scheduleDailyProgress(now);
       }
     } catch (cause) {
@@ -1049,7 +1052,7 @@
         <span>{practicePresentation.dailyLabel}</span>
         <progress
           class="daily-meter"
-          max={DEFAULT_DAILY_TARGET}
+          max={dailyTarget}
           value={practicePresentation.progressValue}
           aria-label={practicePresentation.accessibleDailyLabel}
         ></progress>

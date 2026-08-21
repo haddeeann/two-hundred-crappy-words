@@ -37,6 +37,7 @@ function record(
     creditedWords,
     revision,
     completedAt: null,
+    target: 200,
     now: new Date("2026-08-21T12:00:00.000Z"),
   });
 }
@@ -131,6 +132,7 @@ describe("daily progress repository", () => {
       creditedWords: 31,
       revision: 1,
       completedAt: "2026-08-21T12:00:00.000Z",
+      target: 200,
       now: new Date("2026-08-21T12:00:00.000Z"),
     });
     await new DailyProgressRepository(backend).put(completed);
@@ -193,6 +195,7 @@ describe("daily progress repository", () => {
       updatedAt: "2026-08-21T12:00:00.000Z",
       revision: 3,
       completedAt: null,
+      target: 200,
     });
   });
 
@@ -204,6 +207,7 @@ describe("daily progress repository", () => {
         creditedWords: 200,
         revision: 2,
         completedAt: "sometime later",
+        target: 200,
       }),
     ).toThrow(RangeError);
   });
