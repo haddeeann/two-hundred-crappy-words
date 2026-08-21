@@ -8,6 +8,33 @@ Completed successfully on macOS on 2026-08-19. The run covered nested creation a
 
 The run found that the native picker initially granted only one directory level. Commit `1c20728` requests recursive scope for the explicitly selected project folder and adds a regression test; nested files were reopened successfully after the fix. No known ordinary interaction in this walkthrough silently lost text.
 
+## Milestone 0.3 combined checkpoint
+
+This short run remains pending. It proves persistence, configurable goals, one-time completion, populated history, and audited correction together without using real writing.
+
+Create a fresh project identity in Terminal so no earlier daily ledger can affect the result:
+
+```sh
+daily_qa_dir="$(mktemp -d /tmp/two-hundred-crappy-words-daily-qa.XXXXXX)"
+printf 'Existing words are only a baseline.\n' > "$daily_qa_dir/practice.txt"
+echo "$daily_qa_dir"
+```
+
+Open that folder in the development app, open `practice.txt`, and complete these steps:
+
+1. Confirm the existing sentence appears but **Today** begins at `0 / 200`.
+2. Choose **Goal**, enter `5`, and press Enter. Confirm the footer becomes `Today · 0 / 5` and the progress bar remains empty.
+3. Append `Persistence crosses the silent dark.` Confirm the document count rises by five, Today becomes `5 / 5`, and `Daily goal reached. Nicely done.` appears without a modal, motion, sound, or focus change.
+4. Expand **Writing history**. Confirm today shows `5 / 5` with a check and the rhythm says `One day underway`. No missing dates should be invented.
+5. Change the goal to `8`. Confirm the footer becomes `5 / 8`, the completion message clears, and history still truthfully shows the completed `5 / 5` goal. Change the goal back to `5`; the completion message must not replay.
+6. Close the app normally, rerun `npm run tauri dev`, and confirm the folder, `Today · 5 / 5`, and the five-word goal restore. Reopening `practice.txt` must not add credit, and the completion message must not replay.
+7. In Writing history choose **Correct** for today. Try `-1` first and confirm the inline validation refuses it without changing the total. Then save `3`. Confirm Today becomes `3 / 5`, the history check is removed, and `Corrected once` appears.
+8. Append `Still listening.` Confirm those two active-edit words bring Today to `5 / 5` and the completion status appears. Delete those two words again; the document count should fall but Today must remain at five.
+9. Close and relaunch once more. Confirm Today and goal restore, existing prose is not recounted, the completion message does not replay, and history retains both `5 / 5` and `Corrected once`.
+10. Use Tab and Shift+Tab through the history disclosure, Correct, correction input, Save, and Cancel. Confirm focus is visible; Enter saves and Escape cancels. With VoiceOver if convenient, confirm the progress meter and reached check have understandable labels.
+
+Record any mismatch in `docs/CURRENT.md`. When every step passes, mark the remaining 0.3 roadmap items complete and advance `docs/CURRENT.md` to milestone 0.4.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:

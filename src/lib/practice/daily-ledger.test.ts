@@ -80,12 +80,14 @@ describe("local calendar dates", () => {
       creditedWords: 13,
       revision: 2,
       completedAt: null,
+      completedTarget: null,
     });
     expect(resolveDailyProgress(records, new Date(2026, 7, 20, 12))).toEqual({
       dateKey: "2026-08-20",
       creditedWords: 8,
       revision: 1,
       completedAt: null,
+      completedTarget: null,
     });
   });
 
@@ -101,7 +103,27 @@ describe("local calendar dates", () => {
       creditedWords: 0,
       revision: 0,
       completedAt: null,
+      completedTarget: null,
     });
+  });
+
+  it("restores the goal that was actually completed after a later goal change", () => {
+    const completed = createDailyProgressRecord({
+      projectPath: "/world/andromeda",
+      dateKey: "2026-08-21",
+      creditedWords: 5,
+      revision: 2,
+      completedAt: "2026-08-21T12:00:00.000Z",
+      completedTarget: 5,
+      target: 8,
+    });
+
+    expect(
+      resolveDailyProgress(
+        { [completed.dateKey]: completed },
+        new Date(2026, 7, 21, 12),
+      ).completedTarget,
+    ).toBe(5);
   });
 });
 

@@ -105,6 +105,7 @@
   let activeDailyDateKey = $state(localDateKey());
   let activeDailyRevision = 0;
   let activeCompletedAt: string | null = null;
+  let activeCompletedTarget: number | null = null;
   let dailyRecordsByDate = $state<DailyProgressRecords>({});
   let dailyTarget = $state(DEFAULT_DAILY_TARGET);
   let editingDailyTarget = $state(false);
@@ -615,6 +616,7 @@
     activeDailyDateKey = dailyContext.dateKey;
     activeDailyRevision = dailyContext.revision;
     activeCompletedAt = dailyContext.completedAt;
+    activeCompletedTarget = dailyContext.completedTarget;
     practiceState = beginDailyPractice("", dailyContext.creditedWords);
     dailyTarget = projectTarget;
     editingDailyTarget = false;
@@ -776,6 +778,7 @@
     activeDailyDateKey = dailyContext.dateKey;
     activeDailyRevision = dailyContext.revision;
     activeCompletedAt = dailyContext.completedAt;
+    activeCompletedTarget = dailyContext.completedTarget;
     practiceState = beginDailyPractice(documentText, dailyContext.creditedWords);
     completionMessage = "";
   }
@@ -789,6 +792,7 @@
       creditedWords: practiceState.dailyWords,
       revision: activeDailyRevision,
       completedAt: activeCompletedAt,
+      completedTarget: activeCompletedTarget,
       target: dailyTarget,
       now,
     });
@@ -818,6 +822,7 @@
     const newlyCompleted = completion.completedAt !== activeCompletedAt;
     activeCompletedAt = completion.completedAt;
     if (completion.shouldAnnounce) {
+      activeCompletedTarget = dailyTarget;
       completionMessage = "Daily goal reached. Nicely done.";
     }
     if (practiceState.dailyWords > previousDailyWords || newlyCompleted) {
@@ -865,6 +870,7 @@
       editingDailyTarget = false;
       dailyTargetInput = "";
       dailyProgressError = "";
+      completionMessage = "";
 
       const now = new Date();
       const completion = assessGoalCompletion({
@@ -875,6 +881,7 @@
       });
       if (completion.completedAt !== activeCompletedAt) {
         activeCompletedAt = completion.completedAt;
+        activeCompletedTarget = dailyTarget;
         completionMessage = "Daily goal reached. Nicely done.";
         scheduleDailyProgress(now);
       } else if (practiceState.dailyWords > 0) {
@@ -912,6 +919,7 @@
       if (dateKey === activeDailyDateKey) {
         activeDailyRevision = corrected.revision;
         activeCompletedAt = corrected.completedAt ?? null;
+        activeCompletedTarget = corrected.completedTarget ?? null;
         practiceState = beginDailyPractice(content, corrected.creditedWords);
         completionMessage = "";
       }

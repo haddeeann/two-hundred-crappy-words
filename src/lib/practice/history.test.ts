@@ -55,6 +55,24 @@ describe("writing history", () => {
       },
     ]);
   });
+
+  it("shows the completed goal rather than a larger goal chosen later", () => {
+    const completed = createDailyProgressRecord({
+      projectPath: "/world/andromeda",
+      dateKey: "2026-08-21",
+      creditedWords: 5,
+      revision: 2,
+      completedAt: "2026-08-21T12:00:00.000Z",
+      completedTarget: 5,
+      target: 8,
+    });
+
+    expect(createWritingHistory({ [completed.dateKey]: completed })[0]).toMatchObject({
+      creditedWords: 5,
+      target: 5,
+      completed: true,
+    });
+  });
 });
 
 describe("humane streak summaries", () => {

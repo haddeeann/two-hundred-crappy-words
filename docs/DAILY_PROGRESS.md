@@ -12,7 +12,8 @@ Tauri stores `daily-progress.json` in the app-data directory for application ide
 - an update timestamp; and
 - a monotonic revision used to reject stale writes;
 - an optional completion timestamp so the quiet completion status occurs only once for that date; and
-- the daily goal at the time of the most recent update, when available.
+- the daily goal at the time of the most recent update, when available; and
+- for completed days, the goal that was actually reached, so a later goal change does not produce a contradictory history row.
 
 A corrected record also contains an append-only list of its previous total, corrected total, and correction timestamp. Correction history contains counters and timestamps only; it does not contain creative text.
 

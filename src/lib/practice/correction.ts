@@ -34,14 +34,27 @@ export function correctDailyProgressRecord(
     correctedAt,
   };
   const target = record.target ?? DEFAULT_DAILY_TARGET;
+  const wasCompleted = Boolean(record.completedAt);
+  const originalCompletedTarget = wasCompleted
+    ? (record.completedTarget ?? record.target ?? DEFAULT_DAILY_TARGET)
+    : null;
+  const qualifyingTarget =
+    originalCompletedTarget === null
+      ? target
+      : Math.min(originalCompletedTarget, target);
+  const isCompleted = correctedWords >= qualifyingTarget;
 
   return {
     ...record,
     creditedWords: correctedWords,
     updatedAt: correctedAt,
     revision: record.revision + 1,
-    completedAt:
-      correctedWords >= target ? (record.completedAt ?? correctedAt) : null,
+    completedAt: isCompleted ? (record.completedAt ?? correctedAt) : null,
+    completedTarget: isCompleted
+      ? originalCompletedTarget !== null && correctedWords >= originalCompletedTarget
+        ? originalCompletedTarget
+        : target
+      : null,
     corrections: [...(record.corrections ?? []), correction],
   };
 }

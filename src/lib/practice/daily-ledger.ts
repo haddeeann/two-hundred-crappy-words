@@ -1,4 +1,4 @@
-import { validateDailyTarget } from "./daily-goal";
+import { DEFAULT_DAILY_TARGET, validateDailyTarget } from "./daily-goal";
 
 export const DAILY_PROGRESS_STORE_FILE = "daily-progress.json";
 const DAILY_PROGRESS_PROJECTS_KEY = "projects";
@@ -11,6 +11,7 @@ export interface DailyProgressRecord {
   updatedAt: string;
   revision: number;
   completedAt?: string | null;
+  completedTarget?: number | null;
   target?: number;
   corrections?: DailyProgressCorrection[];
 }
@@ -35,6 +36,7 @@ export interface DailyProgressContext {
   creditedWords: number;
   revision: number;
   completedAt: string | null;
+  completedTarget: number | null;
 }
 
 export function localDateKey(now = new Date()): string {
@@ -59,6 +61,9 @@ export function resolveDailyProgress(
     creditedWords: record?.creditedWords ?? 0,
     revision: record?.revision ?? 0,
     completedAt: record?.completedAt ?? null,
+    completedTarget: record?.completedAt
+      ? (record.completedTarget ?? record.target ?? DEFAULT_DAILY_TARGET)
+      : null,
   };
 }
 
@@ -68,6 +73,7 @@ export function createDailyProgressRecord({
   creditedWords,
   revision,
   completedAt = null,
+  completedTarget = null,
   target,
   now = new Date(),
 }: {
@@ -76,6 +82,7 @@ export function createDailyProgressRecord({
   creditedWords: number;
   revision: number;
   completedAt?: string | null;
+  completedTarget?: number | null;
   target?: number;
   now?: Date;
 }): DailyProgressRecord {
@@ -94,6 +101,12 @@ export function createDailyProgressRecord({
     throw new RangeError("The completion timestamp is invalid.");
   }
   if (target !== undefined) validateDailyTarget(target);
+  if (completedTarget !== null) {
+    validateDailyTarget(completedTarget);
+    if (completedAt === null) {
+      throw new RangeError("A completed goal requires a completion timestamp.");
+    }
+  }
 
   return {
     version: 1,
@@ -103,6 +116,7 @@ export function createDailyProgressRecord({
     updatedAt: now.toISOString(),
     revision,
     completedAt,
+    ...(completedTarget === null ? {} : { completedTarget }),
     ...(target === undefined ? {} : { target }),
   };
 }
@@ -143,6 +157,9 @@ function isDailyProgressRecord(value: unknown): value is DailyProgressRecord {
       record.completedAt === null ||
       (typeof record.completedAt === "string" &&
         !Number.isNaN(Date.parse(record.completedAt)))) &&
+    (record.completedTarget === undefined ||
+      record.completedTarget === null ||
+      (Boolean(record.completedAt) && isDailyTarget(record.completedTarget))) &&
     (record.target === undefined || isDailyTarget(record.target)) &&
     (record.corrections === undefined ||
       (Array.isArray(record.corrections) &&

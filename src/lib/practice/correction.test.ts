@@ -65,6 +65,17 @@ describe("daily progress correction", () => {
     const corrected = correctDailyProgressRecord(record(180), 200, now);
 
     expect(corrected.completedAt).toBe(now.toISOString());
+    expect(corrected.completedTarget).toBe(200);
+  });
+
+  it("preserves the goal originally reached when correcting a completed day", () => {
+    const original = {
+      ...record(5, "2026-08-21T12:00:00.000Z"),
+      target: 8,
+      completedTarget: 5,
+    };
+
+    expect(correctDailyProgressRecord(original, 6).completedTarget).toBe(5);
   });
 
   it("returns the same record when the total is unchanged", () => {

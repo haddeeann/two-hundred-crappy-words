@@ -44,7 +44,9 @@ export function createWritingHistory(
     .map((record) => ({
       dateKey: record.dateKey,
       creditedWords: record.creditedWords,
-      target: record.target ?? DEFAULT_DAILY_TARGET,
+      target: record.completedAt
+        ? (record.completedTarget ?? record.target ?? DEFAULT_DAILY_TARGET)
+        : (record.target ?? DEFAULT_DAILY_TARGET),
       completed: Boolean(record.completedAt),
       correctionCount: record.corrections?.length ?? 0,
     }))
