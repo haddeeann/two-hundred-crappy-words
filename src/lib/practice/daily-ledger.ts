@@ -75,6 +75,7 @@ export function createDailyProgressRecord({
   completedAt = null,
   completedTarget = null,
   target,
+  corrections,
   now = new Date(),
 }: {
   projectPath: string;
@@ -84,6 +85,7 @@ export function createDailyProgressRecord({
   completedAt?: string | null;
   completedTarget?: number | null;
   target?: number;
+  corrections?: DailyProgressCorrection[];
   now?: Date;
 }): DailyProgressRecord {
   if (!projectPath) throw new RangeError("A project path is required.");
@@ -107,6 +109,13 @@ export function createDailyProgressRecord({
       throw new RangeError("A completed goal requires a completion timestamp.");
     }
   }
+  if (
+    corrections !== undefined &&
+    (!Array.isArray(corrections) ||
+      !corrections.every(isDailyProgressCorrection))
+  ) {
+    throw new RangeError("The correction audit is invalid.");
+  }
 
   return {
     version: 1,
@@ -118,6 +127,9 @@ export function createDailyProgressRecord({
     completedAt,
     ...(completedTarget === null ? {} : { completedTarget }),
     ...(target === undefined ? {} : { target }),
+    ...(corrections === undefined
+      ? {}
+      : { corrections: corrections.map((correction) => ({ ...correction })) }),
   };
 }
 

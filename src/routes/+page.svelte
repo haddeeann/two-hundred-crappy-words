@@ -794,6 +794,7 @@
       completedAt: activeCompletedAt,
       completedTarget: activeCompletedTarget,
       target: dailyTarget,
+      corrections: dailyRecordsByDate[activeDailyDateKey]?.corrections,
       now,
     });
     dailyRecordsByDate = {

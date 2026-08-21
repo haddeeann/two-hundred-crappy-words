@@ -70,12 +70,26 @@ describe("daily practice lifecycle", () => {
     practice = beginDailyPractice(fiveWordEdit, corrected.creditedWords);
     practice = applyDailyPracticeEdit(practice, `${fiveWordEdit} Still listening.`);
     expect(practice.dailyWords).toBe(5);
-    expect(
-      assessGoalCompletion({
-        dailyWords: practice.dailyWords,
-        target: 5,
-        completedAt: corrected.completedAt ?? null,
-      }).shouldAnnounce,
-    ).toBe(true);
+    const correctedCompletion = assessGoalCompletion({
+      dailyWords: practice.dailyWords,
+      target: 5,
+      completedAt: corrected.completedAt ?? null,
+    });
+    expect(correctedCompletion.shouldAnnounce).toBe(true);
+
+    const completedAfterCorrection = createDailyProgressRecord({
+      ...corrected,
+      creditedWords: practice.dailyWords,
+      revision: corrected.revision + 1,
+      completedAt: correctedCompletion.completedAt,
+      completedTarget: 5,
+      target: 5,
+    });
+    expect(createWritingHistory({ [dateKey]: completedAfterCorrection })[0])
+      .toMatchObject({
+        creditedWords: 5,
+        completed: true,
+        correctionCount: 1,
+      });
   });
 });

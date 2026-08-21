@@ -10,7 +10,9 @@ The run found that the native picker initially granted only one directory level.
 
 ## Milestone 0.3 combined checkpoint
 
-This short run remains pending. It proves persistence, configurable goals, one-time completion, populated history, and audited correction together without using real writing.
+Completed successfully on macOS on 2026-08-21 using Computer Use against a freshly packaged build and a disposable project. The run proved baseline protection, configurable goals, one-time completion, populated history, goal-change truthfulness, two restarts, no duplicate credit, validation, audited correction, non-decrementing daily credit, keyboard traversal, visible focus, and understandable accessibility labels.
+
+QA found and fixed two issues before the final pass: keyboard activation of **Correct** did not move focus into its input, and a correction audit was dropped when later writing created the next ledger revision. The final rebuilt app passed Enter/Escape behavior and retained both `5 / 5` and `Corrected once` after restart.
 
 Create a fresh project identity in Terminal so no earlier daily ledger can affect the result:
 
@@ -33,7 +35,7 @@ Open that folder in the development app, open `practice.txt`, and complete these
 9. Close and relaunch once more. Confirm Today and goal restore, existing prose is not recounted, the completion message does not replay, and history retains both `5 / 5` and `Corrected once`.
 10. Use Tab and Shift+Tab through the history disclosure, Correct, correction input, Save, and Cancel. Confirm focus is visible; Enter saves and Escape cancels. With VoiceOver if convenient, confirm the progress meter and reached check have understandable labels.
 
-Record any mismatch in `docs/CURRENT.md`. When every step passes, mark the remaining 0.3 roadmap items complete and advance `docs/CURRENT.md` to milestone 0.4.
+This checkpoint passed in full. Its steps remain below as a repeatable regression walkthrough.
 
 ## Start safely
 

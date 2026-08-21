@@ -99,6 +99,7 @@
             </div>
             {#if editingDateKey === entry.dateKey}
               <div class="correction-editor">
+                <!-- svelte-ignore a11y_autofocus -->
                 <input
                   type="number"
                   min="0"
@@ -111,6 +112,7 @@
                     ).value)}
                   onkeydown={correctionKeydown}
                   disabled={correcting}
+                  autofocus
                 />
                 <button type="button" onclick={() => void confirmCorrection()} disabled={correcting}>Save</button>
                 <button type="button" onclick={cancelCorrection} disabled={correcting}>Cancel</button>

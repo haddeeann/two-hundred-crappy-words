@@ -9,8 +9,8 @@ Status legend: `PLANNED`, `ACTIVE`, `BLOCKED`, `COMPLETE`, `DEFERRED`.
 | Milestone | Outcome | Status |
 | --- | --- | --- |
 | 0.2 Trustworthy editor | A writer can trust the app not to lose work | COMPLETE |
-| 0.3 Daily practice | The 200-words-a-day promise is real and encouraging | ACTIVE |
-| 0.4 World projects | A folder becomes a portable, structured science-fiction world | PLANNED |
+| 0.3 Daily practice | The 200-words-a-day promise is real and encouraging | COMPLETE |
+| 0.4 World projects | A folder becomes a portable, structured science-fiction world | ACTIVE |
 | 0.5 Connected lore | Manuscript and world bible can reference each other fluidly | PLANNED |
 | 0.6 Novel structure | Scenes and chapters can be planned, reordered, and exported | PLANNED |
 | 0.7 Continuity tools | Time, travel, relationships, and canon can be reasoned about | PLANNED |
@@ -37,11 +37,11 @@ Goal: fulfill the product's central promise with an accurate, humane daily writi
 
 - [x] Define and test word-token and daily-credit semantics.
 - [x] Show live document and daily word counts.
-- [ ] Persist daily progress by local calendar date and project.
-- [ ] Add a 200-word progress treatment and accessible completion moment.
-- [ ] Allow the daily target to be changed while keeping 200 as the default.
-- [ ] Add writing history and gentle streak information.
-- [ ] Make corrections, time-zone changes, and recovery behavior understandable.
+- [x] Persist daily progress by local calendar date and project.
+- [x] Add a 200-word progress treatment and accessible completion moment.
+- [x] Allow the daily target to be changed while keeping 200 as the default.
+- [x] Add writing history and gentle streak information.
+- [x] Make corrections, time-zone changes, and recovery behavior understandable.
 
 Specification: [`docs/milestones/0.3-daily-practice.md`](docs/milestones/0.3-daily-practice.md)
 
