@@ -47,6 +47,14 @@
     SourceFileUnavailableError,
   } from "$lib/editor/guarded-write";
   import { folderDialogOptions } from "$lib/editor/folder-access";
+  import {
+    applyDailyPracticeEdit,
+    beginDailyPractice,
+  } from "$lib/practice/word-count";
+  import {
+    DEFAULT_DAILY_TARGET,
+    presentPractice,
+  } from "$lib/practice/progress";
 
   interface SaveFailure {
     path: string;
@@ -74,6 +82,7 @@
   let navigationPromise: Promise<void> | null = null;
   let forcedSave: { path: string; revision: number } | null = null;
   let lastSaveFailure: SaveFailure | null = null;
+  let practiceState = $state(beginDailyPractice(""));
   const persistedContentByPath = new Map<string, string>();
 
   const dirty = $derived(
@@ -92,6 +101,7 @@
     }
     return findTreeEntry(entries, selectedDirectoryPath)?.name ?? "Project root";
   });
+  const practicePresentation = $derived(presentPractice(practiceState));
 
   const autosave = new AutosaveController({
     delayMs: AUTOSAVE_DELAY_MS,
@@ -380,6 +390,7 @@
     activeFilePath = "";
     content = "";
     persistedContent = "";
+    practiceState = beginDailyPractice("", practiceState.dailyWords);
     saveState = createSaveState();
   }
 
@@ -471,6 +482,7 @@
     activeFilePath = "";
     content = "";
     persistedContent = "";
+    practiceState = beginDailyPractice("", practiceState.dailyWords);
     persistedContentByPath.clear();
     forcedSave = null;
     lastSaveFailure = null;
@@ -589,6 +601,10 @@
         persistedContent = fileContent;
         persistedContentByPath.set(entry.path, fileContent);
         content = recovered.content;
+        practiceState = beginDailyPractice(
+          recovered.content,
+          practiceState.dailyWords,
+        );
         saveState = recovered.revision
           ? createRecoveredSaveState(recovered.revision)
           : createSaveState();
@@ -613,7 +629,9 @@
   }
 
   function handleContentInput(event: Event) {
-    content = (event.currentTarget as HTMLTextAreaElement).value;
+    const nextContent = (event.currentTarget as HTMLTextAreaElement).value;
+    practiceState = applyDailyPracticeEdit(practiceState, nextContent);
+    content = nextContent;
     saveState = markEdited(saveState);
     if (activeFilePath) {
       recoveryWriter.schedule(
@@ -770,6 +788,23 @@
       value={content}
       oninput={handleContentInput}
     ></textarea>
+    <div class="practice-bar" aria-label="Writing progress">
+      <span class="document-count">
+        {activeFile ? practicePresentation.documentLabel : "No document open"}
+      </span>
+      <div
+        class="session-progress"
+        title="Session progress is stored only while the app is running for now"
+      >
+        <span>{practicePresentation.sessionLabel}</span>
+        <progress
+          class="session-meter"
+          max={DEFAULT_DAILY_TARGET}
+          value={practicePresentation.progressValue}
+          aria-label={practicePresentation.accessibleSessionLabel}
+        ></progress>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -1056,5 +1091,56 @@
   .editor-input:disabled {
     cursor: default;
     opacity: 0.72;
+  }
+
+  .practice-bar {
+    box-sizing: border-box;
+    min-height: 40px;
+    padding: 0.55rem 1.5rem;
+    border-top: 1px solid #3c3c3c;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    color: #b8b8b8;
+    font-size: 0.78rem;
+  }
+
+  .document-count {
+    flex: 0 0 auto;
+  }
+
+  .session-progress {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    color: #d4d4d4;
+    white-space: nowrap;
+  }
+
+  .session-meter {
+    width: min(140px, 22vw);
+    height: 6px;
+    border: none;
+    border-radius: 999px;
+    overflow: hidden;
+    background-color: #333333;
+  }
+
+  .session-meter::-webkit-progress-bar {
+    border-radius: 999px;
+    background-color: #333333;
+  }
+
+  .session-meter::-webkit-progress-value {
+    border-radius: 999px;
+    background-color: #4da3d9;
+  }
+
+  .session-meter::-moz-progress-bar {
+    border-radius: 999px;
+    background-color: #4da3d9;
   }
 </style>

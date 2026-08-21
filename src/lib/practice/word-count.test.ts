@@ -89,4 +89,18 @@ describe("daily practice credit", () => {
       dailyWords: 3,
     });
   });
+
+  it("preserves session credit when another document establishes a baseline", () => {
+    const firstDocument = beginDailyPractice("one", 5);
+    const edited = applyDailyPracticeEdit(firstDocument, "one two three");
+    const switchedDocument = beginDailyPractice(
+      "five words already live over here",
+      edited.dailyWords,
+    );
+
+    expect(switchedDocument).toEqual({
+      documentWords: 6,
+      dailyWords: 7,
+    });
+  });
 });

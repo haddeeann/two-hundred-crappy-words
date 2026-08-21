@@ -1,6 +1,6 @@
 # Current work
 
-Last updated: 2026-08-19
+Last updated: 2026-08-21
 
 ## Active milestone
 
@@ -10,29 +10,31 @@ The trustworthy-editor foundation is complete. The active milestone now makes th
 
 ## Active slice
 
-**0.3.2 — Live document and session progress treatment**
+**0.3.3 — Persist progress by local date and project**
 
 ### Intended outcome
 
-Bring the tested counting model into the editor so a writer can see the current document count and progress earned during this running session. Keep the presentation compact, calm, keyboard-safe, and truthful that persistence arrives in the following slice.
+Turn the verified session counter into truthful daily progress that survives restart. Store only local project/date counters and bookkeeping—not manuscript text—and preserve the no-double-credit baselines already used for file opening and recovery.
 
 ### Acceptance criteria
 
-- [ ] Show the active document's live word count without affecting typing or saving.
-- [ ] Show session-earned progress toward the default 200-word target without calling it persistent daily history yet.
-- [ ] Establish a no-credit baseline when a file opens, switches, or recovers; apply credit only to active editor input.
-- [ ] Preserve session credit while switching documents and folders within the running app.
-- [ ] Provide concise accessible labels and a progress treatment that does not announce every keystroke.
-- [ ] Add focused integration coverage and pass the full frontend checks.
+- [ ] Define and test local calendar-date keys, including midnight, time-zone, and backward-clock behavior.
+- [ ] Persist credited words per explicitly selected project and local date in app-local data without storing manuscript text.
+- [ ] Restore today's credited words after restart and prevent opening, switching, or recovery from crediting existing prose again.
+- [ ] Serialize rapid ledger updates so an older write cannot replace newer progress.
+- [ ] Document the ledger location, schema, project identity, retention, and correction/migration expectations.
+- [ ] Change the footer from honest session language to today's progress only after persistence is verified.
+- [ ] Pass focused ledger tests, full frontend checks, and a restart-level desktop demonstration.
 
 ## Next slices
 
-1. 0.3.3 — Persist progress by local date and project.
-2. 0.3.4 — Accessible 200-word completion moment and configurable target.
-3. 0.3.5 — Writing history and gentle streak information.
+1. 0.3.4 — Accessible 200-word completion moment and configurable target.
+2. 0.3.5 — Writing history and gentle streak information.
+3. 0.3.6 — Corrections, date/time-zone behavior, and milestone QA.
 
 ## Completed checkpoint
 
+- Slice 0.3.2 connects counting to active editor input, carries earned credit across in-session file and folder changes, and presents the live document count plus a compact native progress meter labelled `This session`. Five new tests cover presentation and cross-document state, bringing the suite to 68 passing tests across ten files. Svelte/TypeScript checks and the production frontend build pass. The macOS desktop flow and footer layout were manually approved on 2026-08-21; deletion lowered the document count without erasing earned session credit.
 - Slice 0.3.1 defines deterministic Unicode word tokens and gross-positive edit credit in `docs/WORD_COUNTING.md` and decision D-015. The pure implementation has sixteen focused fixtures; the full frontend suite contains 63 passing tests across nine files, and Svelte/TypeScript checks plus the production frontend build pass.
 - Milestone 0.2 passed its disposable-file macOS walkthrough on 2026-08-19.
 - The run manually demonstrated nested file creation, autosave during navigation, external-change refusal and explicit overwrite, moved-file refusal, write-denied safe close and successful saving after permission restoration, forced-interruption recovery, stale-recovery cleanup, remembered selected-folder scope, whole-folder removal, window controls, title-bar dragging, keyboard traversal, focus visibility, and basic visual legibility.

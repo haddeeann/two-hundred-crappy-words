@@ -2,7 +2,7 @@
 
 200 Crappy Words is an early-stage desktop writing app for working with plain-text files in a folder. It provides a deliberately small, dark interface: choose a folder, pick a file, and write.
 
-The name describes the direction of the project, but the app does not count words or enforce a 200-word target yet.
+The app now counts words and shows progress earned during the running session toward its default 200-word target. Persisting that progress across restarts and local calendar days is the active development slice.
 
 ## Current features
 
@@ -23,10 +23,12 @@ The name describes the direction of the project, but the app does not count word
 - Limit filesystem access to folders explicitly chosen in the native picker
 - Block remote scripts and network origins in the packaged webview
 - Display filesystem errors in the interface
+- Show the active document's live word count
+- Track gross-positive writing progress toward 200 words during the running session
 
 ## Current limitations
 
-- There is no word counter or 200-word goal behavior yet
+- Writing progress is currently session-only and resets when the app quits; daily persistence is in progress
 - Files and folders cannot be renamed, moved, or deleted in the app
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
 - The frameless window does not yet provide maximize/full-screen controls
@@ -88,7 +90,7 @@ static/                   Static images and icons
 
 ## Status
 
-This is a functional prototype. Its trustworthy-editor milestone has passed automated and hands-on macOS QA. Work is now beginning on the product-specific 200-word daily-practice experience.
+This is a functional prototype. Its trustworthy-editor milestone has passed automated and hands-on macOS QA. The product-specific daily-practice milestone now has deterministic word counting and a manually verified live session-progress footer; persistent daily history is next.
 
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 

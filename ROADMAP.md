@@ -36,7 +36,7 @@ Specification: [`docs/milestones/0.2-trustworthy-editor.md`](docs/milestones/0.2
 Goal: fulfill the product's central promise with an accurate, humane daily writing loop.
 
 - [x] Define and test word-token and daily-credit semantics.
-- [ ] Show live document and daily word counts.
+- [x] Show live document and daily word counts.
 - [ ] Persist daily progress by local calendar date and project.
 - [ ] Add a 200-word progress treatment and accessible completion moment.
 - [ ] Allow the daily target to be changed while keeping 200 as the default.
