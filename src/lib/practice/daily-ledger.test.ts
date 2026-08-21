@@ -200,6 +200,19 @@ describe("daily progress repository", () => {
     expect(backend.saves).toBe(2);
   });
 
+  it("does not replace a record with a different payload at the same revision", async () => {
+    const backend = new MemoryBackend();
+    const repository = new DailyProgressRepository(backend);
+    await repository.put(record(12, 2));
+    await repository.put(record(99, 2));
+
+    expect(
+      (await repository.get("/world/andromeda", "2026-08-21"))
+        ?.creditedWords,
+    ).toBe(12);
+    expect(backend.saves).toBe(1);
+  });
+
   it("returns all valid dates for clock or time-zone changes", async () => {
     const repository = new DailyProgressRepository(new MemoryBackend());
     await repository.put(record(9, 1, "/world/andromeda", "2026-08-20"));

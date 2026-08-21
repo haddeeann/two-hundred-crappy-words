@@ -215,7 +215,7 @@ export class DailyProgressRepository {
       const projects = await this.readProjects();
       const project = projects[record.projectPath] ?? {};
       const existing = project[record.dateKey];
-      if (existing && existing.revision > record.revision) return;
+      if (existing && existing.revision >= record.revision) return;
 
       project[record.dateKey] = record;
       projects[record.projectPath] = project;
