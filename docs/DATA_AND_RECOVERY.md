@@ -29,3 +29,7 @@ Recovery text is not stored in the writing project, transmitted, or used for tel
 If the app finds a recovery draft that differs from the source file, it asks whether to recover the draft, keep the source file, or cancel opening it. If the source also appears to have changed since recovery began, the prompt says so rather than choosing one version automatically.
 
 Recovery is a last line of defense, not a backup system. Writers should still back up their project folders normally.
+
+## Daily progress
+
+The app-data directory also contains `daily-progress.json`. It stores versioned word-credit counters by selected project path and local calendar date, without manuscript text. Its schema, privacy boundaries, date behavior, and current folder-rename limitation are documented in [`DAILY_PROGRESS.md`](DAILY_PROGRESS.md).

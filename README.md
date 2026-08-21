@@ -2,7 +2,7 @@
 
 200 Crappy Words is an early-stage desktop writing app for working with plain-text files in a folder. It provides a deliberately small, dark interface: choose a folder, pick a file, and write.
 
-The app now counts words and shows progress earned during the running session toward its default 200-word target. Persisting that progress across restarts and local calendar days is the active development slice.
+The app now counts words and stores progress toward its default 200-word target by selected project and local calendar date. The current persistence slice is awaiting its final restart-level desktop check.
 
 ## Current features
 
@@ -24,11 +24,12 @@ The app now counts words and shows progress earned during the running session to
 - Block remote scripts and network origins in the packaged webview
 - Display filesystem errors in the interface
 - Show the active document's live word count
-- Track gross-positive writing progress toward 200 words during the running session
+- Track and locally persist gross-positive writing progress toward 200 words by project and date
 
 ## Current limitations
 
-- Writing progress is currently session-only and resets when the app quits; daily persistence is in progress
+- Daily history, correction controls, and configurable targets are not available yet
+- Moving or renaming a project folder currently starts a new local progress identity
 - Files and folders cannot be renamed, moved, or deleted in the app
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
 - The frameless window does not yet provide maximize/full-screen controls
@@ -90,13 +91,15 @@ static/                   Static images and icons
 
 ## Status
 
-This is a functional prototype. Its trustworthy-editor milestone has passed automated and hands-on macOS QA. The product-specific daily-practice milestone now has deterministic word counting and a manually verified live session-progress footer; persistent daily history is next.
+This is a functional prototype. Its trustworthy-editor milestone has passed automated and hands-on macOS QA. The product-specific daily-practice milestone now has deterministic word counting, a verified live progress footer, and app-local daily persistence awaiting its final restart demonstration.
 
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 Local settings and draft-recovery behavior are documented in [`docs/DATA_AND_RECOVERY.md`](docs/DATA_AND_RECOVERY.md).
 
 The deterministic word-count and daily-credit rules being implemented for milestone 0.3 are documented in [`docs/WORD_COUNTING.md`](docs/WORD_COUNTING.md).
+
+The daily ledger's schema, privacy boundaries, and local-date behavior are documented in [`docs/DAILY_PROGRESS.md`](docs/DAILY_PROGRESS.md).
 
 The current native capability and selected-folder access model is documented in [`docs/SECURITY_AND_PERMISSIONS.md`](docs/SECURITY_AND_PERMISSIONS.md).
 

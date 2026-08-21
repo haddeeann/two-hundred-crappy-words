@@ -18,12 +18,12 @@ Turn the verified session counter into truthful daily progress that survives res
 
 ### Acceptance criteria
 
-- [ ] Define and test local calendar-date keys, including midnight, time-zone, and backward-clock behavior.
-- [ ] Persist credited words per explicitly selected project and local date in app-local data without storing manuscript text.
-- [ ] Restore today's credited words after restart and prevent opening, switching, or recovery from crediting existing prose again.
-- [ ] Serialize rapid ledger updates so an older write cannot replace newer progress.
-- [ ] Document the ledger location, schema, project identity, retention, and correction/migration expectations.
-- [ ] Change the footer from honest session language to today's progress only after persistence is verified.
+- [x] Define and test local calendar-date keys, including midnight, time-zone, and backward-clock behavior.
+- [x] Persist credited words per explicitly selected project and local date in app-local data without storing manuscript text.
+- [x] Restore today's credited words after restart and prevent opening, switching, or recovery from crediting existing prose again.
+- [x] Serialize rapid ledger updates so an older write cannot replace newer progress.
+- [x] Document the ledger location, schema, project identity, retention, and correction/migration expectations.
+- [x] Change the footer from honest session language to today's progress only after persistence is verified.
 - [ ] Pass focused ledger tests, full frontend checks, and a restart-level desktop demonstration.
 
 ## Next slices
@@ -34,6 +34,7 @@ Turn the verified session counter into truthful daily progress that survives res
 
 ## Completed checkpoint
 
+- Slice 0.3.3 implementation stores versioned daily counters by selected folder path and local date in app data, rechecks the local day during editing, restores prior-date entries after backward clock or time-zone changes, serializes revisions, flushes progress during safe navigation, and never stores manuscript text in the ledger. Eleven focused ledger tests bring the full suite to 79 passing tests across eleven files; Svelte/TypeScript checks and the production build pass. Window-only screen capture confirms the `Today` footer remains visually sound. A human restart demonstration is the remaining slice checkpoint.
 - Slice 0.3.2 connects counting to active editor input, carries earned credit across in-session file and folder changes, and presents the live document count plus a compact native progress meter labelled `This session`. Five new tests cover presentation and cross-document state, bringing the suite to 68 passing tests across ten files. Svelte/TypeScript checks and the production frontend build pass. The macOS desktop flow and footer layout were manually approved on 2026-08-21; deletion lowered the document count without erasing earned session credit.
 - Slice 0.3.1 defines deterministic Unicode word tokens and gross-positive edit credit in `docs/WORD_COUNTING.md` and decision D-015. The pure implementation has sixteen focused fixtures; the full frontend suite contains 63 passing tests across nine files, and Svelte/TypeScript checks plus the production frontend build pass.
 - Milestone 0.2 passed its disposable-file macOS walkthrough on 2026-08-19.
@@ -45,7 +46,7 @@ Turn the verified session counter into truthful daily progress that survives res
 
 ## Blockers
 
-None.
+The implementation is complete; slice 0.3.3 awaits a short restart-level desktop demonstration using disposable text.
 
 ## Handoff protocol
 

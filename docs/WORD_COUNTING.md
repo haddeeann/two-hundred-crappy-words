@@ -29,4 +29,4 @@ Positive changes are added to today's credit. Deletion, replacement with the sam
 
 Save and autosave events never affect credit. Reopening a file, accepting a recovery draft, or deliberately reloading an externally changed file establishes a new baseline and does not credit existing text. This avoids credit being created merely by navigating, restarting, recovering, or resolving a conflict.
 
-The future daily ledger may store the local date, project identity, counters, and enough state to prevent restart duplication. It must not store manuscript text merely to calculate progress.
+The app-local daily ledger stores the local date, project identity, counters, and monotonic revisions needed for restart persistence. It does not store manuscript text merely to calculate progress; its schema and clock behavior are documented in [`DAILY_PROGRESS.md`](DAILY_PROGRESS.md).

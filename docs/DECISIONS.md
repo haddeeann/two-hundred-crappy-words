@@ -136,3 +136,12 @@ Why: native command permissions are only a useful boundary if untrusted remote c
 Document words use an app-owned Unicode rule: letter/number runs form tokens, combining marks remain attached, internal apostrophes remain within words, numeric periods and commas remain within numbers, and hyphens or dashes split tokens. The rule does not use operating-system dictionary segmentation. Daily credit adds only positive document-count changes from active text edits; loading, switching, recovery, save events, and external reloads establish state without earning credit.
 
 Why: the same text should count consistently across supported machines, daily history must not depend on save timing, and existing or recovered prose must not be counted again merely because it was opened. The transparent rule and its known limitation for unspaced scripts are documented in `docs/WORD_COUNTING.md`.
+
+## D-016 — App-local daily ledger keyed by folder and local date
+
+- Date: 2026-08-21
+- Status: accepted for the pre-project-format milestone
+
+Daily credit is stored in a versioned `daily-progress.json` file in Tauri's app-data directory. Records are keyed by the explicitly selected folder's absolute path and a date derived from the computer's local calendar. They contain counters, timestamps, and monotonic revisions but no manuscript text. A folder move or rename creates a new identity until the portable project format in milestone 0.4 supplies a safer durable identifier.
+
+Why: progress should survive restart without placing machine-specific habit data inside ordinary writing folders or changing their format prematurely. Local date keys match a writer's lived day, while retaining independent entries makes midnight, backward clock changes, and time-zone changes deterministic and recoverable.

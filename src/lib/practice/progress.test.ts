@@ -6,8 +6,8 @@ describe("practice progress presentation", () => {
   it("formats document and session counts", () => {
     expect(presentPractice({ documentWords: 42, dailyWords: 17 })).toEqual({
       documentLabel: "42 words",
-      sessionLabel: "This session · 17 / 200",
-      accessibleSessionLabel: "This session: 17 of 200 words",
+      dailyLabel: "Today · 17 / 200",
+      accessibleDailyLabel: "Today: 17 of 200 words",
       progressValue: 17,
     });
   });
@@ -25,7 +25,7 @@ describe("practice progress presentation", () => {
     });
 
     expect(presentation.progressValue).toBe(DEFAULT_DAILY_TARGET);
-    expect(presentation.sessionLabel).toContain("247 / 200");
+    expect(presentation.dailyLabel).toContain("247 / 200");
   });
 
   it("rejects invalid targets", () => {

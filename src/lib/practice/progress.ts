@@ -4,8 +4,8 @@ export const DEFAULT_DAILY_TARGET = 200;
 
 export interface PracticePresentation {
   documentLabel: string;
-  sessionLabel: string;
-  accessibleSessionLabel: string;
+  dailyLabel: string;
+  accessibleDailyLabel: string;
   progressValue: number;
 }
 
@@ -21,8 +21,8 @@ export function presentPractice(
 
   return {
     documentLabel: `${state.documentWords} ${documentUnit}`,
-    sessionLabel: `This session · ${state.dailyWords} / ${target}`,
-    accessibleSessionLabel: `This session: ${state.dailyWords} of ${target} words`,
+    dailyLabel: `Today · ${state.dailyWords} / ${target}`,
+    accessibleDailyLabel: `Today: ${state.dailyWords} of ${target} words`,
     progressValue: Math.min(state.dailyWords, target),
   };
 }

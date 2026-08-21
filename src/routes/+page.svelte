@@ -55,6 +55,15 @@
     DEFAULT_DAILY_TARGET,
     presentPractice,
   } from "$lib/practice/progress";
+  import {
+    createDailyProgressRecord,
+    DAILY_PROGRESS_STORE_FILE,
+    DailyProgressRepository,
+    localDateKey,
+    resolveDailyProgress,
+    type DailyProgressRecord,
+    type DailyProgressRecords,
+  } from "$lib/practice/daily-ledger";
 
   interface SaveFailure {
     path: string;
@@ -67,6 +76,7 @@
   const LAST_FOLDER_KEY = "lastFolder";
   const AUTOSAVE_DELAY_MS = 750;
   const RECOVERY_DELAY_MS = 100;
+  const DAILY_PROGRESS_DELAY_MS = 100;
 
   let folderPath = $state("");
   let entries = $state<FileTreeEntry[]>([]);
@@ -83,7 +93,25 @@
   let forcedSave: { path: string; revision: number } | null = null;
   let lastSaveFailure: SaveFailure | null = null;
   let practiceState = $state(beginDailyPractice(""));
+  let activeDailyDateKey = localDateKey();
+  let activeDailyRevision = 0;
+  let dailyRecordsByDate: DailyProgressRecords = {};
+  let dailyProgressError = $state("");
+  let lastDailyProgressFailure: {
+    path: string;
+    revision: number;
+  } | null = null;
   const persistedContentByPath = new Map<string, string>();
+  const dailyProgressWriters = new Map<
+    string,
+    AutosaveController<DailyProgressWrite>
+  >();
+
+  interface DailyProgressWrite {
+    path: string;
+    revision: number;
+    record: DailyProgressRecord;
+  }
 
   const dirty = $derived(
     activeFilePath !== "" && hasUnsavedChanges(saveState),
@@ -192,9 +220,64 @@
     },
   });
 
+  let dailyProgressRepositoryPromise: Promise<DailyProgressRepository> | null =
+    null;
+
+  function getDailyProgressRepository(): Promise<DailyProgressRepository> {
+    dailyProgressRepositoryPromise ??= load(DAILY_PROGRESS_STORE_FILE, {
+      autoSave: false,
+      defaults: {},
+    }).then((store) => new DailyProgressRepository(store));
+    return dailyProgressRepositoryPromise;
+  }
+
+  function dailyProgressWriter(record: DailyProgressRecord) {
+    const entryPath = `${record.projectPath}\u0000${record.dateKey}`;
+    let writer = dailyProgressWriters.get(entryPath);
+    if (writer) return writer;
+
+    writer = new AutosaveController<DailyProgressWrite>({
+      delayMs: DAILY_PROGRESS_DELAY_MS,
+      save: ({ record: pendingRecord }) =>
+        getDailyProgressRepository().then((repository) =>
+          repository.put(pendingRecord),
+        ),
+      onSuccess: (request) => {
+        if (
+          lastDailyProgressFailure?.path === request.path &&
+          lastDailyProgressFailure.revision <= request.revision
+        ) {
+          lastDailyProgressFailure = null;
+          dailyProgressError = "";
+        }
+      },
+      onError: (request, cause) => {
+        lastDailyProgressFailure = {
+          path: request.path,
+          revision: request.revision,
+        };
+        dailyProgressError = `Your writing is safe, but today's progress could not be stored: ${formatError(cause)}`;
+      },
+    });
+    dailyProgressWriters.set(entryPath, writer);
+    return writer;
+  }
+
+  async function flushDailyProgress(): Promise<void> {
+    await Promise.all(
+      Array.from(dailyProgressWriters.values(), (writer) => writer.flush()),
+    );
+  }
+
   onDestroy(() => {
     autosave.dispose();
     recoveryWriter.dispose();
+    for (const writer of dailyProgressWriters.values()) writer.dispose();
+  });
+
+  onMount(() => {
+    const timer = setInterval(() => refreshDailyDate(), 30_000);
+    return () => clearInterval(timer);
   });
 
   onMount(() => {
@@ -394,13 +477,15 @@
     saveState = createSaveState();
   }
 
-  function prepareToLeave(): Promise<boolean> {
-    return resolvePendingChanges({
+  async function prepareToLeave(): Promise<boolean> {
+    const canLeave = await resolvePendingChanges({
       hasUnsavedChanges: () => dirty,
       save: saveFile,
       chooseAfterFailure: chooseAfterSaveFailure,
       discard: discardActiveChanges,
     });
+    if (canLeave) await flushDailyProgress();
+    return canLeave;
   }
 
   async function navigate(action: () => Promise<void>): Promise<void> {
@@ -475,6 +560,17 @@
   // leaving existing state untouched (entries are read before committing).
   async function loadFolder(path: string) {
     const newEntries = await readEntries(path);
+    let projectRecords: DailyProgressRecords = {};
+    let progressLoadError = "";
+    try {
+      projectRecords = await (await getDailyProgressRepository()).getProject(
+        path,
+      );
+    } catch (cause) {
+      progressLoadError = `The folder opened, but its daily progress could not be loaded: ${formatError(cause)}`;
+    }
+    const dailyContext = resolveDailyProgress(projectRecords);
+
     folderPath = path;
     selectedDirectoryPath = path;
     entries = newEntries;
@@ -482,7 +578,12 @@
     activeFilePath = "";
     content = "";
     persistedContent = "";
-    practiceState = beginDailyPractice("", practiceState.dailyWords);
+    dailyRecordsByDate = projectRecords;
+    activeDailyDateKey = dailyContext.dateKey;
+    activeDailyRevision = dailyContext.revision;
+    practiceState = beginDailyPractice("", dailyContext.creditedWords);
+    lastDailyProgressFailure = null;
+    dailyProgressError = progressLoadError;
     persistedContentByPath.clear();
     forcedSave = null;
     lastSaveFailure = null;
@@ -601,6 +702,7 @@
         persistedContent = fileContent;
         persistedContentByPath.set(entry.path, fileContent);
         content = recovered.content;
+        refreshDailyDate(recovered.content);
         practiceState = beginDailyPractice(
           recovered.content,
           practiceState.dailyWords,
@@ -628,9 +730,43 @@
     await autosave.flush();
   }
 
+  function refreshDailyDate(documentText = content, now = new Date()) {
+    if (!folderPath) return;
+    const dailyContext = resolveDailyProgress(dailyRecordsByDate, now);
+    if (dailyContext.dateKey === activeDailyDateKey) return;
+
+    activeDailyDateKey = dailyContext.dateKey;
+    activeDailyRevision = dailyContext.revision;
+    practiceState = beginDailyPractice(documentText, dailyContext.creditedWords);
+  }
+
+  function scheduleDailyProgress(now = new Date()) {
+    if (!folderPath) return;
+    activeDailyRevision += 1;
+    const record = createDailyProgressRecord({
+      projectPath: folderPath,
+      dateKey: activeDailyDateKey,
+      creditedWords: practiceState.dailyWords,
+      revision: activeDailyRevision,
+      now,
+    });
+    dailyRecordsByDate = {
+      ...dailyRecordsByDate,
+      [activeDailyDateKey]: record,
+    };
+    dailyProgressWriter(record).schedule({
+      path: `${record.projectPath}\u0000${record.dateKey}`,
+      revision: record.revision,
+      record,
+    });
+  }
+
   function handleContentInput(event: Event) {
     const nextContent = (event.currentTarget as HTMLTextAreaElement).value;
+    refreshDailyDate(content);
+    const previousDailyWords = practiceState.dailyWords;
     practiceState = applyDailyPracticeEdit(practiceState, nextContent);
+    if (practiceState.dailyWords > previousDailyWords) scheduleDailyProgress();
     content = nextContent;
     saveState = markEdited(saveState);
     if (activeFilePath) {
@@ -741,6 +877,9 @@
     {#if error}
       <p class="error" role="alert">{error}</p>
     {/if}
+    {#if dailyProgressError}
+      <p class="error" role="alert">{dailyProgressError}</p>
+    {/if}
 
     <nav class="files" aria-label="Project files">
       {#if folderPath}
@@ -793,15 +932,15 @@
         {activeFile ? practicePresentation.documentLabel : "No document open"}
       </span>
       <div
-        class="session-progress"
-        title="Session progress is stored only while the app is running for now"
+        class="daily-progress"
+        title="Today's progress is stored locally for this project"
       >
-        <span>{practicePresentation.sessionLabel}</span>
+        <span>{practicePresentation.dailyLabel}</span>
         <progress
-          class="session-meter"
+          class="daily-meter"
           max={DEFAULT_DAILY_TARGET}
           value={practicePresentation.progressValue}
-          aria-label={practicePresentation.accessibleSessionLabel}
+          aria-label={practicePresentation.accessibleDailyLabel}
         ></progress>
       </div>
     </div>
@@ -1110,7 +1249,7 @@
     flex: 0 0 auto;
   }
 
-  .session-progress {
+  .daily-progress {
     min-width: 0;
     display: flex;
     align-items: center;
@@ -1120,7 +1259,7 @@
     white-space: nowrap;
   }
 
-  .session-meter {
+  .daily-meter {
     width: min(140px, 22vw);
     height: 6px;
     border: none;
@@ -1129,17 +1268,17 @@
     background-color: #333333;
   }
 
-  .session-meter::-webkit-progress-bar {
+  .daily-meter::-webkit-progress-bar {
     border-radius: 999px;
     background-color: #333333;
   }
 
-  .session-meter::-webkit-progress-value {
+  .daily-meter::-webkit-progress-value {
     border-radius: 999px;
     background-color: #4da3d9;
   }
 
-  .session-meter::-moz-progress-bar {
+  .daily-meter::-moz-progress-bar {
     border-radius: 999px;
     background-color: #4da3d9;
   }
