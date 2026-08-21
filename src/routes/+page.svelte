@@ -71,6 +71,7 @@
     type DailyProgressRecord,
     type DailyProgressRecords,
   } from "$lib/practice/daily-ledger";
+  import PracticeHistory from "$lib/practice/PracticeHistory.svelte";
 
   interface SaveFailure {
     path: string;
@@ -100,10 +101,10 @@
   let forcedSave: { path: string; revision: number } | null = null;
   let lastSaveFailure: SaveFailure | null = null;
   let practiceState = $state(beginDailyPractice(""));
-  let activeDailyDateKey = localDateKey();
+  let activeDailyDateKey = $state(localDateKey());
   let activeDailyRevision = 0;
   let activeCompletedAt: string | null = null;
-  let dailyRecordsByDate: DailyProgressRecords = {};
+  let dailyRecordsByDate = $state<DailyProgressRecords>({});
   let dailyTarget = $state(DEFAULT_DAILY_TARGET);
   let editingDailyTarget = $state(false);
   let dailyTargetInput = $state("");
@@ -1010,6 +1011,13 @@
         {@render tree(entries, 0)}
       {/if}
     </nav>
+
+    {#if folderPath}
+      <PracticeHistory
+        records={dailyRecordsByDate}
+        todayKey={activeDailyDateKey}
+      />
+    {/if}
   </aside>
 
   <div class="divider"></div>

@@ -27,10 +27,11 @@ The app now counts words and stores progress toward its default 200-word target 
 - Track and locally persist gross-positive writing progress toward 200 words by project and date
 - Change a project's daily goal while keeping 200 as the default
 - Acknowledge the first goal completion of the day without interrupting typing
+- Review recorded writing days and gentle current/best rhythm information
 
 ## Current limitations
 
-- Daily history and correction controls are not available yet
+- Daily progress correction controls are not available yet
 - Moving or renaming a project folder currently starts a new local progress identity
 - Files and folders cannot be renamed, moved, or deleted in the app
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
