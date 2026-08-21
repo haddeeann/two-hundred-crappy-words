@@ -10,7 +10,10 @@ Tauri stores `daily-progress.json` in the app-data directory for application ide
 - a local `YYYY-MM-DD` date key;
 - credited words for that project and date;
 - an update timestamp; and
-- a monotonic revision used to reject stale writes.
+- a monotonic revision used to reject stale writes; and
+- an optional completion timestamp so the quiet completion status occurs only once for that date.
+
+The same file stores an optional whole-number goal for each selected project. The default remains 200 words. Goals must be from 1 through 100,000 words; the upper bound prevents accidental or corrupted values while leaving ample room for unusual practices.
 
 It does **not** contain manuscript text, recovery drafts, individual keystrokes, or telemetry. Creative files remain ordinary files in the selected project folder.
 

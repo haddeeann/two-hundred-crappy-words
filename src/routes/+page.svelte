@@ -56,6 +56,13 @@
     presentPractice,
   } from "$lib/practice/progress";
   import {
+    assessGoalCompletion,
+    DailyGoalRepository,
+    MAX_DAILY_TARGET,
+    MIN_DAILY_TARGET,
+    parseDailyTarget,
+  } from "$lib/practice/daily-goal";
+  import {
     createDailyProgressRecord,
     DAILY_PROGRESS_STORE_FILE,
     DailyProgressRepository,
@@ -95,7 +102,12 @@
   let practiceState = $state(beginDailyPractice(""));
   let activeDailyDateKey = localDateKey();
   let activeDailyRevision = 0;
+  let activeCompletedAt: string | null = null;
   let dailyRecordsByDate: DailyProgressRecords = {};
+  let dailyTarget = $state(DEFAULT_DAILY_TARGET);
+  let editingDailyTarget = $state(false);
+  let dailyTargetInput = $state("");
+  let completionMessage = $state("");
   let dailyProgressError = $state("");
   let lastDailyProgressFailure: {
     path: string;
@@ -129,7 +141,9 @@
     }
     return findTreeEntry(entries, selectedDirectoryPath)?.name ?? "Project root";
   });
-  const practicePresentation = $derived(presentPractice(practiceState));
+  const practicePresentation = $derived(
+    presentPractice(practiceState, dailyTarget),
+  );
 
   const autosave = new AutosaveController({
     delayMs: AUTOSAVE_DELAY_MS,
@@ -220,15 +234,28 @@
     },
   });
 
-  let dailyProgressRepositoryPromise: Promise<DailyProgressRepository> | null =
-    null;
+  let dailyRepositoriesPromise: Promise<{
+    progress: DailyProgressRepository;
+    goal: DailyGoalRepository;
+  }> | null = null;
 
-  function getDailyProgressRepository(): Promise<DailyProgressRepository> {
-    dailyProgressRepositoryPromise ??= load(DAILY_PROGRESS_STORE_FILE, {
+  function getDailyRepositories() {
+    dailyRepositoriesPromise ??= load(DAILY_PROGRESS_STORE_FILE, {
       autoSave: false,
       defaults: {},
-    }).then((store) => new DailyProgressRepository(store));
-    return dailyProgressRepositoryPromise;
+    }).then((store) => ({
+      progress: new DailyProgressRepository(store),
+      goal: new DailyGoalRepository(store),
+    }));
+    return dailyRepositoriesPromise;
+  }
+
+  function getDailyProgressRepository(): Promise<DailyProgressRepository> {
+    return getDailyRepositories().then(({ progress }) => progress);
+  }
+
+  function getDailyGoalRepository(): Promise<DailyGoalRepository> {
+    return getDailyRepositories().then(({ goal }) => goal);
   }
 
   function dailyProgressWriter(record: DailyProgressRecord) {
@@ -561,11 +588,14 @@
   async function loadFolder(path: string) {
     const newEntries = await readEntries(path);
     let projectRecords: DailyProgressRecords = {};
+    let projectTarget = DEFAULT_DAILY_TARGET;
     let progressLoadError = "";
     try {
-      projectRecords = await (await getDailyProgressRepository()).getProject(
-        path,
-      );
+      const repositories = await getDailyRepositories();
+      [projectRecords, projectTarget] = await Promise.all([
+        repositories.progress.getProject(path),
+        repositories.goal.get(path),
+      ]);
     } catch (cause) {
       progressLoadError = `The folder opened, but its daily progress could not be loaded: ${formatError(cause)}`;
     }
@@ -581,7 +611,12 @@
     dailyRecordsByDate = projectRecords;
     activeDailyDateKey = dailyContext.dateKey;
     activeDailyRevision = dailyContext.revision;
+    activeCompletedAt = dailyContext.completedAt;
     practiceState = beginDailyPractice("", dailyContext.creditedWords);
+    dailyTarget = projectTarget;
+    editingDailyTarget = false;
+    dailyTargetInput = "";
+    completionMessage = "";
     lastDailyProgressFailure = null;
     dailyProgressError = progressLoadError;
     persistedContentByPath.clear();
@@ -737,7 +772,9 @@
 
     activeDailyDateKey = dailyContext.dateKey;
     activeDailyRevision = dailyContext.revision;
+    activeCompletedAt = dailyContext.completedAt;
     practiceState = beginDailyPractice(documentText, dailyContext.creditedWords);
+    completionMessage = "";
   }
 
   function scheduleDailyProgress(now = new Date()) {
@@ -748,6 +785,7 @@
       dateKey: activeDailyDateKey,
       creditedWords: practiceState.dailyWords,
       revision: activeDailyRevision,
+      completedAt: activeCompletedAt,
       now,
     });
     dailyRecordsByDate = {
@@ -763,10 +801,24 @@
 
   function handleContentInput(event: Event) {
     const nextContent = (event.currentTarget as HTMLTextAreaElement).value;
-    refreshDailyDate(content);
+    const now = new Date();
+    refreshDailyDate(content, now);
     const previousDailyWords = practiceState.dailyWords;
     practiceState = applyDailyPracticeEdit(practiceState, nextContent);
-    if (practiceState.dailyWords > previousDailyWords) scheduleDailyProgress();
+    const completion = assessGoalCompletion({
+      dailyWords: practiceState.dailyWords,
+      target: dailyTarget,
+      completedAt: activeCompletedAt,
+      now,
+    });
+    const newlyCompleted = completion.completedAt !== activeCompletedAt;
+    activeCompletedAt = completion.completedAt;
+    if (completion.shouldAnnounce) {
+      completionMessage = "Daily goal reached. Nicely done.";
+    }
+    if (practiceState.dailyWords > previousDailyWords || newlyCompleted) {
+      scheduleDailyProgress(now);
+    }
     content = nextContent;
     saveState = markEdited(saveState);
     if (activeFilePath) {
@@ -781,6 +833,60 @@
     }
     const request = currentSaveRequest();
     if (request) autosave.schedule(request);
+  }
+
+  function startDailyTargetEdit() {
+    if (!folderPath) return;
+    dailyProgressError = "";
+    dailyTargetInput = String(dailyTarget);
+    editingDailyTarget = true;
+  }
+
+  function cancelDailyTargetEdit() {
+    editingDailyTarget = false;
+    dailyTargetInput = "";
+  }
+
+  async function confirmDailyTargetEdit() {
+    if (!editingDailyTarget || !folderPath) return;
+    const nextTarget = parseDailyTarget(dailyTargetInput);
+    if (nextTarget === null) {
+      dailyProgressError = `Daily goal must be a whole number from ${MIN_DAILY_TARGET} to ${MAX_DAILY_TARGET}.`;
+      return;
+    }
+
+    try {
+      await (await getDailyGoalRepository()).set(folderPath, nextTarget);
+      dailyTarget = nextTarget;
+      editingDailyTarget = false;
+      dailyTargetInput = "";
+      dailyProgressError = "";
+
+      const now = new Date();
+      const completion = assessGoalCompletion({
+        dailyWords: practiceState.dailyWords,
+        target: dailyTarget,
+        completedAt: activeCompletedAt,
+        now,
+      });
+      if (completion.completedAt !== activeCompletedAt) {
+        activeCompletedAt = completion.completedAt;
+        completionMessage = "Daily goal reached. Nicely done.";
+        scheduleDailyProgress(now);
+      }
+    } catch (cause) {
+      dailyProgressError = `The daily goal could not be stored: ${formatError(cause)}`;
+    }
+  }
+
+  function dailyTargetKeydown(event: KeyboardEvent) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      void confirmDailyTargetEdit();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      cancelDailyTargetEdit();
+    }
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -931,6 +1037,11 @@
       <span class="document-count">
         {activeFile ? practicePresentation.documentLabel : "No document open"}
       </span>
+      {#if completionMessage}
+        <span class="completion-message" role="status" aria-live="polite">
+          {completionMessage}
+        </span>
+      {/if}
       <div
         class="daily-progress"
         title="Today's progress is stored locally for this project"
@@ -942,6 +1053,32 @@
           value={practicePresentation.progressValue}
           aria-label={practicePresentation.accessibleDailyLabel}
         ></progress>
+        {#if editingDailyTarget}
+          <!-- svelte-ignore a11y_autofocus -->
+          <input
+            class="daily-target-input"
+            type="number"
+            min={MIN_DAILY_TARGET}
+            max={MAX_DAILY_TARGET}
+            aria-label="Daily word goal"
+            value={dailyTargetInput}
+            oninput={(event) =>
+              (dailyTargetInput = (
+                event.currentTarget as HTMLInputElement
+              ).value)}
+            onkeydown={dailyTargetKeydown}
+            onblur={() => void confirmDailyTargetEdit()}
+            autofocus
+          />
+        {:else}
+          <button
+            class="daily-target-button"
+            onclick={startDailyTargetEdit}
+            disabled={!folderPath}
+            aria-label={`Change daily goal, currently ${dailyTarget} words`}
+            title="Change daily goal"
+          >Goal</button>
+        {/if}
       </div>
     </div>
   </main>
@@ -1249,6 +1386,12 @@
     flex: 0 0 auto;
   }
 
+  .completion-message {
+    min-width: 0;
+    color: #a7d7ad;
+    text-align: center;
+  }
+
   .daily-progress {
     min-width: 0;
     display: flex;
@@ -1281,5 +1424,41 @@
   .daily-meter::-moz-progress-bar {
     border-radius: 999px;
     background-color: #4da3d9;
+  }
+
+  .daily-target-button,
+  .daily-target-input {
+    box-sizing: border-box;
+    height: 24px;
+    border: 1px solid #4b4b4b;
+    border-radius: 4px;
+    background-color: #292929;
+    color: #d4d4d4;
+    font: inherit;
+  }
+
+  .daily-target-button {
+    padding: 0 0.45rem;
+    cursor: pointer;
+  }
+
+  .daily-target-button:hover:not(:disabled) {
+    background-color: #353535;
+  }
+
+  .daily-target-button:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .daily-target-button:focus-visible,
+  .daily-target-input:focus-visible {
+    outline: 2px solid #75beff;
+    outline-offset: 2px;
+  }
+
+  .daily-target-input {
+    width: 72px;
+    padding: 0 0.35rem;
   }
 </style>

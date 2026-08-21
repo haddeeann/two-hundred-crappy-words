@@ -36,6 +36,7 @@ function record(
     dateKey,
     creditedWords,
     revision,
+    completedAt: null,
     now: new Date("2026-08-21T12:00:00.000Z"),
   });
 }
@@ -76,11 +77,13 @@ describe("local calendar dates", () => {
       dateKey: "2026-08-21",
       creditedWords: 13,
       revision: 2,
+      completedAt: null,
     });
     expect(resolveDailyProgress(records, new Date(2026, 7, 20, 12))).toEqual({
       dateKey: "2026-08-20",
       creditedWords: 8,
       revision: 1,
+      completedAt: null,
     });
   });
 
@@ -95,6 +98,7 @@ describe("local calendar dates", () => {
       dateKey: "2026-08-22",
       creditedWords: 0,
       revision: 0,
+      completedAt: null,
     });
   });
 });
@@ -121,13 +125,20 @@ describe("daily progress repository", () => {
 
   it("retains progress across repository instances", async () => {
     const backend = new MemoryBackend();
-    await new DailyProgressRepository(backend).put(record(31, 1));
+    const completed = createDailyProgressRecord({
+      projectPath: "/world/andromeda",
+      dateKey: "2026-08-21",
+      creditedWords: 31,
+      revision: 1,
+      completedAt: "2026-08-21T12:00:00.000Z",
+      now: new Date("2026-08-21T12:00:00.000Z"),
+    });
+    await new DailyProgressRepository(backend).put(completed);
 
     const afterRestart = new DailyProgressRepository(backend);
-    expect(
-      (await afterRestart.get("/world/andromeda", "2026-08-21"))
-        ?.creditedWords,
-    ).toBe(31);
+    expect(await afterRestart.get("/world/andromeda", "2026-08-21")).toEqual(
+      completed,
+    );
   });
 
   it("serializes rapid writes and keeps the newest revision", async () => {
@@ -181,6 +192,19 @@ describe("daily progress repository", () => {
       creditedWords: 20,
       updatedAt: "2026-08-21T12:00:00.000Z",
       revision: 3,
+      completedAt: null,
     });
+  });
+
+  it("rejects malformed completion timestamps", () => {
+    expect(() =>
+      createDailyProgressRecord({
+        projectPath: "/world/andromeda",
+        dateKey: "2026-08-21",
+        creditedWords: 200,
+        revision: 2,
+        completedAt: "sometime later",
+      }),
+    ).toThrow(RangeError);
   });
 });

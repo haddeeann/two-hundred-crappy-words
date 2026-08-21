@@ -1,6 +1,7 @@
 import type { DailyPracticeState } from "./word-count";
+import { DEFAULT_DAILY_TARGET, validateDailyTarget } from "./daily-goal";
 
-export const DEFAULT_DAILY_TARGET = 200;
+export { DEFAULT_DAILY_TARGET } from "./daily-goal";
 
 export interface PracticePresentation {
   documentLabel: string;
@@ -13,9 +14,7 @@ export function presentPractice(
   state: DailyPracticeState,
   target = DEFAULT_DAILY_TARGET,
 ): PracticePresentation {
-  if (!Number.isSafeInteger(target) || target < 1) {
-    throw new RangeError("The writing target must be a positive integer.");
-  }
+  validateDailyTarget(target);
 
   const documentUnit = state.documentWords === 1 ? "word" : "words";
 

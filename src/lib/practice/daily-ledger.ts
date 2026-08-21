@@ -8,6 +8,7 @@ export interface DailyProgressRecord {
   creditedWords: number;
   updatedAt: string;
   revision: number;
+  completedAt?: string | null;
 }
 
 export interface DailyProgressBackend {
@@ -23,6 +24,7 @@ export interface DailyProgressContext {
   dateKey: string;
   creditedWords: number;
   revision: number;
+  completedAt: string | null;
 }
 
 export function localDateKey(now = new Date()): string {
@@ -46,6 +48,7 @@ export function resolveDailyProgress(
     dateKey,
     creditedWords: record?.creditedWords ?? 0,
     revision: record?.revision ?? 0,
+    completedAt: record?.completedAt ?? null,
   };
 }
 
@@ -54,12 +57,14 @@ export function createDailyProgressRecord({
   dateKey,
   creditedWords,
   revision,
+  completedAt = null,
   now = new Date(),
 }: {
   projectPath: string;
   dateKey: string;
   creditedWords: number;
   revision: number;
+  completedAt?: string | null;
   now?: Date;
 }): DailyProgressRecord {
   if (!projectPath) throw new RangeError("A project path is required.");
@@ -70,6 +75,12 @@ export function createDailyProgressRecord({
   if (!Number.isSafeInteger(revision) || revision < 1) {
     throw new RangeError("The ledger revision must be a positive integer.");
   }
+  if (
+    completedAt !== null &&
+    (typeof completedAt !== "string" || Number.isNaN(Date.parse(completedAt)))
+  ) {
+    throw new RangeError("The completion timestamp is invalid.");
+  }
 
   return {
     version: 1,
@@ -78,6 +89,7 @@ export function createDailyProgressRecord({
     creditedWords,
     updatedAt: now.toISOString(),
     revision,
+    completedAt,
   };
 }
 
@@ -112,7 +124,11 @@ function isDailyProgressRecord(value: unknown): value is DailyProgressRecord {
     typeof record.updatedAt === "string" &&
     !Number.isNaN(Date.parse(record.updatedAt)) &&
     Number.isSafeInteger(record.revision) &&
-    (record.revision ?? 0) >= 1
+    (record.revision ?? 0) >= 1 &&
+    (record.completedAt === undefined ||
+      record.completedAt === null ||
+      (typeof record.completedAt === "string" &&
+        !Number.isNaN(Date.parse(record.completedAt))))
   );
 }
 

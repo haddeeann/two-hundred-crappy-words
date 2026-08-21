@@ -18,6 +18,17 @@ describe("practice progress presentation", () => {
     ).toBe("1 word");
   });
 
+  it("presents a configured target", () => {
+    expect(presentPractice({ documentWords: 50, dailyWords: 40 }, 350)).toEqual(
+      {
+        documentLabel: "50 words",
+        dailyLabel: "Today · 40 / 350",
+        accessibleDailyLabel: "Today: 40 of 350 words",
+        progressValue: 40,
+      },
+    );
+  });
+
   it("caps the visual meter while retaining earned credit in its label", () => {
     const presentation = presentPractice({
       documentWords: 250,

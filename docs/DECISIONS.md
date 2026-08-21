@@ -145,3 +145,12 @@ Why: the same text should count consistently across supported machines, daily hi
 Daily credit is stored in a versioned `daily-progress.json` file in Tauri's app-data directory. Records are keyed by the explicitly selected folder's absolute path and a date derived from the computer's local calendar. They contain counters, timestamps, and monotonic revisions but no manuscript text. A folder move or rename creates a new identity until the portable project format in milestone 0.4 supplies a safer durable identifier.
 
 Why: progress should survive restart without placing machine-specific habit data inside ordinary writing folders or changing their format prematurely. Local date keys match a writer's lived day, while retaining independent entries makes midnight, backward clock changes, and time-zone changes deterministic and recoverable.
+
+## D-017 — Per-project goals and a quiet once-daily completion
+
+- Date: 2026-08-21
+- Status: accepted, subject to visual usability testing
+
+The daily target defaults to 200 and can be changed per explicitly selected project to a whole number from 1 through 100,000. Reaching the target records one completion timestamp for that project and local date. The interface acknowledges it with a short inline status and a polite screen-reader announcement, without a modal, sound, animation, focus change, or interruption to typing.
+
+Why: 200 remains the product's opinionated identity while writers with different practices retain agency. Persisting a single daily completion state prevents repeated celebration after restart, deletion, file switching, or later target changes, and the motion-free inline treatment follows the calm, non-punitive product direction.
