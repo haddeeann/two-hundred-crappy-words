@@ -54,6 +54,9 @@ The app now counts words and stores progress toward its default 200-word target 
 - Open a session-only project search with `Command+P` on macOS or `Ctrl+P` elsewhere
 - Rank bounded title, alias, filename, path, heading, and prose matches with an explained match reason and source context
 - Open a quick-opener result through guarded navigation and select its verified heading or exact prose range
+- Open a resolved connection or quick-opener result in a read-only side reference without replacing the active draft or selection
+- Refresh an open reference after contained filesystem changes and show an explicit unavailable state when its verified source disappears
+- Create a valid unambiguous missing Markdown note only after confirmation, using create-new protection and without rewriting the source link
 
 ## Current limitations
 
@@ -62,7 +65,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Cursor position and editor scroll position are not restored yet
 - Files and folders cannot be renamed, moved, or deleted in the app
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
-- Unlinked mentions and a side-by-side reference pane are not yet available
+- Unlinked-mention suggestions and previewed note rename/link repair are not yet available
 - The frameless window does not yet provide maximize/full-screen controls
 - Distribution signing, notarization, and a finished installer are deferred to release readiness
 
@@ -122,7 +125,7 @@ static/                   Static images and icons
 
 ## Status
 
-This is a functional prototype. Its trustworthy-editor, daily-practice, and world-project milestones have passed automated and hands-on macOS QA. The active connected-lore milestone now has approved link semantics, a bounded incrementally refreshed memory-only index, keyboard completion, outgoing/backlink navigation, and a project quick opener; a side-by-side lore reference comes next.
+This is a functional prototype. Its trustworthy-editor, daily-practice, and world-project milestones have passed automated and hands-on macOS QA. The active connected-lore milestone now has approved link semantics, a bounded incrementally refreshed memory-only index, keyboard completion, outgoing/backlink navigation, project search, read-only side references, and confirmed safe creation of unambiguous missing notes. Bounded unlinked mentions and previewed rename handling come next.
 
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 

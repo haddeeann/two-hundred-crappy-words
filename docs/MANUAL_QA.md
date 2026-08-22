@@ -93,6 +93,16 @@ The first packaged walkthrough found a focus race that HTML autofocus alone did 
 
 Search ranking and source mapping are covered for titles, aliases, filenames, paths, headings, content, collisions, Unicode normalization, UTF-16 ranges, empty queries, query/result bounds, and stable ties. A first benchmark naively mapped every common prose match and took 3,255.16 ms, correctly failing the budget. Ranking before exact mapping reduced the same 2,000-note/24.78 MiB search to 5.94 ms cold; a warm selective search averaged 13.64 ms, both beneath 50 ms. The full suite has 250 passing tests across thirty-six files, Svelte/TypeScript checks report zero errors and warnings, and frontend plus packaged macOS builds pass.
 
+## Milestone 0.5.6 side-reference checkpoint
+
+Completed successfully on macOS on 2026-08-22 using Computer Use against a freshly packaged build and the disposable lore project. With `protected draft` selected in `chapter.md`, Command+P plus `Early` and Shift+Enter opened `Lore/mara.md` in a visually inspected read-only split pane. The active file remained `chapter.md`; Escape closed the pane, returned focus to the editor, and accessibility inspection confirmed the exact original selection was still intact. The reference exposed its title, project-relative path, plain Markdown, close control, and explicit **Open in editor** action. That action alone replaced the active editor with the referenced note. The quick opener also cycled from search to Close and back with Tab.
+
+An external edit appeared in the open reference automatically. Moving that source outside the selected project changed the pane to an explicit unavailable state instead of retaining stale text; restoring it recovered the verified source automatically. The QA-only line was then removed so `Lore/mara.md` returned to its baseline content.
+
+The broken `[[Overlay Survives]]` connection offered **Create missing note…**. Its native confirmation named `Overlay Survives.md` and promised not to rewrite the source. Confirming created only a minimal `# Overlay Survives` note with create-new protection, raised the index from two to three notes, changed the connection from broken to resolved, and opened the new note beside the still-active manuscript. Direct filesystem inspection confirmed `chapter.md` was byte-for-byte unchanged. **Open in editor** then navigated explicitly to the created note and exposed the expected backlink. The disposable note was moved back outside the project afterward, returning the fixture to two notes and its original broken-link state.
+
+Automated coverage exercises verified refresh, unavailable, symbolic-link, oversized, unreadable, and request-race states plus missing-note path planning and connection metadata. The full suite has 256 passing tests across thirty-eight files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, Rust formatting/checks pass, and the production dependency audit reports zero vulnerabilities.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:

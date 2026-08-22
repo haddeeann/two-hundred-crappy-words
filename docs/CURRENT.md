@@ -10,27 +10,29 @@ World projects are complete. The active milestone makes manuscript and world-bib
 
 ## Active slice
 
-**0.5.6 — Side-by-side lore reference**
+**0.5.7 — Unlinked mentions and safe rename previews**
 
 ### Intended outcome
 
-Let a writer consult a resolved note beside the manuscript without replacing the active draft, its selection, or its save context. Keep the first reference surface clearly read-only, keyboard reachable, and derived from a verified indexed source; add a safe create-new path for a broken note only when its destination is unambiguous.
+Help writers notice a small number of useful plain-text lore mentions, then make note renames and link repairs understandable before any project file changes. Keep suggestions bounded and dismissible, and make every multi-file mutation explicit, previewed, contained, and recoverable.
 
 ### Acceptance criteria
 
-- [ ] Open a resolved outgoing link or quick-opener result in a side reference without navigating away from the active editor or changing its selection.
-- [ ] Read the verified contained Markdown source through existing scope and stable-read protections; show stale/unavailable state instead of displaying mismatched indexed ranges.
-- [ ] Present a clear read-only title, path, headings, and text view with keyboard focus transfer, scrolling, close, and return-to-editor behavior.
-- [ ] Refresh or close the reference safely after incremental edit, move, removal, folder change, or index replacement without retaining its creative text in app data.
-- [ ] Offer broken-note creation only for a valid unambiguous project-relative destination, use atomic create-new semantics, and never repair or rewrite the source link silently.
-- [ ] Preserve active-draft autosave, recovery, daily credit, completion, and quick-opener behavior; pass focused state tests and packaged split-view QA.
+- [ ] Find only bounded, exact title or alias mentions in eligible prose; exclude existing links, metadata, headings, code, ambiguous names, self-mentions, and noisy short terms.
+- [ ] Present unlinked mentions as optional source-context suggestions with clear destination, location, dismissal, and guarded navigation; never rewrite prose automatically.
+- [ ] Define rename eligibility around stable note IDs and verified contained Markdown sources, with explicit refusal for collisions, invalid destinations, symbolic links, stale reads, or unsupported metadata.
+- [ ] Preview the note move and every exact link edit before confirmation, including files that cannot be updated and links intentionally left unchanged.
+- [ ] Apply a confirmed rename through recoverable, conflict-aware steps that never silently overwrites a file and reports partial failure honestly.
+- [ ] Preserve editor selection, unsaved overlays, recovery, daily credit, reference/search behavior, and memory-only privacy boundaries; pass focused performance and packaged macOS QA.
 
 ## Next slices
 
-1. 0.5.7 — Add bounded unlinked mentions and previewed safe rename handling.
-2. 0.5.8 — Add connected-lore navigation history and finish milestone regression QA.
+1. 0.5.8 — Add connected-lore navigation history and finish milestone regression QA.
 
 ## Completed checkpoint
+
+- Slice 0.5.6 is complete. Resolved outgoing links open beside the active manuscript by default, and Shift+Enter opens a quick-opener result in the same read-only reference surface. The pane loads only contained, non-symbolic, stable Markdown sources; it displays a clear title and project-relative path, accepts keyboard focus and scrolling, returns focus and the exact selection on Escape, and requires an explicit action before replacing the editor. Active buffers appear directly only behind their verified fingerprint, while external edits, moves, removals, folder changes, and index replacements refresh or invalidate the ephemeral view without persisting its text.
+- Broken links now offer creation only when their target maps to one valid portable project-relative Markdown path. A native confirmation explains the destination and that the source link will not change; the implementation revalidates after the dialog, writes with atomic create-new semantics, updates the index immediately, and opens the new note beside the unchanged draft. Automated coverage includes stable refresh, unavailable and symbolic-link refusal, oversized/unreadable sources, request races, safe path planning, and connection metadata. Packaged macOS QA covered visual split layout, preserved selection, Tab/Escape focus behavior, live external refresh, disappearance and recovery, confirmed missing-note creation, immediate link resolution, source-file integrity, and explicit Open in editor navigation. The full suite has 256 passing tests across thirty-eight files; Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, Rust formatting/checks pass, and the production dependency audit reports zero vulnerabilities.
 
 - Slice 0.5.5 is complete. Command/Ctrl+P now opens a session-only modal search over the current memory index. Each of at most thirty results shows a title, project-relative path, match reason, and bounded context. Exact title/alias/path/heading matches, prefixes, word prefixes, substrings, and prose use documented tiering plus stable path/range ties; colliding notes remain separate choices. Exact Unicode source ranges are mapped only after cheap global ranking, and the verified fingerprint gate prevents stale coordinates from selecting changed text.
 - Packaged macOS QA covered visual layout, explicit repeat-open focus, accessibility state, title/heading/prose/no-result searches, ArrowDown/Enter traversal, Escape focus restoration, exact source selection, guarded opening, and query reset. The first package exposed and safely recovered a focus race before the explicit post-mount focus fix. On the 2,000-note fixture, worst-case common prose search dropped from a correctly rejected 3,255.16 ms prototype to 5.94 ms cold; warm selective search averaged 13.64 ms. The full suite has 250 passing tests across thirty-six files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, and no search query or result history is persisted.

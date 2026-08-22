@@ -68,7 +68,7 @@ Goal: let a writer consult and connect world knowledge without leaving the manus
 - [x] Show outgoing links and source-context backlinks.
 - [ ] Identify useful unlinked mentions without overwhelming the writer.
 - [x] Add fast project-wide search and a quick opener.
-- [ ] Open a lore reference beside the active manuscript.
+- [x] Open a lore reference beside the active manuscript.
 - [ ] Handle renamed notes and broken links without silent data loss.
 - [ ] Keep indexing responsive on realistically large projects.
 
