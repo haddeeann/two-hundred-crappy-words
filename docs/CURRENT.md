@@ -18,11 +18,11 @@ Define the smallest inspectable, portable structure that can order chapter and s
 
 ### Acceptance criteria
 
-- [ ] Document whether order belongs in one visible project-level file, distributed note frontmatter, or a deliberately limited combination, including the source of truth and merge/churn tradeoffs.
-- [ ] Define stable chapter/scene identity, optional metadata, ordinary-folder compatibility, and behavior for missing, duplicate, moved, externally edited, or malformed entries.
-- [ ] Define safe preview, compare-before-write, rollback, undo, and recovery boundaries for future reorder, split, merge, and compile operations.
-- [ ] Specify deterministic Markdown/plain-text compilation order and make DOCX/PDF explicitly later output adapters rather than new prose stores.
-- [ ] Preserve current version-one manifests and existing Markdown byte-for-byte until an explicit migration or opt-in action is approved.
+- [x] Document whether order belongs in one visible project-level file, distributed note frontmatter, or a deliberately limited combination, including the source of truth and merge/churn tradeoffs.
+- [x] Define stable chapter/scene identity, optional metadata, ordinary-folder compatibility, and behavior for missing, duplicate, moved, externally edited, or malformed entries.
+- [x] Define safe preview, compare-before-write, rollback, undo, and recovery boundaries for future reorder, split, merge, and compile operations.
+- [x] Specify deterministic Markdown/plain-text compilation order and make DOCX/PDF explicitly later output adapters rather than new prose stores.
+- [x] Preserve current version-one manifests and existing Markdown byte-for-byte until an explicit migration or opt-in action is approved.
 - [ ] Record the accepted decision and turn it into the next bounded implementation slice only after user approval.
 
 ## Next slices
@@ -60,7 +60,7 @@ Define the smallest inspectable, portable structure that can order chapter and s
 
 ## Blockers and decision gates
 
-No blocker to writing the 0.6.1 proposal. Implementation is deliberately gated because choosing a manuscript-order source of truth and adding portable scene/chapter fields would extend the writer-authored project format. Existing version-one manifests and Markdown must remain untouched until the user approves that proposal.
+The proposal is ready in `docs/MANUSCRIPT_FORMAT.md`. Implementation is deliberately waiting for user approval because the visible structure file would become writer-authored project data. Existing version-one manifests and Markdown remain untouched.
 
 ## Handoff protocol
 
