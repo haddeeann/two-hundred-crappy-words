@@ -10,8 +10,8 @@ Status legend: `PLANNED`, `ACTIVE`, `BLOCKED`, `COMPLETE`, `DEFERRED`.
 | --- | --- | --- |
 | 0.2 Trustworthy editor | A writer can trust the app not to lose work | COMPLETE |
 | 0.3 Daily practice | The 200-words-a-day promise is real and encouraging | COMPLETE |
-| 0.4 World projects | A folder becomes a portable, structured science-fiction world | ACTIVE |
-| 0.5 Connected lore | Manuscript and world bible can reference each other fluidly | PLANNED |
+| 0.4 World projects | A folder becomes a portable, structured science-fiction world | COMPLETE |
+| 0.5 Connected lore | Manuscript and world bible can reference each other fluidly | ACTIVE |
 | 0.6 Novel structure | Scenes and chapters can be planned, reordered, and exported | PLANNED |
 | 0.7 Continuity tools | Time, travel, relationships, and canon can be reasoned about | PLANNED |
 | 0.8 Release readiness | The app is accessible, documented, packaged, and recoverable | PLANNED |
@@ -54,8 +54,8 @@ Goal: turn an arbitrary folder into an optional, portable project for a manuscri
 - [x] Preserve compatibility with ordinary existing folders.
 - [x] Use Markdown for creative text and documented, human-readable project metadata.
 - [x] Add templates for characters, locations, factions, species, technology, spacecraft, events, scenes, and chapters.
-- [ ] Create notes in the selected folder and remember meaningful navigation state.
-- [ ] Add project settings, backup guidance, and format-version handling.
+- [x] Create notes in the selected folder and remember meaningful navigation state.
+- [x] Add project settings, backup guidance, and format-version handling.
 
 Specification: [`docs/milestones/0.4-world-projects.md`](docs/milestones/0.4-world-projects.md)
 

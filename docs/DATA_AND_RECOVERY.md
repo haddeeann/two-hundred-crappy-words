@@ -12,6 +12,8 @@ If the folder contains a valid approved `200-crappy-words.project.json` manifest
 
 The last opened folder is stored in `settings.json` in Tauri's app-data directory for the application.
 
+`workspace.json` stores at most twelve recent-project shortcuts plus useful navigation state for each retained project: selected directory, expanded directories, and active file. World projects use the manifest's stable project ID; ordinary folders use their absolute path. Every remembered navigation path is project-relative and is accepted on restoration only if it still resolves to an existing non-symbolic-link item inside the currently opened root. Removing a recent shortcut removes only this app-local record and never a project file.
+
 The same directory can contain `.persisted-scope`, which records filesystem access for folders the writer explicitly chose in the native picker. This lets the last folder reopen without granting static access to the rest of the computer. Permission details and limitations are documented in [`SECURITY_AND_PERMISSIONS.md`](SECURITY_AND_PERMISSIONS.md).
 
 ## Recovery drafts
@@ -34,4 +36,10 @@ Recovery is a last line of defense, not a backup system. Writers should still ba
 
 ## Daily progress
 
-The app-data directory also contains `daily-progress.json`. It stores versioned word-credit counters by selected project path and local calendar date, without manuscript text. Its schema, privacy boundaries, date behavior, and current folder-rename limitation are documented in [`DAILY_PROGRESS.md`](DAILY_PROGRESS.md).
+The app-data directory also contains `daily-progress.json`. It stores versioned word-credit counters by selected project identity and local calendar date, without manuscript text. Valid world projects use their stable manifest UUID, so a move does not split their local history; ordinary folders remain path-identified. Its schema, privacy boundaries, and date behavior are documented in [`DAILY_PROGRESS.md`](DAILY_PROGRESS.md).
+
+## Backup boundary
+
+Backing up an entire world-project folder protects the creative files, project manifest, structured-note metadata, and writer-owned assets in that folder. It does not include `settings.json`, `workspace.json`, `.persisted-scope`, `daily-progress.json`, or `recovery.json`. In particular, recovery drafts are temporary local safety copies and must not be treated as version history or the only copy of writing.
+
+See [`BACKUP_AND_PORTABILITY.md`](BACKUP_AND_PORTABILITY.md) for move, copy, and restore guidance.

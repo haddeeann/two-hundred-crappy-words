@@ -26,7 +26,7 @@ The existing app establishes these compatibility constraints:
 - The last folder and persisted permission scopes live in Tauri's app-data directory.
 - Daily goals, progress, completion records, and correction audits are app-local and currently keyed by an absolute folder path.
 - Recovery drafts are app-local and keyed by the absolute source-file path because they protect a particular disk revision.
-- Tree expansion, selected directory, active document, cursor, and scroll state are currently in memory only.
+- Tree expansion, selected directory, and active document are remembered app-locally as safe project-relative paths. Cursor and scroll state remain in memory only.
 - File creation validates portable names and uses create-new semantics so a stale view cannot truncate an existing file.
 - Source writes compare against the last known disk content and require an explicit choice before replacing an external change or recreating a missing path.
 
@@ -143,12 +143,14 @@ For a valid world project, app-local stores use a namespaced key derived from `p
 
 When a folder is first adopted, existing path-keyed daily goal and progress data should be copied to the project-ID key after the manifest is safely created. The legacy path-keyed records remain temporarily available for rollback; migration must not delete the only copy.
 
-When the same project ID appears at a new path:
+When the same project ID appears at a new path, the implemented opening flow follows these rules:
 
 - if the previous path no longer exists or is inaccessible, treat it as a move and update only the app-local last-known path;
 - if the previous path still exists, treat it as a possible copy and ask whether this is the same project or an independent project;
 - choosing an independent project creates a new ID only after explicit confirmation and a guarded manifest write; and
 - declining the choice still permits ordinary file editing without merging local state.
+
+The independent-copy update changes only `projectId`, preserves unknown version-one JSON fields, compares the source against the version just read before writing, and rereads the result as a valid supported manifest. No copy decision is made merely because a project is opened at its already remembered path.
 
 Recovery drafts remain path-specific. The app must not blindly attach a draft from an old absolute file path to a similarly named file after a project move.
 
@@ -210,4 +212,4 @@ The milestone 0.4 decision gate approved this combination on 2026-08-21:
 4. ordinary folders remaining fully supported and never auto-adopted; and
 5. optional YAML frontmatter limited initially to `id`, `type`, and `title` on newly created structured Markdown notes.
 
-Version 1 manifest handling, explicit project creation/adoption, and the nine initial structured-note templates implement this decision. Template creation writes a new `.md` file atomically, includes only the three approved fields, and leaves all prompts in removable Markdown-body comments. Existing Markdown is never given frontmatter merely because it was opened.
+Version 1 manifest handling, explicit project creation/adoption, the nine initial structured-note templates, app-local recent/navigation state, and explicit copy resolution implement this decision. Template creation writes a new `.md` file atomically, includes only the three approved fields, and leaves all prompts in removable Markdown-body comments. Existing Markdown is never given frontmatter merely because it was opened.

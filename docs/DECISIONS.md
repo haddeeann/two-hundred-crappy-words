@@ -181,3 +181,14 @@ Why: automatic counting can be misunderstood or affected by an unusual workflow,
 The proposed format uses one visible `200-crappy-words.project.json` file containing a version discriminator, locally generated UUID, display name, and optional portable folder-role mappings. Personal practice data, recovery drafts, recent locations, permissions, and editor state remain app-local. Ordinary folders remain fully supported and are never adopted merely by opening them. Newly created structured Markdown notes may opt into safe-subset YAML frontmatter limited initially to `id`, `type`, and `title`.
 
 Why: a small portable identity lets a world project survive a folder move without turning private habit or machine state into creative-project churn. A visible JSON manifest is inspectable and unambiguous, while minimal optional frontmatter prepares rename-safe notes without modifying existing Markdown. The complete format and failure behavior are documented in [`PROJECT_FORMAT.md`](PROJECT_FORMAT.md). The user approved the format gate on 2026-08-21.
+
+## D-021 — App-local workspace state and explicit copy resolution
+
+- Date: 2026-08-22
+- Status: accepted
+
+The app keeps at most twelve recent projects plus selected directory, expanded directories, and active file in versioned `workspace.json` app data. World-project entries use the stable manifest UUID and ordinary folders use their absolute path. Navigation paths are stored relative to the project and restored only when each path still resolves to an existing non-symbolic-link item inside the opened root. Creative text, recovery drafts, cursor state, and scroll state are not stored there.
+
+When the same world UUID is opened at a second accessible path, the writer chooses whether it is the same project, an independent copy, or an ordinary folder. Only the independent choice rewrites anything portable: it assigns a new UUID through a compare-before-write update that preserves unknown version-one manifest fields. Moving a world whose previous path is inaccessible updates only app-local location data, and recovery drafts remain absolute-path-specific.
+
+Why: returning to work should restore useful mental context without creating machine-specific churn in creative folders. Stable-key deduplication makes moves calm, while an explicit copy choice prevents two filesystem copies from silently sharing or unexpectedly splitting private practice identity.

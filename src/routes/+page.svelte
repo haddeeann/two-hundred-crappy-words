@@ -106,6 +106,20 @@
     validateStructuredNoteFileName,
     type StructuredNoteType,
   } from "$lib/project/structured-note";
+  import { createIndependentProjectManifestText } from "$lib/project/project-copy";
+  import {
+    collectExpandedProjectDirectories,
+    restoreProjectNavigation,
+  } from "$lib/project/navigation-restore";
+  import {
+    createProjectNavigationState,
+    createRecentProject,
+    projectRelativePath,
+    WORKSPACE_STORE_FILE,
+    WorkspaceRepository,
+    type ProjectNavigationState,
+    type RecentProject,
+  } from "$lib/project/workspace";
 
   interface SaveFailure {
     path: string;
@@ -119,6 +133,7 @@
   const AUTOSAVE_DELAY_MS = 750;
   const RECOVERY_DELAY_MS = 100;
   const DAILY_PROGRESS_DELAY_MS = 100;
+  const NAVIGATION_DELAY_MS = 150;
 
   let folderPath = $state("");
   let projectStorageKey = $state("");
@@ -174,6 +189,8 @@
   let completionMessage = $state("");
   let dailyProgressError = $state("");
   let correctingDailyProgress = $state(false);
+  let recentProjects = $state<RecentProject[]>([]);
+  let unavailableRecentKeys = $state<string[]>([]);
   let lastDailyProgressFailure: {
     path: string;
     revision: number;
@@ -188,6 +205,12 @@
     path: string;
     revision: number;
     record: DailyProgressRecord;
+  }
+
+  interface NavigationWrite {
+    path: string;
+    revision: number;
+    state: ProjectNavigationState;
   }
 
   const dirty = $derived(
@@ -313,6 +336,29 @@
     progress: DailyProgressRepository;
     goal: DailyGoalRepository;
   }> | null = null;
+  let workspaceRepositoryPromise: Promise<WorkspaceRepository> | null = null;
+  let navigationRevision = 0;
+
+  function getWorkspaceRepository(): Promise<WorkspaceRepository> {
+    workspaceRepositoryPromise ??= load(WORKSPACE_STORE_FILE, {
+      autoSave: false,
+      defaults: {},
+    }).then((store) => new WorkspaceRepository(store));
+    return workspaceRepositoryPromise;
+  }
+
+  const navigationWriter = new AutosaveController<NavigationWrite>({
+    delayMs: NAVIGATION_DELAY_MS,
+    save: ({ state }) =>
+      getWorkspaceRepository().then((repository) =>
+        repository.setNavigation(state),
+      ),
+    onError: (_request, cause) => {
+      appendError(
+        `Navigation could not be remembered, but no project file was changed: ${formatError(cause)}`,
+      );
+    },
+  });
 
   function getDailyRepositories() {
     dailyRepositoriesPromise ??= load(DAILY_PROGRESS_STORE_FILE, {
@@ -374,6 +420,7 @@
   onDestroy(() => {
     autosave.dispose();
     recoveryWriter.dispose();
+    navigationWriter.dispose();
     for (const writer of dailyProgressWriters.values()) writer.dispose();
   });
 
@@ -420,6 +467,18 @@
 
   function formatError(cause: unknown): string {
     return cause instanceof Error ? cause.message : String(cause);
+  }
+
+  function appendError(message: string): void {
+    error = error ? `${error} ${message}` : message;
+  }
+
+  function projectDisplayName(
+    path: string,
+    inspection: WorldProjectFolderInspection,
+  ): string {
+    if (inspection.kind === "world-project") return inspection.manifest.name;
+    return path.split(/[\\/]/).filter(Boolean).at(-1) ?? "Folder";
   }
 
   async function minimizeWindow(): Promise<void> {
@@ -577,6 +636,7 @@
     persistedContent = "";
     practiceState = beginDailyPractice("", practiceState.dailyWords);
     saveState = createSaveState();
+    scheduleNavigationState();
   }
 
   async function prepareToLeave(): Promise<boolean> {
@@ -586,8 +646,98 @@
       chooseAfterFailure: chooseAfterSaveFailure,
       discard: discardActiveChanges,
     });
-    if (canLeave) await flushDailyProgress();
+    if (canLeave) {
+      await Promise.all([flushDailyProgress(), navigationWriter.flush()]);
+    }
     return canLeave;
+  }
+
+  function scheduleNavigationState(): void {
+    if (!folderPath || !projectStorageKey) return;
+    const selectedDirectory = projectRelativePath(
+      folderPath,
+      selectedDirectoryPath || folderPath,
+    );
+    const activeFileRelative = activeFilePath
+      ? projectRelativePath(folderPath, activeFilePath)
+      : null;
+    if (selectedDirectory === null || (activeFilePath && !activeFileRelative)) {
+      return;
+    }
+
+    navigationRevision += 1;
+    navigationWriter.schedule({
+      path: projectStorageKey,
+      revision: navigationRevision,
+      state: createProjectNavigationState({
+        projectKey: projectStorageKey,
+        selectedDirectory,
+        activeFile: activeFileRelative,
+        expandedDirectories: collectExpandedProjectDirectories(
+          entries,
+          folderPath,
+        ),
+      }),
+    });
+  }
+
+  async function rememberOpenedProject(
+    path: string,
+    inspection: WorldProjectFolderInspection,
+    previousProjectKey: string,
+    previousFolderPath: string,
+  ): Promise<void> {
+    const repository = await getWorkspaceRepository();
+    if (
+      previousProjectKey &&
+      previousProjectKey !== inspection.storageKey &&
+      previousFolderPath === path
+    ) {
+      await repository.removeProject(previousProjectKey);
+    }
+    await repository.rememberProject(
+      createRecentProject({
+        projectKey: inspection.storageKey,
+        path,
+        name: projectDisplayName(path, inspection),
+        kind:
+          inspection.kind === "world-project" ? "world-project" : "ordinary",
+      }),
+    );
+    recentProjects = await repository.listRecent();
+    unavailableRecentKeys = unavailableRecentKeys.filter(
+      (key) => key !== inspection.storageKey,
+    );
+
+    const settings = await load(STORE_FILE);
+    await settings.set(LAST_FOLDER_KEY, path);
+    await settings.save();
+  }
+
+  async function openRecentProject(project: RecentProject): Promise<void> {
+    await navigate(async () => {
+      try {
+        await loadFolder(project.path);
+      } catch (cause) {
+        unavailableRecentKeys = [
+          ...new Set([...unavailableRecentKeys, project.projectKey]),
+        ];
+        error = `“${project.name}” is unavailable at its last location. If it moved, use Open Folder to select it again; a world project will reconnect by its project ID. ${formatError(cause)}`;
+      }
+    });
+  }
+
+  async function forgetRecentProject(project: RecentProject): Promise<void> {
+    try {
+      const repository = await getWorkspaceRepository();
+      await repository.removeProject(project.projectKey);
+      recentProjects = await repository.listRecent();
+      unavailableRecentKeys = unavailableRecentKeys.filter(
+        (key) => key !== project.projectKey,
+      );
+    } catch (cause) {
+      appendError(`Could not remove the recent-project shortcut: ${formatError(cause)}`);
+    }
   }
 
   async function navigate(action: () => Promise<void>): Promise<void> {
@@ -647,26 +797,124 @@
           expanded: true,
           children,
         }));
+        scheduleNavigationState();
         return;
       }
       entries = updateTreeEntry(entries, entry.path, (current) => ({
         ...current,
         expanded: !current.expanded,
       }));
+      scheduleNavigationState();
     } catch (e) {
       error = `Could not read ${entry.name}: ${e}`;
+      scheduleNavigationState();
     }
+  }
+
+  function selectProjectRoot(): void {
+    selectedDirectoryPath = folderPath;
+    scheduleNavigationState();
+  }
+
+  async function resolvePossibleProjectCopy(
+    path: string,
+    folderEntries: readonly FileTreeEntry[],
+    inspection: WorldProjectFolderInspection,
+  ): Promise<{
+    inspection: WorldProjectFolderInspection;
+    warning: string;
+  }> {
+    if (inspection.kind !== "world-project") {
+      return { inspection, warning: "" };
+    }
+    const previous = (await (
+      await getWorkspaceRepository()
+    ).listRecent()).find(
+      (project) =>
+        project.projectKey === inspection.storageKey && project.path !== path,
+    );
+    if (!previous) return { inspection, warning: "" };
+
+    try {
+      await readDir(previous.path);
+    } catch {
+      // An inaccessible previous path is treated as a move. Only app-local
+      // location data changes; the portable manifest remains untouched.
+      return { inspection, warning: "" };
+    }
+
+    const choice = await message(
+      `“${inspection.manifest.name}” is also available at ${previous.path}. Is this another location for the same world, or should this copy become an independent world?`,
+      {
+        title: "Possible world-project copy",
+        kind: "warning",
+        buttons: {
+          yes: "Same project",
+          no: "Make independent",
+          cancel: "Open as folder",
+        },
+      },
+    );
+    if (choice === "Same project") return { inspection, warning: "" };
+    if (choice === "Open as folder") {
+      return {
+        inspection: { kind: "ordinary", storageKey: path },
+        warning:
+          "This copy is open as an ordinary folder. Its manifest was not changed and its local practice data was not merged with the other world.",
+      };
+    }
+
+    const manifestEntry = folderEntries.find(
+      (entry) => entry.name === WORLD_PROJECT_MANIFEST_FILE,
+    );
+    if (!manifestEntry?.isFile || manifestEntry.isSymlink) {
+      throw new Error("The project manifest is no longer a regular file.");
+    }
+    const currentText = await readTextFile(manifestEntry.path);
+    const independent = createIndependentProjectManifestText(
+      currentText,
+      crypto.randomUUID(),
+    );
+    await guardedWriteText(
+      {
+        path: manifestEntry.path,
+        content: independent.text,
+        expectedContent: currentText,
+      },
+      { read: readTextFile, write: writeTextFile },
+    );
+    const reinspected = await inspectWorldProjectFolder({
+      folderPath: path,
+      entries: folderEntries,
+      readText: readTextFile,
+    });
+    if (reinspected.kind !== "world-project") {
+      throw new Error("The independent project manifest could not be reopened.");
+    }
+    return {
+      inspection: reinspected,
+      warning:
+        "This copy now has its own project ID and independent local practice history.",
+    };
   }
 
   // Load a folder into the sidebar. Throws if the path can't be read,
   // leaving existing state untouched (entries are read before committing).
   async function loadFolder(path: string) {
-    const newEntries = await readEntries(path);
-    const inspectedProject = await inspectWorldProjectFolder({
+    const previousProjectKey = projectStorageKey;
+    const previousFolderPath = folderPath;
+    let newEntries = await readEntries(path);
+    let inspectedProject = await inspectWorldProjectFolder({
       folderPath: path,
       entries: newEntries,
       readText: readTextFile,
     });
+    const copyResolution = await resolvePossibleProjectCopy(
+      path,
+      newEntries,
+      inspectedProject,
+    );
+    inspectedProject = copyResolution.inspection;
     const storageKey = inspectedProject.storageKey;
     let projectRecords: DailyProgressRecords = {};
     let projectTarget = DEFAULT_DAILY_TARGET;
@@ -686,35 +934,85 @@
     }
     const dailyContext = resolveDailyProgress(projectRecords);
 
+    let restoredSelectedDirectoryPath = path;
+    let restoredFile: FileTreeEntry | null = null;
+    let restoredFileContent = "";
+    let restoredContent = "";
+    let restoredRevision = 0;
+    let navigationLoadError = "";
+    try {
+      const navigationState = await (
+        await getWorkspaceRepository()
+      ).getNavigation(storageKey);
+      const restored = await restoreProjectNavigation(
+        path,
+        newEntries,
+        navigationState,
+        { joinPath: join, readEntries },
+      );
+      newEntries = restored.entries;
+      restoredSelectedDirectoryPath = restored.selectedDirectoryPath;
+      restoredFile = restored.activeFileEntry;
+      if (restoredFile) {
+        restoredFileContent = await readTextFile(restoredFile.path);
+        const recovered = await recoverContent(
+          restoredFile.path,
+          restoredFileContent,
+        );
+        if (recovered) {
+          restoredContent = recovered.content;
+          restoredRevision = recovered.revision;
+        } else {
+          restoredFile = null;
+        }
+      }
+    } catch (cause) {
+      restoredFile = null;
+      restoredFileContent = "";
+      restoredContent = "";
+      restoredRevision = 0;
+      navigationLoadError = `The folder opened, but its previous navigation could not be restored: ${formatError(cause)}`;
+    }
+
     folderPath = path;
     projectStorageKey = storageKey;
     projectInspection = inspectedProject;
-    selectedDirectoryPath = path;
+    selectedDirectoryPath = restoredSelectedDirectoryPath;
     entries = newEntries;
-    activeFile = "";
-    activeFilePath = "";
-    content = "";
-    persistedContent = "";
+    activeFile = restoredFile?.name ?? "";
+    activeFilePath = restoredFile?.path ?? "";
+    content = restoredContent;
+    persistedContent = restoredFileContent;
     dailyRecordsByDate = projectRecords;
     activeDailyDateKey = dailyContext.dateKey;
     activeDailyRevision = dailyContext.revision;
     activeCompletedAt = dailyContext.completedAt;
     activeCompletedTarget = dailyContext.completedTarget;
-    practiceState = beginDailyPractice("", dailyContext.creditedWords);
+    practiceState = beginDailyPractice(restoredContent, dailyContext.creditedWords);
     dailyTarget = projectTarget;
     editingDailyTarget = false;
     dailyTargetInput = "";
     completionMessage = "";
     lastDailyProgressFailure = null;
     dailyProgressError = progressLoadError;
-    error =
+    error = [
       inspectedProject.kind === "manifest-problem"
         ? inspectedProject.message
-        : "";
+        : "",
+      copyResolution.warning,
+      navigationLoadError,
+    ]
+      .filter(Boolean)
+      .join(" ");
     persistedContentByPath.clear();
+    if (restoredFile) {
+      persistedContentByPath.set(restoredFile.path, restoredFileContent);
+    }
     forcedSave = null;
     lastSaveFailure = null;
-    saveState = createSaveState();
+    saveState = restoredRevision
+      ? createRecoveredSaveState(restoredRevision)
+      : createSaveState();
     creatingFile = false;
     newFileName = "";
     adoptingWorldProject = false;
@@ -727,6 +1025,25 @@
     newWorldProjectRoles = [];
     newWorldProjectBusy = false;
     resetStructuredNote();
+
+    try {
+      await rememberOpenedProject(
+        path,
+        inspectedProject,
+        previousProjectKey,
+        previousFolderPath,
+      );
+    } catch (cause) {
+      appendError(
+        `The folder is open, but its recent-project shortcut could not be stored: ${formatError(cause)}`,
+      );
+    }
+
+    navigationRevision = 0;
+    if (restoredRevision) {
+      const request = currentSaveRequest();
+      if (request) autosave.schedule(request);
+    }
   }
 
   async function startWorldProjectAdoption() {
@@ -886,9 +1203,6 @@
         }
 
         await loadFolder(rootPath);
-        const store = await load(STORE_FILE);
-        await store.set(LAST_FOLDER_KEY, rootPath);
-        await store.save();
       });
     } catch (cause) {
       error = `Could not create world project: ${formatError(cause)}`;
@@ -1150,10 +1464,6 @@
 
       try {
         await loadFolder(selected);
-        // Remember this folder so it reopens on next launch.
-        const store = await load(STORE_FILE);
-        await store.set(LAST_FOLDER_KEY, selected);
-        await store.save();
       } catch (e) {
         error = `Could not read folder: ${e}`;
       }
@@ -1162,11 +1472,20 @@
 
   // On startup, reopen the last folder if it's still accessible.
   onMount(async () => {
+    let last = "";
     try {
+      const repository = await getWorkspaceRepository();
+      recentProjects = await repository.listRecent();
       const store = await load(STORE_FILE);
-      const last = await store.get<string>(LAST_FOLDER_KEY);
+      last = (await store.get<string>(LAST_FOLDER_KEY)) ?? "";
       if (last) await loadFolder(last);
     } catch (cause) {
+      const unavailable = recentProjects.find((project) => project.path === last);
+      if (unavailable) {
+        unavailableRecentKeys = [
+          ...new Set([...unavailableRecentKeys, unavailable.projectKey]),
+        ];
+      }
       error = `The last folder could not be reopened. Choose Open Folder to select it again: ${formatError(cause)}`;
     }
   });
@@ -1264,6 +1583,7 @@
           : createSaveState();
         activeFile = entry.name;
         activeFilePath = entry.path;
+        scheduleNavigationState();
 
         if (recovered.revision) {
           const request = currentSaveRequest();
@@ -1551,6 +1871,44 @@
       New File in {selectedDirectoryName}
     </button>
 
+    {#if recentProjects.length > 0}
+      <details class="recent-projects">
+        <summary>Recent projects</summary>
+        <ul>
+          {#each recentProjects as project (project.projectKey)}
+            <li class:unavailable={unavailableRecentKeys.includes(project.projectKey)}>
+              <button
+                class="recent-project-open"
+                onclick={() => openRecentProject(project)}
+                disabled={worldProjectBusy}
+                title={`Open ${project.name} from ${project.path}`}
+              >
+                <span>{project.name}</span>
+                <small>
+                  {project.kind === "world-project" ? "World project" : "Folder"}
+                  {unavailableRecentKeys.includes(project.projectKey)
+                    ? " · unavailable"
+                    : ""}
+                </small>
+              </button>
+              <button
+                class="recent-project-remove"
+                onclick={() => forgetRecentProject(project)}
+                disabled={worldProjectBusy}
+                aria-label={`Remove ${project.name} from recent projects`}
+                title="Remove shortcut only; project files stay untouched"
+              >×</button>
+            </li>
+          {/each}
+        </ul>
+        {#if unavailableRecentKeys.length > 0}
+          <p class="form-hint">
+            If a world moved, use Open Folder to reconnect it by project ID.
+          </p>
+        {/if}
+      </details>
+    {/if}
+
     {#if projectInspection.kind === "world-project"}
       <button
         class="open-btn"
@@ -1797,12 +2155,41 @@
       <p class="error" role="alert">{dailyProgressError}</p>
     {/if}
 
+    {#if folderPath}
+      <details class="project-info">
+        <summary>Project & backup info</summary>
+        {#if projectInspection.kind === "world-project"}
+          <p>
+            This world's stable identity lives in
+            <code>{WORLD_PROJECT_MANIFEST_FILE}</code>. Back up or move the entire
+            project folder so its writing and identity stay together.
+          </p>
+          <p>
+            If both an original and a copy are available, the app asks whether they
+            are the same world or whether the copy should receive a new project ID.
+            Making it independent is the only opening choice that changes its
+            manifest.
+          </p>
+        {:else}
+          <p>
+            This ordinary folder is identified by its location. Moving it may start
+            separate local practice history until you reopen it.
+          </p>
+        {/if}
+        <p>
+          Daily goals and history, recent locations, navigation, and recovery drafts
+          stay private to this app on this Mac. They are not part of a project-folder
+          backup. Recovery drafts are temporary safety copies, not version history.
+        </p>
+      </details>
+    {/if}
+
     <nav class="files" aria-label="Project files">
       {#if folderPath}
         <button
           class="file-item root-item"
           class:selected={selectedDirectoryPath === folderPath}
-          onclick={() => (selectedDirectoryPath = folderPath)}
+          onclick={selectProjectRoot}
           aria-pressed={selectedDirectoryPath === folderPath}
           title="Select the project root for new files"
         >
@@ -2041,6 +2428,104 @@
   .open-btn:disabled {
     opacity: 0.5;
     cursor: default;
+  }
+
+  .recent-projects,
+  .project-info {
+    margin: 0 0 0.75rem;
+    color: #b8b8b8;
+    font-size: 0.76rem;
+  }
+
+  .recent-projects summary,
+  .project-info summary {
+    padding: 0.3rem 0;
+    color: #d4d4d4;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .recent-projects summary:focus-visible,
+  .project-info summary:focus-visible,
+  .recent-project-open:focus-visible,
+  .recent-project-remove:focus-visible {
+    outline: 2px solid #75beff;
+    outline-offset: 2px;
+  }
+
+  .recent-projects ul {
+    margin: 0.25rem 0 0.5rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .recent-projects li {
+    display: flex;
+    align-items: stretch;
+    gap: 0.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .recent-project-open,
+  .recent-project-remove {
+    border: 1px solid #3c3c3c;
+    border-radius: 4px;
+    background: #292929;
+    color: #d4d4d4;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .recent-project-open {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0.4rem 0.45rem;
+    text-align: left;
+  }
+
+  .recent-project-open span,
+  .recent-project-open small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .recent-project-open small {
+    margin-top: 0.15rem;
+    color: #999999;
+  }
+
+  .recent-project-remove {
+    flex: 0 0 1.8rem;
+    padding: 0;
+    font-size: 1rem;
+  }
+
+  .recent-project-open:hover:not(:disabled),
+  .recent-project-remove:hover:not(:disabled) {
+    background: #353535;
+  }
+
+  .recent-projects li.unavailable .recent-project-open {
+    border-color: #8a5548;
+  }
+
+  .recent-project-open:disabled,
+  .recent-project-remove:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+
+  .project-info p {
+    margin: 0.35rem 0;
+    line-height: 1.4;
+  }
+
+  .project-info code {
+    color: #cccccc;
+    font-size: 0.72rem;
+    overflow-wrap: anywhere;
   }
 
   .new-file-input {

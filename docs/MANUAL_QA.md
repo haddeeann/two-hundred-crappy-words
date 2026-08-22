@@ -53,6 +53,14 @@ Completed successfully on macOS on 2026-08-22 using Computer Use against a fresh
 
 Opening the generated 74-word template did not add daily credit; the existing project remained `6 / 6`. Repeating creation with the same destination and filename produced a clear error, left the editor usable, and preserved the file's SHA-256. Validation returned focus to the title, Escape canceled from the form, and note-specific errors disappeared with the form rather than becoming stale global warnings.
 
+## Milestone 0.4.5 recent-project and portability checkpoint
+
+Completed successfully on macOS on 2026-08-22 using Computer Use against a freshly packaged build and disposable “The Patient Comet” folders. The app showed a bounded recent-project disclosure with separate open and remove-shortcut controls, removed a stale shortcut without touching its files, and exposed concise in-app backup/privacy guidance. Tab and Shift+Tab reached the disclosure and its actions with visible focus.
+
+The walkthrough expanded `Lore/Planets`, selected it, opened `velorum.md`, closed normally, and restored both branches, the selected destination, active file, content, and unchanged `0 / 200` daily baseline after restart. After the whole project root moved externally, startup marked its recent entry unavailable with clear Open Folder recovery. Reopening the new location restored the same relative navigation at the new absolute path, updated the single UUID-keyed recent entry, and did not rewrite the manifest.
+
+Three live filesystem copies exercised every identity choice. **Same project** updated one last-known path without changing either manifest. **Make independent** generated a new UUID and a separate recent entry while preserving an unknown version-one test field and leaving the original unchanged. **Open as folder** displayed the copy as an ordinary path-identified folder, disabled structured-project behavior, kept local history separate, and left its manifest byte-for-byte unchanged. The final app-local `workspace.json` contained absolute recent locations but only project-relative navigation and no creative text. The full suite has 195 passing tests across twenty-four files; Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, Rust formatting/checks pass, and the production dependency audit reports zero vulnerabilities.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:

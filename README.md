@@ -38,12 +38,15 @@ The app now counts words and stores progress toward its default 200-word target 
 - Move or rename a valid world-project folder and retain its app-local goal and writing history after reopening
 - Create ordinary Markdown notes from optional character, location, faction, species, technology, spacecraft, event, scene, and chapter templates
 - Choose a verified project folder for a template note and protect existing files with create-new writes
+- Return through a bounded app-local recent-project list and remove shortcuts without deleting files
+- Restore the selected folder, expanded tree branches, and active file when those paths still exist safely inside the project
+- Reconnect a moved world by stable ID and make an intentional folder copy independent through a guarded manifest update
 
 ## Current limitations
 
 - Correction audit export is not available yet
 - Ordinary folders still use their absolute path as local progress identity until explicitly adopted
-- Recent-project navigation and per-project editor-state restoration are not available yet
+- Cursor position and editor scroll position are not restored yet
 - Files and folders cannot be renamed, moved, or deleted in the app
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
 - The frameless window does not yet provide maximize/full-screen controls
@@ -105,11 +108,11 @@ static/                   Static images and icons
 
 ## Status
 
-This is a functional prototype. Its trustworthy-editor and daily-practice milestones have passed automated and hands-on macOS QA. The active world-project milestone has an approved portable format plus safely tested recognition, ordinary-folder adoption, native creation, move/reopen behavior, and optional structured Markdown templates.
+This is a functional prototype. Its trustworthy-editor, daily-practice, and world-project milestones have passed automated and hands-on macOS QA. The active connected-lore milestone begins with a format and indexing decision before project-wide scanning is implemented.
 
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
-Local settings and draft-recovery behavior are documented in [`docs/DATA_AND_RECOVERY.md`](docs/DATA_AND_RECOVERY.md).
+Local settings and draft-recovery behavior are documented in [`docs/DATA_AND_RECOVERY.md`](docs/DATA_AND_RECOVERY.md). Backup, move, and copy boundaries are summarized in [`docs/BACKUP_AND_PORTABILITY.md`](docs/BACKUP_AND_PORTABILITY.md).
 
 The deterministic word-count and daily-credit rules being implemented for milestone 0.3 are documented in [`docs/WORD_COUNTING.md`](docs/WORD_COUNTING.md).
 
