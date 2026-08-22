@@ -97,12 +97,20 @@ export function updateLoreProjectIndex(
   path: string,
   text: string | null,
 ): LoreProjectIndex {
+  return updateLoreProjectIndexBatch(current, new Map([[path, text]]));
+}
+
+export function updateLoreProjectIndexBatch(
+  current: LoreProjectIndex,
+  changes: ReadonlyMap<string, string | null>,
+): LoreProjectIndex {
   const documents: IndexableLoreDocument[] = [];
   for (const record of current.documents.values()) {
-    if (record.path !== path) documents.push(recordToIndexable(record));
+    if (!changes.has(record.path)) documents.push(recordToIndexable(record));
   }
   const textByPath = new Map<string, string>();
-  if (text !== null) {
+  for (const [path, text] of changes) {
+    if (text === null) continue;
     documents.push(parseMarkdownNote(path, text));
     textByPath.set(path, text);
   }

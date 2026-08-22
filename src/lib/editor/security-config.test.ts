@@ -20,6 +20,7 @@ describe("desktop security configuration", () => {
       expect.arrayContaining([
         "fs:allow-read-dir",
         "fs:allow-stat",
+        "fs:allow-watch",
         "fs:allow-read-text-file",
         "fs:allow-write-text-file",
         "fs:allow-mkdir",

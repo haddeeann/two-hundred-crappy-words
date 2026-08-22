@@ -5,6 +5,7 @@ import {
   LORE_INDEX_FORMAT,
   LORE_INDEX_VERSION,
   updateLoreProjectIndex,
+  updateLoreProjectIndexBatch,
 } from "./index";
 
 const DUPLICATE_ID = "2cd59970-6ab4-46f9-b54b-a0e35af5b9e1";
@@ -83,5 +84,33 @@ describe("memory-only connected-lore index", () => {
       fingerprint: unchanged.fingerprint,
       normalizedSearchText: unchanged.normalizedSearchText,
     });
+  });
+
+  it("applies a coalesced create, edit, and removal in one generation", () => {
+    const initial = buildLoreProjectIndex([
+      { path: "source.md", text: "[[Old]] [[New]]" },
+      { path: "old.md", text: "# Old" },
+      { path: "edited.md", text: "# Before" },
+    ]);
+    const updated = updateLoreProjectIndexBatch(
+      initial,
+      new Map<string, string | null>([
+        ["old.md", null],
+        ["new.md", "# New"],
+        ["edited.md", "# After"],
+      ]),
+    );
+
+    expect(updated.generation).toBe(initial.generation + 1);
+    expect([...updated.documents.keys()].sort()).toEqual([
+      "edited.md",
+      "new.md",
+      "source.md",
+    ]);
+    expect(
+      updated.documents
+        .get("source.md")
+        ?.outgoing.map(({ resolution }) => resolution.kind),
+    ).toEqual(["broken-note", "resolved"]);
   });
 });

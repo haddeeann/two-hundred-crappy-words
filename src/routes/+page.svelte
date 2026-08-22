@@ -5,6 +5,7 @@
     mkdir,
     readDir,
     readTextFile,
+    watch,
     writeTextFile,
   } from "@tauri-apps/plugin-fs";
   import { join } from "@tauri-apps/api/path";
@@ -129,6 +130,14 @@
     type LoreScanResult,
   } from "$lib/lore/scan";
   import { LoreIndexSession } from "$lib/lore/session";
+  import {
+    LoreChangeMonitor,
+    shouldReconcileWatchEvent,
+  } from "$lib/lore/monitor";
+  import {
+    collapseLoreChangePaths,
+    reconcileLoreChanges,
+  } from "$lib/lore/reconcile";
   import { tauriLoreScanBackend } from "$lib/lore/tauri-scan";
   import type { LoreProjectIndex } from "$lib/lore/types";
 
@@ -210,8 +219,11 @@
   let loreScanIssues = $state<LoreScanIssue[]>([]);
   let loreSuppressedIssueCount = $state(0);
   let loreIndexError = $state("");
+  let loreIndexNeedsRefresh = false;
   let loreIndexSession = new LoreIndexSession();
   let loreOverlayTimer: ReturnType<typeof setTimeout> | null = null;
+  let loreChangeMonitor: LoreChangeMonitor | null = null;
+  let stopLoreWatch: (() => void) | null = null;
   let lastDailyProgressFailure: {
     path: string;
     revision: number;
@@ -472,6 +484,7 @@
 
   onDestroy(() => {
     if (loreOverlayTimer) clearTimeout(loreOverlayTimer);
+    stopLoreMonitoring();
     autosave.dispose();
     recoveryWriter.dispose();
     navigationWriter.dispose();
@@ -532,12 +545,14 @@
       clearTimeout(loreOverlayTimer);
       loreOverlayTimer = null;
     }
+    stopLoreMonitoring();
     loreIndexSession.invalidatePendingWork();
     loreIndexSession = new LoreIndexSession();
     loreIndex = null;
     loreScanIssues = [];
     loreSuppressedIssueCount = 0;
     loreIndexError = "";
+    loreIndexNeedsRefresh = false;
     loreIndexPhase = "indexing";
     void refreshLoreIndex(path);
   }
@@ -563,12 +578,135 @@
       loreSuppressedIssueCount = scanResult.suppressedIssueCount;
       loreIndex = loaded.index;
       syncActiveLoreBuffer();
+      loreIndexNeedsRefresh = false;
       loreIndexPhase = "ready";
+      void startLoreMonitoring(path, session);
     } catch (cause) {
       if (session !== loreIndexSession || path !== folderPath) return;
       loreIndexPhase = "error";
       loreIndexError = `Indexing could not finish, but writing and saving still work: ${formatError(cause)}`;
     }
+  }
+
+  function stopLoreMonitoring(): void {
+    loreChangeMonitor?.dispose();
+    loreChangeMonitor = null;
+    stopLoreWatch?.();
+    stopLoreWatch = null;
+  }
+
+  async function startLoreMonitoring(
+    path: string,
+    session: LoreIndexSession,
+  ): Promise<void> {
+    if (
+      stopLoreWatch ||
+      loreChangeMonitor ||
+      path !== folderPath ||
+      session !== loreIndexSession
+    ) {
+      return;
+    }
+
+    const monitor = new LoreChangeMonitor({
+      delayMs: 180,
+      reconcile: async ({ paths }) => {
+        if (session !== loreIndexSession || path !== folderPath || !loreIndex) return;
+        const changedPaths = collapseLoreChangePaths(paths);
+        if (changedPaths.length === 0) return;
+        try {
+          const result = await reconcileLoreChanges({
+            rootPath: path,
+            relativePaths: changedPaths,
+            currentIndex: loreIndex,
+            backend: tauriLoreScanBackend,
+          });
+          if (session !== loreIndexSession || path !== folderPath) return;
+          if (result.changes.size > 0) {
+            loreIndex = session.applyDiskChanges(result.changes);
+          }
+          loreScanIssues = mergeReconciledScanIssues(
+            loreScanIssues,
+            result.issues,
+            changedPaths,
+          );
+          if (result.stale) {
+            loreIndexNeedsRefresh = true;
+            loreIndexPhase = "stale";
+            loreIndexError =
+              "Some external changes could not be reconciled safely. The last known index remains available; use Refresh lore index to try again.";
+          } else if (!loreIndexNeedsRefresh) {
+            loreIndexPhase = "ready";
+            loreIndexError = "";
+          }
+        } catch (cause) {
+          if (session !== loreIndexSession || path !== folderPath) return;
+          loreIndexNeedsRefresh = true;
+          loreIndexPhase = "stale";
+          loreIndexError = `External changes could not be reconciled, but writing and saving still work: ${formatError(cause)}`;
+        }
+      },
+    });
+    loreChangeMonitor = monitor;
+
+    try {
+      const unwatch = await watch(
+        path,
+        (event) => {
+          if (!shouldReconcileWatchEvent(event.type)) return;
+          const relativePaths = event.paths
+            .map((eventPath) => projectRelativePath(path, eventPath))
+            .filter((eventPath): eventPath is string => eventPath !== null);
+          monitor.notify(relativePaths);
+        },
+        { recursive: true, delayMs: 120 },
+      );
+      if (
+        session !== loreIndexSession ||
+        path !== folderPath ||
+        monitor !== loreChangeMonitor
+      ) {
+        unwatch();
+        return;
+      }
+      stopLoreWatch = unwatch;
+    } catch (cause) {
+      if (monitor === loreChangeMonitor) {
+        monitor.dispose();
+        loreChangeMonitor = null;
+      }
+      if (session !== loreIndexSession || path !== folderPath) return;
+      loreIndexNeedsRefresh = true;
+      loreIndexPhase = "stale";
+      loreIndexError = `Automatic lore refresh is unavailable. Writing and explicit refresh still work: ${formatError(cause)}`;
+    }
+  }
+
+  function mergeReconciledScanIssues(
+    existing: readonly LoreScanIssue[],
+    incoming: readonly LoreScanIssue[],
+    changedPaths: readonly string[],
+  ): LoreScanIssue[] {
+    const untouched = existing.filter(
+      (issue) =>
+        !changedPaths.some(
+          (path) =>
+            !path ||
+            !issue.path ||
+            issue.path === path ||
+            issue.path.startsWith(`${path}/`) ||
+            path.startsWith(`${issue.path}/`),
+        ),
+    );
+    return [...untouched, ...incoming].filter(
+      (issue, index, values) =>
+        values.findIndex(
+          (candidate) =>
+            candidate.kind === issue.kind &&
+            candidate.path === issue.path &&
+            candidate.message === issue.message,
+        ) === index,
+    );
   }
 
   function activeLorePath(path = activeFilePath): string | null {
@@ -607,11 +745,12 @@
     const bytes = new TextEncoder().encode(text).byteLength;
     if (bytes > DEFAULT_MAX_LORE_FILE_BYTES) {
       loreIndex = loreIndexSession.removeDiskSource(relativePath);
+      loreIndexNeedsRefresh = true;
       loreIndexPhase = "stale";
       return;
     }
     loreIndex = loreIndexSession.replaceDiskSource(relativePath, text);
-    loreIndexPhase = "ready";
+    if (!loreIndexNeedsRefresh) loreIndexPhase = "ready";
   }
 
   function projectDisplayName(

@@ -2,6 +2,7 @@ import {
   buildLoreProjectIndex,
   buildLoreProjectIndexCooperatively,
   updateLoreProjectIndex,
+  updateLoreProjectIndexBatch,
   type LoreSourceDocument,
 } from "./index";
 import type { LoreProjectIndex } from "./types";
@@ -68,6 +69,22 @@ export class LoreIndexSession {
     this.revision += 1;
     this.overlays.delete(path);
     return this.reindex(path);
+  }
+
+  applyDiskChanges(
+    changes: ReadonlyMap<string, string | null>,
+  ): LoreProjectIndex {
+    this.revision += 1;
+    const effectiveChanges = new Map<string, string | null>();
+    for (const [path, text] of changes) {
+      if (text === null) this.diskSources.delete(path);
+      else this.diskSources.set(path, text);
+      effectiveChanges.set(path, this.overlays.get(path) ?? text);
+    }
+    if (!this.index) return this.reindex();
+    this.index = updateLoreProjectIndexBatch(this.index, effectiveChanges);
+    this.generation = this.index.generation;
+    return this.index;
   }
 
   private reindex(changedPath?: string): LoreProjectIndex {

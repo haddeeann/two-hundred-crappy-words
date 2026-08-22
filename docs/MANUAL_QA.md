@@ -69,6 +69,14 @@ Editing the open chapter added `[[Mara#Unwritten history]]`. Before autosave com
 
 The first packaged attempt also proved the failure boundary: Tauri denied the newly used metadata call, the lore status showed per-file errors, and ordinary opening, editing, and saving remained available. The capability was narrowed to `fs:allow-stat`, whose paths remain constrained by the native picker; the rebuilt app passed. The final suite has 225 passing tests across thirty-one files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS app builds pass, and the measured 2,000-file/24.78 MiB fixture remained within every approved performance budget.
 
+## Milestone 0.5.3 incremental-refresh checkpoint
+
+Completed successfully on macOS on 2026-08-22 using Computer Use against a freshly packaged build and the same disposable lore project. The first package deliberately exercised the fallback boundary: JavaScript permission was present but the Rust filesystem plugin lacked its optional watch implementation, so the app reported that automatic refresh was unavailable, retained the known-good index, and kept both editing and explicit refresh usable. Enabling the official plugin's `watch` feature corrected the package without broadening its native-picker path scope.
+
+With monitoring active, an external heading edit plus note creation automatically changed the index from two to three notes and resolved both a broken note and broken heading. Moving the new note within the selected root retained three notes and title-based resolution; moving it outside the root returned to two notes and restored the broken-link issue. Hidden, dependency, and symbolic-link exclusions remained unchanged throughout.
+
+The active chapter was then made read-only and edited in the app. Its unsaved `[[Overlay Survives]]` link appeared immediately in the derived index while autosave reported permission denied. A different external disk version triggered the existing guarded-write conflict, but reconciliation retained the unsaved overlay and its source issue. **Keep writing** preserved that draft; after restoring the disposable last-saved baseline, Command+S saved normally and the app closed without a prompt. No external event awarded daily credit by itself, no lore cache or metadata was written, and all external changes stayed beneath the selected disposable root.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:

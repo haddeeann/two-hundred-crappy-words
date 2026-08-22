@@ -10,28 +10,30 @@ World projects are complete. The active milestone makes manuscript and world-bib
 
 ## Active slice
 
-**0.5.3 — Incremental lore refresh**
+**0.5.4 — Link completion, outgoing links, and backlinks**
 
 ### Intended outcome
 
-Keep the memory-only lore index truthful after app-owned and external filesystem changes without rescanning on every event or weakening source-write and selected-folder protections. Give the writer an explicit stale/error state and refresh fallback whenever monitoring cannot reconcile safely.
+Turn the connected-lore index into a quiet, keyboard-first drafting aid. Offer bounded completion only while the caret is inside a wiki-link target, and expose the active note's outgoing links and source-context backlinks without rewriting prose or stealing editor focus.
 
 ### Acceptance criteria
 
-- [ ] Keep the index current after confirmed app saves and Markdown creation without awarding extra daily credit or writing metadata.
-- [ ] Coalesce external create, content-change, move, and removal events beneath the selected root and update only affected safe Markdown records.
-- [ ] Revalidate containment, exclusions, symlinks, byte limits, and stable reads before accepting an event-driven update.
-- [ ] Preserve an unsaved/recovered active-buffer overlay when its disk file changes and leave source-conflict handling to guarded writes.
-- [ ] Dispose monitoring on folder changes and app teardown; never retain or watch a path outside the current selected root.
-- [ ] Surface monitoring failures as stale with an explicit refresh, and pass focused race tests plus packaged external-change QA.
+- [ ] Detect the current wiki-link target and replacement range from editor text plus UTF-16 selection without interpreting escaped or closed links as active completion.
+- [ ] Rank a bounded, deterministic set of contained note and heading candidates by exact prefix, word prefix, substring, alias/title/path context, and stable tie-breakers.
+- [ ] Open, traverse, accept, and dismiss completion entirely from the keyboard while preserving labels, heading syntax, surrounding text, undo, autosave, recovery, and daily-credit semantics.
+- [ ] Show the active note's resolved, broken, and ambiguous outgoing links with useful target labels and source locations.
+- [ ] Show source-context backlinks, allow keyboard navigation to a safe indexed source, and leave the writer in control of any file switch.
+- [ ] Keep the surfaces responsive, accessible, memory-only, and non-blocking when no index is ready; pass focused tests and packaged keyboard QA.
 
 ## Next slices
 
-1. 0.5.4 — Add keyboard-friendly link completion plus outgoing and backlink surfaces.
-2. 0.5.5 — Add fast project search and a keyboard-first quick opener.
+1. 0.5.5 — Add fast project search and a keyboard-first quick opener.
+2. 0.5.6 — Open a lore reference beside the active manuscript and add safe missing-target creation.
 
 ## Completed checkpoint
 
+- Slice 0.5.3 is complete. The selected project now receives a recursive, native-picker-scoped filesystem watch whose noisy events are coalesced before affected files or directory subtrees are reconciled. Every changed path is revalidated for containment, exclusions, symbolic links, stable reads, and whole-project limits; unreadable or unstable changes retain known-good records and mark the index stale with explicit refresh available. App-owned writes flow through the same watcher without adding lore persistence or daily credit, active unsaved/recovered buffers remain authoritative overlays, and monitoring is disposed on project changes and teardown.
+- Packaged macOS QA automatically reflected an external create, heading edit, in-root move, and removal while preserving exclusions and link resolution. A read-only unsaved draft remained the indexed overlay after a conflicting external disk edit, the guarded-write dialog showed both versions, **Keep writing** preserved the draft, and a later safe Command+S completed normally. The first package also proved the stale fallback when the optional native watch command was absent; enabling the official filesystem plugin feature corrected it. The focused incremental suite has 44 passing tests across ten files; the full suite has 237 passing tests across thirty-three files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, Rust formatting/checks pass, and the production dependency audit reports zero vulnerabilities.
 - Slice 0.5.2 is complete. The selected project now receives a bounded background scan and a keyboard-accessible, explicitly refreshable lore-index status. The index is versioned and memory-only; active unsaved Markdown overlays after 180 ms without changing recovery, autosave, conflict, or daily-credit behavior. A cooperative builder reuses unchanged parse/search records while globally recomputing resolutions and backlinks. On the 2,000-file, 24.78 MiB fixture, full indexing took 222.31 ms total with a 6.94 ms longest work chunk, a single update took 6.65 ms, and warm title/backlink lookup averaged 0.0001 ms—all within the approved 3,000/50/100/50 ms budgets.
 - Packaged macOS QA indexed exactly two eligible disposable notes, showed the expected hidden/dependency/symlink exclusions and broken note at its source location, added a broken-heading issue while the editor still showed Unsaved, retained it through refresh and autosave, and passed Return/Tab focus. QA first exposed a denied metadata call; the corrected narrow `fs:allow-stat` capability then passed. The full suite has 225 passing tests across thirty-one files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged app builds pass, and the core editor remained usable throughout the failed first scan.
 - The second 0.5.2 checkpoint adds deterministic candidate and heading resolution, collision-visible duplicate-ID handling, source-context backlinks, bounded project traversal, explicit exclusion reasons, stable-read retry, scan caps, and a versioned memory-only index session whose pending work is invalidated by newer disk or active-buffer state. Twenty-nine focused lore tests pass; the full suite has 224 passing tests across thirty-one files, frontend build passes, and Svelte/TypeScript checks report zero errors and warnings. The next step connects this tested boundary to the selected Tauri folder and measures the approved fixture.

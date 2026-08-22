@@ -8,13 +8,15 @@ The production webview uses a restrictive Content Security Policy: bundled appli
 
 ## Writing-folder access
 
-The frontend is permitted to call only the filesystem operations it currently uses: list a directory, inspect file metadata, read a text file, write a text file, and create a directory. Metadata inspection lets the lore index enforce its per-file byte limit and detect a file that changes while being read; it grants no new path because the native picker still defines the runtime scope. Directory creation is used only after the writer explicitly confirms world-project creation or adoption. The application has no delete, rename, shell, or static whole-filesystem (`**`) capability.
+The frontend is permitted to call only the filesystem operations it currently uses: list or watch a directory, inspect file metadata, read a text file, write a text file, and create a directory. Metadata inspection lets the lore index enforce its per-file byte limit and detect a file that changes while being read. Recursive watching lets the in-memory lore index reconcile affected paths after external filesystem changes. Neither operation grants a new path: both remain inside the runtime scope established by the native picker. Directory creation is used only after the writer explicitly confirms world-project creation or adoption. The application has no delete, rename, shell, or static whole-filesystem (`**`) capability.
 
 Tauri's native folder dialog adds a folder explicitly selected by the writer to the runtime filesystem scope. The official persisted-scope plugin stores those runtime grants in `.persisted-scope` inside the application's local data directory so the remembered project can reopen after an app restart. The filesystem plugin is registered before persisted-scope, as required by the plugin.
 
 The persisted scope can contain access to more than one folder if the writer has explicitly selected several over time. Tauri does not currently expose a safe removal operation for an individual allowed pattern; adding permanent deny patterns would make later re-selection unreliable. Retaining only writer-selected folder grants is the narrowest reliable model used here, and is materially narrower than the prototype's former access to every path.
 
 After upgrading from a version without persisted scopes, the writer may need to choose the remembered folder once more. Future restarts can then restore that explicit grant.
+
+The official filesystem plugin's `watch` feature is enabled only to observe the selected project. A watcher is disposed before the app changes projects and when its window is destroyed. Events are coalesced and their paths are revalidated for containment, exclusions, symbolic links, size limits, and stable reads before they can replace a known-good lore record. If monitoring or reconciliation fails, the app marks the memory-only index stale and keeps writing plus explicit refresh available.
 
 ## App-local data
 

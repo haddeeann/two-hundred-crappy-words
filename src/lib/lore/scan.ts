@@ -63,11 +63,29 @@ export async function scanProjectLore(
   backend: LoreScanBackend,
   options: LoreScanOptions = {},
 ): Promise<LoreScanResult> {
+  return scanLoreSubtree(rootPath, "", backend, options);
+}
+
+export async function scanLoreSubtree(
+  absoluteDirectory: string,
+  relativeDirectory: string,
+  backend: LoreScanBackend,
+  options: LoreScanOptions = {},
+): Promise<LoreScanResult> {
+  if (relativeDirectory) {
+    validateLoreConfiguredPaths([relativeDirectory], "relativeDirectory");
+  }
   const maxFileBytes = validLimit(options.maxFileBytes, DEFAULT_MAX_LORE_FILE_BYTES);
   const maxFiles = validLimit(options.maxFiles, DEFAULT_MAX_LORE_FILES);
   const maxTotalBytes = validLimit(options.maxTotalBytes, DEFAULT_MAX_LORE_TOTAL_BYTES);
-  const excludedPaths = validateConfiguredPaths(options.excludedPaths ?? [], "excludedPaths");
-  const generatedPaths = validateConfiguredPaths(options.generatedPaths ?? [], "generatedPaths");
+  const excludedPaths = validateLoreConfiguredPaths(
+    options.excludedPaths ?? [],
+    "excludedPaths",
+  );
+  const generatedPaths = validateLoreConfiguredPaths(
+    options.generatedPaths ?? [],
+    "generatedPaths",
+  );
   const sources: LoreSourceDocument[] = [];
   const issues: LoreScanIssue[] = [];
   let suppressedIssueCount = 0;
@@ -100,7 +118,12 @@ export async function scanProjectLore(
       const relativePath = relativeDirectory
         ? `${relativeDirectory}/${entry.name}`
         : entry.name;
-      const exclusion = exclusionFor(relativePath, entry, excludedPaths, generatedPaths);
+      const exclusion = loreExclusionForEntry(
+        relativePath,
+        entry,
+        excludedPaths,
+        generatedPaths,
+      );
       if (exclusion) {
         report(exclusion);
         continue;
@@ -133,7 +156,13 @@ export async function scanProjectLore(
 
       let accepted: { text: string; bytes: number } | null;
       try {
-        accepted = await readStableFile(absolutePath, relativePath, backend, maxFileBytes, report);
+        accepted = await readStableLoreFile(
+          absolutePath,
+          relativePath,
+          backend,
+          maxFileBytes,
+          report,
+        );
       } catch (cause) {
         report({
           kind: "unreadable-file",
@@ -158,7 +187,7 @@ export async function scanProjectLore(
     return true;
   };
 
-  await walk(rootPath, "");
+  await walk(absoluteDirectory, relativeDirectory);
   return {
     sources,
     issues,
@@ -169,7 +198,7 @@ export async function scanProjectLore(
   };
 }
 
-async function readStableFile(
+export async function readStableLoreFile(
   absolutePath: string,
   relativePath: string,
   backend: LoreScanBackend,
@@ -209,7 +238,7 @@ async function readStableFile(
   return null;
 }
 
-function exclusionFor(
+export function loreExclusionForEntry(
   path: string,
   entry: LoreScanEntry,
   excludedPaths: readonly string[],
@@ -246,7 +275,10 @@ function matchesConfiguredPath(path: string, configured: readonly string[]): boo
   return configured.some((candidate) => path === candidate || path.startsWith(`${candidate}/`));
 }
 
-function validateConfiguredPaths(paths: readonly string[], option: string): string[] {
+export function validateLoreConfiguredPaths(
+  paths: readonly string[],
+  option: string,
+): string[] {
   return [...new Set(paths.map((path) => {
     if (
       !path ||

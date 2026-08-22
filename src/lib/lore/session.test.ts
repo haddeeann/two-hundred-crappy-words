@@ -42,4 +42,30 @@ describe("in-memory lore index session", () => {
     expect(session.replaceDiskSource("two.md", "# Two").documents.size).toBe(2);
     expect(session.removeDiskSource("one.md").documents.has("one.md")).toBe(false);
   });
+
+  it("keeps an active overlay when external disk changes are reconciled", async () => {
+    const session = new LoreIndexSession();
+    await session.rebuild(async () => [
+      { path: "active.md", text: "Disk before [[Before]]" },
+      { path: "before.md", text: "# Before" },
+      { path: "draft.md", text: "# Draft" },
+    ]);
+    session.setActiveOverlay("active.md", "Unsaved [[Draft]]");
+
+    const index = session.applyDiskChanges(
+      new Map<string, string | null>([
+        ["active.md", "Disk changed outside [[Outside]]"],
+        ["outside.md", "# Outside"],
+      ]),
+    );
+
+    expect(index.documents.get("active.md")?.outgoing).toMatchObject([
+      { resolution: { kind: "resolved", targetPath: "draft.md" } },
+    ]);
+    expect(
+      session.clearActiveOverlay("active.md").documents.get("active.md")?.outgoing,
+    ).toMatchObject([
+      { resolution: { kind: "resolved", targetPath: "outside.md" } },
+    ]);
+  });
 });

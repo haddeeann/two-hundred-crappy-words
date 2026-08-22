@@ -53,7 +53,9 @@
   {:else if phase === "error"}
     <p class="lore-index-error" role="alert">{errorMessage}</p>
   {:else if phase === "stale"}
-    <p role="status">The last index may be out of date.</p>
+    <p class="lore-index-error" role="status">
+      {errorMessage || "The last index may be out of date."}
+    </p>
   {/if}
   {#if issueCount > 0}
     <p>{issueCount.toLocaleString()} {issueCount === 1 ? "issue needs" : "issues need"} attention.</p>
