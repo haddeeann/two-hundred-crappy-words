@@ -92,7 +92,7 @@ The structure file may describe more than one book in a shared world project. Cr
 - `targetWords`: optional whole number from 1 through 10,000,000. It is a structural target, separate from the app-local daily-practice goal.
 - `includeInCompile`: optional boolean, defaulting to `true`.
 
-The whole file is bounded to 10,000 outline items and 10 MiB. Duplicate manuscript IDs, duplicate item IDs, repeated source bindings, unsupported nesting, invalid strings, or limit overflow disable structural mutation and compile, but ordinary file editing remains available.
+The whole file is bounded to 10,000 outline items and 10 MiB, with at most 32 manuscripts. Titles contain at most 120 Unicode code points; POV, location, story date, and status contain at most 240. Synopsis and notes fields contain at most 10,000 code points. Each item has at most 32 distinct labels of at most 120 code points each, and a structural word target is a whole number from 1 through 10,000,000. Validation reports at most 100 specific issues plus one bounded omission notice. Duplicate manuscript IDs, duplicate item IDs, repeated source paths or note IDs, unsupported nesting, invalid strings, or limit overflow disable structural mutation and compile, but ordinary file editing remains available.
 
 ## Markdown ownership and identity
 
