@@ -21,6 +21,7 @@ describe("desktop security configuration", () => {
         "fs:allow-read-dir",
         "fs:allow-read-text-file",
         "fs:allow-write-text-file",
+        "fs:allow-mkdir",
       ]),
     );
   });

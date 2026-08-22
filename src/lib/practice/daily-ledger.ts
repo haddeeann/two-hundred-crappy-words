@@ -236,9 +236,42 @@ export class DailyProgressRepository {
     });
   }
 
-  private enqueue(operation: () => Promise<void>): Promise<void> {
+  copyProject(sourceKey: string, targetKey: string): Promise<number> {
+    if (!sourceKey || !targetKey || sourceKey === targetKey) {
+      return Promise.reject(
+        new RangeError("Distinct source and target project keys are required."),
+      );
+    }
+
+    return this.enqueue(async () => {
+      const projects = await this.readProjects();
+      const source = projects[sourceKey] ?? {};
+      const target = projects[targetKey] ?? {};
+      let copied = 0;
+
+      for (const [dateKey, record] of Object.entries(source)) {
+        if (target[dateKey]) continue;
+        target[dateKey] = {
+          ...structuredClone(record),
+          projectPath: targetKey,
+        };
+        copied += 1;
+      }
+      if (copied === 0) return 0;
+
+      projects[targetKey] = target;
+      await this.backend.set(DAILY_PROGRESS_PROJECTS_KEY, projects);
+      await this.backend.save();
+      return copied;
+    });
+  }
+
+  private enqueue<T>(operation: () => Promise<T>): Promise<T> {
     const next = this.operations.catch(() => {}).then(operation);
-    this.operations = next.catch(() => {});
+    this.operations = next.then(
+      () => {},
+      () => {},
+    );
     return next;
   }
 

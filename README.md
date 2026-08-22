@@ -2,7 +2,7 @@
 
 200 Crappy Words is an early-stage desktop writing app for working with plain-text files in a folder. It provides a deliberately small, dark interface: choose a folder, pick a file, and write.
 
-The app now counts words and stores progress toward its default 200-word target by selected project and local calendar date. Daily-practice persistence, goals, history, corrections, and restart behavior have passed their desktop checkpoint; the active work is the optional world-project format.
+The app now counts words and stores progress toward its default 200-word target by selected project and local calendar date. Daily-practice persistence, goals, history, corrections, and restart behavior have passed their desktop checkpoint. A writer can also explicitly turn an existing folder into a portable named world project without changing its existing material.
 
 ## Current features
 
@@ -31,11 +31,15 @@ The app now counts words and stores progress toward its default 200-word target 
 - Correct a mistaken daily total while retaining a private local audit
 - Recognize an approved world-project manifest without modifying the folder on open
 - Use a valid world project's stable UUID for app-local goals and progress
+- Explicitly adopt an ordinary folder as a named world project
+- Choose which suggested manuscript and worldbuilding folders to create during adoption
+- Preserve existing app-local goals and writing history when adopting a folder
 
 ## Current limitations
 
 - Correction audit export is not available yet
-- Ordinary folders still use their absolute path as local progress identity; the in-app world-project creation and adoption flow is not available yet
+- Ordinary folders still use their absolute path as local progress identity until explicitly adopted
+- Creating an entirely new project folder from inside the app is the next active slice
 - Files and folders cannot be renamed, moved, or deleted in the app
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
 - The frameless window does not yet provide maximize/full-screen controls
@@ -97,7 +101,7 @@ static/                   Static images and icons
 
 ## Status
 
-This is a functional prototype. Its trustworthy-editor and daily-practice milestones have passed automated and hands-on macOS QA. The active world-project milestone is currently at its required format-proposal decision gate; no new project metadata is written yet.
+This is a functional prototype. Its trustworthy-editor and daily-practice milestones have passed automated and hands-on macOS QA. The active world-project milestone has an approved portable format, read-only recognition, and a safely tested ordinary-folder adoption flow.
 
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
@@ -107,7 +111,7 @@ The deterministic word-count and daily-credit rules being implemented for milest
 
 The daily ledger's schema, privacy boundaries, and local-date behavior are documented in [`docs/DAILY_PROGRESS.md`](docs/DAILY_PROGRESS.md).
 
-The proposed portable manifest and optional Markdown metadata are documented in [`docs/PROJECT_FORMAT.md`](docs/PROJECT_FORMAT.md). The proposal is not implemented until its decision gate is approved.
+The approved portable manifest and optional Markdown metadata are documented in [`docs/PROJECT_FORMAT.md`](docs/PROJECT_FORMAT.md).
 
 The current native capability and selected-folder access model is documented in [`docs/SECURITY_AND_PERMISSIONS.md`](docs/SECURITY_AND_PERMISSIONS.md).
 

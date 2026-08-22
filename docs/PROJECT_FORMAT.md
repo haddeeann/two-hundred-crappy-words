@@ -1,8 +1,8 @@
-# World project format proposal
+# World project format
 
 Status: **APPROVED** on 2026-08-21
 
-This document defines the approved first portable project format for 200 Crappy Words. Implementation begins with pure validation and read-only detection before any creation or adoption flow writes this metadata into a project folder.
+This document defines the approved first portable project format for 200 Crappy Words. The app validates and recognizes this format without writing on folder open, and creates it only through an explicit confirmed project-creation or adoption action.
 
 ## Design goals
 

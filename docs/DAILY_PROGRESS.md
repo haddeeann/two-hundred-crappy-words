@@ -23,7 +23,7 @@ It does **not** contain manuscript text, recovery drafts, individual keystrokes,
 
 An ordinary folder continues to use its absolute path as a deliberately local identity. Renaming or moving an ordinary folder therefore starts a new local progress identity; the old history remains in the ledger and is not silently reassigned.
 
-A folder with a valid approved world-project manifest uses `project:<projectId>` as its app-local storage key. The UUID travels in the manifest, while daily history remains private in app data. The explicit creation and adoption flow will copy existing path-keyed practice data only after safely creating the manifest; it will retain the legacy records during the rollback window rather than deleting the only copy.
+A folder with a valid approved world-project manifest uses `project:<projectId>` as its app-local storage key. The UUID travels in the manifest, while daily history remains private in app data. After explicit adoption safely creates the manifest, the app copies existing path-keyed practice data to the stable identity and retains the legacy records as a rollback fallback rather than deleting the only copy. The copy is safe to retry and does not replace records already present under the stable identity.
 
 ## Date and clock behavior
 

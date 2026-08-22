@@ -130,4 +130,35 @@ describe("daily goal repository", () => {
     expect(await repository.get("/world/zero")).toBe(200);
     expect(await repository.get("/world/text")).toBe(200);
   });
+
+  it("copies an explicit goal to stable identity without deleting the path key", async () => {
+    const backend = new MemoryBackend();
+    const repository = new DailyGoalRepository(backend);
+    await repository.set("/world/andromeda", 350);
+
+    await expect(
+      repository.copyProject(
+        "/world/andromeda",
+        "project:7848b5c8-4b08-4bc2-912e-c74c7ec8b001",
+      ),
+    ).resolves.toBe(true);
+    expect(await repository.get("/world/andromeda")).toBe(350);
+    expect(
+      await repository.get(
+        "project:7848b5c8-4b08-4bc2-912e-c74c7ec8b001",
+      ),
+    ).toBe(350);
+  });
+
+  it("does not replace an existing stable-identity goal during a retry", async () => {
+    const backend = new MemoryBackend();
+    const repository = new DailyGoalRepository(backend);
+    await repository.set("/world/andromeda", 350);
+    await repository.set("project:stable", 500);
+
+    await expect(
+      repository.copyProject("/world/andromeda", "project:stable"),
+    ).resolves.toBe(false);
+    expect(await repository.get("project:stable")).toBe(500);
+  });
 });

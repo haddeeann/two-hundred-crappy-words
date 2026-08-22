@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy, onMount, tick } from "svelte";
   import { message, open } from "@tauri-apps/plugin-dialog";
   import {
+    mkdir,
     readDir,
     readTextFile,
     writeTextFile,
@@ -77,6 +78,16 @@
     inspectWorldProjectFolder,
     type WorldProjectFolderInspection,
   } from "$lib/project/folder-project";
+  import {
+    executeWorldProjectAdoption,
+    planWorldProjectAdoption,
+    SUGGESTED_WORLD_PROJECT_FOLDERS,
+  } from "$lib/project/adoption";
+  import {
+    WORLD_PROJECT_FOLDER_ROLES,
+    WORLD_PROJECT_MANIFEST_FILE,
+    type WorldProjectFolderRole,
+  } from "$lib/project/manifest";
 
   interface SaveFailure {
     path: string;
@@ -107,6 +118,11 @@
   let error = $state("");
   let creatingFile = $state(false);
   let newFileName = $state("");
+  let adoptingWorldProject = $state(false);
+  let adoptionName = $state("");
+  let adoptionRoles = $state<WorldProjectFolderRole[]>([]);
+  let adoptionBusy = $state(false);
+  let adoptionNameInput = $state<HTMLInputElement>();
   let navigationPromise: Promise<void> | null = null;
   let forcedSave: { path: string; revision: number } | null = null;
   let lastSaveFailure: SaveFailure | null = null;
@@ -618,6 +634,10 @@
     let progressLoadError = "";
     try {
       const repositories = await getDailyRepositories();
+      if (inspectedProject.kind === "world-project") {
+        await repositories.progress.copyProject(path, storageKey);
+        await repositories.goal.copyProject(path, storageKey);
+      }
       [projectRecords, projectTarget] = await Promise.all([
         repositories.progress.getProject(storageKey),
         repositories.goal.get(storageKey),
@@ -658,6 +678,109 @@
     saveState = createSaveState();
     creatingFile = false;
     newFileName = "";
+    adoptingWorldProject = false;
+    adoptionName = "";
+    adoptionRoles = [];
+    adoptionBusy = false;
+  }
+
+  async function startWorldProjectAdoption() {
+    if (!folderPath || projectInspection.kind !== "ordinary") return;
+    error = "";
+    adoptionName =
+      folderPath.split(/[\\/]/).filter(Boolean).at(-1) ?? "My World";
+    adoptionRoles = [...WORLD_PROJECT_FOLDER_ROLES];
+    adoptingWorldProject = true;
+    await tick();
+    adoptionNameInput?.focus();
+    adoptionNameInput?.select();
+  }
+
+  function cancelWorldProjectAdoption() {
+    if (adoptionBusy) return;
+    adoptingWorldProject = false;
+    adoptionName = "";
+    adoptionRoles = [];
+  }
+
+  function setAdoptionRole(role: WorldProjectFolderRole, selected: boolean) {
+    adoptionRoles = selected
+      ? [...new Set([...adoptionRoles, role])]
+      : adoptionRoles.filter((candidate) => candidate !== role);
+  }
+
+  function adoptionFormKeydown(event: KeyboardEvent) {
+    if (
+      adoptingWorldProject &&
+      !adoptionBusy &&
+      event.key === "Escape"
+    ) {
+      event.preventDefault();
+      cancelWorldProjectAdoption();
+    }
+  }
+
+  async function confirmWorldProjectAdoption() {
+    if (
+      !folderPath ||
+      projectInspection.kind !== "ordinary" ||
+      adoptionBusy
+    ) {
+      return;
+    }
+
+    adoptionBusy = true;
+    try {
+      await navigate(async () => {
+        let plan;
+        try {
+          plan = planWorldProjectAdoption({
+            entries,
+            projectId: crypto.randomUUID(),
+            name: adoptionName,
+            selectedRoles: adoptionRoles,
+          });
+        } catch (cause) {
+          error = formatError(cause);
+          return;
+        }
+
+        if (plan.kind === "blocked") {
+          error = `This folder was not changed. Resolve these project-creation conflicts first: ${plan.collisions
+            .map((collision) => `${collision.path} (${collision.reason})`)
+            .join(", ")}.`;
+          return;
+        }
+
+        const adoptingFolderPath = folderPath;
+        const result = await executeWorldProjectAdoption(plan, {
+          createDirectory: async (relativePath) => {
+            await mkdir(await join(adoptingFolderPath, relativePath));
+          },
+          createManifest: async (text) => {
+            await writeTextFile(
+              await join(adoptingFolderPath, WORLD_PROJECT_MANIFEST_FILE),
+              text,
+              { createNew: true },
+            );
+          },
+        });
+
+        if (result.kind === "partial") {
+          await refreshDirectory(adoptingFolderPath);
+          const created =
+            result.createdDirectories.length > 0
+              ? ` Created: ${result.createdDirectories.join(", ")}.`
+              : "";
+          error = `World project creation stopped at ${result.failedAt}: ${result.message}.${created} Existing material was not removed or replaced.`;
+          return;
+        }
+
+        await loadFolder(adoptingFolderPath);
+      });
+    } finally {
+      adoptionBusy = false;
+    }
   }
 
   async function openFolder() {
@@ -982,6 +1105,8 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
+    adoptionFormKeydown(event);
+    if (event.defaultPrevented) return;
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
       event.preventDefault();
       void prepareToLeave();
@@ -1055,9 +1180,68 @@
     <h1 class="app-title">200 Crappy Words</h1>
 
     <button class="open-btn" onclick={openFolder}>Open Folder</button>
-    <button class="open-btn" onclick={startNewFile} disabled={!folderPath}>
+    <button class="open-btn" onclick={startNewFile} disabled={!folderPath || adoptionBusy}>
       New File in {selectedDirectoryName}
     </button>
+
+    {#if folderPath && projectInspection.kind === "ordinary"}
+      <button
+        class="open-btn"
+        onclick={startWorldProjectAdoption}
+        disabled={adoptionBusy}
+      >Make World Project</button>
+    {/if}
+
+    {#if adoptingWorldProject}
+      <form
+        class="project-adoption"
+        aria-label="Make world project"
+        onsubmit={(event) => {
+          event.preventDefault();
+          void confirmWorldProjectAdoption();
+        }}
+      >
+        <label for="project-name">Project name</label>
+        <input
+          id="project-name"
+          class="new-file-input"
+          aria-label="World project name"
+          value={adoptionName}
+          oninput={(event) =>
+            (adoptionName = (event.currentTarget as HTMLInputElement).value)}
+          bind:this={adoptionNameInput}
+          disabled={adoptionBusy}
+        />
+        <fieldset disabled={adoptionBusy}>
+          <legend>Suggested folders</legend>
+          {#each WORLD_PROJECT_FOLDER_ROLES as role}
+            <label class="folder-choice">
+              <input
+                type="checkbox"
+                checked={adoptionRoles.includes(role)}
+                onchange={(event) =>
+                  setAdoptionRole(
+                    role,
+                    (event.currentTarget as HTMLInputElement).checked,
+                  )}
+              />
+              {SUGGESTED_WORLD_PROJECT_FOLDERS[role]}
+            </label>
+          {/each}
+        </fieldset>
+        <div class="adoption-actions">
+          <button
+            type="submit"
+            disabled={adoptionBusy}
+          >{adoptionBusy ? "Creating…" : "Create project"}</button>
+          <button
+            type="button"
+            onclick={cancelWorldProjectAdoption}
+            disabled={adoptionBusy}
+          >Cancel</button>
+        </div>
+      </form>
+    {/if}
 
     {#if creatingFile}
       <!-- svelte-ignore a11y_autofocus -->
@@ -1129,7 +1313,7 @@
       class="editor-input"
       placeholder="Start writing your 200 crappy words..."
       aria-label="Document editor"
-      disabled={!activeFilePath || correctingDailyProgress}
+      disabled={!activeFilePath || correctingDailyProgress || adoptionBusy}
       value={content}
       oninput={handleContentInput}
     ></textarea>
@@ -1337,6 +1521,72 @@
     font-family: inherit;
     font-size: 0.85rem;
     outline: none;
+  }
+
+  .project-adoption {
+    box-sizing: border-box;
+    margin: 0 0 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid #3c3c3c;
+    border-radius: 4px;
+    background-color: #202020;
+    font-size: 0.78rem;
+  }
+
+  .project-adoption > label,
+  .project-adoption legend {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: #d4d4d4;
+    font-weight: 600;
+  }
+
+  .project-adoption fieldset {
+    margin: 0 0 0.65rem;
+    padding: 0;
+    border: 0;
+  }
+
+  .folder-choice {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0.3rem 0;
+    color: #b8b8b8;
+  }
+
+  .folder-choice input {
+    margin: 0;
+  }
+
+  .adoption-actions {
+    display: flex;
+    gap: 0.45rem;
+  }
+
+  .adoption-actions button {
+    padding: 0.35rem 0.5rem;
+    border: 1px solid #4b4b4b;
+    border-radius: 4px;
+    background-color: #292929;
+    color: #d4d4d4;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .adoption-actions button:hover:not(:disabled) {
+    background-color: #353535;
+  }
+
+  .adoption-actions button:focus-visible,
+  .folder-choice input:focus-visible {
+    outline: 2px solid #75beff;
+    outline-offset: 2px;
+  }
+
+  .adoption-actions button:disabled,
+  .project-adoption fieldset:disabled {
+    opacity: 0.6;
   }
 
   .files .placeholder {

@@ -37,6 +37,10 @@ Open that folder in the development app, open `practice.txt`, and complete these
 
 This checkpoint passed in full. Its steps remain below as a repeatable regression walkthrough.
 
+## Milestone 0.4.2 existing-folder adoption checkpoint
+
+Completed successfully on macOS on 2026-08-22 using Computer Use against a freshly packaged build and a disposable ordinary folder. The form opened with its project name selected, exposed all nine suggested folders, supported Escape cancellation throughout the form, and allowed Research and Inbox to be omitted. Creation produced only the seven selected directories and a version 1 manifest, then immediately reloaded the folder under its display name and stable UUID identity. The existing file was unchanged; its 5-word goal and corrected Aug 21 history survived adoption and restart. A SHA-256 and modification-time comparison confirmed that reopening did not rewrite the manifest.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:

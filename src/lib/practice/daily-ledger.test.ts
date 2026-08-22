@@ -223,6 +223,44 @@ describe("daily progress repository", () => {
     );
   });
 
+  it("copies path-keyed history to stable identity without deleting its fallback", async () => {
+    const backend = new MemoryBackend();
+    const repository = new DailyProgressRepository(backend);
+    await repository.put(record(9, 1, "/world/andromeda", "2026-08-20"));
+    await repository.put(record(14, 2, "/world/andromeda", "2026-08-21"));
+    const stableKey =
+      "project:7848b5c8-4b08-4bc2-912e-c74c7ec8b001";
+
+    await expect(
+      repository.copyProject("/world/andromeda", stableKey),
+    ).resolves.toBe(2);
+    expect(
+      (await repository.get(stableKey, "2026-08-21"))?.projectPath,
+    ).toBe(stableKey);
+    expect(
+      await repository.getProject("/world/andromeda"),
+    ).toHaveProperty("2026-08-21");
+  });
+
+  it("keeps existing stable dates and makes project copy retries idempotent", async () => {
+    const backend = new MemoryBackend();
+    const repository = new DailyProgressRepository(backend);
+    await repository.put(record(9, 1, "/world/andromeda", "2026-08-20"));
+    await repository.put(record(14, 2, "/world/andromeda", "2026-08-21"));
+    await repository.put(record(99, 4, "project:stable", "2026-08-21"));
+
+    await expect(
+      repository.copyProject("/world/andromeda", "project:stable"),
+    ).resolves.toBe(1);
+    expect(
+      (await repository.get("project:stable", "2026-08-21"))
+        ?.creditedWords,
+    ).toBe(99);
+    await expect(
+      repository.copyProject("/world/andromeda", "project:stable"),
+    ).resolves.toBe(0);
+  });
+
   it("ignores malformed and cross-project records", async () => {
     const backend = new MemoryBackend();
     backend.values.set("projects", {

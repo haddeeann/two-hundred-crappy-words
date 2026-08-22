@@ -95,9 +95,32 @@ export class DailyGoalRepository {
     });
   }
 
-  private enqueue(operation: () => Promise<void>): Promise<void> {
+  copyProject(sourceKey: string, targetKey: string): Promise<boolean> {
+    if (!sourceKey || !targetKey || sourceKey === targetKey) {
+      return Promise.reject(
+        new RangeError("Distinct source and target project keys are required."),
+      );
+    }
+
+    return this.enqueue(async () => {
+      const targets = await this.readTargets();
+      if (targets[targetKey] !== undefined || targets[sourceKey] === undefined) {
+        return false;
+      }
+
+      targets[targetKey] = targets[sourceKey];
+      await this.backend.set(DAILY_TARGETS_KEY, targets);
+      await this.backend.save();
+      return true;
+    });
+  }
+
+  private enqueue<T>(operation: () => Promise<T>): Promise<T> {
     const next = this.operations.catch(() => {}).then(operation);
-    this.operations = next.catch(() => {});
+    this.operations = next.then(
+      () => {},
+      () => {},
+    );
     return next;
   }
 
