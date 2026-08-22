@@ -121,6 +121,14 @@ An external edit refreshed the visible Mara reference but invalidated a previous
 
 The final 2,000-note/24.78 MiB regression measured 236.33 ms for a full index, 7.49 ms for its longest cooperative work chunk, 6.40 ms for an incremental update, 0.0001 ms warm lookup, 8.07 ms cold and 3.45 ms warm completion, 6.86 ms cold and 13.79 ms warm search, and 4.55 ms cold and 1.97 ms warm mention analysis; every approved budget passed. The frontend suite has 271 passing tests across forty-two files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, Rust formatting/tests/checks pass, and the production dependency audit reports zero vulnerabilities. This completes milestone 0.5.
 
+## Milestone 0.6.4 read-only manuscript-outline checkpoint
+
+Completed successfully on macOS on 2026-08-22 using Computer Use against a freshly packaged build and a disposable three-note manuscript project. A valid root `200-crappy-words.manuscripts.json` appeared as a compact disclosure summarizing one book and two scenes. Its expanded accessibility tree and visual inspection preserved the declared book, chapter, optional `chapter.md` overview, and two-scene order at the actual sidebar width. Return collapsed the disclosure, Space expanded it, and the explicit refresh retained the same hierarchy.
+
+Opening the first scene from the outline used the existing editor and left Today at `0 / 200`. The optional chapter overview was pinned ahead of the scene list, opened through the same guarded path, and likewise added no daily credit. Moving the first scene externally changed its row automatically into a non-clickable `Moved candidate` suggestion that explicitly said the structure was not changed; restoring the path recovered the verified action automatically.
+
+Deliberately prefixing the structure with invalid text changed the disclosure to `Manuscript structure: needs attention` and explained the JSON parse failure while the already open scene remained saved and usable. Restoring the exact JSON recovered the outline automatically. No QA operation wrote or repaired the structure, scene, or overview content. The full suite has 298 passing tests across forty-four files, Svelte/TypeScript checks report zero errors and warnings, and frontend plus packaged macOS builds pass.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:

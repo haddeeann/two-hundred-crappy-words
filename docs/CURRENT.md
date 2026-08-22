@@ -10,26 +10,28 @@ Connected lore is complete. The active milestone makes a long manuscript underst
 
 ## Active slice
 
-**0.6.4 — Read-only manuscript outline integration**
+**0.6.5 — Explicit manuscript-structure creation and import**
 
 ### Intended outcome
 
-Let a writer inspect an approved structure, chapter folders, optional overviews, ordered scene files, and source-health problems inside the current app without creating, repairing, or reordering anything yet.
+Let a writer explicitly create the first portable manuscript structure from an empty outline or a previewed import of existing Markdown, without rewriting prose or replacing an existing structure file.
 
 ### Acceptance criteria
 
-- [ ] Start a request-scoped structure load after a selected project and lore index are ready; invalidate stale results on project replacement and expose explicit refresh without blocking the editor.
-- [ ] Add a keyboard-accessible disclosure that preserves manuscript, chapter, and scene order; pin an optional chapter overview before scene rows and keep unavailable entries visible with concise reasons.
-- [ ] Show absent, malformed, invalid, newer, unsafe, unreadable, unstable, source-limit, missing, moved, identity, duplicate-ID, and converged-path states without suggesting that the app repaired anything.
-- [ ] Open only a currently verified overview or prose source through the existing guarded navigation path, while moved candidates remain labeled as suggestions and unavailable sources cannot be followed.
-- [ ] Keep projects without the structure file visually calm, persist no outline/cache/query state, award no daily credit for loading, and add no creation, repair, reorder, or compile write path.
-- [ ] Pass automated regressions, accessible keyboard and visual inspection, Svelte/TypeScript checks, frontend and packaged macOS builds; document the next explicit structure-creation slice.
+- [ ] Offer an explicit **Create manuscript structure** action only when the fixed root file is absent; never offer creation over malformed, invalid, newer, unreadable, or unsafe structure state.
+- [ ] Provide a keyboard-accessible preview with an editable manuscript title and two clear starts: an empty manuscript or a bounded import from the preferred/selected manuscript folder.
+- [ ] Interpret immediate folders as chapter containers, a conventional `chapter.md` as the optional overview, remaining Markdown as naturally ordered scenes, and top-level Markdown as loose scenes; show the exact proposed hierarchy before writing.
+- [ ] Stable-read every imported source, generate local stable IDs, reuse a valid unique Markdown note ID when available, and block on changed, unsafe, symbolic-link, duplicate-ID, oversized, or over-limit input rather than silently omitting it.
+- [ ] On confirmation, validate the complete version-one structure and atomically create `200-crappy-words.manuscripts.json` with create-new protection; do not create, move, rename, or rewrite any Markdown file.
+- [ ] Refresh the outline immediately after success, preserve ordinary editor/daily/recovery behavior on cancel or failure, and pass focused tests, Svelte/TypeScript checks, frontend/package builds, and disposable packaged macOS QA.
 
 ## Next slices
 
-1. 0.6.5 — Add explicit previewed creation/import of the first structure file with create-new protection and no Markdown rewrite.
+1. 0.6.6 — Add a previewed repair flow for uniquely moved stable-ID sources; keep ambiguous and path-only missing sources manual.
 
 ## Completed checkpoint
+
+- Slice 0.6.4 is complete. Once a selected project and its memory-only lore index are ready, the app request-scopes a read-only manuscript load and automatically refreshes it after contained filesystem changes. A compact keyboard-accessible disclosure preserves book, chapter, overview, and scene order; projects without the fixed structure file remain visually unchanged. Every parser and reconciliation failure stays visible without becoming an action, moved candidates are labeled as uncommitted suggestions, and only a currently fingerprint-verified source can enter the existing guarded editor-navigation flow. The outline creates no project or app-data writes and loading it grants no daily credit. Packaged macOS QA covered visual layout, Return/Space disclosure, explicit refresh, scene and overview navigation, moved-file suggestion and recovery, malformed JSON and automatic recovery, unchanged daily progress, and ordinary editor survival. The full suite has 298 passing tests across forty-four files, Svelte/TypeScript checks report zero errors and warnings, and frontend plus packaged macOS builds pass.
 
 - Slice 0.6.3 is complete. A read-only project loader now finds only the fixed root structure filename through segment-by-segment directory inspection, refuses symbolic links and non-regular files, performs two-attempt stable reads, and returns explicit absent, malformed, invalid, unsupported, unsafe, unreadable, or unstable states. Valid outlines reconcile every optional chapter folder, overview, one-file chapter, and scene in deterministic order. Direct paths are contained and stable-read; optional note IDs are verified against actual Markdown and the current memory-only lore index can produce one non-mutating moved-path suggestion or a duplicate-ID ambiguity. Missing, unsafe, unreadable, unstable, oversized, identity-mismatched, and total-limit sources remain visible. Two bindings that converge after an external move become a path conflict rather than duplicate prose. Reconciliation reads at most 10 MiB per source and 100 MiB total, retains fingerprints and exact byte totals, and performs no write or app-data operation. Ten focused tests pass; the full suite has 298 passing tests across forty-four files, Svelte/TypeScript checks report zero errors and warnings, and the frontend build passes.
 
@@ -66,7 +68,7 @@ Let a writer inspect an approved structure, chapter folders, optional overviews,
 
 ## Blockers and decision gates
 
-No blocker. Slice 0.6.4 exposes only the already approved, verified read-only model. Structure creation, source repair, reorder, split/merge, and compile writes remain later guarded slices.
+No blocker. Slice 0.6.5 is the first structural write path, but its scope is limited to explicit create-new of the previously absent structure file. Source repair, reorder, split/merge, and compile writes remain later guarded slices.
 
 ## Handoff protocol
 

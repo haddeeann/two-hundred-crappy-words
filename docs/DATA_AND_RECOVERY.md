@@ -18,6 +18,8 @@ The same directory can contain `.persisted-scope`, which records filesystem acce
 
 The connected-lore index is not another settings file. Version 1 derives Markdown titles, aliases, headings, links, backlink context, search text, and unlinked-mention suggestions in application memory and discards them when the app process ends or the project index is replaced. Contained filesystem events update affected records in that same ephemeral index; they do not create a persistent cache. Quick-opener queries are held only while its dialog is open and are cleared on close; no query or result history is written. A side reference likewise holds only its current verified source in memory and is cleared when closed or when its project context is replaced. Connected-lore Back/Forward history is bounded to fifty editor/reference contexts, retains only project-relative paths, source fingerprints, and selections in memory, and clears on project replacement or process exit. Unlinked-mention dismissals and lore-rename previews are also session-only and are not written to app data. A confirmed rename changes only the previewed project Markdown paths and exact link targets; it does not create a private rename log. The app does not persist creative text or derived lore data in Tauri app data. Only ordinary recovery behavior may temporarily persist an unsaved active draft as described below.
 
+An opted-in project may contain `200-crappy-words.manuscripts.json`, a visible writer-owned structure file that stores portable book, chapter, and scene order plus compact planning metadata and project-relative Markdown bindings. It belongs in normal project backups and may contain creative titles, synopses, and notes. The read-only in-app outline is derived from that file and verified Markdown sources in memory; it has no app-local cache and opening or refreshing it does not rewrite either the structure or prose. The format and its source limits are documented in [`MANUSCRIPT_FORMAT.md`](MANUSCRIPT_FORMAT.md).
+
 ## Recovery drafts
 
 While a document has unsaved changes, the application maintains a second local copy in `recovery.json` in Tauri's app-data directory. Tauri resolves that directory according to the operating system and the application identifier `com.pat.two-hundred-crappy-words`.
@@ -42,6 +44,6 @@ The app-data directory also contains `daily-progress.json`. It stores versioned 
 
 ## Backup boundary
 
-Backing up an entire world-project folder protects the creative files, project manifest, structured-note metadata, and writer-owned assets in that folder. It does not include `settings.json`, `workspace.json`, `.persisted-scope`, `daily-progress.json`, or `recovery.json`. In particular, recovery drafts are temporary local safety copies and must not be treated as version history or the only copy of writing.
+Backing up an entire world-project folder protects the creative files, project manifest, optional manuscript structure, structured-note metadata, and writer-owned assets in that folder. It does not include `settings.json`, `workspace.json`, `.persisted-scope`, `daily-progress.json`, or `recovery.json`. In particular, recovery drafts are temporary local safety copies and must not be treated as version history or the only copy of writing.
 
 See [`BACKUP_AND_PORTABILITY.md`](BACKUP_AND_PORTABILITY.md) for move, copy, and restore guidance.

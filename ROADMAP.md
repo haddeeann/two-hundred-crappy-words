@@ -78,7 +78,7 @@ Specification: [`docs/milestones/0.5-connected-lore.md`](docs/milestones/0.5-con
 
 Goal: support a long manuscript as scenes and chapters while retaining ordinary files.
 
-- [ ] Represent manuscript order without making prose proprietary.
+- [x] Represent manuscript order without making prose proprietary.
 - [ ] Add chapter and scene metadata: synopsis, point of view, location, story date, status, and notes.
 - [ ] Add an outline and reorderable corkboard.
 - [ ] Show scene, chapter, and manuscript word counts and targets.
