@@ -31,6 +31,7 @@
   import {
     assessRecovery,
     createRecoveryRecord,
+    fingerprintContent,
     formatRecoveryPreview,
     RECOVERY_STORE_FILE,
     RecoveryRepository,
@@ -122,6 +123,18 @@
     type RecentProject,
   } from "$lib/project/workspace";
   import LoreIndexStatus from "$lib/lore/LoreIndexStatus.svelte";
+  import LoreCompletion from "$lib/lore/LoreCompletion.svelte";
+  import LoreConnections from "$lib/lore/LoreConnections.svelte";
+  import {
+    findWikiLinkCompletion,
+    loreCompletionCandidates,
+    type LoreCompletionCandidate,
+    type WikiLinkCompletionContext,
+  } from "$lib/lore/completion";
+  import {
+    activeLoreConnections,
+    type LoreConnectionItem,
+  } from "$lib/lore/connections";
   import { isMarkdownPath } from "$lib/lore/normalize";
   import {
     DEFAULT_MAX_LORE_FILE_BYTES,
@@ -224,6 +237,12 @@
   let loreOverlayTimer: ReturnType<typeof setTimeout> | null = null;
   let loreChangeMonitor: LoreChangeMonitor | null = null;
   let stopLoreWatch: (() => void) | null = null;
+  let editorInput = $state<HTMLTextAreaElement>();
+  let loreCompletionContext = $state<WikiLinkCompletionContext | null>(null);
+  let loreCompletionItems = $state<LoreCompletionCandidate[]>([]);
+  let loreCompletionSelectedIndex = $state(0);
+  let dismissedLoreCompletion = "";
+  let insertingLoreCompletion = false;
   let lastDailyProgressFailure: {
     path: string;
     revision: number;
@@ -306,6 +325,9 @@
     }
     return messages;
   });
+  const currentLoreConnections = $derived(
+    activeLoreConnections(loreIndex, activeLorePath()),
+  );
 
   const autosave = new AutosaveController({
     delayMs: AUTOSAVE_DELAY_MS,
@@ -553,6 +575,7 @@
     loreSuppressedIssueCount = 0;
     loreIndexError = "";
     loreIndexNeedsRefresh = false;
+    clearLoreCompletion();
     loreIndexPhase = "indexing";
     void refreshLoreIndex(path);
   }
@@ -713,6 +736,168 @@
     if (!folderPath || !path) return null;
     const relativePath = projectRelativePath(folderPath, path);
     return relativePath && isMarkdownPath(relativePath) ? relativePath : null;
+  }
+
+  function loreCompletionSignature(
+    context: WikiLinkCompletionContext,
+  ): string {
+    return [
+      activeFilePath,
+      context.linkStart,
+      context.replaceStart,
+      context.replaceEnd,
+      context.mode,
+      context.noteTarget,
+      context.query,
+    ].join("\u0000");
+  }
+
+  function clearLoreCompletion(): void {
+    loreCompletionContext = null;
+    loreCompletionItems = [];
+    loreCompletionSelectedIndex = 0;
+  }
+
+  function updateLoreCompletion(textarea = editorInput): void {
+    const sourcePath = activeLorePath();
+    if (!textarea || !loreIndex || !sourcePath) {
+      clearLoreCompletion();
+      return;
+    }
+    const context = findWikiLinkCompletion(
+      textarea.value,
+      textarea.selectionStart,
+      textarea.selectionEnd,
+    );
+    if (
+      !context ||
+      loreCompletionSignature(context) === dismissedLoreCompletion
+    ) {
+      clearLoreCompletion();
+      return;
+    }
+    const selectedKey = loreCompletionItems[loreCompletionSelectedIndex]?.key;
+    const items = loreCompletionCandidates(loreIndex, sourcePath, context);
+    if (items.length === 0) {
+      clearLoreCompletion();
+      return;
+    }
+    loreCompletionContext = context;
+    loreCompletionItems = items;
+    const retainedIndex = selectedKey
+      ? items.findIndex(({ key }) => key === selectedKey)
+      : -1;
+    loreCompletionSelectedIndex = retainedIndex === -1 ? 0 : retainedIndex;
+  }
+
+  function dismissLoreCompletion(): void {
+    if (loreCompletionContext) {
+      dismissedLoreCompletion = loreCompletionSignature(loreCompletionContext);
+    }
+    clearLoreCompletion();
+  }
+
+  async function acceptLoreCompletion(
+    candidate = loreCompletionItems[loreCompletionSelectedIndex],
+  ): Promise<void> {
+    const textarea = editorInput;
+    const context = loreCompletionContext;
+    if (!textarea || !context || !candidate) return;
+
+    insertingLoreCompletion = true;
+    textarea.focus();
+    textarea.setSelectionRange(context.replaceStart, context.replaceEnd);
+    let inserted = false;
+    try {
+      inserted = document.execCommand("insertText", false, candidate.insertText);
+    } catch {
+      inserted = false;
+    }
+    if (!inserted) {
+      textarea.setRangeText(
+        candidate.insertText,
+        context.replaceStart,
+        context.replaceEnd,
+        "end",
+      );
+    }
+    if (textarea.value !== content) {
+      textarea.dispatchEvent(
+        new InputEvent("input", {
+          bubbles: true,
+          data: candidate.insertText,
+          inputType: "insertText",
+        }),
+      );
+    }
+    insertingLoreCompletion = false;
+    await tick();
+    const acceptedContext = findWikiLinkCompletion(
+      textarea.value,
+      textarea.selectionStart,
+      textarea.selectionEnd,
+    );
+    dismissedLoreCompletion = acceptedContext
+      ? loreCompletionSignature(acceptedContext)
+      : "";
+    clearLoreCompletion();
+    textarea.focus();
+  }
+
+  function handleEditorKeydown(event: KeyboardEvent): void {
+    if (event.isComposing || loreCompletionItems.length === 0) return;
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      loreCompletionSelectedIndex =
+        (loreCompletionSelectedIndex + direction + loreCompletionItems.length) %
+        loreCompletionItems.length;
+    } else if (event.key === "Enter" || event.key === "Tab") {
+      event.preventDefault();
+      void acceptLoreCompletion();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      dismissLoreCompletion();
+    }
+  }
+
+  function handleEditorCaretChange(event: Event): void {
+    if (insertingLoreCompletion) return;
+    updateLoreCompletion(event.currentTarget as HTMLTextAreaElement);
+  }
+
+  async function openLoreConnection(item: LoreConnectionItem): Promise<void> {
+    if (!folderPath || !item.targetPath) return;
+    try {
+      const targetFingerprint = loreIndex?.documents.get(item.targetPath)?.fingerprint;
+      const segments = item.targetPath.split("/");
+      const path = await join(folderPath, ...segments);
+      const known = findTreeEntry(entries, path);
+      await openFile(
+        known ?? {
+          name: segments.at(-1) ?? item.targetPath,
+          path,
+          isFile: true,
+          isDirectory: false,
+          isSymlink: false,
+          expanded: false,
+          children: null,
+        },
+      );
+      await tick();
+      if (activeFilePath !== path || !editorInput) return;
+      const range =
+        targetFingerprint && fingerprintContent(content) === targetFingerprint
+          ? item.targetRange
+          : null;
+      const start = Math.min(range?.start ?? 0, editorInput.value.length);
+      const end = Math.min(range?.end ?? start, editorInput.value.length);
+      editorInput.focus();
+      editorInput.setSelectionRange(start, end);
+      updateLoreCompletion(editorInput);
+    } catch (cause) {
+      error = `Could not open lore connection: ${formatError(cause)}`;
+    }
   }
 
   function syncActiveLoreBuffer(): void {
@@ -1868,6 +2053,8 @@
           : createSaveState();
         activeFile = entry.name;
         activeFilePath = entry.path;
+        dismissedLoreCompletion = "";
+        clearLoreCompletion();
         syncActiveLoreBuffer();
         scheduleNavigationState();
 
@@ -1927,7 +2114,8 @@
   }
 
   function handleContentInput(event: Event) {
-    const nextContent = (event.currentTarget as HTMLTextAreaElement).value;
+    const textarea = event.currentTarget as HTMLTextAreaElement;
+    const nextContent = textarea.value;
     const now = new Date();
     refreshDailyDate(content, now);
     const previousDailyWords = practiceState.dailyWords;
@@ -1962,6 +2150,10 @@
     }
     const request = currentSaveRequest();
     if (request) autosave.schedule(request);
+    if (!insertingLoreCompletion) {
+      dismissedLoreCompletion = "";
+      updateLoreCompletion(textarea);
+    }
   }
 
   function startDailyTargetEdit() {
@@ -2528,14 +2720,45 @@
         >{saveStatus}</span>
       {/if}
     </div>
-    <textarea
-      class="editor-input"
-      placeholder="Start writing your 200 crappy words..."
-      aria-label="Document editor"
-      disabled={!activeFilePath || correctingDailyProgress || worldProjectBusy}
-      value={content}
-      oninput={handleContentInput}
-    ></textarea>
+    <div class="editor-workspace">
+      <textarea
+        class="editor-input"
+        placeholder="Start writing your 200 crappy words..."
+        aria-label="Document editor"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-haspopup="listbox"
+        aria-expanded={loreCompletionItems.length > 0}
+        aria-controls={loreCompletionItems.length > 0
+          ? "lore-completion-list"
+          : undefined}
+        aria-activedescendant={loreCompletionItems.length > 0
+          ? `lore-completion-option-${loreCompletionSelectedIndex}`
+          : undefined}
+        disabled={!activeFilePath || correctingDailyProgress || worldProjectBusy}
+        value={content}
+        bind:this={editorInput}
+        oninput={handleContentInput}
+        onkeydown={handleEditorKeydown}
+        onkeyup={handleEditorCaretChange}
+        onclick={handleEditorCaretChange}
+        onselect={handleEditorCaretChange}
+      ></textarea>
+      {#if loreCompletionContext && loreCompletionItems.length > 0}
+        <LoreCompletion
+          candidates={loreCompletionItems}
+          selectedIndex={loreCompletionSelectedIndex}
+          mode={loreCompletionContext.mode}
+          onSelect={(candidate) => void acceptLoreCompletion(candidate)}
+        />
+      {/if}
+    </div>
+    {#if currentLoreConnections}
+      <LoreConnections
+        connections={currentLoreConnections}
+        onOpen={(item) => void openLoreConnection(item)}
+      />
+    {/if}
     <div class="practice-bar" aria-label="Writing progress">
       <span class="document-count">
         {activeFile ? practicePresentation.documentLabel : "No document open"}
@@ -3021,6 +3244,13 @@
     gap: 1rem;
   }
 
+  .editor-workspace {
+    position: relative;
+    flex: 1 1 auto;
+    display: flex;
+    min-height: 0;
+  }
+
   .save-status {
     flex: 0 0 auto;
   }
@@ -3031,6 +3261,7 @@
 
   .editor-input {
     flex: 1 1 auto;
+    width: 100%;
     box-sizing: border-box;
     padding: 1.5rem;
     border: none;

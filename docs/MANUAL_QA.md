@@ -77,6 +77,14 @@ With monitoring active, an external heading edit plus note creation automaticall
 
 The active chapter was then made read-only and edited in the app. Its unsaved `[[Overlay Survives]]` link appeared immediately in the derived index while autosave reported permission denied. A different external disk version triggered the existing guarded-write conflict, but reconciliation retained the unsaved overlay and its source issue. **Keep writing** preserved that draft; after restoring the disposable last-saved baseline, Command+S saved normally and the app closed without a prompt. No external event awarded daily credit by itself, no lore cache or metadata was written, and all external changes stayed beneath the selected disposable root.
 
+## Milestone 0.5.4 completion and connections checkpoint
+
+Completed successfully on macOS on 2026-08-22 using Computer Use against a freshly packaged build and the disposable lore project. Replacing a broken target with the incomplete `[[Mar` opened a compact, visually inspected note popup without moving focus from the editor. The textarea exposed combobox/listbox semantics, the selected option and instructions were available through accessibility, Tab inserted `Mara Venn`, and typing `#Ear` switched to the uniquely resolved note's heading candidates. Enter inserted `Early life`; closing the writer-owned brackets immediately changed the unsaved note's connection surface to one resolved outgoing link.
+
+The expanded surface showed the target title, heading, project-relative path, one-based source location, and bounded source context. Following it opened `Lore/mara.md` and selected the exact `Early life` heading. Its backlink surface then showed `Chapter One` plus source context; following that backlink returned to `chapter.md` and selected the exact wiki-link range. An immediate Command+Z after another completion restored `Mar`, proving accepted text remains in the native undo flow. The disposable chapter was restored byte-for-byte and saved cleanly after QA.
+
+The completion model also has automated coverage for escaped, closed, labeled, multiline, nested, selected, heading, collision, Unicode-offset, deterministic-ranking, and exact-replacement cases. On the 2,000-note/24.78 MiB fixture, the first bounded completion query took 8.21 ms and a warm query averaged 3.13 ms against a 50 ms target. The full suite has 246 passing tests across thirty-five files, Svelte/TypeScript checks report zero errors and warnings, and frontend plus packaged macOS builds pass.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:

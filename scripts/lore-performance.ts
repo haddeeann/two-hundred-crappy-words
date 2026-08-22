@@ -5,6 +5,10 @@ import {
   type LoreSourceDocument,
 } from "../src/lib/lore/index";
 import { LoreIndexSession } from "../src/lib/lore/session";
+import {
+  findWikiLinkCompletion,
+  loreCompletionCandidates,
+} from "../src/lib/lore/completion";
 
 const FILE_COUNT = 2_000;
 const TARGET_BYTES = 25 * 1024 * 1024;
@@ -61,6 +65,21 @@ for (let iteration = 0; iteration < 1_000; iteration += 1) {
 }
 const warmQueryMilliseconds = (performance.now() - queryStart) / 1_000;
 
+const completionContext = findWikiLinkCompletion("[[Note 1", 8)!;
+const firstCompletionStart = performance.now();
+const firstCompletion = loreCompletionCandidates(
+  index,
+  sources[0]!.path,
+  completionContext,
+);
+const firstCompletionMilliseconds = performance.now() - firstCompletionStart;
+const warmCompletionStart = performance.now();
+for (let iteration = 0; iteration < 100; iteration += 1) {
+  loreCompletionCandidates(index, sources[0]!.path, completionContext);
+}
+const warmCompletionMilliseconds =
+  (performance.now() - warmCompletionStart) / 100;
+
 const result = {
   files: sources.length,
   acceptedMiB: Number((acceptedBytes / (1024 * 1024)).toFixed(2)),
@@ -69,11 +88,15 @@ const result = {
   longestWorkChunkMilliseconds: Number(longestWorkChunkMilliseconds.toFixed(2)),
   singleUpdateMilliseconds: Number(updateMilliseconds.toFixed(2)),
   warmQueryMilliseconds: Number(warmQueryMilliseconds.toFixed(4)),
+  firstCompletionMilliseconds: Number(firstCompletionMilliseconds.toFixed(2)),
+  warmCompletionMilliseconds: Number(warmCompletionMilliseconds.toFixed(2)),
   targets: {
     fullMilliseconds: 3_000,
     longestWorkChunkMilliseconds: 50,
     singleUpdateMilliseconds: 100,
     warmQueryMilliseconds: 50,
+    firstCompletionMilliseconds: 50,
+    warmCompletionMilliseconds: 50,
   },
 };
 
@@ -84,7 +107,11 @@ if (
   fullMilliseconds > result.targets.fullMilliseconds ||
   longestWorkChunkMilliseconds > result.targets.longestWorkChunkMilliseconds ||
   updateMilliseconds > result.targets.singleUpdateMilliseconds ||
-  warmQueryMilliseconds > result.targets.warmQueryMilliseconds
+  warmQueryMilliseconds > result.targets.warmQueryMilliseconds ||
+  firstCompletion.length === 0 ||
+  firstCompletion.length > 8 ||
+  firstCompletionMilliseconds > result.targets.firstCompletionMilliseconds ||
+  warmCompletionMilliseconds > result.targets.warmCompletionMilliseconds
 ) {
   process.exitCode = 1;
 }

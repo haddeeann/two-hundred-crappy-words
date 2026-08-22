@@ -64,8 +64,9 @@ Specification: [`docs/milestones/0.4-world-projects.md`](docs/milestones/0.4-wor
 Goal: let a writer consult and connect world knowledge without leaving the manuscript flow.
 
 - [x] Index project Markdown files safely and incrementally.
-- [ ] Support `[[Wiki Links]]` with keyboard-friendly completion.
-- [ ] Show outgoing links, backlinks, and useful unlinked mentions.
+- [x] Support `[[Wiki Links]]` with keyboard-friendly completion.
+- [x] Show outgoing links and source-context backlinks.
+- [ ] Identify useful unlinked mentions without overwhelming the writer.
 - [ ] Add fast project-wide search and a quick opener.
 - [ ] Open a lore reference beside the active manuscript.
 - [ ] Handle renamed notes and broken links without silent data loss.

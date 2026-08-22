@@ -10,28 +10,30 @@ World projects are complete. The active milestone makes manuscript and world-bib
 
 ## Active slice
 
-**0.5.4 — Link completion, outgoing links, and backlinks**
+**0.5.5 — Project search and quick opener**
 
 ### Intended outcome
 
-Turn the connected-lore index into a quiet, keyboard-first drafting aid. Offer bounded completion only while the caret is inside a wiki-link target, and expose the active note's outgoing links and source-context backlinks without rewriting prose or stealing editor focus.
+Make every indexed note quickly reachable without navigating the folder tree. Add a keyboard-first project opener with understandable title, alias, path, heading, and content ranking, bounded context, and no persistent search history or creative-text cache.
 
 ### Acceptance criteria
 
-- [ ] Detect the current wiki-link target and replacement range from editor text plus UTF-16 selection without interpreting escaped or closed links as active completion.
-- [ ] Rank a bounded, deterministic set of contained note and heading candidates by exact prefix, word prefix, substring, alias/title/path context, and stable tie-breakers.
-- [ ] Open, traverse, accept, and dismiss completion entirely from the keyboard while preserving labels, heading syntax, surrounding text, undo, autosave, recovery, and daily-credit semantics.
-- [ ] Show the active note's resolved, broken, and ambiguous outgoing links with useful target labels and source locations.
-- [ ] Show source-context backlinks, allow keyboard navigation to a safe indexed source, and leave the writer in control of any file switch.
-- [ ] Keep the surfaces responsive, accessible, memory-only, and non-blocking when no index is ready; pass focused tests and packaged keyboard QA.
+- [ ] Define deterministic ranking across exact title/alias/path, word prefix, substring, heading, and bounded content matches with stable path/range tie-breakers.
+- [ ] Return a bounded result set with a useful title, project-relative path, match reason, and short in-memory context while exposing collisions rather than guessing.
+- [ ] Open the quick opener from Command/Ctrl+P, type without editor side effects, traverse results, dismiss, and return focus entirely from the keyboard.
+- [ ] Open a selected result through the existing guarded navigation flow and select a matched heading or content range when it remains safe.
+- [ ] Keep query text session-only, work when the index is stale but available, and explain indexing/unavailable/empty states without blocking writing.
+- [ ] Stay within the approved 50 ms warm-query budget on the representative fixture and pass focused ranking plus packaged keyboard QA.
 
 ## Next slices
 
-1. 0.5.5 — Add fast project search and a keyboard-first quick opener.
-2. 0.5.6 — Open a lore reference beside the active manuscript and add safe missing-target creation.
+1. 0.5.6 — Open a lore reference beside the active manuscript and add safe missing-target creation.
+2. 0.5.7 — Add bounded unlinked mentions and previewed safe rename handling.
 
 ## Completed checkpoint
 
+- Slice 0.5.4 is complete. The editor now detects only a live, unescaped, unclosed wiki-link target at a collapsed UTF-16 caret and ranks at most eight note or uniquely resolved heading candidates. Title, alias, filename, rooted path, prefix, word-prefix, and substring matches use deterministic tie-breakers; colliding names insert rooted project-relative paths rather than guessing. Arrow keys traverse, Enter or Tab inserts through the native undo path, Escape dismisses, and labels, headings, punctuation, autosave, recovery, and gross-positive daily-credit behavior remain writer-owned.
+- The active Markdown note now has a bounded connections disclosure for resolved, broken, invalid, and ambiguous outgoing links plus source-context backlinks. Resolved buttons use the existing guarded navigation flow and select the indexed heading or exact source link. Packaged macOS QA covered note and heading completion, accessibility state, focus retention, visual layout, unsaved connection refresh, bidirectional navigation, exact selections, undo, safe save, and clean close. The 2,000-note fixture measured 8.21 ms for the first completion query and 3.13 ms warm; the full suite has 246 passing tests across thirty-five files, Svelte/TypeScript checks report zero errors and warnings, and frontend plus packaged macOS builds pass.
 - Slice 0.5.3 is complete. The selected project now receives a recursive, native-picker-scoped filesystem watch whose noisy events are coalesced before affected files or directory subtrees are reconciled. Every changed path is revalidated for containment, exclusions, symbolic links, stable reads, and whole-project limits; unreadable or unstable changes retain known-good records and mark the index stale with explicit refresh available. App-owned writes flow through the same watcher without adding lore persistence or daily credit, active unsaved/recovered buffers remain authoritative overlays, and monitoring is disposed on project changes and teardown.
 - Packaged macOS QA automatically reflected an external create, heading edit, in-root move, and removal while preserving exclusions and link resolution. A read-only unsaved draft remained the indexed overlay after a conflicting external disk edit, the guarded-write dialog showed both versions, **Keep writing** preserved the draft, and a later safe Command+S completed normally. The first package also proved the stale fallback when the optional native watch command was absent; enabling the official filesystem plugin feature corrected it. The focused incremental suite has 44 passing tests across ten files; the full suite has 237 passing tests across thirty-three files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, Rust formatting/checks pass, and the production dependency audit reports zero vulnerabilities.
 - Slice 0.5.2 is complete. The selected project now receives a bounded background scan and a keyboard-accessible, explicitly refreshable lore-index status. The index is versioned and memory-only; active unsaved Markdown overlays after 180 ms without changing recovery, autosave, conflict, or daily-credit behavior. A cooperative builder reuses unchanged parse/search records while globally recomputing resolutions and backlinks. On the 2,000-file, 24.78 MiB fixture, full indexing took 222.31 ms total with a 6.94 ms longest work chunk, a single update took 6.65 ms, and warm title/backlink lookup averaged 0.0001 ms—all within the approved 3,000/50/100/50 ms budgets.

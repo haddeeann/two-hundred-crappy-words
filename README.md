@@ -47,6 +47,10 @@ The app now counts words and stores progress toward its default 200-word target 
 - Reflect the active unsaved Markdown buffer in the derived index without changing save or daily-credit behavior
 - Refresh affected lore records automatically after contained external creates, edits, moves, and removals
 - Keep the last known index available with an explicit refresh fallback when a filesystem change cannot be reconciled safely
+- Complete note names and uniquely resolved headings from the keyboard while typing an open wiki link
+- Insert collision-safe rooted paths when a title or alias would resolve ambiguously
+- Inspect resolved, broken, and ambiguous outgoing links plus source-context backlinks for the active Markdown note
+- Follow a resolved connection to its exact heading or source link through the existing safe-navigation flow
 
 ## Current limitations
 
@@ -55,7 +59,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Cursor position and editor scroll position are not restored yet
 - Files and folders cannot be renamed, moved, or deleted in the app
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
-- Wiki-link following, completion, backlinks, and project search are not yet exposed in the editor
+- Project search, quick opening, unlinked mentions, and a side-by-side reference pane are not yet available
 - The frameless window does not yet provide maximize/full-screen controls
 - Distribution signing, notarization, and a finished installer are deferred to release readiness
 
@@ -115,7 +119,7 @@ static/                   Static images and icons
 
 ## Status
 
-This is a functional prototype. Its trustworthy-editor, daily-practice, and world-project milestones have passed automated and hands-on macOS QA. The active connected-lore milestone now has approved link semantics plus a bounded, incrementally refreshed, memory-only project index; writer-facing completion, link, backlink, and navigation tools come next.
+This is a functional prototype. Its trustworthy-editor, daily-practice, and world-project milestones have passed automated and hands-on macOS QA. The active connected-lore milestone now has approved link semantics, a bounded incrementally refreshed memory-only index, keyboard completion, and outgoing/backlink navigation; project search and a quick opener come next.
 
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
