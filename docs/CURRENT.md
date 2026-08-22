@@ -10,26 +10,28 @@ Connected lore is complete. The active milestone makes a long manuscript underst
 
 ## Active slice
 
-**0.6.3 — Contained manuscript-source reconciliation**
+**0.6.4 — Read-only manuscript outline integration**
 
 ### Intended outcome
 
-Resolve a validated outline against the currently selected project without mutation, so missing, moved, ambiguous, unsafe, or changed chapter folders, overviews, and scene sources are explicit before any outline UI or compile behavior relies on them.
+Let a writer inspect an approved structure, chapter folders, optional overviews, ordered scene files, and source-health problems inside the current app without creating, repairing, or reordering anything yet.
 
 ### Acceptance criteria
 
-- [ ] Load an optional root structure through bounded stable reads and explicit absent, malformed, invalid, unsupported, unstable, and unreadable states.
-- [ ] Resolve every chapter folder, overview, one-file chapter, and scene path only inside the selected non-symbolic project scope, without following filesystem links or rewriting paths.
-- [ ] When a binding has a note ID, use the current memory-only lore index to distinguish an exact match, one moved candidate, a missing ID, or a duplicate-ID ambiguity; expose a repair suggestion but never apply it.
-- [ ] Retain source fingerprints and deterministic outline order for later guarded previews, counts, and compilation, while unavailable entries remain visible with specific reasons.
-- [ ] Keep ordinary folders and projects without a structure file unchanged, add no cache or app-local creative text, and introduce no structure write path or UI yet.
-- [ ] Pass focused reconciliation tests, the full frontend suite, Svelte/TypeScript checks, and the frontend build; document results and the next read-only outline integration slice.
+- [ ] Start a request-scoped structure load after a selected project and lore index are ready; invalidate stale results on project replacement and expose explicit refresh without blocking the editor.
+- [ ] Add a keyboard-accessible disclosure that preserves manuscript, chapter, and scene order; pin an optional chapter overview before scene rows and keep unavailable entries visible with concise reasons.
+- [ ] Show absent, malformed, invalid, newer, unsafe, unreadable, unstable, source-limit, missing, moved, identity, duplicate-ID, and converged-path states without suggesting that the app repaired anything.
+- [ ] Open only a currently verified overview or prose source through the existing guarded navigation path, while moved candidates remain labeled as suggestions and unavailable sources cannot be followed.
+- [ ] Keep projects without the structure file visually calm, persist no outline/cache/query state, award no daily credit for loading, and add no creation, repair, reorder, or compile write path.
+- [ ] Pass automated regressions, accessible keyboard and visual inspection, Svelte/TypeScript checks, frontend and packaged macOS builds; document the next explicit structure-creation slice.
 
 ## Next slices
 
-1. 0.6.4 — Surface the validated read-only manuscript outline and source health without enabling creation or reorder yet.
+1. 0.6.5 — Add explicit previewed creation/import of the first structure file with create-new protection and no Markdown rewrite.
 
 ## Completed checkpoint
+
+- Slice 0.6.3 is complete. A read-only project loader now finds only the fixed root structure filename through segment-by-segment directory inspection, refuses symbolic links and non-regular files, performs two-attempt stable reads, and returns explicit absent, malformed, invalid, unsupported, unsafe, unreadable, or unstable states. Valid outlines reconcile every optional chapter folder, overview, one-file chapter, and scene in deterministic order. Direct paths are contained and stable-read; optional note IDs are verified against actual Markdown and the current memory-only lore index can produce one non-mutating moved-path suggestion or a duplicate-ID ambiguity. Missing, unsafe, unreadable, unstable, oversized, identity-mismatched, and total-limit sources remain visible. Two bindings that converge after an external move become a path conflict rather than duplicate prose. Reconciliation reads at most 10 MiB per source and 100 MiB total, retains fingerprints and exact byte totals, and performs no write or app-data operation. Ten focused tests pass; the full suite has 298 passing tests across forty-four files, Svelte/TypeScript checks report zero errors and warnings, and the frontend build passes.
 
 - Slice 0.6.2 is complete. A dependency-free manuscript module now parses at most 10 MiB into distinct valid, malformed, invalid, or unsupported-version results without reading a referenced file. It validates the approved chapter-folder/overview/scene model, one-file chapter exclusivity, descriptive metadata and word-target bounds, safe project-relative Markdown paths, at most 32 manuscripts and 10,000 outline items, globally unique manuscript/item IDs, and non-repeated source paths and note IDs. Validation issues carry deterministic JSON paths and are bounded to 100 details plus an omission notice. Valid results expose normalized typed data plus a deep copy of unknown supported-version fields; new in-memory structures serialize deterministically with validation and a trailing newline. No project file, Markdown, app data, capability, or UI changed. Seventeen focused tests pass; the full suite has 288 passing tests across forty-three files, Svelte/TypeScript checks report zero errors and warnings, and the frontend build passes.
 
@@ -64,7 +66,7 @@ Resolve a validated outline against the currently selected project without mutat
 
 ## Blockers and decision gates
 
-No blocker. Slice 0.6.3 remains read-only and non-mutating. Project creation, source repair, reorder writes, compile writes, and structural UI remain later guarded slices.
+No blocker. Slice 0.6.4 exposes only the already approved, verified read-only model. Structure creation, source repair, reorder, split/merge, and compile writes remain later guarded slices.
 
 ## Handoff protocol
 

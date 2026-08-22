@@ -186,6 +186,8 @@ Compile order is a pre-order traversal of the selected manuscript's visible JSON
 
 Before export, the app stable-reads the structure and every included source. A missing, changed, ambiguous, symbolic-link, oversized, or unreadable source blocks export by default and appears in a complete report. A later UI may let the writer explicitly export with named omissions, but it must never skip material silently.
 
+Source reconciliation reads at most 10 MiB from one overview or prose file and 100 MiB across one complete refresh. Both limits are local read-safety boundaries rather than manuscript-format restrictions: an oversized source remains an ordinary editable file but is visibly unavailable to structural counts and compile until the writer reduces it or a later reviewed limit changes. Every accepted source retains a content fingerprint; changing during either of two read attempts produces an explicit unstable state.
+
 The first output adapters are Markdown and plain text. They write only to a writer-chosen destination, use create-new protection unless overwrite is separately confirmed, and never modify source files or structure. Markdown compilation removes only a valid leading structured-note frontmatter block, preserves each remaining Markdown body, and inserts deterministic separators. Plain-text rendering follows the same traversal and must receive its own tested Markdown-to-text rules before implementation. DOCX and PDF remain later adapters behind their separate layout decision gate; neither becomes a prose store.
 
 ## Privacy, backup, and compatibility
