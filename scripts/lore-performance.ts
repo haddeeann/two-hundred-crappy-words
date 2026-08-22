@@ -10,6 +10,7 @@ import {
   loreCompletionCandidates,
 } from "../src/lib/lore/completion";
 import { searchProjectLore } from "../src/lib/lore/search";
+import { activeLoreMentions } from "../src/lib/lore/mentions";
 
 const FILE_COUNT = 2_000;
 const TARGET_BYTES = 25 * 1024 * 1024;
@@ -22,7 +23,7 @@ function fixture(): LoreSourceDocument[] {
     const body = repeated.repeat(Math.ceil(PER_FILE_BODY / repeated.length)).slice(0, PER_FILE_BODY);
     return {
       path: `Lore/Sector-${Math.floor(index / 100)}/Note-${index}.md`,
-      text: `# Note ${index}\n\n## Arrival\n\n[[Lore/Sector-${Math.floor(next / 100)}/Note-${next}|next signal]]\n\n${body}`,
+      text: `# Note ${index}\n\n## Arrival\n\n[[Lore/Sector-${Math.floor(next / 100)}/Note-${next}|next signal]]\n\n${index === 0 ? "Note 1000 crosses the archive.\n\n" : ""}${body}`,
     };
   });
 }
@@ -90,6 +91,15 @@ for (let iteration = 0; iteration < 25; iteration += 1) {
 }
 const warmSearchMilliseconds = (performance.now() - warmSearchStart) / 25;
 
+const firstMentionStart = performance.now();
+const firstMentions = activeLoreMentions(index, sources[0]!.path);
+const firstMentionMilliseconds = performance.now() - firstMentionStart;
+const warmMentionStart = performance.now();
+for (let iteration = 0; iteration < 25; iteration += 1) {
+  activeLoreMentions(index, sources[0]!.path);
+}
+const warmMentionMilliseconds = (performance.now() - warmMentionStart) / 25;
+
 const result = {
   files: sources.length,
   acceptedMiB: Number((acceptedBytes / (1024 * 1024)).toFixed(2)),
@@ -102,6 +112,8 @@ const result = {
   warmCompletionMilliseconds: Number(warmCompletionMilliseconds.toFixed(2)),
   firstSearchMilliseconds: Number(firstSearchMilliseconds.toFixed(2)),
   warmSearchMilliseconds: Number(warmSearchMilliseconds.toFixed(2)),
+  firstMentionMilliseconds: Number(firstMentionMilliseconds.toFixed(2)),
+  warmMentionMilliseconds: Number(warmMentionMilliseconds.toFixed(2)),
   targets: {
     fullMilliseconds: 3_000,
     longestWorkChunkMilliseconds: 50,
@@ -111,6 +123,8 @@ const result = {
     warmCompletionMilliseconds: 50,
     firstSearchMilliseconds: 50,
     warmSearchMilliseconds: 50,
+    firstMentionMilliseconds: 50,
+    warmMentionMilliseconds: 50,
   },
 };
 
@@ -129,7 +143,11 @@ if (
   firstSearch.length === 0 ||
   firstSearch.length > 30 ||
   firstSearchMilliseconds > result.targets.firstSearchMilliseconds ||
-  warmSearchMilliseconds > result.targets.warmSearchMilliseconds
+  warmSearchMilliseconds > result.targets.warmSearchMilliseconds ||
+  firstMentions.length === 0 ||
+  firstMentions.length > 20 ||
+  firstMentionMilliseconds > result.targets.firstMentionMilliseconds ||
+  warmMentionMilliseconds > result.targets.warmMentionMilliseconds
 ) {
   process.exitCode = 1;
 }

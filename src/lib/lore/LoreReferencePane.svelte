@@ -5,10 +5,11 @@
     reference: LoreReferenceView;
     onClose: () => void;
     onOpenEditor: (path: string) => void;
+    onRename: (path: string) => void;
     onRetry: (path: string) => void;
   }
 
-  let { reference, onClose, onOpenEditor, onRetry }: Props = $props();
+  let { reference, onClose, onOpenEditor, onRename, onRetry }: Props = $props();
 </script>
 
 <aside
@@ -37,7 +38,10 @@
     ></textarea>
     <footer>
       <span>Plain Markdown · changes stay in the main editor</span>
-      <button type="button" onclick={() => onOpenEditor(reference.path)}>Open in editor</button>
+      <div class="actions">
+        <button type="button" onclick={() => onRename(reference.path)}>Rename note…</button>
+        <button type="button" onclick={() => onOpenEditor(reference.path)}>Open in editor</button>
+      </div>
     </footer>
   {:else}
     <div class="message" role={reference.phase === "error" ? "alert" : "status"}>
@@ -158,6 +162,12 @@
     color: #d4d4d4;
     font: inherit;
     cursor: pointer;
+  }
+
+  .actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 0.4rem;
   }
 
   footer button:hover,

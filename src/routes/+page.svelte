@@ -9,6 +9,7 @@
     writeTextFile,
   } from "@tauri-apps/plugin-fs";
   import { join } from "@tauri-apps/api/path";
+  import { invoke } from "@tauri-apps/api/core";
   import { load } from "@tauri-apps/plugin-store";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import {
@@ -127,6 +128,7 @@
   import LoreConnections from "$lib/lore/LoreConnections.svelte";
   import LoreQuickOpen from "$lib/lore/LoreQuickOpen.svelte";
   import LoreReferencePane from "$lib/lore/LoreReferencePane.svelte";
+  import LoreRenameDialog from "$lib/lore/LoreRenameDialog.svelte";
   import {
     findWikiLinkCompletion,
     loreCompletionCandidates,
@@ -148,6 +150,11 @@
     type LoreReferenceView,
   } from "$lib/lore/reference";
   import { planMissingLoreNote } from "$lib/lore/missing-note";
+  import { planLoreRename } from "$lib/lore/rename";
+  import {
+    executeLoreRename,
+    mapOffsetThroughLoreRename,
+  } from "$lib/lore/rename-execution";
   import { isMarkdownPath } from "$lib/lore/normalize";
   import {
     DEFAULT_MAX_LORE_FILE_BYTES,
@@ -262,6 +269,10 @@
   let quickOpenReturnFocus: HTMLElement | null = null;
   let loreReference = $state<LoreReferenceView | null>(null);
   const loreReferenceRequests = new LoreReferenceRequestCoordinator();
+  let loreRenameSourcePath = $state("");
+  let loreRenameRequestedPath = $state("");
+  let loreRenameBusy = $state(false);
+  let loreRenameError = $state("");
   let lastDailyProgressFailure: {
     path: string;
     revision: number;
@@ -288,7 +299,7 @@
     activeFilePath !== "" && hasUnsavedChanges(saveState),
   );
   const worldProjectBusy = $derived(
-    adoptionBusy || newWorldProjectBusy || structuredNoteBusy,
+    adoptionBusy || newWorldProjectBusy || structuredNoteBusy || loreRenameBusy,
   );
   const saveStatus = $derived.by(() => {
     if (!activeFilePath) return "";
@@ -346,6 +357,11 @@
   });
   const currentLoreConnections = $derived(
     activeLoreConnections(loreIndex, activeLorePath()),
+  );
+  const loreRenamePlan = $derived(
+    loreIndex && loreRenameSourcePath
+      ? planLoreRename(loreIndex, loreRenameSourcePath, loreRenameRequestedPath)
+      : null,
   );
   const quickOpenResults = $derived(
     quickOpenVisible && loreIndex
@@ -605,6 +621,10 @@
     loreIndexNeedsRefresh = false;
     clearLoreCompletion();
     closeLoreReference(false);
+    loreRenameSourcePath = "";
+    loreRenameRequestedPath = "";
+    loreRenameBusy = false;
+    loreRenameError = "";
     loreIndexPhase = "indexing";
     void refreshLoreIndex(path);
   }
@@ -1065,6 +1085,174 @@
   async function openReferenceInEditor(path: string): Promise<void> {
     closeLoreReference(false);
     await openIndexedLorePath(path, null);
+  }
+
+  function beginLoreRename(path: string): void {
+    if (!loreIndex) return;
+    if (dirty) {
+      error = "Save or resolve the active draft before previewing a multi-file lore rename.";
+      editorInput?.focus();
+      return;
+    }
+    closeQuickOpen(false);
+    loreRenameSourcePath = path;
+    loreRenameRequestedPath = path;
+    loreRenameBusy = false;
+    loreRenameError = "";
+    error = "";
+  }
+
+  function closeLoreRename(returnFocus = true): void {
+    if (loreRenameBusy) return;
+    loreRenameSourcePath = "";
+    loreRenameRequestedPath = "";
+    loreRenameError = "";
+    if (returnFocus) {
+      void tick().then(() =>
+        document.getElementById("lore-reference-pane")?.focus({ preventScroll: true }),
+      );
+    }
+  }
+
+  async function confirmLoreRename(): Promise<void> {
+    if (
+      !folderPath ||
+      !loreIndex ||
+      !loreRenamePlan ||
+      loreRenamePlan.kind !== "ready" ||
+      loreRenameBusy
+    ) {
+      return;
+    }
+    if (dirty) {
+      loreRenameError = "The active draft changed after the preview. Save or resolve it before renaming.";
+      return;
+    }
+    const currentPlan = planLoreRename(
+      loreIndex,
+      loreRenamePlan.sourcePath,
+      loreRenamePlan.targetPath,
+    );
+    if (
+      currentPlan.kind !== "ready" ||
+      currentPlan.signature !== loreRenamePlan.signature
+    ) {
+      loreRenameError = "The lore index changed after the preview, so nothing was renamed. Review the refreshed plan.";
+      return;
+    }
+
+    const activeRelative = activeLorePath();
+    const selectionStart = editorInput?.selectionStart ?? 0;
+    const selectionEnd = editorInput?.selectionEnd ?? selectionStart;
+    const rootAtStart = folderPath;
+    const sessionAtStart = loreIndexSession;
+    loreRenameBusy = true;
+    const absolutePath = async (relativePath: string): Promise<string> =>
+      join(rootAtStart, ...relativePath.split("/"));
+    const result = await executeLoreRename(currentPlan, {
+      readText: async (relativePath) => readTextFile(await absolutePath(relativePath)),
+      writeText: async (relativePath, text) =>
+        writeTextFile(await absolutePath(relativePath), text),
+      renameNoClobber: async (sourcePath, targetPath) =>
+        invoke("rename_lore_file_no_clobber", {
+          rootPath: rootAtStart,
+          sourceRelative: sourcePath,
+          targetRelative: targetPath,
+        }),
+    });
+    if (
+      rootAtStart !== folderPath ||
+      sessionAtStart !== loreIndexSession
+    ) {
+      loreRenameBusy = false;
+      error = "The project changed while the rename was running. Refresh the project before continuing.";
+      return;
+    }
+    if (result.kind === "failed") {
+      loreRenameBusy = false;
+      loreRenameError = result.message;
+      if (!result.rollbackComplete) {
+        error = result.message;
+        void refreshLoreIndex();
+      }
+      return;
+    }
+
+    const diskChanges = new Map<string, string | null>();
+    diskChanges.set(currentPlan.sourcePath, null);
+    const sourceEdit = currentPlan.fileEdits.find(
+      ({ path }) => path === currentPlan.sourcePath,
+    );
+    diskChanges.set(
+      currentPlan.targetPath,
+      sourceEdit?.updatedText ?? currentPlan.sourceText,
+    );
+    for (const edit of currentPlan.fileEdits) {
+      if (edit.path !== currentPlan.sourcePath) {
+        diskChanges.set(edit.path, edit.updatedText);
+      }
+    }
+    loreIndex = sessionAtStart.applyDiskChanges(diskChanges);
+
+    for (const edit of currentPlan.fileEdits) {
+      const oldAbsolute = await absolutePath(edit.path);
+      const nextRelative = edit.path === currentPlan.sourcePath
+        ? currentPlan.targetPath
+        : edit.path;
+      const nextAbsolute = await absolutePath(nextRelative);
+      persistedContentByPath.delete(oldAbsolute);
+      persistedContentByPath.set(nextAbsolute, edit.updatedText);
+      if (activeRelative === edit.path) {
+        content = edit.updatedText;
+        persistedContent = edit.updatedText;
+      }
+    }
+    if (activeRelative === currentPlan.sourcePath) {
+      const oldAbsolute = activeFilePath;
+      const nextAbsolute = await absolutePath(currentPlan.targetPath);
+      persistedContentByPath.delete(oldAbsolute);
+      persistedContentByPath.set(
+        nextAbsolute,
+        sourceEdit?.updatedText ?? currentPlan.sourceText,
+      );
+      activeFilePath = nextAbsolute;
+      activeFile = currentPlan.targetPath.split("/").at(-1) ?? currentPlan.targetPath;
+      persistedContent = sourceEdit?.updatedText ?? currentPlan.sourceText;
+      content = persistedContent;
+    }
+
+    const activeEdit = currentPlan.fileEdits.find(
+      ({ path }) => path === activeRelative,
+    );
+    if (activeRelative === currentPlan.sourcePath || activeEdit) {
+      practiceState = beginDailyPractice(content, practiceState.dailyWords);
+    }
+    const nextSelectionStart = mapOffsetThroughLoreRename(selectionStart, activeEdit);
+    const nextSelectionEnd = mapOffsetThroughLoreRename(selectionEnd, activeEdit);
+    const sourceParent = currentPlan.sourcePath.split("/").slice(0, -1).join("/");
+    const targetParent = currentPlan.targetPath.split("/").slice(0, -1).join("/");
+    const parents = [...new Set([sourceParent, targetParent])];
+    for (const parent of parents) {
+      const parentPath = parent ? await absolutePath(parent) : rootAtStart;
+      await refreshDirectory(parentPath);
+    }
+    scheduleNavigationState();
+    const referencePath = loreReference?.path === currentPlan.sourcePath
+      ? currentPlan.targetPath
+      : loreReference?.path;
+    loreRenameBusy = false;
+    loreRenameSourcePath = "";
+    loreRenameRequestedPath = "";
+    loreRenameError = "";
+    error = "";
+    if (referencePath) {
+      await openLoreReference(referencePath, false);
+      await focusLoreReference();
+    }
+    await tick();
+    if (editorInput && activeRelative) {
+      editorInput.setSelectionRange(nextSelectionStart, nextSelectionEnd);
+    }
   }
 
   async function createMissingLoreNote(item: LoreConnectionItem): Promise<void> {
@@ -3050,6 +3238,7 @@
           reference={loreReference}
           onClose={() => closeLoreReference()}
           onOpenEditor={(path) => void openReferenceInEditor(path)}
+          onRename={(path) => beginLoreRename(path)}
           onRetry={(path) => void openLoreReference(path)}
         />
       {/if}
@@ -3060,6 +3249,21 @@
         onOpen={(item) => void openLoreConnection(item)}
         onOpenMention={(mention) => void openLoreMention(mention)}
         onCreateMissing={(item) => void createMissingLoreNote(item)}
+      />
+    {/if}
+    {#if loreRenameSourcePath && loreRenamePlan}
+      <LoreRenameDialog
+        sourcePath={loreRenameSourcePath}
+        requestedPath={loreRenameRequestedPath}
+        plan={loreRenamePlan}
+        busy={loreRenameBusy}
+        executionError={loreRenameError}
+        onRequestedPath={(path) => {
+          loreRenameRequestedPath = path;
+          loreRenameError = "";
+        }}
+        onCancel={() => closeLoreRename()}
+        onConfirm={() => void confirmLoreRename()}
       />
     {/if}
     <div class="practice-bar" aria-label="Writing progress">
