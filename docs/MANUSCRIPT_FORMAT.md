@@ -1,6 +1,6 @@
 # Proposed portable manuscript structure
 
-Status: **approved on 2026-08-22; implementation begins in bounded slices**
+Status: **approved on 2026-08-22; parsing, reconciliation, read-only outline, and guarded initial creation/import are implemented**
 
 This document proposes the smallest portable model that can order chapters and scenes, hold planning metadata, and compile a long manuscript without turning prose into an app-owned format. Existing projects, manifests, and Markdown files must remain byte-for-byte unchanged until the writer explicitly opts in after this proposal is approved.
 
