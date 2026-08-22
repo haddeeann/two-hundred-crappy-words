@@ -6,7 +6,7 @@ This document proposes the smallest portable model that can order chapters and s
 
 ## Recommendation
 
-Use one visible project-root file named `200-crappy-words.manuscripts.json` as the source of truth for manuscript order and planning metadata. Keep prose in ordinary project-relative Markdown files.
+Use one visible project-root file named `200-crappy-words.manuscripts.json` as the source of truth for manuscript order and compact outline metadata. Keep prose in ordinary project-relative Markdown scene files. A chapter may correspond to a normal folder containing an optional `chapter.md` overview plus its scene files.
 
 Do not store order numbers or parent IDs in every Markdown file. Reordering should normally change one small structure file, not rewrite a run of scenes. Do not add manuscript order to `200-crappy-words.project.json`; project identity and folder roles should not churn whenever a scene moves.
 
@@ -38,8 +38,9 @@ The structure file may describe more than one book in a shared world project. Cr
           "synopsis": "Mara receives the first impossible transmission.",
           "status": "draft",
           "targetWords": 2400,
-          "source": {
-            "path": "Manuscript/signals-in-the-dust.md",
+          "folder": "Manuscript/01 Signals in the Dust",
+          "overview": {
+            "path": "Manuscript/01 Signals in the Dust/chapter.md",
             "noteId": "2792befd-5380-4815-9a25-e2659aa9c79f"
           },
           "children": [
@@ -53,7 +54,7 @@ The structure file may describe more than one book in a shared world project. Cr
               "labels": ["opening", "mystery"],
               "notes": "Keep the sender uncertain.",
               "source": {
-                "path": "Manuscript/Scenes/buried-antenna.md",
+                "path": "Manuscript/01 Signals in the Dust/01 buried-antenna.md",
                 "noteId": "b94fc398-9156-46d2-a48b-93e3c40ee638"
               }
             }
@@ -82,7 +83,9 @@ The structure file may describe more than one book in a shared world project. Cr
 - `id`: required canonical lowercase UUID v4 for the outline item. It remains stable across reorder and source repair.
 - `kind`: required `chapter` or `scene`.
 - `title`: required display title. It belongs to the outline and may differ from a filename or Markdown heading.
-- `source`: optional contained Markdown source. A source-less chapter is a grouping/title item. A scene must have a source before it can compile.
+- `folder`: optional normalized project-relative chapter directory. It makes the writer's filesystem organization visible but does not determine scene order.
+- `overview`: optional contained Markdown file, conventionally `chapter.md`, for the chapter's synopsis, freeform notes, reminders, or any other writer-owned overview. It is not manuscript prose and is excluded from compile by default.
+- `source`: required contained Markdown prose source for a scene. A one-file chapter may use `source` only when it has no child scenes.
 - `children`: optional ordered scene array on a chapter. Version 1 forbids children on scenes and nested chapters.
 - `synopsis`, `pov`, `location`, `storyDate`, `status`, and `notes`: optional bounded display strings. Version 1 does not interpret them as dates, lore relationships, or workflow rules.
 - `labels`: optional ordered set of at most 32 non-empty display strings.
@@ -93,7 +96,7 @@ The whole file is bounded to 10,000 outline items and 10 MiB. Duplicate manuscri
 
 ## Markdown ownership and identity
 
-The JSON file owns order, grouping, outline titles, and planning metadata. A Markdown file owns its prose.
+The JSON file owns order, grouping, outline titles, and compact fields the outline needs to sort, filter, and summarize. Markdown scene files own prose. An optional chapter overview file owns the writer's freeform chapter notes.
 
 No new Markdown frontmatter key is required for version 1. Existing structured notes may keep the already approved `id`, `type`, `title`, and `aliases` fields. A source binding contains:
 
@@ -104,19 +107,32 @@ For a path-only source, the path is the binding. If it moves externally, the ite
 
 When `noteId` is present, the unique contained Markdown note with that ID establishes identity. If its recorded path changes, the app may offer an exact path repair preview. A missing or duplicate ID is an explicit conflict. The app never silently edits the JSON or the Markdown merely because a likely match exists.
 
-This allows an existing ordinary Markdown file to join an outline without being rewritten. Newly created scene and chapter sources may use the existing structured-note ID so later in-app renames remain repairable.
+This allows an existing ordinary Markdown file to join an outline without being rewritten. Newly created scene and chapter-overview files may use the existing structured-note ID so later in-app renames remain repairable.
 
 ## Multiple books and loose scenes
 
 A shared world may contain multiple manuscript records. Their IDs and item orders are independent.
 
-A top-level scene is allowed as a loose or unassigned scene. Moving it into a chapter changes only the ordered JSON tree. A chapter may be:
+A top-level scene is allowed as a loose or unassigned scene. Moving it into a chapter changes only the ordered JSON tree; moving the physical file is a separate, explicit operation. A chapter may be:
 
-- source-less, acting as a grouping title whose children contain the prose;
-- source-backed with no children, acting as a conventional one-file chapter; or
-- source-backed with children, compiling its own body first and then each child scene in order.
+- a folder-backed container with an optional `chapter.md` overview and ordered scene children;
+- a logical container with scene children but no matching filesystem folder or overview; or
+- a conventional one-file chapter with a prose `source` and no child scenes.
 
-The UI must disclose that last rule before a writer adds children to a source-backed chapter so prose is never unexpectedly omitted or duplicated.
+Version 1 forbids a chapter from having both its own prose `source` and child-scene prose. Converting a one-file chapter into scenes is an explicit, previewed operation that preserves the original prose as a scene before the chapter becomes a container. A `chapter.md` overview remains notes rather than hidden manuscript prose; if material should appear in the novel, the writer makes it a scene.
+
+The recommended on-disk experience is ordinary and optional:
+
+```text
+Manuscript/
+└── 01 Signals in the Dust/
+    ├── chapter.md                 # optional overview and quick notes
+    ├── 01 buried-antenna.md       # scene prose
+    ├── 02 the-signal-answers.md   # scene prose
+    └── 03 abandon-the-relay.md    # scene prose
+```
+
+The app may offer this layout when creating a chapter, but it never requires an existing writer to reorganize files into it. The central structure, not alphabetical filenames, remains the authority for chapter and scene order.
 
 ## Loading and failure behavior
 
@@ -163,9 +179,9 @@ Split and merge are later multi-file transactions. They must preview new and cha
 Compile order is a pre-order traversal of the selected manuscript's visible JSON order:
 
 1. visit each top-level item in array order;
-2. if included and source-backed, emit its source body;
-3. if an included source-less chapter has a title, emit a generated chapter heading in the chosen output adapter;
-4. visit that chapter's child scenes in array order; and
+2. for an included one-file chapter, emit its prose source;
+3. for an included chapter container, emit its generated chapter heading but not its optional overview notes;
+4. visit that chapter's child scene sources in array order; and
 5. omit an item only when `includeInCompile` is explicitly `false`.
 
 Before export, the app stable-reads the structure and every included source. A missing, changed, ambiguous, symbolic-link, oversized, or unreadable source blocks export by default and appears in a complete report. A later UI may let the writer explicitly export with named omissions, but it must never skip material silently.
@@ -185,9 +201,9 @@ The first output adapters are Markdown and plain text. They write only to a writ
 
 Implementation should begin only after confirming these choices:
 
-1. Use one visible `200-crappy-words.manuscripts.json` file as the source of order and planning metadata.
+1. Use one visible `200-crappy-words.manuscripts.json` file as the source of order and compact outline metadata.
 2. Keep prose in Markdown and avoid new required frontmatter; bind existing files by path with an optional stable note ID.
-3. Allow multiple books, source-less chapter groups, one-file chapters, and loose scenes in version 1.
+3. Treat a chapter primarily as a folder or logical container with an optional `chapter.md` overview and separate scene files; allow one-file chapters only when they have no child scenes.
 4. Treat POV, location, story date, status, and labels as display metadata for now rather than pretending they already have continuity semantics.
 5. Make structural edits previewed, compare-before-write, atomic, and undoable only while the just-written structure remains unchanged.
 6. Compile in deterministic pre-order, block on unresolved sources by default, and treat Markdown/plain text as output adapters rather than source formats.
