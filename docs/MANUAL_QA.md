@@ -47,6 +47,12 @@ Completed successfully on macOS on 2026-08-22 using Computer Use against a fresh
 
 The run then created `Manuscript/chapter-one.md`, saved `Signals cross the glass meridian tonight.`, and recorded a `6 / 6` goal. After a normal close, the root folder was moved externally. Startup explained the missing remembered path without losing usability; selecting the moved folder restored the display name, manuscript, goal, and daily progress through the manifest UUID. The manifest SHA-256 remained unchanged across close, move, and reopen.
 
+## Milestone 0.4.4 structured-note checkpoint
+
+Completed successfully on macOS on 2026-08-22 using Computer Use against a freshly packaged build and the moved “The Glass Meridian” project. The form exposed all nine template kinds, focused its title field, changed the suggested filename and semantic destination with the selected type, allowed Inbox to replace Spacecraft's Technology default, and created `Inbox/iss-penumbra.md` with create-new semantics. The note opened immediately with exactly `id`, `type`, and `title` frontmatter plus removable Markdown-body comments.
+
+Opening the generated 74-word template did not add daily credit; the existing project remained `6 / 6`. Repeating creation with the same destination and filename produced a clear error, left the editor usable, and preserved the file's SHA-256. Validation returned focus to the title, Escape canceled from the form, and note-specific errors disappeared with the form rather than becoming stale global warnings.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:

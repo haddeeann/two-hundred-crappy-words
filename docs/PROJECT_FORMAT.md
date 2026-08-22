@@ -165,7 +165,7 @@ The version number governs the whole manifest. A future migration must:
 
 Changing the meaning of existing fields, generating a new project ID, or adding required frontmatter is another permanent-format decision gate—not a routine migration.
 
-## Proposed Markdown frontmatter
+## Structured Markdown frontmatter
 
 Markdown remains valid without frontmatter. Adoption never inserts metadata into existing notes. App-created structured notes may opt in to a deliberately small YAML 1.2 frontmatter block:
 
@@ -210,4 +210,4 @@ The milestone 0.4 decision gate approved this combination on 2026-08-21:
 4. ordinary folders remaining fully supported and never auto-adopted; and
 5. optional YAML frontmatter limited initially to `id`, `type`, and `title` on newly created structured Markdown notes.
 
-Implementation begins with pure manifest validation and fixtures before adding any folder-writing flow.
+Version 1 manifest handling, explicit project creation/adoption, and the nine initial structured-note templates implement this decision. Template creation writes a new `.md` file atomically, includes only the three approved fields, and leaves all prompts in removable Markdown-body comments. Existing Markdown is never given frontmatter merely because it was opened.

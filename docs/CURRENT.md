@@ -10,25 +10,25 @@ Daily practice is complete. The active milestone turns an ordinary folder into a
 
 ## Active slice
 
-**0.4.4 — Add optional Markdown templates and create notes by semantic role**
+**0.4.5 — Recent projects, navigation restoration, portability guidance, and milestone QA**
 
 ### Intended outcome
 
-Let a writer create an ordinary Markdown note from an optional science-fiction template in the appropriate configured project folder. Keep the prose fully editable in any text editor, limit frontmatter to the approved safe subset, and never modify an existing note or require a template.
+Make returning to several worlds calm and reliable without putting machine-specific state into creative folders. Keep a bounded app-local recent list, restore only safe useful navigation state, explain missing or moved projects clearly, document backup boundaries, and complete the milestone-wide regression checkpoint.
 
 ### Acceptance criteria
 
-- [ ] Define deterministic, dependency-free templates for character, location, faction, species, technology, spacecraft, event, scene, and chapter notes.
-- [ ] Emit only approved `id`, `type`, and `title` frontmatter with safe scalar serialization and a local UUID v4.
-- [ ] Map each template to a sensible configured semantic folder while allowing the writer to choose another real project folder.
-- [ ] Add an explicit accessible note-creation form with template, title, portable filename, and destination.
-- [ ] Write new `.md` notes with create-new semantics and never alter existing Markdown or require frontmatter for editing.
-- [ ] Open the created note immediately and keep every prompt easy to ignore, replace, or delete.
-- [ ] Pass focused tests, full frontend/Rust checks, and a packaged-app keyboard and disposable-project walkthrough.
+- [ ] Add a versioned, bounded app-local recent-project repository keyed by stable UUID for world projects and path for ordinary folders.
+- [ ] Update a moved world's last-known path without duplicating its recent entry, and let the writer remove stale entries without touching project files.
+- [ ] Add an accessible recent-project UI with clear unavailable-project recovery.
+- [ ] Persist selected directory, expanded folders, and active file per project; restore only existing paths inside the currently opened root.
+- [ ] Never attach a path-specific recovery draft to a moved file or write editor/navigation state into the project manifest.
+- [ ] Add truthful in-app and written guidance for project identity, backup, moves/copies, private practice data, and recovery drafts.
+- [ ] Pass repository and restoration tests, full frontend/Rust checks, dependency audit, and a packaged milestone-wide macOS walkthrough.
 
 ## Next slices
 
-1. 0.4.5 — Recent projects, navigation restoration, portability guidance, and milestone QA.
+1. 0.5.1 — Define the connected-lore index and link semantics before project-wide scanning.
 
 ## Completed checkpoint
 
@@ -38,6 +38,8 @@ Let a writer create an ordinary Markdown note from an optional science-fiction t
 - The packaged macOS walkthrough adopted a disposable ordinary folder as “A Quiet Red Planet,” omitted Research and Inbox, preserved its 5-word goal and corrected Aug 21 history, and reopened cleanly after restart. The manifest hash and modification time were unchanged by reopening. Keyboard QA covers initial name-field focus, Enter submission semantics, visible controls, and Escape cancellation from anywhere in the form. The full suite has 155 passing tests across eighteen files; Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, and Rust formatting/checks pass.
 - The 0.4.3 native creation flow collects separate display and portable folder names, lets the writer tailor the suggested structure, chooses a parent through the native picker, preflights root collisions, and creates the root, selected directories, and manifest in a guarded deterministic order. Pure execution reports whether the root and which children were created if any step fails.
 - The packaged macOS walkthrough created “The Glass Meridian” with eight selected directories, wrote a six-word manuscript note, set and reached a six-word goal, closed normally, moved the root externally, explained the stale remembered path on startup, and reopened the moved project through the native picker. The manuscript text, `6 / 6` practice state, display name, and UUID identity survived; the manifest hash remained unchanged. QA also covers invalid portable names, focus returning to the invalid field, live error clearing, initial focus, Escape, and selectable structure. The full suite has 164 passing tests across nineteen files; Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, and Rust formatting/checks pass.
+- The 0.4.4 template engine deterministically creates character, location, faction, species, technology, spacecraft, event, scene, and chapter Markdown. JSON-compatible YAML quoting keeps frontmatter to local UUID `id`, recognized `type`, and trimmed `title`; body prompts are HTML comments that can be ignored or deleted. Filenames are portable `.md` names, template defaults follow semantic folder mappings, configured nested paths are verified segment by segment, and any real top-level project directory remains selectable.
+- The packaged macOS walkthrough created and immediately opened `Inbox/iss-penumbra.md` from the Spacecraft template after overriding its Technology default. The file contained exactly three frontmatter fields plus removable prompts, existing template text was treated as a 74-word document baseline without changing the existing `6 / 6` daily credit, and a same-name retry reported the collision without changing the file hash. Keyboard QA covers initial focus, validation focus, select menus, automatic filename and role changes, alternate destination, Escape, and form-error cleanup. The full suite has 174 passing tests across twenty-one files; Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, and Rust formatting/checks pass.
 - Milestone 0.3 passed its full disposable-project macOS walkthrough on 2026-08-21 using Computer Use against a freshly packaged build. The run covered baseline protection, per-project goals, live and persisted daily totals, quiet one-time completion, truthful goal changes, populated history, two restarts, correction validation, append-only audit display, deletion semantics, keyboard traversal, visible focus, and accessible labels.
 - QA exposed two issues before the final pass. The correction editor now receives focus when opened so Enter and Escape work immediately. New ledger revisions now preserve prior correction entries, including through correction, later writing, deletion, and restart. The lifecycle regression test covers the audit across that transition.
 - The frontend suite contains 119 passing tests across fifteen files. Svelte/TypeScript checks report zero errors and zero warnings, the production frontend and macOS application builds pass, Rust formatting/checks pass, and the production dependency audit reports zero vulnerabilities.
@@ -45,7 +47,7 @@ Let a writer create an ordinary Markdown note from an optional science-fiction t
 
 ## Blockers and decision gates
 
-No blocker. The format gate approved optional structured Markdown frontmatter limited to `id`, `type`, and `title`; template work must stay within that boundary and preserve ordinary Markdown compatibility.
+No blocker. Recent locations and navigation are explicitly app-local under the approved format decision. Restoration must validate every path against the currently opened root and must not weaken recovery-draft path isolation.
 
 ## Handoff protocol
 

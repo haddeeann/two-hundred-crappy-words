@@ -94,6 +94,18 @@
     executeNewWorldProject,
     planNewWorldProject,
   } from "$lib/project/new-project";
+  import {
+    discoverStructuredNoteDestinations,
+    type StructuredNoteDestination,
+  } from "$lib/project/note-destination";
+  import {
+    createStructuredNote,
+    STRUCTURED_NOTE_TEMPLATES,
+    STRUCTURED_NOTE_TYPES,
+    suggestStructuredNoteFileName,
+    validateStructuredNoteFileName,
+    type StructuredNoteType,
+  } from "$lib/project/structured-note";
 
   interface SaveFailure {
     path: string;
@@ -136,6 +148,17 @@
   let newWorldProjectBusy = $state(false);
   let newWorldProjectNameInput = $state<HTMLInputElement>();
   let newWorldProjectFolderNameInput = $state<HTMLInputElement>();
+  let creatingStructuredNote = $state(false);
+  let structuredNoteType = $state<StructuredNoteType>("character");
+  let structuredNoteTitle = $state("");
+  let structuredNoteFileName = $state("");
+  let structuredNoteFileNameTouched = $state(false);
+  let structuredNoteDestination = $state("");
+  let structuredNoteDestinations = $state<StructuredNoteDestination[]>([]);
+  let structuredNoteBusy = $state(false);
+  let structuredNoteError = $state("");
+  let structuredNoteTitleInput = $state<HTMLInputElement>();
+  let structuredNoteFileNameInput = $state<HTMLInputElement>();
   let navigationPromise: Promise<void> | null = null;
   let forcedSave: { path: string; revision: number } | null = null;
   let lastSaveFailure: SaveFailure | null = null;
@@ -171,7 +194,7 @@
     activeFilePath !== "" && hasUnsavedChanges(saveState),
   );
   const worldProjectBusy = $derived(
-    adoptionBusy || newWorldProjectBusy,
+    adoptionBusy || newWorldProjectBusy || structuredNoteBusy,
   );
   const saveStatus = $derived.by(() => {
     if (!activeFilePath) return "";
@@ -703,6 +726,7 @@
     newWorldProjectFolderName = "";
     newWorldProjectRoles = [];
     newWorldProjectBusy = false;
+    resetStructuredNote();
   }
 
   async function startWorldProjectAdoption() {
@@ -746,12 +770,20 @@
     ) {
       event.preventDefault();
       cancelNewWorldProject();
+    } else if (
+      creatingStructuredNote &&
+      !structuredNoteBusy &&
+      event.key === "Escape"
+    ) {
+      event.preventDefault();
+      cancelStructuredNote();
     }
   }
 
   async function startNewWorldProject() {
     if (worldProjectBusy) return;
     cancelWorldProjectAdoption();
+    cancelStructuredNote();
     error = "";
     newWorldProjectName = "My World";
     newWorldProjectFolderName = "My World";
@@ -865,6 +897,188 @@
     }
   }
 
+  async function resolveRealProjectDirectory(
+    relativePath: string,
+  ): Promise<string | null> {
+    if (!folderPath || projectInspection.kind !== "world-project") {
+      return null;
+    }
+    if (!relativePath) return folderPath;
+
+    let currentPath = folderPath;
+    for (const segment of relativePath.split("/")) {
+      const currentEntries = await readDir(currentPath);
+      const entry = currentEntries.find((candidate) => candidate.name === segment);
+      if (!entry?.isDirectory || entry.isSymlink) return null;
+      currentPath = await join(currentPath, segment);
+    }
+    return currentPath;
+  }
+
+  async function startStructuredNote() {
+    if (projectInspection.kind !== "world-project" || worldProjectBusy) return;
+    cancelNewWorldProject();
+    error = "";
+    structuredNoteBusy = true;
+    try {
+      structuredNoteDestinations =
+        await discoverStructuredNoteDestinations({
+          entries,
+          folders: projectInspection.manifest.folders,
+          rootLabel: projectInspection.manifest.name,
+          isUsableDirectory: async (relativePath) =>
+            (await resolveRealProjectDirectory(relativePath)) !== null,
+        });
+      structuredNoteType = "character";
+      structuredNoteTitle = "";
+      structuredNoteFileName = suggestStructuredNoteFileName(
+        "",
+        structuredNoteType,
+      );
+      structuredNoteFileNameTouched = false;
+      selectDefaultStructuredNoteDestination();
+      creatingStructuredNote = true;
+      await tick();
+      structuredNoteTitleInput?.focus();
+    } catch (cause) {
+      error = `Could not prepare note creation: ${formatError(cause)}`;
+    } finally {
+      structuredNoteBusy = false;
+    }
+  }
+
+  function resetStructuredNote() {
+    creatingStructuredNote = false;
+    structuredNoteType = "character";
+    structuredNoteTitle = "";
+    structuredNoteFileName = "";
+    structuredNoteFileNameTouched = false;
+    structuredNoteDestination = "";
+    structuredNoteDestinations = [];
+    structuredNoteBusy = false;
+    structuredNoteError = "";
+  }
+
+  function cancelStructuredNote() {
+    if (structuredNoteBusy) return;
+    resetStructuredNote();
+  }
+
+  function selectDefaultStructuredNoteDestination() {
+    const preferred =
+      projectInspection.kind === "world-project"
+        ? projectInspection.manifest.folders[
+            STRUCTURED_NOTE_TEMPLATES[structuredNoteType].defaultRole
+          ]
+        : undefined;
+    structuredNoteDestination =
+      preferred &&
+      structuredNoteDestinations.some(
+        (destination) => destination.relativePath === preferred,
+      )
+        ? preferred
+        : "";
+  }
+
+  function setStructuredNoteType(type: StructuredNoteType) {
+    structuredNoteType = type;
+    if (!structuredNoteFileNameTouched) {
+      structuredNoteFileName = suggestStructuredNoteFileName(
+        structuredNoteTitle,
+        type,
+      );
+    }
+    selectDefaultStructuredNoteDestination();
+    structuredNoteError = "";
+  }
+
+  function setStructuredNoteTitle(title: string) {
+    structuredNoteTitle = title;
+    if (!structuredNoteFileNameTouched) {
+      structuredNoteFileName = suggestStructuredNoteFileName(
+        title,
+        structuredNoteType,
+      );
+    }
+    structuredNoteError = "";
+  }
+
+  async function confirmStructuredNote() {
+    if (
+      !creatingStructuredNote ||
+      structuredNoteBusy ||
+      projectInspection.kind !== "world-project"
+    ) {
+      return;
+    }
+
+    const titleIssue = validateProjectName(structuredNoteTitle);
+    if (titleIssue) {
+      structuredNoteError = `Title ${titleIssue.slice("name ".length)}`;
+      await tick();
+      structuredNoteTitleInput?.focus();
+      return;
+    }
+    const fileName = structuredNoteFileName.trim();
+    const fileNameIssue = validateStructuredNoteFileName(fileName);
+    if (fileNameIssue) {
+      structuredNoteError = fileNameIssue;
+      await tick();
+      structuredNoteFileNameInput?.focus();
+      return;
+    }
+    if (
+      !structuredNoteDestinations.some(
+        (destination) =>
+          destination.relativePath === structuredNoteDestination,
+      )
+    ) {
+      structuredNoteError =
+        "Choose an available project folder for this note.";
+      return;
+    }
+
+    structuredNoteError = "";
+    structuredNoteBusy = true;
+    let createdEntry: FileTreeEntry | null = null;
+    try {
+      await navigate(async () => {
+        const destinationPath = await resolveRealProjectDirectory(
+          structuredNoteDestination,
+        );
+        if (!destinationPath) {
+          structuredNoteError =
+            "That project folder moved, disappeared, or became a symbolic link. Nothing was written.";
+          return;
+        }
+
+        const path = await join(destinationPath, fileName);
+        const note = createStructuredNote({
+          id: crypto.randomUUID(),
+          type: structuredNoteType,
+          title: structuredNoteTitle,
+        });
+        await writeTextFile(path, note, { createNew: true });
+        await refreshDirectory(destinationPath);
+        createdEntry = {
+          name: fileName,
+          path,
+          isDirectory: false,
+          isFile: true,
+          isSymlink: false,
+          expanded: false,
+          children: null,
+        };
+        resetStructuredNote();
+      });
+      if (createdEntry) await openFile(createdEntry);
+    } catch (cause) {
+      structuredNoteError = `Could not create note. No existing file was changed: ${formatError(cause)}`;
+    } finally {
+      structuredNoteBusy = false;
+    }
+  }
+
   async function confirmWorldProjectAdoption() {
     if (
       !folderPath ||
@@ -960,6 +1174,8 @@
   function startNewFile() {
     // Only meaningful once a folder is open.
     if (!folderPath) return;
+    cancelNewWorldProject();
+    cancelStructuredNote();
     error = "";
     newFileName = "";
     creatingFile = true;
@@ -1335,6 +1551,14 @@
       New File in {selectedDirectoryName}
     </button>
 
+    {#if projectInspection.kind === "world-project"}
+      <button
+        class="open-btn"
+        onclick={startStructuredNote}
+        disabled={worldProjectBusy}
+      >New Note from Template</button>
+    {/if}
+
     {#if folderPath && projectInspection.kind === "ordinary"}
       <button
         class="open-btn"
@@ -1408,6 +1632,95 @@
             type="button"
             onclick={cancelNewWorldProject}
             disabled={newWorldProjectBusy}
+          >Cancel</button>
+        </div>
+      </form>
+    {/if}
+
+    {#if creatingStructuredNote}
+      <form
+        class="project-adoption"
+        aria-label="Create structured Markdown note"
+        onsubmit={(event) => {
+          event.preventDefault();
+          void confirmStructuredNote();
+        }}
+      >
+        <label for="structured-note-type">Template</label>
+        <select
+          id="structured-note-type"
+          aria-label="Note template"
+          value={structuredNoteType}
+          onchange={(event) =>
+            setStructuredNoteType(
+              (event.currentTarget as HTMLSelectElement)
+                .value as StructuredNoteType,
+            )}
+          disabled={structuredNoteBusy}
+        >
+          {#each STRUCTURED_NOTE_TYPES as type}
+            <option value={type}>{STRUCTURED_NOTE_TEMPLATES[type].label}</option>
+          {/each}
+        </select>
+        <label for="structured-note-title">Title</label>
+        <input
+          id="structured-note-title"
+          class="new-file-input"
+          aria-label="Structured note title"
+          value={structuredNoteTitle}
+          oninput={(event) =>
+            setStructuredNoteTitle(
+              (event.currentTarget as HTMLInputElement).value,
+            )}
+          bind:this={structuredNoteTitleInput}
+          disabled={structuredNoteBusy}
+        />
+        <label for="structured-note-file-name">Markdown file name</label>
+        <input
+          id="structured-note-file-name"
+          class="new-file-input"
+          aria-label="Structured note file name"
+          value={structuredNoteFileName}
+          oninput={(event) => {
+            structuredNoteFileName = (
+              event.currentTarget as HTMLInputElement
+            ).value;
+            structuredNoteFileNameTouched = true;
+            structuredNoteError = "";
+          }}
+          bind:this={structuredNoteFileNameInput}
+          disabled={structuredNoteBusy}
+        />
+        <label for="structured-note-destination">Project folder</label>
+        <select
+          id="structured-note-destination"
+          aria-label="Structured note project folder"
+          value={structuredNoteDestination}
+          onchange={(event) => {
+            structuredNoteDestination = (
+              event.currentTarget as HTMLSelectElement
+            ).value;
+            structuredNoteError = "";
+          }}
+          disabled={structuredNoteBusy}
+        >
+          {#each structuredNoteDestinations as destination}
+            <option value={destination.relativePath}>{destination.label}</option>
+          {/each}
+        </select>
+        <p class="form-hint">
+          Creates an ordinary Markdown file. Template comments are optional and safe to delete.
+        </p>
+        {#if structuredNoteError}
+          <p class="error" role="alert">{structuredNoteError}</p>
+        {/if}
+        <div class="adoption-actions">
+          <button type="submit" disabled={structuredNoteBusy}
+            >{structuredNoteBusy ? "Creating…" : "Create note"}</button>
+          <button
+            type="button"
+            onclick={cancelStructuredNote}
+            disabled={structuredNoteBusy}
           >Cancel</button>
         </div>
       </form>
@@ -1768,6 +2081,24 @@
     border: 0;
   }
 
+  .project-adoption select {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 0.65rem;
+    padding: 0.45rem;
+    border: 1px solid #4b4b4b;
+    border-radius: 4px;
+    background-color: #292929;
+    color: #d4d4d4;
+    font: inherit;
+  }
+
+  .form-hint {
+    margin: 0 0 0.65rem;
+    color: #a8a8a8;
+    line-height: 1.4;
+  }
+
   .folder-choice {
     display: flex;
     align-items: center;
@@ -1800,7 +2131,8 @@
   }
 
   .adoption-actions button:focus-visible,
-  .folder-choice input:focus-visible {
+  .folder-choice input:focus-visible,
+  .project-adoption select:focus-visible {
     outline: 2px solid #75beff;
     outline-offset: 2px;
   }

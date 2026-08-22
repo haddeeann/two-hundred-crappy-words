@@ -36,12 +36,14 @@ The app now counts words and stores progress toward its default 200-word target 
 - Preserve existing app-local goals and writing history when adopting a folder
 - Create a brand-new named world project inside a location chosen with the native folder picker
 - Move or rename a valid world-project folder and retain its app-local goal and writing history after reopening
+- Create ordinary Markdown notes from optional character, location, faction, species, technology, spacecraft, event, scene, and chapter templates
+- Choose a verified project folder for a template note and protect existing files with create-new writes
 
 ## Current limitations
 
 - Correction audit export is not available yet
 - Ordinary folders still use their absolute path as local progress identity until explicitly adopted
-- Structured Markdown note templates and template-aware creation are not available yet
+- Recent-project navigation and per-project editor-state restoration are not available yet
 - Files and folders cannot be renamed, moved, or deleted in the app
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
 - The frameless window does not yet provide maximize/full-screen controls
@@ -103,7 +105,7 @@ static/                   Static images and icons
 
 ## Status
 
-This is a functional prototype. Its trustworthy-editor and daily-practice milestones have passed automated and hands-on macOS QA. The active world-project milestone has an approved portable format plus safely tested recognition, ordinary-folder adoption, native creation, and move/reopen behavior.
+This is a functional prototype. Its trustworthy-editor and daily-practice milestones have passed automated and hands-on macOS QA. The active world-project milestone has an approved portable format plus safely tested recognition, ordinary-folder adoption, native creation, move/reopen behavior, and optional structured Markdown templates.
 
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
