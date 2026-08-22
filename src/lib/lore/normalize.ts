@@ -10,8 +10,11 @@ export function relativeMarkdownStem(path: string): string {
 }
 
 export function normalizeLoreName(value: string): string {
+  return normalizeLoreSearchText(value.trim());
+}
+
+export function normalizeLoreSearchText(value: string): string {
   return value
-    .trim()
     .normalize("NFC")
     .toUpperCase()
     .toLowerCase()

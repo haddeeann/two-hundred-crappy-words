@@ -85,6 +85,14 @@ The expanded surface showed the target title, heading, project-relative path, on
 
 The completion model also has automated coverage for escaped, closed, labeled, multiline, nested, selected, heading, collision, Unicode-offset, deterministic-ranking, and exact-replacement cases. On the 2,000-note/24.78 MiB fixture, the first bounded completion query took 8.21 ms and a warm query averaged 3.13 ms against a 50 ms target. The full suite has 246 passing tests across thirty-five files, Svelte/TypeScript checks report zero errors and warnings, and frontend plus packaged macOS builds pass.
 
+## Milestone 0.5.5 project-search checkpoint
+
+Completed successfully on macOS on 2026-08-22 using Computer Use against freshly packaged builds and the disposable lore project. Command+P opened a visually inspected modal quick opener, focused its search field, exposed dialog/combobox/listbox semantics, and showed a bounded title list with match reasons and project-relative paths. `Early` produced one explained heading result; Enter opened `Lore/mara.md` through guarded navigation and selected the exact `Early life` source range. `patient cartographer` produced the original-case prose line as context and selected the exact phrase. A no-match query showed a clear empty state, Escape restored the prior editor focus and selection, ArrowDown changed the accessible active option, Enter opened it, and every reopen began with an empty query.
+
+The first packaged walkthrough found a focus race that HTML autofocus alone did not prevent after heading navigation: the next query briefly replaced the selected disposable heading. Command+Z immediately restored the unsaved text, Command+S confirmed the original file, and no source change was lost. The corrected component explicitly focuses its input after mount; the same reopen-and-type sequence then left prose and daily progress untouched. Final inspection confirmed the disposable Markdown remained unchanged.
+
+Search ranking and source mapping are covered for titles, aliases, filenames, paths, headings, content, collisions, Unicode normalization, UTF-16 ranges, empty queries, query/result bounds, and stable ties. A first benchmark naively mapped every common prose match and took 3,255.16 ms, correctly failing the budget. Ranking before exact mapping reduced the same 2,000-note/24.78 MiB search to 5.94 ms cold; a warm selective search averaged 13.64 ms, both beneath 50 ms. The full suite has 250 passing tests across thirty-six files, Svelte/TypeScript checks report zero errors and warnings, and frontend plus packaged macOS builds pass.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:

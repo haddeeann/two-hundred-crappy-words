@@ -1,6 +1,6 @@
 import { fingerprintContent } from "$lib/editor/recovery";
 import { parseMarkdownNote } from "./markdown";
-import { normalizeLoreName } from "./normalize";
+import { normalizeLoreSearchText } from "./normalize";
 import {
   createResolutionCatalog,
   resolveWikiLink,
@@ -169,8 +169,11 @@ function assembleLoreIndex(
       headings: [...document.headings],
       outgoing,
       parseIssues: [...document.issues],
+      searchText: text === undefined ? previous!.searchText : text,
       normalizedSearchText:
-        text === undefined ? previous!.normalizedSearchText : normalizeLoreName(text),
+        text === undefined
+          ? previous!.normalizedSearchText
+          : normalizeLoreSearchText(text),
     });
   }
 
@@ -246,7 +249,8 @@ function preparedRecord(
       context: linkContext(text, link.range.start, link.range.end),
     })),
     parseIssues: document.issues,
-    normalizedSearchText: normalizeLoreName(text),
+    searchText: text,
+    normalizedSearchText: normalizeLoreSearchText(text),
   };
 }
 

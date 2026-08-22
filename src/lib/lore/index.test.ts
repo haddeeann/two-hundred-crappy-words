@@ -83,6 +83,7 @@ describe("memory-only connected-lore index", () => {
     expect(updated.documents.get("unchanged.md")).toMatchObject({
       fingerprint: unchanged.fingerprint,
       normalizedSearchText: unchanged.normalizedSearchText,
+      searchText: unchanged.searchText,
     });
   });
 

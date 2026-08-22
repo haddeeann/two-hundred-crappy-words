@@ -67,7 +67,7 @@ Goal: let a writer consult and connect world knowledge without leaving the manus
 - [x] Support `[[Wiki Links]]` with keyboard-friendly completion.
 - [x] Show outgoing links and source-context backlinks.
 - [ ] Identify useful unlinked mentions without overwhelming the writer.
-- [ ] Add fast project-wide search and a quick opener.
+- [x] Add fast project-wide search and a quick opener.
 - [ ] Open a lore reference beside the active manuscript.
 - [ ] Handle renamed notes and broken links without silent data loss.
 - [ ] Keep indexing responsive on realistically large projects.

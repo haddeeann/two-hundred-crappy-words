@@ -101,6 +101,7 @@ export interface LoreDocumentRecord {
   headings: ParsedHeading[];
   outgoing: IndexedWikiLink[];
   parseIssues: LoreIssue[];
+  searchText: string;
   normalizedSearchText: string;
 }
 

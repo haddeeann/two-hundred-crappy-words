@@ -10,28 +10,30 @@ World projects are complete. The active milestone makes manuscript and world-bib
 
 ## Active slice
 
-**0.5.5 — Project search and quick opener**
+**0.5.6 — Side-by-side lore reference**
 
 ### Intended outcome
 
-Make every indexed note quickly reachable without navigating the folder tree. Add a keyboard-first project opener with understandable title, alias, path, heading, and content ranking, bounded context, and no persistent search history or creative-text cache.
+Let a writer consult a resolved note beside the manuscript without replacing the active draft, its selection, or its save context. Keep the first reference surface clearly read-only, keyboard reachable, and derived from a verified indexed source; add a safe create-new path for a broken note only when its destination is unambiguous.
 
 ### Acceptance criteria
 
-- [ ] Define deterministic ranking across exact title/alias/path, word prefix, substring, heading, and bounded content matches with stable path/range tie-breakers.
-- [ ] Return a bounded result set with a useful title, project-relative path, match reason, and short in-memory context while exposing collisions rather than guessing.
-- [ ] Open the quick opener from Command/Ctrl+P, type without editor side effects, traverse results, dismiss, and return focus entirely from the keyboard.
-- [ ] Open a selected result through the existing guarded navigation flow and select a matched heading or content range when it remains safe.
-- [ ] Keep query text session-only, work when the index is stale but available, and explain indexing/unavailable/empty states without blocking writing.
-- [ ] Stay within the approved 50 ms warm-query budget on the representative fixture and pass focused ranking plus packaged keyboard QA.
+- [ ] Open a resolved outgoing link or quick-opener result in a side reference without navigating away from the active editor or changing its selection.
+- [ ] Read the verified contained Markdown source through existing scope and stable-read protections; show stale/unavailable state instead of displaying mismatched indexed ranges.
+- [ ] Present a clear read-only title, path, headings, and text view with keyboard focus transfer, scrolling, close, and return-to-editor behavior.
+- [ ] Refresh or close the reference safely after incremental edit, move, removal, folder change, or index replacement without retaining its creative text in app data.
+- [ ] Offer broken-note creation only for a valid unambiguous project-relative destination, use atomic create-new semantics, and never repair or rewrite the source link silently.
+- [ ] Preserve active-draft autosave, recovery, daily credit, completion, and quick-opener behavior; pass focused state tests and packaged split-view QA.
 
 ## Next slices
 
-1. 0.5.6 — Open a lore reference beside the active manuscript and add safe missing-target creation.
-2. 0.5.7 — Add bounded unlinked mentions and previewed safe rename handling.
+1. 0.5.7 — Add bounded unlinked mentions and previewed safe rename handling.
+2. 0.5.8 — Add connected-lore navigation history and finish milestone regression QA.
 
 ## Completed checkpoint
 
+- Slice 0.5.5 is complete. Command/Ctrl+P now opens a session-only modal search over the current memory index. Each of at most thirty results shows a title, project-relative path, match reason, and bounded context. Exact title/alias/path/heading matches, prefixes, word prefixes, substrings, and prose use documented tiering plus stable path/range ties; colliding notes remain separate choices. Exact Unicode source ranges are mapped only after cheap global ranking, and the verified fingerprint gate prevents stale coordinates from selecting changed text.
+- Packaged macOS QA covered visual layout, explicit repeat-open focus, accessibility state, title/heading/prose/no-result searches, ArrowDown/Enter traversal, Escape focus restoration, exact source selection, guarded opening, and query reset. The first package exposed and safely recovered a focus race before the explicit post-mount focus fix. On the 2,000-note fixture, worst-case common prose search dropped from a correctly rejected 3,255.16 ms prototype to 5.94 ms cold; warm selective search averaged 13.64 ms. The full suite has 250 passing tests across thirty-six files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, and no search query or result history is persisted.
 - Slice 0.5.4 is complete. The editor now detects only a live, unescaped, unclosed wiki-link target at a collapsed UTF-16 caret and ranks at most eight note or uniquely resolved heading candidates. Title, alias, filename, rooted path, prefix, word-prefix, and substring matches use deterministic tie-breakers; colliding names insert rooted project-relative paths rather than guessing. Arrow keys traverse, Enter or Tab inserts through the native undo path, Escape dismisses, and labels, headings, punctuation, autosave, recovery, and gross-positive daily-credit behavior remain writer-owned.
 - The active Markdown note now has a bounded connections disclosure for resolved, broken, invalid, and ambiguous outgoing links plus source-context backlinks. Resolved buttons use the existing guarded navigation flow and select the indexed heading or exact source link. Packaged macOS QA covered note and heading completion, accessibility state, focus retention, visual layout, unsaved connection refresh, bidirectional navigation, exact selections, undo, safe save, and clean close. The 2,000-note fixture measured 8.21 ms for the first completion query and 3.13 ms warm; the full suite has 246 passing tests across thirty-five files, Svelte/TypeScript checks report zero errors and warnings, and frontend plus packaged macOS builds pass.
 - Slice 0.5.3 is complete. The selected project now receives a recursive, native-picker-scoped filesystem watch whose noisy events are coalesced before affected files or directory subtrees are reconciled. Every changed path is revalidated for containment, exclusions, symbolic links, stable reads, and whole-project limits; unreadable or unstable changes retain known-good records and mark the index stale with explicit refresh available. App-owned writes flow through the same watcher without adding lore persistence or daily credit, active unsaved/recovered buffers remain authoritative overlays, and monitoring is disposed on project changes and teardown.

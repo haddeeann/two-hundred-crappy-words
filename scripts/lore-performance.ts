@@ -9,6 +9,7 @@ import {
   findWikiLinkCompletion,
   loreCompletionCandidates,
 } from "../src/lib/lore/completion";
+import { searchProjectLore } from "../src/lib/lore/search";
 
 const FILE_COUNT = 2_000;
 const TARGET_BYTES = 25 * 1024 * 1024;
@@ -80,6 +81,15 @@ for (let iteration = 0; iteration < 100; iteration += 1) {
 const warmCompletionMilliseconds =
   (performance.now() - warmCompletionStart) / 100;
 
+const firstSearchStart = performance.now();
+const firstSearch = searchProjectLore(index, "patient signal");
+const firstSearchMilliseconds = performance.now() - firstSearchStart;
+const warmSearchStart = performance.now();
+for (let iteration = 0; iteration < 25; iteration += 1) {
+  searchProjectLore(index, "Note 1000");
+}
+const warmSearchMilliseconds = (performance.now() - warmSearchStart) / 25;
+
 const result = {
   files: sources.length,
   acceptedMiB: Number((acceptedBytes / (1024 * 1024)).toFixed(2)),
@@ -90,6 +100,8 @@ const result = {
   warmQueryMilliseconds: Number(warmQueryMilliseconds.toFixed(4)),
   firstCompletionMilliseconds: Number(firstCompletionMilliseconds.toFixed(2)),
   warmCompletionMilliseconds: Number(warmCompletionMilliseconds.toFixed(2)),
+  firstSearchMilliseconds: Number(firstSearchMilliseconds.toFixed(2)),
+  warmSearchMilliseconds: Number(warmSearchMilliseconds.toFixed(2)),
   targets: {
     fullMilliseconds: 3_000,
     longestWorkChunkMilliseconds: 50,
@@ -97,6 +109,8 @@ const result = {
     warmQueryMilliseconds: 50,
     firstCompletionMilliseconds: 50,
     warmCompletionMilliseconds: 50,
+    firstSearchMilliseconds: 50,
+    warmSearchMilliseconds: 50,
   },
 };
 
@@ -111,7 +125,11 @@ if (
   firstCompletion.length === 0 ||
   firstCompletion.length > 8 ||
   firstCompletionMilliseconds > result.targets.firstCompletionMilliseconds ||
-  warmCompletionMilliseconds > result.targets.warmCompletionMilliseconds
+  warmCompletionMilliseconds > result.targets.warmCompletionMilliseconds ||
+  firstSearch.length === 0 ||
+  firstSearch.length > 30 ||
+  firstSearchMilliseconds > result.targets.firstSearchMilliseconds ||
+  warmSearchMilliseconds > result.targets.warmSearchMilliseconds
 ) {
   process.exitCode = 1;
 }

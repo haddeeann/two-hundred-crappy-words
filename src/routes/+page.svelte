@@ -125,6 +125,7 @@
   import LoreIndexStatus from "$lib/lore/LoreIndexStatus.svelte";
   import LoreCompletion from "$lib/lore/LoreCompletion.svelte";
   import LoreConnections from "$lib/lore/LoreConnections.svelte";
+  import LoreQuickOpen from "$lib/lore/LoreQuickOpen.svelte";
   import {
     findWikiLinkCompletion,
     loreCompletionCandidates,
@@ -135,6 +136,10 @@
     activeLoreConnections,
     type LoreConnectionItem,
   } from "$lib/lore/connections";
+  import {
+    searchProjectLore,
+    type LoreSearchResult,
+  } from "$lib/lore/search";
   import { isMarkdownPath } from "$lib/lore/normalize";
   import {
     DEFAULT_MAX_LORE_FILE_BYTES,
@@ -152,7 +157,7 @@
     reconcileLoreChanges,
   } from "$lib/lore/reconcile";
   import { tauriLoreScanBackend } from "$lib/lore/tauri-scan";
-  import type { LoreProjectIndex } from "$lib/lore/types";
+  import type { LoreProjectIndex, SourceRange } from "$lib/lore/types";
 
   interface SaveFailure {
     path: string;
@@ -243,6 +248,10 @@
   let loreCompletionSelectedIndex = $state(0);
   let dismissedLoreCompletion = "";
   let insertingLoreCompletion = false;
+  let quickOpenVisible = $state(false);
+  let quickOpenQuery = $state("");
+  let quickOpenSelectedIndex = $state(0);
+  let quickOpenReturnFocus: HTMLElement | null = null;
   let lastDailyProgressFailure: {
     path: string;
     revision: number;
@@ -327,6 +336,14 @@
   });
   const currentLoreConnections = $derived(
     activeLoreConnections(loreIndex, activeLorePath()),
+  );
+  const quickOpenResults = $derived(
+    quickOpenVisible && loreIndex
+      ? searchProjectLore(loreIndex, quickOpenQuery)
+      : [],
+  );
+  const quickOpenActiveIndex = $derived(
+    Math.max(0, Math.min(quickOpenSelectedIndex, quickOpenResults.length - 1)),
   );
 
   const autosave = new AutosaveController({
@@ -867,15 +884,28 @@
   }
 
   async function openLoreConnection(item: LoreConnectionItem): Promise<void> {
-    if (!folderPath || !item.targetPath) return;
+    if (!item.targetPath) return;
+    await openIndexedLorePath(item.targetPath, item.targetRange);
+  }
+
+  async function openLoreSearchResult(result: LoreSearchResult): Promise<void> {
+    closeQuickOpen(false);
+    await openIndexedLorePath(result.path, result.range);
+  }
+
+  async function openIndexedLorePath(
+    relativePath: string,
+    targetRange: SourceRange | null,
+  ): Promise<void> {
+    if (!folderPath) return;
     try {
-      const targetFingerprint = loreIndex?.documents.get(item.targetPath)?.fingerprint;
-      const segments = item.targetPath.split("/");
+      const targetFingerprint = loreIndex?.documents.get(relativePath)?.fingerprint;
+      const segments = relativePath.split("/");
       const path = await join(folderPath, ...segments);
       const known = findTreeEntry(entries, path);
       await openFile(
         known ?? {
-          name: segments.at(-1) ?? item.targetPath,
+          name: segments.at(-1) ?? relativePath,
           path,
           isFile: true,
           isDirectory: false,
@@ -888,7 +918,7 @@
       if (activeFilePath !== path || !editorInput) return;
       const range =
         targetFingerprint && fingerprintContent(content) === targetFingerprint
-          ? item.targetRange
+          ? targetRange
           : null;
       const start = Math.min(range?.start ?? 0, editorInput.value.length);
       const end = Math.min(range?.end ?? start, editorInput.value.length);
@@ -896,8 +926,45 @@
       editorInput.setSelectionRange(start, end);
       updateLoreCompletion(editorInput);
     } catch (cause) {
-      error = `Could not open lore connection: ${formatError(cause)}`;
+      error = `Could not open indexed note: ${formatError(cause)}`;
     }
+  }
+
+  async function openQuickOpen(): Promise<void> {
+    if (quickOpenVisible) return;
+    quickOpenReturnFocus = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    dismissedLoreCompletion = "";
+    clearLoreCompletion();
+    quickOpenQuery = "";
+    quickOpenSelectedIndex = 0;
+    quickOpenVisible = true;
+    await tick();
+  }
+
+  function closeQuickOpen(restoreFocus = true): void {
+    if (!quickOpenVisible) return;
+    quickOpenVisible = false;
+    quickOpenQuery = "";
+    quickOpenSelectedIndex = 0;
+    const returnFocus = quickOpenReturnFocus;
+    quickOpenReturnFocus = null;
+    if (restoreFocus) {
+      void tick().then(() => returnFocus?.focus());
+    }
+  }
+
+  function updateQuickOpenQuery(value: string): void {
+    quickOpenQuery = value;
+    quickOpenSelectedIndex = 0;
+  }
+
+  function moveQuickOpenSelection(index: number): void {
+    quickOpenSelectedIndex = Math.max(
+      0,
+      Math.min(index, quickOpenResults.length - 1),
+    );
   }
 
   function syncActiveLoreBuffer(): void {
@@ -2265,6 +2332,18 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
+    if (event.defaultPrevented) return;
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "p") {
+      event.preventDefault();
+      if (quickOpenVisible) closeQuickOpen();
+      else void openQuickOpen();
+      return;
+    }
+    if (quickOpenVisible && event.key === "Escape") {
+      event.preventDefault();
+      closeQuickOpen();
+      return;
+    }
     adoptionFormKeydown(event);
     if (event.defaultPrevented) return;
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
@@ -2810,6 +2889,20 @@
     </div>
   </main>
 </div>
+
+{#if quickOpenVisible}
+  <LoreQuickOpen
+    query={quickOpenQuery}
+    results={quickOpenResults}
+    selectedIndex={quickOpenActiveIndex}
+    phase={loreIndexPhase}
+    hasIndex={loreIndex !== null}
+    onQuery={updateQuickOpenQuery}
+    onMove={moveQuickOpenSelection}
+    onOpen={(result) => void openLoreSearchResult(result)}
+    onClose={() => closeQuickOpen()}
+  />
+{/if}
 
 <style>
   :global(html, body) {
