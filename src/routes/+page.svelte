@@ -177,6 +177,11 @@
   } from "$lib/lore/reconcile";
   import { tauriLoreScanBackend } from "$lib/lore/tauri-scan";
   import type { LoreProjectIndex, SourceRange } from "$lib/lore/types";
+  import ManuscriptOutline from "$lib/manuscript/ManuscriptOutline.svelte";
+  import {
+    loadManuscriptProject,
+    type ManuscriptProjectLoadResult,
+  } from "$lib/manuscript/source-reconciliation";
 
   interface SaveFailure {
     path: string;
@@ -281,6 +286,9 @@
   let loreHistoryRevision = $state(0);
   let restoringLoreHistory = $state(false);
   let loreHistoryNotice = $state("");
+  let manuscriptProject = $state<ManuscriptProjectLoadResult>({ kind: "absent" });
+  let manuscriptLoading = $state(false);
+  let manuscriptLoadRevision = 0;
   let lastDailyProgressFailure: {
     path: string;
     revision: number;
@@ -645,6 +653,9 @@
     loreHistoryRevision += 1;
     restoringLoreHistory = false;
     loreHistoryNotice = "";
+    manuscriptLoadRevision += 1;
+    manuscriptProject = { kind: "absent" };
+    manuscriptLoading = false;
     loreIndexPhase = "indexing";
     void refreshLoreIndex(path);
   }
@@ -674,6 +685,7 @@
       loreIndexPhase = "ready";
       void startLoreMonitoring(path, session);
       if (loreReference) void openLoreReference(loreReference.path, false);
+      void refreshManuscriptStructure(path, session, loreIndex);
     } catch (cause) {
       if (session !== loreIndexSession || path !== folderPath) return;
       loreIndexPhase = "error";
@@ -740,6 +752,7 @@
           ) {
             void openLoreReference(loreReference.path, false);
           }
+          void refreshManuscriptStructure(path, session, loreIndex);
         } catch (cause) {
           if (session !== loreIndexSession || path !== folderPath) return;
           loreIndexNeedsRefresh = true;
@@ -781,6 +794,55 @@
       loreIndexPhase = "stale";
       loreIndexError = `Automatic lore refresh is unavailable. Writing and explicit refresh still work: ${formatError(cause)}`;
     }
+  }
+
+  async function refreshManuscriptStructure(
+    path = folderPath,
+    session = loreIndexSession,
+    index = loreIndex,
+  ): Promise<void> {
+    if (!path || !index) return;
+    const revision = ++manuscriptLoadRevision;
+    manuscriptLoading = true;
+    try {
+      const result = await loadManuscriptProject(path, tauriLoreScanBackend, {
+        loreIndex: index,
+      });
+      if (
+        revision !== manuscriptLoadRevision ||
+        session !== loreIndexSession ||
+        path !== folderPath
+      ) {
+        return;
+      }
+      manuscriptProject = result;
+    } catch (cause) {
+      if (
+        revision !== manuscriptLoadRevision ||
+        session !== loreIndexSession ||
+        path !== folderPath
+      ) {
+        return;
+      }
+      manuscriptProject = {
+        kind: "unreadable",
+        message: `The manuscript outline could not be refreshed safely: ${formatError(cause)}`,
+      };
+    } finally {
+      if (revision === manuscriptLoadRevision) manuscriptLoading = false;
+    }
+  }
+
+  async function openManuscriptSource(
+    relativePath: string,
+    fingerprint: string,
+  ): Promise<void> {
+    if (!(await historySourceMatches(relativePath, fingerprint))) {
+      error = "That manuscript source changed before it could be opened. The outline is refreshing instead.";
+      await refreshManuscriptStructure();
+      return;
+    }
+    await openIndexedLorePath(relativePath, null);
   }
 
   function mergeReconciledScanIssues(
@@ -3371,6 +3433,14 @@
         errorMessage={loreIndexError}
         onRefresh={() => void refreshLoreIndex()}
       />
+      {#if manuscriptProject.kind !== "absent"}
+        <ManuscriptOutline
+          result={manuscriptProject}
+          loading={manuscriptLoading}
+          onRefresh={() => void refreshManuscriptStructure()}
+          onOpenSource={(path, fingerprint) => void openManuscriptSource(path, fingerprint)}
+        />
+      {/if}
     {/if}
 
     <nav class="files" aria-label="Project files">
