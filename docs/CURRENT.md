@@ -18,12 +18,12 @@ Define the durable meaning of indexed notes and wiki links before scanning or wr
 
 ### Acceptance criteria
 
-- [ ] Inventory the existing world-project, structured-note, filesystem, and recovery constraints that indexing must preserve.
-- [ ] Propose which Markdown files, metadata, headings, and paths are indexed and which hidden, generated, metadata, symbolic-link, or configured paths are excluded.
-- [ ] Specify note identity and title precedence for structured and ordinary Markdown without silently adding metadata to existing files.
-- [ ] Specify `[[Note]]`, `[[Note|label]]`, and heading-link grammar, escaping, normalization, case, ambiguity, and broken-link behavior.
-- [ ] Define a versioned app-local derived index record, invalidation inputs, size limits, and no-network/privacy boundary.
-- [ ] Add representative parsing fixtures and performance targets to the proposal.
+- [x] Inventory the existing world-project, structured-note, filesystem, and recovery constraints that indexing must preserve.
+- [x] Propose which Markdown files, metadata, headings, and paths are indexed and which hidden, generated, metadata, symbolic-link, or configured paths are excluded.
+- [x] Specify note identity and title precedence for structured and ordinary Markdown without silently adding metadata to existing files.
+- [x] Specify `[[Note]]`, `[[Note|label]]`, and heading-link grammar, escaping, normalization, case, ambiguity, and broken-link behavior.
+- [x] Define a versioned in-memory derived index record, invalidation inputs, size limits, and no-network/privacy boundary.
+- [x] Add representative parsing fixtures and performance targets to the proposal.
 - [ ] Pause for approval before implementing semantics that become durable writer-authored Markdown or expanding the approved frontmatter convention.
 
 ## Next slices
@@ -41,7 +41,7 @@ Define the durable meaning of indexed notes and wiki links before scanning or wr
 
 ## Blockers and decision gates
 
-No implementation blocker. Slice 0.5.1 intentionally ends at a user decision gate because wiki-link meaning becomes durable writer-authored Markdown and any new structured-note frontmatter key expands the approved portable format.
+Decision gate reached. `docs/CONNECTED_LORE_FORMAT.md` proposes the complete semantics and recommends an optional block-sequence `aliases` field, project-root-relative path disambiguation, explicit ambiguity instead of silent precedence, documented escaping, and a memory-only creative-text index. Implementation is paused pending user approval or revision.
 
 ## Handoff protocol
 

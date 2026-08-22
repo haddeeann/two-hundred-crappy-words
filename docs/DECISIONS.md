@@ -192,3 +192,12 @@ The app keeps at most twelve recent projects plus selected directory, expanded d
 When the same world UUID is opened at a second accessible path, the writer chooses whether it is the same project, an independent copy, or an ordinary folder. Only the independent choice rewrites anything portable: it assigns a new UUID through a compare-before-write update that preserves unknown version-one manifest fields. Moving a world whose previous path is inaccessible updates only app-local location data, and recovery drafts remain absolute-path-specific.
 
 Why: returning to work should restore useful mental context without creating machine-specific churn in creative folders. Stable-key deduplication makes moves calm, while an explicit copy choice prevents two filesystem copies from silently sharing or unexpectedly splitting private practice identity.
+
+## D-022 — Proposed connected-lore names and wiki links
+
+- Date: 2026-08-22
+- Status: proposed, pending user approval
+
+The recommended first connected-lore format indexes regular project Markdown locally, derives titles without modifying ordinary files, adds an optional safe `aliases` string sequence to structured-note frontmatter, and gives `[[Note]]`, labeled links, heading links, rooted path disambiguation, escaping, normalization, and ambiguity explicit portable semantics. The creative-text index remains in memory in version 1 rather than creating another persistent manuscript copy.
+
+Why: backlinks, search, rename safety, and missing-note creation must agree on what a note and target mean. Choosing these rules before implementation avoids silently changing writer-authored links later. The full proposal, limits, fixtures, and decision points are in [`CONNECTED_LORE_FORMAT.md`](CONNECTED_LORE_FORMAT.md).
