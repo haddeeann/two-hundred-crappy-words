@@ -177,11 +177,21 @@
   } from "$lib/lore/reconcile";
   import { tauriLoreScanBackend } from "$lib/lore/tauri-scan";
   import type { LoreProjectIndex, SourceRange } from "$lib/lore/types";
+  import ManuscriptCreationDialog from "$lib/manuscript/ManuscriptCreationDialog.svelte";
   import ManuscriptOutline from "$lib/manuscript/ManuscriptOutline.svelte";
+  import {
+    planManuscriptCreation,
+    retitleManuscriptCreationPlan,
+    verifyManuscriptCreationPlan,
+    type ManuscriptCreationMode,
+    type ManuscriptCreationPlan,
+    type ReadyManuscriptCreationPlan,
+  } from "$lib/manuscript/creation";
   import {
     loadManuscriptProject,
     type ManuscriptProjectLoadResult,
   } from "$lib/manuscript/source-reconciliation";
+  import { MANUSCRIPT_STRUCTURE_FILE } from "$lib/manuscript/structure";
 
   interface SaveFailure {
     path: string;
@@ -289,6 +299,15 @@
   let manuscriptProject = $state<ManuscriptProjectLoadResult>({ kind: "absent" });
   let manuscriptLoading = $state(false);
   let manuscriptLoadRevision = 0;
+  let manuscriptCreationVisible = $state(false);
+  let manuscriptCreationMode = $state<ManuscriptCreationMode>("import");
+  let manuscriptCreationTitle = $state("");
+  let manuscriptCreationImportDirectory = $state("");
+  let manuscriptCreationBasePlan = $state<ManuscriptCreationPlan | null>(null);
+  let manuscriptCreationPlanning = $state(false);
+  let manuscriptCreationBusy = $state(false);
+  let manuscriptCreationError = $state("");
+  let manuscriptCreationRevision = 0;
   let lastDailyProgressFailure: {
     path: string;
     revision: number;
@@ -315,8 +334,21 @@
     activeFilePath !== "" && hasUnsavedChanges(saveState),
   );
   const worldProjectBusy = $derived(
-    adoptionBusy || newWorldProjectBusy || structuredNoteBusy || loreRenameBusy,
+    adoptionBusy ||
+      newWorldProjectBusy ||
+      structuredNoteBusy ||
+      loreRenameBusy ||
+      manuscriptCreationVisible,
   );
+  const manuscriptCreationPlan = $derived.by(() => {
+    if (manuscriptCreationBasePlan?.kind !== "ready") {
+      return manuscriptCreationBasePlan;
+    }
+    return retitleManuscriptCreationPlan(
+      manuscriptCreationBasePlan,
+      manuscriptCreationTitle,
+    );
+  });
   const saveStatus = $derived.by(() => {
     if (!activeFilePath) return "";
     if (saveState.phase === "saving") return "Saving…";
@@ -656,6 +688,7 @@
     manuscriptLoadRevision += 1;
     manuscriptProject = { kind: "absent" };
     manuscriptLoading = false;
+    resetManuscriptCreation(true);
     loreIndexPhase = "indexing";
     void refreshLoreIndex(path);
   }
@@ -843,6 +876,153 @@
       return;
     }
     await openIndexedLorePath(relativePath, null);
+  }
+
+  async function preferredManuscriptImportDirectory(): Promise<string> {
+    if (!folderPath) return "";
+    if (projectInspection.kind === "world-project") {
+      const preferred = projectInspection.manifest.folders.manuscript;
+      if (preferred && (await resolveRealProjectDirectory(preferred))) {
+        return preferred;
+      }
+    }
+    const selected = projectRelativePath(
+      folderPath,
+      selectedDirectoryPath || folderPath,
+    );
+    if (selected) return selected;
+    const conventional = entries.find(
+      (entry) =>
+        entry.name.localeCompare("Manuscript", undefined, { sensitivity: "base" }) === 0 &&
+        entry.isDirectory &&
+        !entry.isFile &&
+        !entry.isSymlink,
+    );
+    return conventional?.name ?? "";
+  }
+
+  async function startManuscriptCreation(): Promise<void> {
+    if (
+      !folderPath ||
+      manuscriptProject.kind !== "absent" ||
+      loreIndexPhase !== "ready" ||
+      !loreIndex ||
+      worldProjectBusy
+    ) {
+      return;
+    }
+    manuscriptCreationVisible = true;
+    manuscriptCreationMode = "import";
+    manuscriptCreationTitle =
+      projectInspection.kind === "world-project"
+        ? projectInspection.manifest.name
+        : folderPath.split(/[\\/]/).filter(Boolean).at(-1) ?? "My Manuscript";
+    manuscriptCreationImportDirectory = await preferredManuscriptImportDirectory();
+    manuscriptCreationBasePlan = null;
+    manuscriptCreationError = "";
+    await refreshManuscriptCreationPreview();
+  }
+
+  function resetManuscriptCreation(force = false): void {
+    if (manuscriptCreationBusy && !force) return;
+    manuscriptCreationRevision += 1;
+    manuscriptCreationVisible = false;
+    manuscriptCreationMode = "import";
+    manuscriptCreationTitle = "";
+    manuscriptCreationImportDirectory = "";
+    manuscriptCreationBasePlan = null;
+    manuscriptCreationPlanning = false;
+    manuscriptCreationBusy = false;
+    manuscriptCreationError = "";
+  }
+
+  function setManuscriptCreationMode(mode: ManuscriptCreationMode): void {
+    if (manuscriptCreationBusy || mode === manuscriptCreationMode) return;
+    manuscriptCreationMode = mode;
+    manuscriptCreationError = "";
+    void refreshManuscriptCreationPreview();
+  }
+
+  async function refreshManuscriptCreationPreview(): Promise<void> {
+    if (!manuscriptCreationVisible || !folderPath) return;
+    const rootPath = folderPath;
+    const revision = ++manuscriptCreationRevision;
+    manuscriptCreationPlanning = true;
+    manuscriptCreationError = "";
+    try {
+      const plan = await planManuscriptCreation({
+        rootPath,
+        importDirectory: manuscriptCreationImportDirectory,
+        title: manuscriptCreationTitle,
+        mode: manuscriptCreationMode,
+        backend: tauriLoreScanBackend,
+        loreIndex,
+        createId: () => crypto.randomUUID(),
+      });
+      if (
+        revision !== manuscriptCreationRevision ||
+        rootPath !== folderPath ||
+        !manuscriptCreationVisible
+      ) {
+        return;
+      }
+      manuscriptCreationBasePlan = plan;
+    } catch (cause) {
+      if (revision !== manuscriptCreationRevision || !manuscriptCreationVisible) return;
+      manuscriptCreationBasePlan = null;
+      manuscriptCreationError = `The preview could not be prepared safely: ${formatError(cause)}`;
+    } finally {
+      if (revision === manuscriptCreationRevision) manuscriptCreationPlanning = false;
+    }
+  }
+
+  async function confirmManuscriptCreation(): Promise<void> {
+    const plan = manuscriptCreationPlan;
+    if (
+      !folderPath ||
+      !manuscriptCreationVisible ||
+      manuscriptCreationBusy ||
+      plan?.kind !== "ready"
+    ) {
+      return;
+    }
+    const rootPath = folderPath;
+    const session = loreIndexSession;
+    let created = false;
+    manuscriptCreationBusy = true;
+    manuscriptCreationError = "";
+    try {
+      const verified = await verifyManuscriptCreationPlan(
+        rootPath,
+        plan as ReadyManuscriptCreationPlan,
+        tauriLoreScanBackend,
+        loreIndex,
+      );
+      if (verified.kind === "blocked") {
+        manuscriptCreationError = `Nothing was written. ${verified.issues
+          .slice(0, 5)
+          .map((issue) => `${issue.path || "Project root"}: ${issue.message}`)
+          .join(" ")}`;
+        return;
+      }
+      await writeTextFile(
+        await join(rootPath, MANUSCRIPT_STRUCTURE_FILE),
+        verified.text,
+        { createNew: true },
+      );
+      created = true;
+      resetManuscriptCreation(true);
+      await refreshDirectory(rootPath);
+      await refreshManuscriptStructure(rootPath, session, loreIndex);
+    } catch (cause) {
+      if (created) {
+        error = `The manuscript structure was created safely, but the project view could not refresh: ${formatError(cause)}. Reopen the folder or refresh the outline to try again.`;
+      } else {
+        manuscriptCreationError = `Nothing existing was changed. The structure could not be created: ${formatError(cause)}`;
+      }
+    } finally {
+      manuscriptCreationBusy = false;
+    }
   }
 
   function mergeReconciledScanIssues(
@@ -2216,6 +2396,7 @@
     newWorldProjectRoles = [];
     newWorldProjectBusy = false;
     resetStructuredNote();
+    resetManuscriptCreation(true);
 
     try {
       await rememberOpenedProject(
@@ -2998,6 +3179,7 @@
 
   function handleKeydown(event: KeyboardEvent) {
     if (event.defaultPrevented) return;
+    if (manuscriptCreationVisible) return;
     if (
       (event.ctrlKey || event.metaKey) &&
       !event.shiftKey &&
@@ -3433,7 +3615,13 @@
         errorMessage={loreIndexError}
         onRefresh={() => void refreshLoreIndex()}
       />
-      {#if manuscriptProject.kind !== "absent"}
+      {#if manuscriptProject.kind === "absent" && loreIndexPhase === "ready"}
+        <button
+          class="open-btn manuscript-create"
+          onclick={() => void startManuscriptCreation()}
+          disabled={worldProjectBusy}
+        >Create manuscript structure</button>
+      {:else if manuscriptProject.kind !== "absent"}
         <ManuscriptOutline
           result={manuscriptProject}
           loading={manuscriptLoading}
@@ -3577,6 +3765,25 @@
         }}
         onCancel={() => closeLoreRename()}
         onConfirm={() => void confirmLoreRename()}
+      />
+    {/if}
+    {#if manuscriptCreationVisible}
+      <ManuscriptCreationDialog
+        title={manuscriptCreationTitle}
+        mode={manuscriptCreationMode}
+        importDirectory={manuscriptCreationImportDirectory}
+        plan={manuscriptCreationPlan}
+        planning={manuscriptCreationPlanning}
+        busy={manuscriptCreationBusy}
+        executionError={manuscriptCreationError}
+        onTitle={(title) => {
+          manuscriptCreationTitle = title;
+          manuscriptCreationError = "";
+        }}
+        onMode={setManuscriptCreationMode}
+        onRefresh={() => void refreshManuscriptCreationPreview()}
+        onCancel={() => resetManuscriptCreation()}
+        onConfirm={() => void confirmManuscriptCreation()}
       />
     {/if}
     <div class="practice-bar" aria-label="Writing progress">

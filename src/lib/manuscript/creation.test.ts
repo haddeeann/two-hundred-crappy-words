@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { buildLoreProjectIndex } from "$lib/lore/index";
 import type { LoreFileRevision, LoreScanBackend, LoreScanEntry } from "$lib/lore/scan";
 import {
+  MAX_MANUSCRIPT_IMPORT_ENTRIES,
   planManuscriptCreation,
   retitleManuscriptCreationPlan,
   verifyManuscriptCreationPlan,
@@ -225,6 +226,28 @@ describe("manuscript structure creation planning", () => {
     });
   });
 
+  it("bounds the visible directory entries examined by one import preview", async () => {
+    const tooManyEntries = Object.fromEntries(
+      Array.from({ length: MAX_MANUSCRIPT_IMPORT_ENTRIES + 1 }, (_, index) => [
+        `asset-${index}.txt`,
+        file("ignored"),
+      ]),
+    );
+    const root = directory({ Manuscript: directory(tooManyEntries) });
+    const plan = await planManuscriptCreation({
+      rootPath: ROOT,
+      importDirectory: "Manuscript",
+      title: "Book",
+      mode: "import",
+      backend: backend(root),
+      createId: ids(),
+    });
+    expect(plan).toMatchObject({
+      kind: "blocked",
+      issues: [{ message: expect.stringContaining("20,000 visible directory entries") }],
+    });
+  });
+
   it("requires a fresh preview when an imported source changes", async () => {
     const scene = file("# One\n\nFirst version.\n");
     const root = directory({ Manuscript: directory({ "one.md": scene }) });
@@ -304,6 +327,26 @@ describe("manuscript structure creation planning", () => {
     expect(retitleManuscriptCreationPlan(plan, "")).toMatchObject({
       kind: "blocked",
       issues: [{ path: "manuscripts[0].title" }],
+    });
+  });
+
+  it("keeps an intentional numeric Markdown title while removing filename order hints", async () => {
+    const text = "# 1984\n";
+    const root = directory({ Manuscript: directory({ "01 opening.md": file(text) }) });
+    const plan = await planManuscriptCreation({
+      rootPath: ROOT,
+      importDirectory: "Manuscript",
+      title: "Book",
+      mode: "import",
+      backend: backend(root),
+      loreIndex: buildLoreProjectIndex([
+        { path: "Manuscript/01 opening.md", text },
+      ], 1),
+      createId: ids(),
+    });
+    expect(plan).toMatchObject({
+      kind: "ready",
+      structure: { manuscripts: [{ items: [{ title: "1984" }] }] },
     });
   });
 });

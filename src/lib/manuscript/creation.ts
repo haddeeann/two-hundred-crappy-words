@@ -19,6 +19,7 @@ import {
 } from "./structure";
 
 export type ManuscriptCreationMode = "empty" | "import";
+export const MAX_MANUSCRIPT_IMPORT_ENTRIES = 20_000;
 
 export interface ManuscriptImportSkip {
   path: string;
@@ -80,6 +81,10 @@ interface PlanOptions {
   backend: LoreScanBackend;
   loreIndex?: LoreProjectIndex | null;
   createId: () => string;
+}
+
+interface DiscoveryBudget {
+  examinedEntries: number;
 }
 
 export async function planManuscriptCreation(
@@ -255,6 +260,7 @@ async function discoverImport(
   const skipped: ManuscriptImportSkip[] = [];
   const items: ImportItem[] = [];
   const idPaths = pathsByLoreId(loreIndex);
+  const budget: DiscoveryBudget = { examinedEntries: 0 };
 
   let entries: readonly LoreScanEntry[];
   try {
@@ -265,6 +271,8 @@ async function discoverImport(
       issues: [{ path: relativeDirectory, message: `The import folder could not be read: ${formatError(cause)}` }],
     };
   }
+  const rootLimit = reserveDiscoveryEntries(budget, entries.length, relativeDirectory);
+  if (rootLimit) return { kind: "blocked", issues: [rootLimit] };
 
   for (const entry of naturalEntries(entries)) {
     const path = joinRelative(relativeDirectory, entry.name);
@@ -284,6 +292,7 @@ async function discoverImport(
         backend,
         loreIndex,
         idPaths,
+        budget,
       );
       if (chapter.kind === "blocked") issues.push(...chapter.issues);
       else {
@@ -314,6 +323,7 @@ async function discoverChapter(
   backend: LoreScanBackend,
   loreIndex: LoreProjectIndex | null,
   idPaths: ReadonlyMap<string, readonly string[]>,
+  budget: DiscoveryBudget,
 ): Promise<
   | { kind: "ready"; chapter: ImportChapter; skipped: ManuscriptImportSkip[] }
   | { kind: "blocked"; issues: ManuscriptCreationIssue[] }
@@ -327,6 +337,8 @@ async function discoverChapter(
       issues: [{ path: relativePath, message: `This chapter folder could not be read: ${formatError(cause)}` }],
     };
   }
+  const chapterLimit = reserveDiscoveryEntries(budget, entries.length, relativePath);
+  if (chapterLimit) return { kind: "blocked", issues: [chapterLimit] };
   const issues: ManuscriptCreationIssue[] = [];
   const skipped: ManuscriptImportSkip[] = [];
   const children: ImportScene[] = [];
@@ -405,11 +417,14 @@ async function resolveDirectory(
     }
     const entry = entries.find((candidate) => candidate.name === segment);
     traversed = joinRelative(traversed, segment);
-    if (!entry || !entry.isDirectory || entry.isFile) {
+    if (!entry) {
       return { kind: "blocked", issues: [{ path: traversed, message: "The import folder is missing." }] };
     }
     if (entry.isSymlink) {
       return { kind: "blocked", issues: [{ path: traversed, message: "Symbolic-link import folders are not followed." }] };
+    }
+    if (!entry.isDirectory || entry.isFile) {
+      return { kind: "blocked", issues: [{ path: traversed, message: "The import folder is missing." }] };
     }
     absolutePath = await backend.join(absolutePath, segment);
   }
@@ -523,13 +538,18 @@ function pathsByLoreId(index: LoreProjectIndex | null): ReadonlyMap<string, read
 }
 
 function sourceTitle(path: string, index: LoreProjectIndex | null): string {
-  return displayTitle(index?.documents.get(path)?.title ?? markdownFileStem(path));
+  const indexedTitle = index?.documents.get(path)?.title;
+  return indexedTitle
+    ? displayTitle(indexedTitle, false)
+    : displayTitle(markdownFileStem(path));
 }
 
-function displayTitle(value: string): string {
-  const normalized = value
-    .replace(/^\s*\d+(?:[.\s_-]+|$)/u, "")
-    .replace(/[-_]+/gu, " ")
+function displayTitle(value: string, stripLeadingNumber = true): string {
+  const normalized = (stripLeadingNumber
+    ? value
+        .replace(/^\s*\d+(?:[.\s_-]+|$)/u, "")
+        .replace(/[-_]+/gu, " ")
+    : value)
     .replace(/[\u0000-\u001f\u007f-\u009f]/gu, " ")
     .replace(/\s+/gu, " ")
     .trim() || "Untitled";
@@ -546,6 +566,20 @@ function naturalEntries(entries: readonly LoreScanEntry[]): LoreScanEntry[] {
       numeric: true,
     }),
   );
+}
+
+function reserveDiscoveryEntries(
+  budget: DiscoveryBudget,
+  count: number,
+  path: string,
+): ManuscriptCreationIssue | null {
+  budget.examinedEntries += count;
+  return budget.examinedEntries > MAX_MANUSCRIPT_IMPORT_ENTRIES
+    ? {
+        path,
+        message: `Import inspection stopped before exceeding ${MAX_MANUSCRIPT_IMPORT_ENTRIES.toLocaleString()} visible directory entries.`,
+      }
+    : null;
 }
 
 function serializeSnapshot(snapshot: ManuscriptImportSnapshot): string {
