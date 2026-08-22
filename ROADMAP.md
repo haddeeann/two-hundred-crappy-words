@@ -11,8 +11,8 @@ Status legend: `PLANNED`, `ACTIVE`, `BLOCKED`, `COMPLETE`, `DEFERRED`.
 | 0.2 Trustworthy editor | A writer can trust the app not to lose work | COMPLETE |
 | 0.3 Daily practice | The 200-words-a-day promise is real and encouraging | COMPLETE |
 | 0.4 World projects | A folder becomes a portable, structured science-fiction world | COMPLETE |
-| 0.5 Connected lore | Manuscript and world bible can reference each other fluidly | ACTIVE |
-| 0.6 Novel structure | Scenes and chapters can be planned, reordered, and exported | PLANNED |
+| 0.5 Connected lore | Manuscript and world bible can reference each other fluidly | COMPLETE |
+| 0.6 Novel structure | Scenes and chapters can be planned, reordered, and exported | ACTIVE |
 | 0.7 Continuity tools | Time, travel, relationships, and canon can be reasoned about | PLANNED |
 | 0.8 Release readiness | The app is accessible, documented, packaged, and recoverable | PLANNED |
 
@@ -70,7 +70,7 @@ Goal: let a writer consult and connect world knowledge without leaving the manus
 - [x] Add fast project-wide search and a quick opener.
 - [x] Open a lore reference beside the active manuscript.
 - [x] Handle renamed notes and broken links without silent data loss.
-- [ ] Keep indexing responsive on realistically large projects.
+- [x] Keep indexing responsive on realistically large projects.
 
 Specification: [`docs/milestones/0.5-connected-lore.md`](docs/milestones/0.5-connected-lore.md)
 

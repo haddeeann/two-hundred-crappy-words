@@ -60,6 +60,8 @@ The app now counts words and stores progress toward its default 200-word target 
 - Suggest a bounded set of exact unlinked title or alias mentions from eligible prose, with source context, side-reference navigation, and session-only dismissal
 - Preview and safely rename stable-ID lore notes while leaving still-valid links alone and showing every exact path-link repair before confirmation
 - Recheck every rename source, refuse existing destinations, roll back completed link edits on failure, and keep mechanical changes out of daily writing credit
+- Move Back and Forward through a bounded session-only history of editor targets and verified side references, restoring exact selections when their sources remain unchanged
+- Skip changed, moved, or unavailable history destinations explicitly, discard a forward branch after new navigation, and clear the trail on project replacement or restart
 
 ## Current limitations
 
@@ -68,7 +70,6 @@ The app now counts words and stores progress toward its default 200-word target 
 - Cursor position and editor scroll position are not restored yet
 - Folders and ordinary files cannot be renamed, moved, or deleted in the app; only eligible stable-ID lore notes have the previewed rename flow
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
-- Connected-lore navigation history is not yet available
 - The frameless window does not yet provide maximize/full-screen controls
 - Distribution signing, notarization, and a finished installer are deferred to release readiness
 
@@ -128,7 +129,7 @@ static/                   Static images and icons
 
 ## Status
 
-This is a functional prototype. Its trustworthy-editor, daily-practice, and world-project milestones have passed automated and hands-on macOS QA. The active connected-lore milestone now has approved link semantics, a bounded incrementally refreshed memory-only index, keyboard completion, outgoing/backlink navigation, project search, read-only side references, safe missing-note creation, bounded unlinked mentions, and previewed no-clobber lore renames with conflict-aware link repair. Session-only navigation history and final milestone regression QA come next.
+This is a functional prototype. Its trustworthy-editor, daily-practice, world-project, and connected-lore milestones have passed automated and hands-on macOS QA. Connected lore includes approved link semantics, a bounded incrementally refreshed memory-only index, keyboard completion, outgoing/backlink navigation, project search, read-only side references, safe missing-note creation, bounded unlinked mentions, previewed no-clobber lore renames with conflict-aware link repair, and session-only Back/Forward navigation that revalidates every destination. The active novel-structure milestone begins with a portable manuscript-order and scene/chapter metadata decision gate before implementation.
 
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 

@@ -4,32 +4,35 @@ Last updated: 2026-08-22
 
 ## Active milestone
 
-**0.5 — Connected lore**
+**0.6 — Novel structure**
 
-World projects are complete. The active milestone makes manuscript and world-bible knowledge quick to find, link, trace, and consult without sending creative work anywhere or taking the writer out of the drafting flow.
+Connected lore is complete. The active milestone makes a long manuscript understandable and safely reorderable as scenes and chapters while keeping prose in ordinary Markdown files.
 
 ## Active slice
 
-**0.5.8 — Connected-lore navigation history and milestone regression**
+**0.6.1 — Portable manuscript-order and scene/chapter metadata decision gate**
 
 ### Intended outcome
 
-Let a writer move through editor targets and side references without losing the path back to the prior manuscript context, then close the connected-lore milestone with representative regression, performance, privacy, accessibility, and packaged desktop checks.
+Define the smallest inspectable, portable structure that can order chapter and scene Markdown without making existing prose proprietary, then obtain explicit approval before any project format or writer-authored metadata is changed.
 
 ### Acceptance criteria
 
-- [ ] Keep a bounded session-only history of successful editor and side-reference destinations, including the prior file, verified selection, and reference state needed to return without inventing stale source ranges.
-- [ ] Provide visible, keyboard-reachable Back and Forward actions with understandable disabled states; a new navigation after Back discards only the forward branch.
-- [ ] Revalidate every history destination through existing contained stable-read and guarded-navigation paths, skipping or explaining entries that moved, disappeared, or changed instead of restoring mismatched text.
-- [ ] Clear history on project replacement and process exit, persist no creative text or navigation trail, and avoid recording autosave, index refresh, external events, or programmatic restoration as writer navigation.
-- [ ] Preserve active draft save/recovery/daily-credit behavior, reference focus, quick opener, connections, unlinked dismissals, and rename safety while traversing history.
-- [ ] Pass the full 2,000-note performance fixture, automated suite, security/privacy review, accessible keyboard inspection, and packaged macOS milestone regression; then mark 0.5 complete.
+- [ ] Document whether order belongs in one visible project-level file, distributed note frontmatter, or a deliberately limited combination, including the source of truth and merge/churn tradeoffs.
+- [ ] Define stable chapter/scene identity, optional metadata, ordinary-folder compatibility, and behavior for missing, duplicate, moved, externally edited, or malformed entries.
+- [ ] Define safe preview, compare-before-write, rollback, undo, and recovery boundaries for future reorder, split, merge, and compile operations.
+- [ ] Specify deterministic Markdown/plain-text compilation order and make DOCX/PDF explicitly later output adapters rather than new prose stores.
+- [ ] Preserve current version-one manifests and existing Markdown byte-for-byte until an explicit migration or opt-in action is approved.
+- [ ] Record the accepted decision and turn it into the next bounded implementation slice only after user approval.
 
 ## Next slices
 
-1. 0.6.1 — Define the portable manuscript-order and scene/chapter metadata gate before implementation.
+1. 0.6.2 — Implement and validate the approved portable manuscript model without yet adding reorder UI.
 
 ## Completed checkpoint
+
+- Milestone 0.5 and slice 0.5.8 are complete. Connected-lore navigation now keeps at most fifty session-only editor/reference contexts. Visible Back and Forward controls and Command/Ctrl+`[`/`]` restore unchanged project-relative destinations, exact editor selections, side-reference state, and appropriate focus; new navigation after Back truncates the forward branch. Every source fingerprint is revalidated through contained stable reads, and changed or unavailable entries are skipped with an accessible explanation rather than restoring stale coordinates. History clears on project replacement and process exit and is never written to app data.
+- Final packaged macOS QA exercised side-reference opening, exact selection restoration, Back/Forward keyboard navigation, explicit Open in editor, branch replacement, external reference refresh, stale-forward skipping, and restart clearing against byte-restored disposable files. The final 2,000-note/24.78 MiB fixture measured 236.33 ms full indexing, 7.49 ms longest cooperative work, 6.40 ms incremental update, 0.0001 ms warm lookup, 8.07/3.45 ms cold/warm completion, 6.86/13.79 ms cold/warm search, and 4.55/1.97 ms cold/warm mention analysis; every approved target passed. The frontend suite has 271 passing tests across forty-two files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged builds pass, Rust formatting/tests/checks pass, and the production dependency audit reports zero vulnerabilities.
 
 - Slice 0.5.7 is complete. The active Markdown note now derives at most twenty exact unlinked title or alias mentions from eligible prose, capped at three per destination. Existing wiki/Markdown links, frontmatter, headings, inline/fenced code, HTML comments, partial words, self references, ambiguous names, short/common noise, and overlapping shorter aliases are excluded. Each suggestion shows the exact source location, matched title or alias, and bounded context; opening it uses the verified side reference, dismissal lasts only for the session, and prose is never rewritten.
 - Stable-ID lore notes now expose an explicit rename preview from the reference pane. Planning refuses missing/duplicate IDs, malformed metadata, invalid/hidden/dependency paths, case-only moves, indexed collisions, and unsupported destinations. It simulates the post-move index, leaves title/alias links untouched when they still resolve, and previews only exact note-target replacements that would otherwise break, preserving headings and labels. Confirmation stable-reads every affected file, performs guarded link writes, and rolls them back if any later write or the move fails. The native no-clobber command is tied to Tauri's picker-granted filesystem scope, revalidates containment and non-symbolic regular files, atomically creates a hard-link destination only when absent, verifies file identity, and removes the old name only after those checks; a failed cleanup attempts to restore the prior single name and reports any partial state honestly.
@@ -57,7 +60,7 @@ Let a writer move through editor targets and side references without losing the 
 
 ## Blockers and decision gates
 
-No blocker. External monitoring remains constrained to the currently selected native-picker scope and does not change the approved writer-authored format. A broader path, persistent creative-text cache, or new link semantics would require another approval.
+No blocker to writing the 0.6.1 proposal. Implementation is deliberately gated because choosing a manuscript-order source of truth and adding portable scene/chapter fields would extend the writer-authored project format. Existing version-one manifests and Markdown must remain untouched until the user approves that proposal.
 
 ## Handoff protocol
 
