@@ -66,10 +66,10 @@ Goal: let a writer consult and connect world knowledge without leaving the manus
 - [x] Index project Markdown files safely and incrementally.
 - [x] Support `[[Wiki Links]]` with keyboard-friendly completion.
 - [x] Show outgoing links and source-context backlinks.
-- [ ] Identify useful unlinked mentions without overwhelming the writer.
+- [x] Identify useful unlinked mentions without overwhelming the writer.
 - [x] Add fast project-wide search and a quick opener.
 - [x] Open a lore reference beside the active manuscript.
-- [ ] Handle renamed notes and broken links without silent data loss.
+- [x] Handle renamed notes and broken links without silent data loss.
 - [ ] Keep indexing responsive on realistically large projects.
 
 Specification: [`docs/milestones/0.5-connected-lore.md`](docs/milestones/0.5-connected-lore.md)

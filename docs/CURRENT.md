@@ -10,26 +10,30 @@ World projects are complete. The active milestone makes manuscript and world-bib
 
 ## Active slice
 
-**0.5.7 — Unlinked mentions and safe rename previews**
+**0.5.8 — Connected-lore navigation history and milestone regression**
 
 ### Intended outcome
 
-Help writers notice a small number of useful plain-text lore mentions, then make note renames and link repairs understandable before any project file changes. Keep suggestions bounded and dismissible, and make every multi-file mutation explicit, previewed, contained, and recoverable.
+Let a writer move through editor targets and side references without losing the path back to the prior manuscript context, then close the connected-lore milestone with representative regression, performance, privacy, accessibility, and packaged desktop checks.
 
 ### Acceptance criteria
 
-- [ ] Find only bounded, exact title or alias mentions in eligible prose; exclude existing links, metadata, headings, code, ambiguous names, self-mentions, and noisy short terms.
-- [ ] Present unlinked mentions as optional source-context suggestions with clear destination, location, dismissal, and guarded navigation; never rewrite prose automatically.
-- [ ] Define rename eligibility around stable note IDs and verified contained Markdown sources, with explicit refusal for collisions, invalid destinations, symbolic links, stale reads, or unsupported metadata.
-- [ ] Preview the note move and every exact link edit before confirmation, including files that cannot be updated and links intentionally left unchanged.
-- [ ] Apply a confirmed rename through recoverable, conflict-aware steps that never silently overwrites a file and reports partial failure honestly.
-- [ ] Preserve editor selection, unsaved overlays, recovery, daily credit, reference/search behavior, and memory-only privacy boundaries; pass focused performance and packaged macOS QA.
+- [ ] Keep a bounded session-only history of successful editor and side-reference destinations, including the prior file, verified selection, and reference state needed to return without inventing stale source ranges.
+- [ ] Provide visible, keyboard-reachable Back and Forward actions with understandable disabled states; a new navigation after Back discards only the forward branch.
+- [ ] Revalidate every history destination through existing contained stable-read and guarded-navigation paths, skipping or explaining entries that moved, disappeared, or changed instead of restoring mismatched text.
+- [ ] Clear history on project replacement and process exit, persist no creative text or navigation trail, and avoid recording autosave, index refresh, external events, or programmatic restoration as writer navigation.
+- [ ] Preserve active draft save/recovery/daily-credit behavior, reference focus, quick opener, connections, unlinked dismissals, and rename safety while traversing history.
+- [ ] Pass the full 2,000-note performance fixture, automated suite, security/privacy review, accessible keyboard inspection, and packaged macOS milestone regression; then mark 0.5 complete.
 
 ## Next slices
 
-1. 0.5.8 — Add connected-lore navigation history and finish milestone regression QA.
+1. 0.6.1 — Define the portable manuscript-order and scene/chapter metadata gate before implementation.
 
 ## Completed checkpoint
+
+- Slice 0.5.7 is complete. The active Markdown note now derives at most twenty exact unlinked title or alias mentions from eligible prose, capped at three per destination. Existing wiki/Markdown links, frontmatter, headings, inline/fenced code, HTML comments, partial words, self references, ambiguous names, short/common noise, and overlapping shorter aliases are excluded. Each suggestion shows the exact source location, matched title or alias, and bounded context; opening it uses the verified side reference, dismissal lasts only for the session, and prose is never rewritten.
+- Stable-ID lore notes now expose an explicit rename preview from the reference pane. Planning refuses missing/duplicate IDs, malformed metadata, invalid/hidden/dependency paths, case-only moves, indexed collisions, and unsupported destinations. It simulates the post-move index, leaves title/alias links untouched when they still resolve, and previews only exact note-target replacements that would otherwise break, preserving headings and labels. Confirmation stable-reads every affected file, performs guarded link writes, and rolls them back if any later write or the move fails. The native no-clobber command is tied to Tauri's picker-granted filesystem scope, revalidates containment and non-symbolic regular files, atomically creates a hard-link destination only when absent, verifies file identity, and removes the old name only after those checks; a failed cleanup attempts to restore the prior single name and reports any partial state honestly.
+- Packaged macOS QA covered visually and accessibly explained unlinked suggestions, side-reference navigation, same-path refusal, exact link-edit disclosure, cancel with byte-stable files, successful rename and reverse rename, immediate tree/index/reference refresh, preserved heading/label links, zero mechanical daily credit, and a forced symbolic-link destination collision. That collision applied then exactly rolled back the previewed chapter repair, left the source note in place, and surfaced the no-clobber failure inside the modal; a corrected package fixed the initially hidden error feedback. A final package proved the native operation still succeeds after binding it to the live picker scope. The 2,000-note/24.78 MiB fixture measured 4.97 ms cold and 1.84 ms warm for mention analysis against a 50 ms budget. The full frontend suite has 267 passing tests across forty-one files, two native rename tests pass, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, Rust formatting/checks pass, and the production dependency audit reports zero vulnerabilities.
 
 - Slice 0.5.6 is complete. Resolved outgoing links open beside the active manuscript by default, and Shift+Enter opens a quick-opener result in the same read-only reference surface. The pane loads only contained, non-symbolic, stable Markdown sources; it displays a clear title and project-relative path, accepts keyboard focus and scrolling, returns focus and the exact selection on Escape, and requires an explicit action before replacing the editor. Active buffers appear directly only behind their verified fingerprint, while external edits, moves, removals, folder changes, and index replacements refresh or invalidate the ephemeral view without persisting its text.
 - Broken links now offer creation only when their target maps to one valid portable project-relative Markdown path. A native confirmation explains the destination and that the source link will not change; the implementation revalidates after the dialog, writes with atomic create-new semantics, updates the index immediately, and opens the new note beside the unchanged draft. Automated coverage includes stable refresh, unavailable and symbolic-link refusal, oversized/unreadable sources, request races, safe path planning, and connection metadata. Packaged macOS QA covered visual split layout, preserved selection, Tab/Escape focus behavior, live external refresh, disappearance and recovery, confirmed missing-note creation, immediate link resolution, source-file integrity, and explicit Open in editor navigation. The full suite has 256 passing tests across thirty-eight files; Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, Rust formatting/checks pass, and the production dependency audit reports zero vulnerabilities.

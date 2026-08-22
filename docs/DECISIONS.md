@@ -201,3 +201,12 @@ Why: returning to work should restore useful mental context without creating mac
 The recommended first connected-lore format indexes regular project Markdown locally, derives titles without modifying ordinary files, adds an optional safe `aliases` string sequence to structured-note frontmatter, and gives `[[Note]]`, labeled links, heading links, rooted path disambiguation, escaping, normalization, and ambiguity explicit portable semantics. The creative-text index remains in memory in version 1 rather than creating another persistent manuscript copy.
 
 Why: backlinks, search, rename safety, and missing-note creation must agree on what a note and target mean. Choosing these rules before implementation avoids silently changing writer-authored links later. The full approved format, limits, fixtures, and decision points are in [`CONNECTED_LORE_FORMAT.md`](CONNECTED_LORE_FORMAT.md). The user approved this format gate on 2026-08-22.
+
+## D-023 — Stable-ID lore rename uses previewed repair and a no-clobber native move
+
+- Date: 2026-08-22
+- Status: accepted
+
+Only an indexed Markdown note with one unique valid stable ID may enter the rename flow. The writer supplies a project-relative Markdown destination and reviews the move, every exact path-dependent wiki-link replacement, and the count of resolved links deliberately left unchanged. Confirmation rechecks the current index and every source file. Link edits use compare-before-write guards and are rolled back if a later edit or move fails. The move itself uses a picker-scope-bound native command that creates a non-overwriting hard-link destination, verifies file identity, and removes the old name only afterward; unsupported filesystems or ambiguous cleanup fail visibly rather than falling back to an overwriting rename.
+
+Why: the filesystem plugin's ordinary rename operation may replace an existing destination, while copy-then-delete can silently lose metadata or strand a partially copied note. Stable IDs establish which note is moving, simulation distinguishes links that need repair from those that remain valid, and hard-link-then-unlink supplies a recoverable same-filesystem no-clobber boundary without granting the webview general rename or delete authority.
