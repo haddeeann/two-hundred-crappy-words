@@ -73,6 +73,10 @@
   } from "$lib/practice/daily-ledger";
   import PracticeHistory from "$lib/practice/PracticeHistory.svelte";
   import { correctDailyProgressRecord } from "$lib/practice/correction";
+  import {
+    inspectWorldProjectFolder,
+    type WorldProjectFolderInspection,
+  } from "$lib/project/folder-project";
 
   interface SaveFailure {
     path: string;
@@ -88,6 +92,11 @@
   const DAILY_PROGRESS_DELAY_MS = 100;
 
   let folderPath = $state("");
+  let projectStorageKey = $state("");
+  let projectInspection = $state<WorldProjectFolderInspection>({
+    kind: "ordinary",
+    storageKey: "",
+  });
   let entries = $state<FileTreeEntry[]>([]);
   let selectedDirectoryPath = $state("");
   let content = $state("");
@@ -139,11 +148,18 @@
     if (dirty) return "Unsaved";
     return "Saved";
   });
+  const projectRootName = $derived(
+    projectInspection.kind === "world-project"
+      ? projectInspection.manifest.name
+      : "Project root",
+  );
   const selectedDirectoryName = $derived.by(() => {
     if (!selectedDirectoryPath || selectedDirectoryPath === folderPath) {
-      return "Project root";
+      return projectRootName;
     }
-    return findTreeEntry(entries, selectedDirectoryPath)?.name ?? "Project root";
+    return (
+      findTreeEntry(entries, selectedDirectoryPath)?.name ?? projectRootName
+    );
   });
   const practicePresentation = $derived(
     presentPractice(practiceState, dailyTarget),
@@ -591,14 +607,20 @@
   // leaving existing state untouched (entries are read before committing).
   async function loadFolder(path: string) {
     const newEntries = await readEntries(path);
+    const inspectedProject = await inspectWorldProjectFolder({
+      folderPath: path,
+      entries: newEntries,
+      readText: readTextFile,
+    });
+    const storageKey = inspectedProject.storageKey;
     let projectRecords: DailyProgressRecords = {};
     let projectTarget = DEFAULT_DAILY_TARGET;
     let progressLoadError = "";
     try {
       const repositories = await getDailyRepositories();
       [projectRecords, projectTarget] = await Promise.all([
-        repositories.progress.getProject(path),
-        repositories.goal.get(path),
+        repositories.progress.getProject(storageKey),
+        repositories.goal.get(storageKey),
       ]);
     } catch (cause) {
       progressLoadError = `The folder opened, but its daily progress could not be loaded: ${formatError(cause)}`;
@@ -606,6 +628,8 @@
     const dailyContext = resolveDailyProgress(projectRecords);
 
     folderPath = path;
+    projectStorageKey = storageKey;
+    projectInspection = inspectedProject;
     selectedDirectoryPath = path;
     entries = newEntries;
     activeFile = "";
@@ -624,6 +648,10 @@
     completionMessage = "";
     lastDailyProgressFailure = null;
     dailyProgressError = progressLoadError;
+    error =
+      inspectedProject.kind === "manifest-problem"
+        ? inspectedProject.message
+        : "";
     persistedContentByPath.clear();
     forcedSave = null;
     lastSaveFailure = null;
@@ -787,7 +815,7 @@
     if (!folderPath) return;
     activeDailyRevision += 1;
     const record = createDailyProgressRecord({
-      projectPath: folderPath,
+      projectPath: projectStorageKey,
       dateKey: activeDailyDateKey,
       creditedWords: practiceState.dailyWords,
       revision: activeDailyRevision,
@@ -866,7 +894,10 @@
     }
 
     try {
-      await (await getDailyGoalRepository()).set(folderPath, nextTarget);
+      await (await getDailyGoalRepository()).set(
+        projectStorageKey,
+        nextTarget,
+      );
       dailyTarget = nextTarget;
       editingDailyTarget = false;
       dailyTargetInput = "";
@@ -897,7 +928,8 @@
     dateKey: string,
     correctedWords: number,
   ): Promise<boolean> {
-    const projectPath = folderPath;
+    const openFolderPath = folderPath;
+    const projectPath = projectStorageKey;
     const existing = dailyRecordsByDate[dateKey];
     if (!projectPath || !existing || existing.projectPath !== projectPath) {
       dailyProgressError = "That writing day is no longer available to correct.";
@@ -911,7 +943,12 @@
       if (corrected !== existing) {
         await (await getDailyProgressRepository()).put(corrected);
       }
-      if (folderPath !== projectPath) return true;
+      if (
+        folderPath !== openFolderPath ||
+        projectStorageKey !== projectPath
+      ) {
+        return true;
+      }
 
       dailyRecordsByDate = {
         ...dailyRecordsByDate,
@@ -1051,7 +1088,7 @@
           aria-pressed={selectedDirectoryPath === folderPath}
           title="Select the project root for new files"
         >
-          ▾ Project root
+          ▾ {projectRootName}
         </button>
       {/if}
       {#if !folderPath}

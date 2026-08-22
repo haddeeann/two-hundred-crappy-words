@@ -6,7 +6,7 @@ Daily writing progress is local, project-scoped, and separate from manuscript fi
 
 Tauri stores `daily-progress.json` in the app-data directory for application identifier `com.pat.two-hundred-crappy-words`. The store is versioned and contains, for each explicitly selected project folder and local calendar date:
 
-- the absolute project-folder path used as the current local project identity;
+- the project identity: an absolute folder path for an ordinary folder or a namespaced stable UUID for a valid world project;
 - a local `YYYY-MM-DD` date key;
 - credited words for that project and date;
 - an update timestamp; and
@@ -21,7 +21,9 @@ The same file stores an optional whole-number goal for each selected project. Th
 
 It does **not** contain manuscript text, recovery drafts, individual keystrokes, or telemetry. Creative files remain ordinary files in the selected project folder.
 
-The absolute folder path is a deliberately local identity until milestone 0.4 introduces an optional portable world-project format. Renaming or moving a folder therefore starts a new local progress identity; the old history remains in the ledger and is not silently reassigned.
+An ordinary folder continues to use its absolute path as a deliberately local identity. Renaming or moving an ordinary folder therefore starts a new local progress identity; the old history remains in the ledger and is not silently reassigned.
+
+A folder with a valid approved world-project manifest uses `project:<projectId>` as its app-local storage key. The UUID travels in the manifest, while daily history remains private in app data. The explicit creation and adoption flow will copy existing path-keyed practice data only after safely creating the manifest; it will retain the legacy records during the rollback window rather than deleting the only copy.
 
 ## Date and clock behavior
 

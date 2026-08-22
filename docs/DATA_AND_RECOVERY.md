@@ -6,6 +6,8 @@
 
 The application reads and writes the text files in the folder the writer chooses. The folder remains an ordinary filesystem folder and can be backed up or opened with other tools.
 
+If the folder contains a valid approved `200-crappy-words.project.json` manifest, the app recognizes its portable identity and preferred folder roles without changing the folder merely because it was opened. Missing, invalid, or newer manifests leave ordinary text editing available. The format is documented in [`PROJECT_FORMAT.md`](PROJECT_FORMAT.md).
+
 ## Settings
 
 The last opened folder is stored in `settings.json` in Tauri's app-data directory for the application.

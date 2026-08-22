@@ -1,8 +1,8 @@
 # World project format proposal
 
-Status: **PROPOSED — awaiting the milestone 0.4 decision gate**
+Status: **APPROVED** on 2026-08-21
 
-This document proposes the first portable project format for 200 Crappy Words. It is not implemented and is not yet a promise to writers. Approval at the milestone decision gate is required before the app writes this metadata into a project folder.
+This document defines the approved first portable project format for 200 Crappy Words. Implementation begins with pure validation and read-only detection before any creation or adoption flow writes this metadata into a project folder.
 
 ## Design goals
 
@@ -200,9 +200,9 @@ Canon status, dates, relationships, scene metadata, and other typed properties a
 - No network, account, telemetry, shell, or external-URL capability is introduced.
 - JSON and safe-subset YAML are data only. They must never be evaluated as code.
 
-## Decision requested
+## Approved decision
 
-Approval is requested for this combination:
+The milestone 0.4 decision gate approved this combination on 2026-08-21:
 
 1. one visible root manifest named `200-crappy-words.project.json`;
 2. JSON version 1 containing a local UUID, display name, and optional semantic folder roles;
@@ -210,4 +210,4 @@ Approval is requested for this combination:
 4. ordinary folders remaining fully supported and never auto-adopted; and
 5. optional YAML frontmatter limited initially to `id`, `type`, and `title` on newly created structured Markdown notes.
 
-After approval, implementation can begin with pure manifest validation and fixtures before adding any folder-writing flow.
+Implementation begins with pure manifest validation and fixtures before adding any folder-writing flow.

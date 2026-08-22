@@ -1,6 +1,6 @@
 # Current work
 
-Last updated: 2026-08-21
+Last updated: 2026-08-22
 
 ## Active milestone
 
@@ -10,30 +10,32 @@ Daily practice is complete. The active milestone turns an ordinary folder into a
 
 ## Active slice
 
-**0.4.1 — Propose the portable project model**
+**0.4.2 — Create or adopt a world project safely**
 
 ### Intended outcome
 
-Define the smallest versioned, human-readable project manifest and the boundary between portable project data and machine-local state. This slice produces a reviewable format proposal before any application code writes permanent project metadata.
+Add an explicit, previewable action that turns the currently open ordinary folder into a named world project. Preflight the manifest and every selected default directory before writing, never overwrite an existing path, migrate app-local practice identity without deleting its path-keyed fallback, and leave any partial creation understandable and recoverable.
 
 ### Acceptance criteria
 
-- [x] Audit the current folder, persistence, permission, and navigation assumptions that the project model must preserve.
-- [x] Propose a minimal manifest name, schema, stable project identity, and format-version behavior.
-- [x] Specify which settings travel with the project and which remain app-local.
-- [x] Define safe adoption, creation, move/reopen, unknown-version, and future-migration behavior.
-- [x] Document compatibility with ordinary folders and the no-overwrite rule.
-- [ ] Present the on-disk format at the milestone decision gate before implementation.
+- [ ] Define a pure creation plan that reports every collision before the first write.
+- [ ] Add an explicit accessible adoption form with project name and selectable suggested folders.
+- [ ] Create only absent directories and write the manifest with create-new semantics.
+- [ ] Report partial failure precisely without removing or replacing pre-existing material.
+- [ ] Copy existing path-keyed daily goal and progress to the UUID identity while retaining the legacy records.
+- [ ] Reload the folder as a world project and demonstrate that ordinary Open Folder still performs no writes.
+- [ ] Pass focused tests, full frontend checks, and a disposable-folder desktop walkthrough.
 
 ## Next slices
 
-1. 0.4.2 — Create or adopt a world project without overwriting existing material.
-2. 0.4.3 — Add the restrained default folder structure and optional templates.
-3. 0.4.4 — Project navigation, recent projects, portability guidance, and milestone QA.
+1. 0.4.3 — Create a new project through a native parent-folder flow.
+2. 0.4.4 — Add optional Markdown templates and create notes by semantic role.
+3. 0.4.5 — Recent projects, navigation restoration, portability guidance, and milestone QA.
 
 ## Completed checkpoint
 
-- The 0.4.1 audit and format proposal are complete in `docs/PROJECT_FORMAT.md`. The recommendation is one visible `200-crappy-words.project.json` manifest with a local UUID, display name, and semantic folder mapping; personal practice, recovery, permissions, recent locations, and editor state remain app-local. Ordinary folders remain fully supported. Optional YAML frontmatter on newly created structured notes is limited initially to `id`, `type`, and `title`. Decision D-020 remains proposed rather than accepted.
+- The 0.4 format gate was approved on 2026-08-21. `docs/PROJECT_FORMAT.md` defines one visible `200-crappy-words.project.json` manifest with a local UUID, display name, and semantic folder mapping; personal practice, recovery, permissions, recent locations, and editor state remain app-local. Ordinary folders remain fully supported. Optional YAML frontmatter on newly created structured notes is limited initially to `id`, `type`, and `title`. Decision D-020 is accepted.
+- The 0.4.1 foundation implements dependency-free version 1 parsing, validation, deterministic serialization, portable folder-path validation, read-only folder inspection, and namespaced UUID storage keys. Folder opening distinguishes missing, valid, malformed, invalid, unreadable, and newer manifests; every problem mode retains ordinary text editing and performs no write. Valid projects show their project name at the tree root and use stable app-local practice identity. Twenty-two focused tests bring the full suite to 141 passing tests across seventeen files; Svelte/TypeScript checks report zero warnings and the production frontend build passes.
 - Milestone 0.3 passed its full disposable-project macOS walkthrough on 2026-08-21 using Computer Use against a freshly packaged build. The run covered baseline protection, per-project goals, live and persisted daily totals, quiet one-time completion, truthful goal changes, populated history, two restarts, correction validation, append-only audit display, deletion semantics, keyboard traversal, visible focus, and accessible labels.
 - QA exposed two issues before the final pass. The correction editor now receives focus when opened so Enter and Escape work immediately. New ledger revisions now preserve prior correction entries, including through correction, later writing, deletion, and restart. The lifecycle regression test covers the audit across that transition.
 - The frontend suite contains 119 passing tests across fifteen files. Svelte/TypeScript checks report zero errors and zero warnings, the production frontend and macOS application builds pass, Rust formatting/checks pass, and the production dependency audit reports zero vulnerabilities.
@@ -41,7 +43,7 @@ Define the smallest versioned, human-readable project manifest and the boundary 
 
 ## Blockers and decision gates
 
-The required milestone 0.4 format decision gate is ready. Implementation must pause until the user approves or revises the manifest and frontmatter proposal in `docs/PROJECT_FORMAT.md`.
+No blocker. The format gate is approved; implementation is active and must preserve the documented no-write behavior for ordinary folder opening.
 
 ## Handoff protocol
 

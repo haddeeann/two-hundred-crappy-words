@@ -29,11 +29,13 @@ The app now counts words and stores progress toward its default 200-word target 
 - Acknowledge the first goal completion of the day without interrupting typing
 - Review recorded writing days and gentle current/best rhythm information
 - Correct a mistaken daily total while retaining a private local audit
+- Recognize an approved world-project manifest without modifying the folder on open
+- Use a valid world project's stable UUID for app-local goals and progress
 
 ## Current limitations
 
 - Correction audit export is not available yet
-- Moving or renaming a project folder currently starts a new local progress identity
+- Ordinary folders still use their absolute path as local progress identity; the in-app world-project creation and adoption flow is not available yet
 - Files and folders cannot be renamed, moved, or deleted in the app
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
 - The frameless window does not yet provide maximize/full-screen controls
