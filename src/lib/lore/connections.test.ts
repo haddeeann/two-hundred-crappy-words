@@ -25,6 +25,22 @@ describe("active lore connections", () => {
     });
     expect(view.outgoing[1]?.targetPath).toBeNull();
     expect(view.outgoing[2]?.detail).toContain("one.md, two.md");
+    expect(view.mentions).toEqual([]);
+  });
+
+  it("includes bounded unlinked mentions without treating them as links", () => {
+    const index = buildLoreProjectIndex([
+      { path: "source.md", text: "Mara Venn crossed the archive." },
+      { path: "mara.md", text: "# Mara Venn" },
+    ]);
+
+    expect(activeLoreConnections(index, "source.md")?.mentions).toMatchObject([
+      {
+        matchedText: "Mara Venn",
+        targetPath: "mara.md",
+        sourceLocation: "source.md:1:1",
+      },
+    ]);
   });
 
   it("presents source-context backlinks in stable source order", () => {

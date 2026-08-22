@@ -5,6 +5,7 @@ import type {
   LoreProjectIndex,
   SourceRange,
 } from "./types";
+import { activeLoreMentions, type LoreUnlinkedMention } from "./mentions";
 
 export interface LoreConnectionItem {
   key: string;
@@ -25,6 +26,7 @@ export interface ActiveLoreConnections {
   title: string;
   outgoing: LoreConnectionItem[];
   backlinks: LoreConnectionItem[];
+  mentions: LoreUnlinkedMention[];
 }
 
 export function activeLoreConnections(
@@ -42,6 +44,7 @@ export function activeLoreConnections(
     backlinks: (index.backlinks.get(activePath) ?? []).map((backlink, ordinal) =>
       backlinkConnection(index, backlink, ordinal),
     ),
+    mentions: activeLoreMentions(index, activePath),
   };
 }
 

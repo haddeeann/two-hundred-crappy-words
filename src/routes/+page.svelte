@@ -137,6 +137,7 @@
     activeLoreConnections,
     type LoreConnectionItem,
   } from "$lib/lore/connections";
+  import type { LoreUnlinkedMention } from "$lib/lore/mentions";
   import {
     searchProjectLore,
     type LoreSearchResult,
@@ -920,6 +921,10 @@
     } else {
       await openIndexedLorePath(item.targetPath, item.targetRange);
     }
+  }
+
+  async function openLoreMention(mention: LoreUnlinkedMention): Promise<void> {
+    await openLoreReference(mention.targetPath);
   }
 
   async function openLoreSearchResult(result: LoreSearchResult): Promise<void> {
@@ -3053,6 +3058,7 @@
       <LoreConnections
         connections={currentLoreConnections}
         onOpen={(item) => void openLoreConnection(item)}
+        onOpenMention={(mention) => void openLoreMention(mention)}
         onCreateMissing={(item) => void createMissingLoreNote(item)}
       />
     {/if}

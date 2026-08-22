@@ -3,26 +3,38 @@
     ActiveLoreConnections,
     LoreConnectionItem,
   } from "./connections";
+  import type { LoreUnlinkedMention } from "./mentions";
 
   interface Props {
     connections: ActiveLoreConnections;
     onOpen: (item: LoreConnectionItem) => void;
+    onOpenMention: (mention: LoreUnlinkedMention) => void;
     onCreateMissing: (item: LoreConnectionItem) => void;
   }
 
-  let { connections, onOpen, onCreateMissing }: Props = $props();
+  let { connections, onOpen, onOpenMention, onCreateMissing }: Props = $props();
   const MAX_VISIBLE_CONNECTIONS = 50;
+  let dismissedMentionKeys = $state<string[]>([]);
   const outgoing = $derived(connections.outgoing.slice(0, MAX_VISIBLE_CONNECTIONS));
   const backlinks = $derived(connections.backlinks.slice(0, MAX_VISIBLE_CONNECTIONS));
+  const mentions = $derived(
+    connections.mentions.filter(({ key }) => !dismissedMentionKeys.includes(key)),
+  );
   const hiddenCount = $derived(
     Math.max(0, connections.outgoing.length - outgoing.length) +
       Math.max(0, connections.backlinks.length - backlinks.length),
   );
+
+  function dismissMention(key: string): void {
+    if (!dismissedMentionKeys.includes(key)) {
+      dismissedMentionKeys = [...dismissedMentionKeys, key];
+    }
+  }
 </script>
 
 <details class="connections">
   <summary>
-    Connections · {connections.outgoing.length} out · {connections.backlinks.length} back
+    Connections · {connections.outgoing.length} out · {connections.backlinks.length} back · {mentions.length} unlinked
   </summary>
   <div class="connection-columns">
     <section aria-labelledby="outgoing-heading">
@@ -74,6 +86,34 @@
       {/if}
     </section>
   </div>
+  <section class="mentions" aria-labelledby="mentions-heading">
+    <h2 id="mentions-heading">Unlinked mentions</h2>
+    {#if mentions.length === 0}
+      <p class="empty">No clear unlinked lore mentions in this note.</p>
+    {:else}
+      <p class="mention-intro">Suggestions only. Your prose is never changed automatically.</p>
+      <ul>
+        {#each mentions as mention (mention.key)}
+          <li>
+            <div class="connection-title">
+              <button type="button" onclick={() => onOpenMention(mention)}>
+                {mention.targetTitle}
+              </button>
+              <span>unlinked</span>
+            </div>
+            <small>{mention.sourceLocation} · {mention.matchedBy} “{mention.matchedText}”</small>
+            <blockquote>{mention.context}</blockquote>
+            <button
+              class="dismiss-mention"
+              type="button"
+              onclick={() => dismissMention(mention.key)}
+              aria-label={`Dismiss unlinked mention of ${mention.matchedText}`}
+            >Dismiss suggestion</button>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+  </section>
   {#if hiddenCount > 0}
     <p class="hidden-count">
       {hiddenCount} more {hiddenCount === 1 ? "connection is" : "connections are"} omitted from this bounded view.
@@ -170,6 +210,26 @@
     background: #303030;
     color: #d4d4d4;
     font-weight: 500;
+  }
+
+  button.dismiss-mention {
+    margin-top: 0.4rem;
+    color: #b8b8b8;
+    font-size: 0.7rem;
+    font-weight: 500;
+  }
+
+  button.dismiss-mention:hover {
+    color: #f0f0f0;
+  }
+
+  .mentions {
+    border-top: 1px solid #3c3c3c;
+  }
+
+  .mention-intro {
+    margin: 0 0 0.4rem;
+    color: #969696;
   }
 
   button.create-missing:hover {
