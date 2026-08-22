@@ -7,9 +7,10 @@
   interface Props {
     connections: ActiveLoreConnections;
     onOpen: (item: LoreConnectionItem) => void;
+    onCreateMissing: (item: LoreConnectionItem) => void;
   }
 
-  let { connections, onOpen }: Props = $props();
+  let { connections, onOpen, onCreateMissing }: Props = $props();
   const MAX_VISIBLE_CONNECTIONS = 50;
   const outgoing = $derived(connections.outgoing.slice(0, MAX_VISIBLE_CONNECTIONS));
   const backlinks = $derived(connections.backlinks.slice(0, MAX_VISIBLE_CONNECTIONS));
@@ -43,6 +44,11 @@
               <small>{item.sourceLocation}</small>
               <p>{item.detail}</p>
               {#if item.context}<blockquote>{item.context}</blockquote>{/if}
+              {#if item.canCreateMissing}
+                <button class="create-missing" type="button" onclick={() => onCreateMissing(item)}>
+                  Create missing note…
+                </button>
+              {/if}
             </li>
           {/each}
         </ul>
@@ -154,6 +160,20 @@
     font-weight: 600;
     text-align: left;
     cursor: pointer;
+  }
+
+  button.create-missing {
+    margin-top: 0.45rem;
+    padding: 0.3rem 0.45rem;
+    border: 1px solid #515151;
+    border-radius: 4px;
+    background: #303030;
+    color: #d4d4d4;
+    font-weight: 500;
+  }
+
+  button.create-missing:hover {
+    background: #3a3a3a;
   }
 
   .connection-title span {

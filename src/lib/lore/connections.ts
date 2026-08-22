@@ -14,8 +14,11 @@ export interface LoreConnectionItem {
   detail: string;
   context: string;
   sourceLocation: string;
+  sourcePath: string;
+  sourceStart: number;
   targetPath: string | null;
   targetRange: SourceRange | null;
+  canCreateMissing: boolean;
 }
 
 export interface ActiveLoreConnections {
@@ -61,8 +64,11 @@ function outgoingConnection(
       detail: resolution.targetPath,
       context: outgoing.context,
       sourceLocation,
+      sourcePath: source.path,
+      sourceStart: link.range.start,
       targetPath: resolution.targetPath,
       targetRange: heading?.textRange ?? null,
+      canCreateMissing: false,
     };
   }
   const status = resolution.kind.includes("ambiguous")
@@ -83,8 +89,11 @@ function outgoingConnection(
     detail: `${resolution.message}${candidates}`,
     context: outgoing.context,
     sourceLocation,
+    sourcePath: source.path,
+    sourceStart: link.range.start,
     targetPath: null,
     targetRange: null,
+    canCreateMissing: resolution.kind === "broken-note",
   };
 }
 
@@ -102,7 +111,10 @@ function backlinkConnection(
     detail: backlink.sourcePath,
     context: backlink.context,
     sourceLocation: `${backlink.sourcePath}:${backlink.link.range.line}:${backlink.link.range.column}`,
+    sourcePath: backlink.sourcePath,
+    sourceStart: backlink.link.range.start,
     targetPath: backlink.sourcePath,
     targetRange: backlink.link.range,
+    canCreateMissing: false,
   };
 }

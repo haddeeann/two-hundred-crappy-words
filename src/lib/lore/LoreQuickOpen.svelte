@@ -11,6 +11,7 @@
     onQuery: (value: string) => void;
     onMove: (index: number) => void;
     onOpen: (result: LoreSearchResult) => void;
+    onReference: (result: LoreSearchResult) => void;
     onClose: () => void;
   }
 
@@ -23,6 +24,7 @@
     onQuery,
     onMove,
     onOpen,
+    onReference,
     onClose,
   }: Props = $props();
   let input = $state<HTMLInputElement>();
@@ -58,7 +60,10 @@
     } else if (event.key === "Enter") {
       event.preventDefault();
       const selected = results[selectedIndex];
-      if (selected) onOpen(selected);
+      if (selected) {
+        if (event.shiftKey) onReference(selected);
+        else onOpen(selected);
+      }
     }
   }
 
@@ -145,7 +150,7 @@
         </button>
       {/each}
     </div>
-    <footer>↑↓ choose · Enter open · Esc close · Command/Ctrl+P</footer>
+    <footer>↑↓ choose · Enter edit · Shift+Enter beside · Esc close · Command/Ctrl+P</footer>
   </div>
 </div>
 

@@ -126,6 +126,7 @@
   import LoreCompletion from "$lib/lore/LoreCompletion.svelte";
   import LoreConnections from "$lib/lore/LoreConnections.svelte";
   import LoreQuickOpen from "$lib/lore/LoreQuickOpen.svelte";
+  import LoreReferencePane from "$lib/lore/LoreReferencePane.svelte";
   import {
     findWikiLinkCompletion,
     loreCompletionCandidates,
@@ -140,6 +141,12 @@
     searchProjectLore,
     type LoreSearchResult,
   } from "$lib/lore/search";
+  import {
+    loadLoreReferenceSource,
+    LoreReferenceRequestCoordinator,
+    type LoreReferenceView,
+  } from "$lib/lore/reference";
+  import { planMissingLoreNote } from "$lib/lore/missing-note";
   import { isMarkdownPath } from "$lib/lore/normalize";
   import {
     DEFAULT_MAX_LORE_FILE_BYTES,
@@ -252,6 +259,8 @@
   let quickOpenQuery = $state("");
   let quickOpenSelectedIndex = $state(0);
   let quickOpenReturnFocus: HTMLElement | null = null;
+  let loreReference = $state<LoreReferenceView | null>(null);
+  const loreReferenceRequests = new LoreReferenceRequestCoordinator();
   let lastDailyProgressFailure: {
     path: string;
     revision: number;
@@ -523,6 +532,7 @@
 
   onDestroy(() => {
     if (loreOverlayTimer) clearTimeout(loreOverlayTimer);
+    loreReferenceRequests.invalidate();
     stopLoreMonitoring();
     autosave.dispose();
     recoveryWriter.dispose();
@@ -593,6 +603,7 @@
     loreIndexError = "";
     loreIndexNeedsRefresh = false;
     clearLoreCompletion();
+    closeLoreReference(false);
     loreIndexPhase = "indexing";
     void refreshLoreIndex(path);
   }
@@ -621,6 +632,7 @@
       loreIndexNeedsRefresh = false;
       loreIndexPhase = "ready";
       void startLoreMonitoring(path, session);
+      if (loreReference) void openLoreReference(loreReference.path, false);
     } catch (cause) {
       if (session !== loreIndexSession || path !== folderPath) return;
       loreIndexPhase = "error";
@@ -678,6 +690,14 @@
           } else if (!loreIndexNeedsRefresh) {
             loreIndexPhase = "ready";
             loreIndexError = "";
+          }
+          if (
+            loreReference &&
+            changedPaths.some((changedPath) =>
+              pathsOverlap(changedPath, loreReference!.path),
+            )
+          ) {
+            void openLoreReference(loreReference.path, false);
           }
         } catch (cause) {
           if (session !== loreIndexSession || path !== folderPath) return;
@@ -746,6 +766,16 @@
             candidate.path === issue.path &&
             candidate.message === issue.message,
         ) === index,
+    );
+  }
+
+  function pathsOverlap(first: string, second: string): boolean {
+    return (
+      !first ||
+      !second ||
+      first === second ||
+      first.startsWith(`${second}/`) ||
+      second.startsWith(`${first}/`)
     );
   }
 
@@ -885,12 +915,21 @@
 
   async function openLoreConnection(item: LoreConnectionItem): Promise<void> {
     if (!item.targetPath) return;
-    await openIndexedLorePath(item.targetPath, item.targetRange);
+    if (item.direction === "outgoing") {
+      await openLoreReference(item.targetPath);
+    } else {
+      await openIndexedLorePath(item.targetPath, item.targetRange);
+    }
   }
 
   async function openLoreSearchResult(result: LoreSearchResult): Promise<void> {
     closeQuickOpen(false);
     await openIndexedLorePath(result.path, result.range);
+  }
+
+  async function referenceLoreSearchResult(result: LoreSearchResult): Promise<void> {
+    closeQuickOpen(false);
+    await openLoreReference(result.path);
   }
 
   async function openIndexedLorePath(
@@ -927,6 +966,154 @@
       updateLoreCompletion(editorInput);
     } catch (cause) {
       error = `Could not open indexed note: ${formatError(cause)}`;
+    }
+  }
+
+  async function openLoreReference(
+    relativePath: string,
+    focus = true,
+  ): Promise<void> {
+    if (!folderPath || !loreIndex) return;
+    const request = loreReferenceRequests.begin(relativePath);
+    const rootAtStart = folderPath;
+    const sessionAtStart = loreIndexSession;
+    const indexAtStart = loreIndex;
+    loreReference = { phase: "loading", path: relativePath };
+
+    const activePath = activeLorePath();
+    const activeRecord = indexAtStart.documents.get(relativePath);
+    if (
+      relativePath === activePath &&
+      activeRecord &&
+      activeRecord.fingerprint === fingerprintContent(content)
+    ) {
+      loreReference = {
+        phase: "ready",
+        path: relativePath,
+        title: activeRecord.title,
+        text: content,
+        fingerprint: activeRecord.fingerprint,
+      };
+      if (focus) await focusLoreReference();
+      return;
+    }
+
+    try {
+      const loaded = await loadLoreReferenceSource({
+        rootPath: rootAtStart,
+        relativePath,
+        currentIndex: indexAtStart,
+        backend: tauriLoreScanBackend,
+      });
+      if (
+        !loreReferenceRequests.isCurrent(request) ||
+        rootAtStart !== folderPath ||
+        sessionAtStart !== loreIndexSession
+      ) {
+        return;
+      }
+      if (loaded.changes.size > 0) {
+        loreIndex = sessionAtStart.applyDiskChanges(loaded.changes);
+      }
+      loreScanIssues = mergeReconciledScanIssues(
+        loreScanIssues,
+        loaded.issues,
+        [relativePath],
+      );
+      loreReference = loaded.kind === "ready"
+        ? {
+            phase: "ready",
+            path: loaded.path,
+            title: loaded.title,
+            text: loaded.text,
+            fingerprint: loaded.fingerprint,
+          }
+        : {
+            phase: loaded.kind,
+            path: loaded.path,
+            message: loaded.message,
+          };
+      if (focus) await focusLoreReference();
+    } catch (cause) {
+      if (!loreReferenceRequests.isCurrent(request)) return;
+      loreReference = {
+        phase: "error",
+        path: relativePath,
+        message: `The reference could not be opened safely: ${formatError(cause)}`,
+      };
+      if (focus) await focusLoreReference();
+    }
+  }
+
+  async function focusLoreReference(): Promise<void> {
+    await tick();
+    document.getElementById("lore-reference-pane")?.focus({ preventScroll: true });
+  }
+
+  function closeLoreReference(returnToEditor = true): void {
+    if (!loreReference) return;
+    loreReferenceRequests.invalidate();
+    loreReference = null;
+    if (returnToEditor) void tick().then(() => editorInput?.focus());
+  }
+
+  async function openReferenceInEditor(path: string): Promise<void> {
+    closeLoreReference(false);
+    await openIndexedLorePath(path, null);
+  }
+
+  async function createMissingLoreNote(item: LoreConnectionItem): Promise<void> {
+    if (!folderPath || !loreIndex || !item.canCreateMissing) return;
+    const outgoing = loreIndex.documents
+      .get(item.sourcePath)
+      ?.outgoing.find(({ link }) => link.range.start === item.sourceStart);
+    if (!outgoing) {
+      error = "The missing link changed before its note could be planned.";
+      return;
+    }
+    const plan = planMissingLoreNote(outgoing, loreIndex);
+    if (plan.kind === "unavailable") {
+      error = `This missing note cannot be created safely: ${plan.reason}`;
+      return;
+    }
+    const result = await message(
+      `Create ${plan.path} inside this project?\n\nThe new Markdown note will contain only its title${outgoing.link.headingTarget ? " and requested heading" : ""}. The source link will not be rewritten.`,
+      {
+        title: "Create missing lore note",
+        kind: "info",
+        buttons: { ok: "Create note", cancel: "Cancel" },
+      },
+    );
+    if (result !== "Create note" || !loreIndex) return;
+    try {
+      const currentOutgoing = loreIndex.documents
+        .get(item.sourcePath)
+        ?.outgoing.find(({ link }) => link.range.start === item.sourceStart);
+      const currentPlan = currentOutgoing
+        ? planMissingLoreNote(currentOutgoing, loreIndex)
+        : null;
+      if (
+        !currentPlan ||
+        currentPlan.kind !== "ready" ||
+        currentPlan.path !== plan.path ||
+        currentPlan.text !== plan.text
+      ) {
+        error = "The missing link changed while the confirmation was open, so nothing was created.";
+        return;
+      }
+      const segments = plan.path.split("/");
+      const path = await join(folderPath, ...segments);
+      await writeTextFile(path, plan.text, { createNew: true });
+      loreIndex = loreIndexSession.replaceDiskSource(plan.path, plan.text);
+      const parentSegments = segments.slice(0, -1);
+      const parentPath = parentSegments.length > 0
+        ? await join(folderPath, ...parentSegments)
+        : folderPath;
+      await refreshDirectory(parentPath);
+      error = "";
+      await openLoreReference(plan.path);
+    } catch (cause) {
+      error = `Could not create ${plan.path}; no existing file was overwritten: ${formatError(cause)}`;
     }
   }
 
@@ -987,7 +1174,21 @@
       const relativePath = activeLorePath(path);
       if (!relativePath) return;
       loreIndex = loreIndexSession.setActiveOverlay(relativePath, text);
+      syncActiveLoreReference(relativePath, text);
     }, LORE_OVERLAY_DELAY_MS);
+  }
+
+  function syncActiveLoreReference(path: string, text: string): void {
+    if (!loreReference || loreReference.path !== path || !loreIndex) return;
+    const record = loreIndex.documents.get(path);
+    if (!record || record.fingerprint !== fingerprintContent(text)) return;
+    loreReference = {
+      phase: "ready",
+      path,
+      title: record.title,
+      text,
+      fingerprint: record.fingerprint,
+    };
   }
 
   function updateLoreSourceAfterSave(path: string, text: string): void {
@@ -1002,6 +1203,7 @@
       return;
     }
     loreIndex = loreIndexSession.replaceDiskSource(relativePath, text);
+    syncActiveLoreReference(relativePath, text);
     if (!loreIndexNeedsRefresh) loreIndexPhase = "ready";
   }
 
@@ -2344,6 +2546,11 @@
       closeQuickOpen();
       return;
     }
+    if (loreReference && event.key === "Escape") {
+      event.preventDefault();
+      closeLoreReference();
+      return;
+    }
     adoptionFormKeydown(event);
     if (event.defaultPrevented) return;
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
@@ -2799,8 +3006,9 @@
         >{saveStatus}</span>
       {/if}
     </div>
-    <div class="editor-workspace">
-      <textarea
+    <div class="writing-split">
+      <div class="editor-workspace">
+        <textarea
         class="editor-input"
         placeholder="Start writing your 200 crappy words..."
         aria-label="Document editor"
@@ -2822,13 +3030,22 @@
         onkeyup={handleEditorCaretChange}
         onclick={handleEditorCaretChange}
         onselect={handleEditorCaretChange}
-      ></textarea>
-      {#if loreCompletionContext && loreCompletionItems.length > 0}
-        <LoreCompletion
-          candidates={loreCompletionItems}
-          selectedIndex={loreCompletionSelectedIndex}
-          mode={loreCompletionContext.mode}
-          onSelect={(candidate) => void acceptLoreCompletion(candidate)}
+        ></textarea>
+        {#if loreCompletionContext && loreCompletionItems.length > 0}
+          <LoreCompletion
+            candidates={loreCompletionItems}
+            selectedIndex={loreCompletionSelectedIndex}
+            mode={loreCompletionContext.mode}
+            onSelect={(candidate) => void acceptLoreCompletion(candidate)}
+          />
+        {/if}
+      </div>
+      {#if loreReference}
+        <LoreReferencePane
+          reference={loreReference}
+          onClose={() => closeLoreReference()}
+          onOpenEditor={(path) => void openReferenceInEditor(path)}
+          onRetry={(path) => void openLoreReference(path)}
         />
       {/if}
     </div>
@@ -2836,6 +3053,7 @@
       <LoreConnections
         connections={currentLoreConnections}
         onOpen={(item) => void openLoreConnection(item)}
+        onCreateMissing={(item) => void createMissingLoreNote(item)}
       />
     {/if}
     <div class="practice-bar" aria-label="Writing progress">
@@ -2900,6 +3118,7 @@
     onQuery={updateQuickOpenQuery}
     onMove={moveQuickOpenSelection}
     onOpen={(result) => void openLoreSearchResult(result)}
+    onReference={(result) => void referenceLoreSearchResult(result)}
     onClose={() => closeQuickOpen()}
   />
 {/if}
@@ -3342,6 +3561,17 @@
     flex: 1 1 auto;
     display: flex;
     min-height: 0;
+  }
+
+  .writing-split {
+    position: relative;
+    flex: 1 1 auto;
+    display: flex;
+    min-height: 0;
+  }
+
+  .writing-split .editor-workspace {
+    min-width: 0;
   }
 
   .save-status {
