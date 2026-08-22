@@ -108,6 +108,7 @@ export type ManuscriptProjectLoadResult =
   | {
       kind: "ready";
       fingerprint: string;
+      text: string;
       source: Record<string, unknown>;
       reconciled: ReconciledManuscriptStructure;
     };
@@ -225,6 +226,7 @@ export async function loadManuscriptProject(
   return {
     kind: "ready",
     fingerprint: loaded.fingerprint,
+    text: loaded.text,
     source: parsed.source,
     reconciled,
   };
