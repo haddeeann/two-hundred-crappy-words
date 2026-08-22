@@ -155,6 +155,10 @@
     executeLoreRename,
     mapOffsetThroughLoreRename,
   } from "$lib/lore/rename-execution";
+  import {
+    LoreNavigationHistory,
+    type LoreNavigationLocation,
+  } from "$lib/lore/navigation-history";
   import { isMarkdownPath } from "$lib/lore/normalize";
   import {
     DEFAULT_MAX_LORE_FILE_BYTES,
@@ -273,6 +277,10 @@
   let loreRenameRequestedPath = $state("");
   let loreRenameBusy = $state(false);
   let loreRenameError = $state("");
+  const loreNavigationHistory = new LoreNavigationHistory();
+  let loreHistoryRevision = $state(0);
+  let restoringLoreHistory = $state(false);
+  let loreHistoryNotice = $state("");
   let lastDailyProgressFailure: {
     path: string;
     revision: number;
@@ -363,6 +371,14 @@
       ? planLoreRename(loreIndex, loreRenameSourcePath, loreRenameRequestedPath)
       : null,
   );
+  const canGoBackThroughLore = $derived.by(() => {
+    loreHistoryRevision;
+    return loreNavigationHistory.canGoBack;
+  });
+  const canGoForwardThroughLore = $derived.by(() => {
+    loreHistoryRevision;
+    return loreNavigationHistory.canGoForward;
+  });
   const quickOpenResults = $derived(
     quickOpenVisible && loreIndex
       ? searchProjectLore(loreIndex, quickOpenQuery)
@@ -625,6 +641,10 @@
     loreRenameRequestedPath = "";
     loreRenameBusy = false;
     loreRenameError = "";
+    loreNavigationHistory.clear();
+    loreHistoryRevision += 1;
+    restoringLoreHistory = false;
+    loreHistoryNotice = "";
     loreIndexPhase = "indexing";
     void refreshLoreIndex(path);
   }
@@ -806,6 +826,160 @@
     return relativePath && isMarkdownPath(relativePath) ? relativePath : null;
   }
 
+  function captureLoreNavigationLocation(): LoreNavigationLocation {
+    const editorPath = folderPath && activeFilePath
+      ? projectRelativePath(folderPath, activeFilePath)
+      : null;
+    const readyReference = loreReference?.phase === "ready" ? loreReference : null;
+    return {
+      editorPath,
+      editorFingerprint: editorPath ? fingerprintContent(content) : null,
+      selectionStart: editorInput?.selectionStart ?? 0,
+      selectionEnd: editorInput?.selectionEnd ?? 0,
+      referencePath: readyReference?.path ?? null,
+      referenceFingerprint: readyReference?.fingerprint ?? null,
+    };
+  }
+
+  function recordLoreNavigation(
+    from: LoreNavigationLocation,
+  ): void {
+    if (restoringLoreHistory) return;
+    const to = captureLoreNavigationLocation();
+    if (!from.editorPath || !to.editorPath) return;
+    loreNavigationHistory.recordTransition(
+      from,
+      to,
+    );
+    loreHistoryRevision += 1;
+    loreHistoryNotice = "";
+  }
+
+  async function historySourceMatches(
+    relativePath: string,
+    fingerprint: string | null,
+  ): Promise<boolean> {
+    if (!folderPath || !fingerprint) return false;
+    if (
+      activeFilePath &&
+      projectRelativePath(folderPath, activeFilePath) === relativePath
+    ) {
+      return fingerprintContent(content) === fingerprint;
+    }
+    if (isMarkdownPath(relativePath)) {
+      const record = loreIndex?.documents.get(relativePath);
+      if (!record || record.fingerprint !== fingerprint) return false;
+    }
+    try {
+      const path = await join(folderPath, ...relativePath.split("/"));
+      const entry = findTreeEntry(entries, path);
+      if (entry?.isSymlink) return false;
+      return fingerprintContent(await readTextFile(path)) === fingerprint;
+    } catch {
+      return false;
+    }
+  }
+
+  async function restoreLoreNavigationLocation(
+    location: LoreNavigationLocation,
+  ): Promise<boolean> {
+    if (!folderPath || !location.editorPath) return false;
+    if (
+      !(await historySourceMatches(
+        location.editorPath,
+        location.editorFingerprint,
+      ))
+    ) {
+      return false;
+    }
+    if (
+      location.referencePath &&
+      !(await historySourceMatches(
+        location.referencePath,
+        location.referenceFingerprint,
+      ))
+    ) {
+      return false;
+    }
+
+    const editorAbsolute = await join(
+      folderPath,
+      ...location.editorPath.split("/"),
+    );
+    if (activeFilePath !== editorAbsolute) {
+      const segments = location.editorPath.split("/");
+      const known = findTreeEntry(entries, editorAbsolute);
+      const opened = await openFile(
+        known ?? {
+          name: segments.at(-1) ?? location.editorPath,
+          path: editorAbsolute,
+          isFile: true,
+          isDirectory: false,
+          isSymlink: false,
+          expanded: false,
+          children: null,
+        },
+        false,
+      );
+      if (!opened) return false;
+    }
+    if (fingerprintContent(content) !== location.editorFingerprint) return false;
+
+    if (location.referencePath) {
+      const opened = await openLoreReference(location.referencePath, false, false);
+      if (
+        !opened ||
+        loreReference?.phase !== "ready" ||
+        loreReference.fingerprint !== location.referenceFingerprint
+      ) {
+        return false;
+      }
+    } else {
+      closeLoreReference(false, false);
+    }
+    await tick();
+    if (!editorInput) return false;
+    const start = Math.min(location.selectionStart, editorInput.value.length);
+    const end = Math.min(location.selectionEnd, editorInput.value.length);
+    editorInput.setSelectionRange(start, Math.max(start, end));
+    if (location.referencePath) await focusLoreReference();
+    else editorInput.focus();
+    return true;
+  }
+
+  async function goThroughLoreHistory(
+    direction: "back" | "forward",
+  ): Promise<void> {
+    if (restoringLoreHistory || worldProjectBusy || quickOpenVisible || loreRenameSourcePath) {
+      return;
+    }
+    loreNavigationHistory.replaceCurrent(captureLoreNavigationLocation());
+    loreHistoryRevision += 1;
+    restoringLoreHistory = true;
+    let skipped = 0;
+    try {
+      let target = loreNavigationHistory.peek(direction);
+      while (target) {
+        if (await restoreLoreNavigationLocation(target)) {
+          loreNavigationHistory.commit(direction);
+          loreHistoryRevision += 1;
+          const destination = target.referencePath ?? target.editorPath ?? "prior writing context";
+          loreHistoryNotice = `${skipped ? `Skipped ${skipped} changed or unavailable ${skipped === 1 ? "entry" : "entries"}. ` : ""}${direction === "back" ? "Back" : "Forward"} to ${destination}.`;
+          return;
+        }
+        loreNavigationHistory.dropCandidate(direction);
+        loreHistoryRevision += 1;
+        skipped += 1;
+        target = loreNavigationHistory.peek(direction);
+      }
+      loreHistoryNotice = skipped
+        ? `Skipped ${skipped} changed or unavailable ${skipped === 1 ? "entry" : "entries"}; there is nowhere else to go ${direction}.`
+        : `There is nowhere to go ${direction} in this session.`;
+    } finally {
+      restoringLoreHistory = false;
+    }
+  }
+
   function loreCompletionSignature(
     context: WikiLinkCompletionContext,
   ): string {
@@ -960,14 +1134,15 @@
   async function openIndexedLorePath(
     relativePath: string,
     targetRange: SourceRange | null,
-  ): Promise<void> {
-    if (!folderPath) return;
+    historyOrigin = captureLoreNavigationLocation(),
+  ): Promise<boolean> {
+    if (!folderPath) return false;
     try {
       const targetFingerprint = loreIndex?.documents.get(relativePath)?.fingerprint;
       const segments = relativePath.split("/");
       const path = await join(folderPath, ...segments);
       const known = findTreeEntry(entries, path);
-      await openFile(
+      const opened = await openFile(
         known ?? {
           name: segments.at(-1) ?? relativePath,
           path,
@@ -977,9 +1152,11 @@
           expanded: false,
           children: null,
         },
+        false,
       );
+      if (!opened) return false;
       await tick();
-      if (activeFilePath !== path || !editorInput) return;
+      if (activeFilePath !== path || !editorInput) return false;
       const range =
         targetFingerprint && fingerprintContent(content) === targetFingerprint
           ? targetRange
@@ -989,16 +1166,23 @@
       editorInput.focus();
       editorInput.setSelectionRange(start, end);
       updateLoreCompletion(editorInput);
+      recordLoreNavigation(historyOrigin);
+      return true;
     } catch (cause) {
       error = `Could not open indexed note: ${formatError(cause)}`;
+      return false;
     }
   }
 
   async function openLoreReference(
     relativePath: string,
     focus = true,
-  ): Promise<void> {
-    if (!folderPath || !loreIndex) return;
+    recordHistory = focus,
+  ): Promise<boolean> {
+    if (!folderPath || !loreIndex) return false;
+    const historyOrigin = recordHistory
+      ? captureLoreNavigationLocation()
+      : null;
     const request = loreReferenceRequests.begin(relativePath);
     const rootAtStart = folderPath;
     const sessionAtStart = loreIndexSession;
@@ -1020,7 +1204,8 @@
         fingerprint: activeRecord.fingerprint,
       };
       if (focus) await focusLoreReference();
-      return;
+      if (historyOrigin) recordLoreNavigation(historyOrigin);
+      return true;
     }
 
     try {
@@ -1035,7 +1220,7 @@
         rootAtStart !== folderPath ||
         sessionAtStart !== loreIndexSession
       ) {
-        return;
+        return false;
       }
       if (loaded.changes.size > 0) {
         loreIndex = sessionAtStart.applyDiskChanges(loaded.changes);
@@ -1059,14 +1244,19 @@
             message: loaded.message,
           };
       if (focus) await focusLoreReference();
+      if (historyOrigin && loreReference.phase === "ready") {
+        recordLoreNavigation(historyOrigin);
+      }
+      return loreReference.phase === "ready";
     } catch (cause) {
-      if (!loreReferenceRequests.isCurrent(request)) return;
+      if (!loreReferenceRequests.isCurrent(request)) return false;
       loreReference = {
         phase: "error",
         path: relativePath,
         message: `The reference could not be opened safely: ${formatError(cause)}`,
       };
       if (focus) await focusLoreReference();
+      return false;
     }
   }
 
@@ -1075,16 +1265,24 @@
     document.getElementById("lore-reference-pane")?.focus({ preventScroll: true });
   }
 
-  function closeLoreReference(returnToEditor = true): void {
+  function closeLoreReference(
+    returnToEditor = true,
+    recordHistory = returnToEditor,
+  ): void {
     if (!loreReference) return;
+    const historyOrigin = recordHistory
+      ? captureLoreNavigationLocation()
+      : null;
     loreReferenceRequests.invalidate();
     loreReference = null;
+    if (historyOrigin) recordLoreNavigation(historyOrigin);
     if (returnToEditor) void tick().then(() => editorInput?.focus());
   }
 
   async function openReferenceInEditor(path: string): Promise<void> {
+    const historyOrigin = captureLoreNavigationLocation();
     closeLoreReference(false);
-    await openIndexedLorePath(path, null);
+    await openIndexedLorePath(path, null, historyOrigin);
   }
 
   function beginLoreRename(path: string): void {
@@ -2490,8 +2688,15 @@
     }
   }
 
-  async function openFile(entry: FileTreeEntry) {
-    if (entry.path === activeFilePath) return;
+  async function openFile(
+    entry: FileTreeEntry,
+    recordHistory = true,
+  ): Promise<boolean> {
+    if (entry.path === activeFilePath) return true;
+    const historyOrigin = recordHistory
+      ? captureLoreNavigationLocation()
+      : null;
+    let opened = false;
 
     await navigate(async () => {
       error = "";
@@ -2515,6 +2720,7 @@
           : createSaveState();
         activeFile = entry.name;
         activeFilePath = entry.path;
+        opened = true;
         dismissedLoreCompletion = "";
         clearLoreCompletion();
         syncActiveLoreBuffer();
@@ -2528,6 +2734,8 @@
         error = `Could not open ${entry.name}: ${e}`;
       }
     });
+    if (opened && historyOrigin) recordLoreNavigation(historyOrigin);
+    return opened;
   }
 
   async function saveFile() {
@@ -2728,6 +2936,18 @@
 
   function handleKeydown(event: KeyboardEvent) {
     if (event.defaultPrevented) return;
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      !event.shiftKey &&
+      !event.altKey &&
+      (event.key === "[" || event.key === "]") &&
+      !quickOpenVisible &&
+      !loreRenameSourcePath
+    ) {
+      event.preventDefault();
+      void goThroughLoreHistory(event.key === "[" ? "back" : "forward");
+      return;
+    }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "p") {
       event.preventDefault();
       if (quickOpenVisible) closeQuickOpen();
@@ -3187,17 +3407,40 @@
 
   <main class="editor">
     <div class="editor-header">
-      <span>
-        {activeFile ? activeFile : "No file open"}
-        {#if dirty}<span class="dirty-dot" aria-hidden="true">●</span>{/if}
-      </span>
-      {#if activeFile}
-        <span
-          class="save-status"
-          class:save-error={saveState.phase === "error"}
-          aria-live="polite"
-        >{saveStatus}</span>
-      {/if}
+      <div class="editor-heading-main">
+        <nav class="lore-history" aria-label="Connected lore navigation history">
+          <button
+            type="button"
+            aria-label="Back through connected lore navigation"
+            title="Back through connected lore navigation (Command/Ctrl+[)"
+            disabled={!canGoBackThroughLore || restoringLoreHistory || worldProjectBusy}
+            onclick={() => void goThroughLoreHistory("back")}
+          >←</button>
+          <button
+            type="button"
+            aria-label="Forward through connected lore navigation"
+            title="Forward through connected lore navigation (Command/Ctrl+])"
+            disabled={!canGoForwardThroughLore || restoringLoreHistory || worldProjectBusy}
+            onclick={() => void goThroughLoreHistory("forward")}
+          >→</button>
+        </nav>
+        <span>
+          {activeFile ? activeFile : "No file open"}
+          {#if dirty}<span class="dirty-dot" aria-hidden="true">●</span>{/if}
+        </span>
+      </div>
+      <div class="editor-statuses">
+        {#if loreHistoryNotice}
+          <span class="history-notice" role="status" aria-live="polite">{loreHistoryNotice}</span>
+        {/if}
+        {#if activeFile}
+          <span
+            class="save-status"
+            class:save-error={saveState.phase === "error"}
+            aria-live="polite"
+          >{saveStatus}</span>
+        {/if}
+      </div>
     </div>
     <div class="writing-split">
       <div class="editor-workspace">
@@ -3764,6 +4007,64 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+  }
+
+  .editor-heading-main,
+  .editor-statuses,
+  .lore-history {
+    display: flex;
+    align-items: center;
+  }
+
+  .editor-heading-main {
+    min-width: 0;
+    gap: 0.65rem;
+  }
+
+  .editor-statuses {
+    min-width: 0;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+
+  .lore-history {
+    flex: 0 0 auto;
+    gap: 0.2rem;
+  }
+
+  .lore-history button {
+    width: 1.55rem;
+    height: 1.45rem;
+    padding: 0;
+    border: 1px solid #484848;
+    border-radius: 4px;
+    background: #292929;
+    color: #c8c8c8;
+    font: inherit;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .lore-history button:hover:not(:disabled) {
+    background: #383838;
+  }
+
+  .lore-history button:focus-visible {
+    outline: 2px solid #75beff;
+    outline-offset: 2px;
+  }
+
+  .lore-history button:disabled {
+    opacity: 0.38;
+    cursor: default;
+  }
+
+  .history-notice {
+    max-width: min(34vw, 28rem);
+    overflow: hidden;
+    color: #a7d7ad;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .editor-workspace {
