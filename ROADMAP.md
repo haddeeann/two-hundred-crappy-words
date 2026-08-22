@@ -49,8 +49,8 @@ Specification: [`docs/milestones/0.3-daily-practice.md`](docs/milestones/0.3-dai
 
 Goal: turn an arbitrary folder into an optional, portable project for a manuscript and its world.
 
-- [ ] Create and reopen a named world project.
-- [ ] Provide a useful default structure for manuscript and worldbuilding material.
+- [x] Create and reopen a named world project.
+- [x] Provide a useful default structure for manuscript and worldbuilding material.
 - [x] Preserve compatibility with ordinary existing folders.
 - [x] Use Markdown for creative text and documented, human-readable project metadata.
 - [ ] Add templates for characters, locations, factions, species, technology, spacecraft, events, scenes, and chapters.

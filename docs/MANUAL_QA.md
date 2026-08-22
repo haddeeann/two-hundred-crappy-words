@@ -41,6 +41,12 @@ This checkpoint passed in full. Its steps remain below as a repeatable regressio
 
 Completed successfully on macOS on 2026-08-22 using Computer Use against a freshly packaged build and a disposable ordinary folder. The form opened with its project name selected, exposed all nine suggested folders, supported Escape cancellation throughout the form, and allowed Research and Inbox to be omitted. Creation produced only the seven selected directories and a version 1 manifest, then immediately reloaded the folder under its display name and stable UUID identity. The existing file was unchanged; its 5-word goal and corrected Aug 21 history survived adoption and restart. A SHA-256 and modification-time comparison confirmed that reopening did not rewrite the manifest.
 
+## Milestone 0.4.3 native project-creation checkpoint
+
+Completed successfully on macOS on 2026-08-22 using Computer Use against a freshly packaged build and a disposable parent folder. The accessible form collected separate display and portable folder names, rejected `../bad` before opening a picker, returned focus to the invalid field, cleared the error during correction, supported Escape, and allowed Research to be omitted. The native picker created and immediately opened “The Glass Meridian” with exactly eight selected folders and a valid version 1 manifest.
+
+The run then created `Manuscript/chapter-one.md`, saved `Signals cross the glass meridian tonight.`, and recorded a `6 / 6` goal. After a normal close, the root folder was moved externally. Startup explained the missing remembered path without losing usability; selecting the moved folder restored the display name, manuscript, goal, and daily progress through the manifest UUID. The manifest SHA-256 remained unchanged across close, move, and reopen.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:

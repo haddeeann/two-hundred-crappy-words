@@ -40,6 +40,7 @@
     reconcileTreeEntries,
     updateTreeEntry,
     validateFileName,
+    validateFolderName,
     type FileTreeEntry,
   } from "$lib/editor/file-tree";
   import {
@@ -86,8 +87,13 @@
   import {
     WORLD_PROJECT_FOLDER_ROLES,
     WORLD_PROJECT_MANIFEST_FILE,
+    validateProjectName,
     type WorldProjectFolderRole,
   } from "$lib/project/manifest";
+  import {
+    executeNewWorldProject,
+    planNewWorldProject,
+  } from "$lib/project/new-project";
 
   interface SaveFailure {
     path: string;
@@ -123,6 +129,13 @@
   let adoptionRoles = $state<WorldProjectFolderRole[]>([]);
   let adoptionBusy = $state(false);
   let adoptionNameInput = $state<HTMLInputElement>();
+  let creatingWorldProject = $state(false);
+  let newWorldProjectName = $state("");
+  let newWorldProjectFolderName = $state("");
+  let newWorldProjectRoles = $state<WorldProjectFolderRole[]>([]);
+  let newWorldProjectBusy = $state(false);
+  let newWorldProjectNameInput = $state<HTMLInputElement>();
+  let newWorldProjectFolderNameInput = $state<HTMLInputElement>();
   let navigationPromise: Promise<void> | null = null;
   let forcedSave: { path: string; revision: number } | null = null;
   let lastSaveFailure: SaveFailure | null = null;
@@ -156,6 +169,9 @@
 
   const dirty = $derived(
     activeFilePath !== "" && hasUnsavedChanges(saveState),
+  );
+  const worldProjectBusy = $derived(
+    adoptionBusy || newWorldProjectBusy,
   );
   const saveStatus = $derived.by(() => {
     if (!activeFilePath) return "";
@@ -682,11 +698,17 @@
     adoptionName = "";
     adoptionRoles = [];
     adoptionBusy = false;
+    creatingWorldProject = false;
+    newWorldProjectName = "";
+    newWorldProjectFolderName = "";
+    newWorldProjectRoles = [];
+    newWorldProjectBusy = false;
   }
 
   async function startWorldProjectAdoption() {
     if (!folderPath || projectInspection.kind !== "ordinary") return;
     error = "";
+    cancelNewWorldProject();
     adoptionName =
       folderPath.split(/[\\/]/).filter(Boolean).at(-1) ?? "My World";
     adoptionRoles = [...WORLD_PROJECT_FOLDER_ROLES];
@@ -717,6 +739,129 @@
     ) {
       event.preventDefault();
       cancelWorldProjectAdoption();
+    } else if (
+      creatingWorldProject &&
+      !newWorldProjectBusy &&
+      event.key === "Escape"
+    ) {
+      event.preventDefault();
+      cancelNewWorldProject();
+    }
+  }
+
+  async function startNewWorldProject() {
+    if (worldProjectBusy) return;
+    cancelWorldProjectAdoption();
+    error = "";
+    newWorldProjectName = "My World";
+    newWorldProjectFolderName = "My World";
+    newWorldProjectRoles = [...WORLD_PROJECT_FOLDER_ROLES];
+    creatingWorldProject = true;
+    await tick();
+    newWorldProjectNameInput?.focus();
+    newWorldProjectNameInput?.select();
+  }
+
+  function cancelNewWorldProject() {
+    if (newWorldProjectBusy) return;
+    creatingWorldProject = false;
+    newWorldProjectName = "";
+    newWorldProjectFolderName = "";
+    newWorldProjectRoles = [];
+  }
+
+  function setNewWorldProjectRole(
+    role: WorldProjectFolderRole,
+    selected: boolean,
+  ) {
+    newWorldProjectRoles = selected
+      ? [...new Set([...newWorldProjectRoles, role])]
+      : newWorldProjectRoles.filter((candidate) => candidate !== role);
+  }
+
+  async function confirmNewWorldProject() {
+    if (!creatingWorldProject || newWorldProjectBusy) return;
+
+    const nameIssue = validateProjectName(newWorldProjectName);
+    if (nameIssue) {
+      error = `Project ${nameIssue}`;
+      await tick();
+      newWorldProjectNameInput?.focus();
+      return;
+    }
+    const folderNameIssue = validateFolderName(
+      newWorldProjectFolderName.trim(),
+    );
+    if (folderNameIssue) {
+      error = folderNameIssue;
+      await tick();
+      newWorldProjectFolderNameInput?.focus();
+      return;
+    }
+    error = "";
+
+    newWorldProjectBusy = true;
+    try {
+      await navigate(async () => {
+        const parentPath = await open({
+          ...folderDialogOptions,
+          title: "Choose where to create the world project",
+        });
+        if (!parentPath) return;
+
+        const parentEntries = await readEntries(parentPath);
+        const plan = planNewWorldProject({
+          parentEntries,
+          projectId: crypto.randomUUID(),
+          name: newWorldProjectName,
+          folderName: newWorldProjectFolderName,
+          selectedRoles: newWorldProjectRoles,
+        });
+        if (plan.kind === "blocked") {
+          error = `Nothing was changed. “${plan.folderName}” already exists in the selected location.`;
+          await tick();
+          newWorldProjectFolderNameInput?.focus();
+          return;
+        }
+
+        const rootPath = await join(parentPath, plan.folderName);
+        const result = await executeNewWorldProject(plan, {
+          createRoot: async () => {
+            await mkdir(rootPath);
+          },
+          createDirectory: async (relativePath) => {
+            await mkdir(await join(rootPath, relativePath));
+          },
+          createManifest: async (text) => {
+            await writeTextFile(
+              await join(rootPath, WORLD_PROJECT_MANIFEST_FILE),
+              text,
+              { createNew: true },
+            );
+          },
+        });
+
+        if (result.kind === "partial") {
+          const created =
+            result.createdDirectories.length > 0
+              ? ` Created inside it: ${result.createdDirectories.join(", ")}.`
+              : "";
+          const root = result.createdRoot
+            ? ` The folder “${plan.folderName}” was created and remains safe to inspect or remove manually.`
+            : " No project folder was created.";
+          error = `World project creation stopped at ${result.failedAt}: ${result.message}.${root}${created}`;
+          return;
+        }
+
+        await loadFolder(rootPath);
+        const store = await load(STORE_FILE);
+        await store.set(LAST_FOLDER_KEY, rootPath);
+        await store.save();
+      });
+    } catch (cause) {
+      error = `Could not create world project: ${formatError(cause)}`;
+    } finally {
+      newWorldProjectBusy = false;
     }
   }
 
@@ -1179,8 +1324,14 @@
   <aside class="sidebar">
     <h1 class="app-title">200 Crappy Words</h1>
 
-    <button class="open-btn" onclick={openFolder}>Open Folder</button>
-    <button class="open-btn" onclick={startNewFile} disabled={!folderPath || adoptionBusy}>
+    <button class="open-btn" onclick={openFolder} disabled={worldProjectBusy}
+      >Open Folder</button>
+    <button
+      class="open-btn"
+      onclick={startNewWorldProject}
+      disabled={worldProjectBusy}
+    >New World Project</button>
+    <button class="open-btn" onclick={startNewFile} disabled={!folderPath || worldProjectBusy}>
       New File in {selectedDirectoryName}
     </button>
 
@@ -1188,8 +1339,78 @@
       <button
         class="open-btn"
         onclick={startWorldProjectAdoption}
-        disabled={adoptionBusy}
+        disabled={worldProjectBusy}
       >Make World Project</button>
+    {/if}
+
+    {#if creatingWorldProject}
+      <form
+        class="project-adoption"
+        aria-label="Create new world project"
+        onsubmit={(event) => {
+          event.preventDefault();
+          void confirmNewWorldProject();
+        }}
+      >
+        <label for="new-project-name">Project name</label>
+        <input
+          id="new-project-name"
+          class="new-file-input"
+          aria-label="New world project name"
+          value={newWorldProjectName}
+          oninput={(event) => {
+            newWorldProjectName = (
+              event.currentTarget as HTMLInputElement
+            ).value;
+            error = "";
+          }}
+          bind:this={newWorldProjectNameInput}
+          disabled={newWorldProjectBusy}
+        />
+        <label for="new-project-folder-name">Folder name</label>
+        <input
+          id="new-project-folder-name"
+          class="new-file-input"
+          aria-label="New world project folder name"
+          value={newWorldProjectFolderName}
+          oninput={(event) => {
+            newWorldProjectFolderName = (
+              event.currentTarget as HTMLInputElement
+            ).value;
+            error = "";
+          }}
+          bind:this={newWorldProjectFolderNameInput}
+          disabled={newWorldProjectBusy}
+        />
+        <fieldset disabled={newWorldProjectBusy}>
+          <legend>Suggested folders</legend>
+          {#each WORLD_PROJECT_FOLDER_ROLES as role}
+            <label class="folder-choice">
+              <input
+                type="checkbox"
+                checked={newWorldProjectRoles.includes(role)}
+                onchange={(event) =>
+                  setNewWorldProjectRole(
+                    role,
+                    (event.currentTarget as HTMLInputElement).checked,
+                  )}
+              />
+              {SUGGESTED_WORLD_PROJECT_FOLDERS[role]}
+            </label>
+          {/each}
+        </fieldset>
+        <div class="adoption-actions">
+          <button
+            type="submit"
+            disabled={newWorldProjectBusy}
+          >{newWorldProjectBusy ? "Creating…" : "Choose location & create"}</button>
+          <button
+            type="button"
+            onclick={cancelNewWorldProject}
+            disabled={newWorldProjectBusy}
+          >Cancel</button>
+        </div>
+      </form>
     {/if}
 
     {#if adoptingWorldProject}
@@ -1313,7 +1534,7 @@
       class="editor-input"
       placeholder="Start writing your 200 crappy words..."
       aria-label="Document editor"
-      disabled={!activeFilePath || correctingDailyProgress || adoptionBusy}
+      disabled={!activeFilePath || correctingDailyProgress || worldProjectBusy}
       value={content}
       oninput={handleContentInput}
     ></textarea>

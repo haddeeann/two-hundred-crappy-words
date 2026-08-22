@@ -82,14 +82,27 @@ export function updateTreeEntry(
 }
 
 export function validateFileName(name: string): string | null {
-  if (!name) return "Enter a file name.";
-  if (name === "." || name === "..") return "Choose a regular file name.";
+  return validatePortableEntryName(name, "file");
+}
+
+export function validateFolderName(name: string): string | null {
+  return validatePortableEntryName(name, "folder");
+}
+
+function validatePortableEntryName(
+  name: string,
+  kind: "file" | "folder",
+): string | null {
+  if (!name) return `Enter a ${kind} name.`;
+  if (name === "." || name === "..") {
+    return `Choose a regular ${kind} name.`;
+  }
   if (/[\\/]/.test(name)) return "Enter a name, not a folder path.";
   if (/[\0-\x1f<>:\"|?*]/.test(name)) {
     return "The name contains a character that is not portable across systems.";
   }
   if (/[ .]$/.test(name)) {
-    return "A file name cannot end with a space or period.";
+    return `A ${kind} name cannot end with a space or period.`;
   }
 
   const baseName = name.split(".")[0]?.toUpperCase();
