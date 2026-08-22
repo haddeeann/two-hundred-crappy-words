@@ -59,3 +59,63 @@ export interface ParsedMarkdownNote {
   issues: LoreIssue[];
   frontmatter: ParsedFrontmatter;
 }
+
+export type LoreLinkResolution =
+  | {
+      kind: "resolved";
+      targetPath: string;
+      heading: ParsedHeading | null;
+    }
+  | {
+      kind: "invalid-target" | "broken-note" | "ambiguous-note";
+      candidatePaths: string[];
+      message: string;
+    }
+  | {
+      kind: "broken-heading" | "ambiguous-heading";
+      targetPath: string;
+      candidateHeadings: ParsedHeading[];
+      message: string;
+    };
+
+export interface IndexedWikiLink {
+  link: ParsedWikiLink;
+  resolution: LoreLinkResolution;
+  context: string;
+}
+
+export interface LoreIndexIssue {
+  kind: "duplicate-note-id";
+  message: string;
+  paths: string[];
+}
+
+export interface LoreDocumentRecord {
+  path: string;
+  fingerprint: string;
+  size: number;
+  id: string | null;
+  type: string | null;
+  title: string;
+  aliases: string[];
+  headings: ParsedHeading[];
+  outgoing: IndexedWikiLink[];
+  parseIssues: LoreIssue[];
+  normalizedSearchText: string;
+}
+
+export interface LoreBacklink {
+  sourcePath: string;
+  targetPath: string;
+  link: ParsedWikiLink;
+  context: string;
+}
+
+export interface LoreProjectIndex {
+  format: "200-crappy-words/lore-index";
+  version: 1;
+  generation: number;
+  documents: ReadonlyMap<string, LoreDocumentRecord>;
+  backlinks: ReadonlyMap<string, readonly LoreBacklink[]>;
+  issues: LoreIndexIssue[];
+}

@@ -20,9 +20,9 @@ Implement the approved safe Markdown/frontmatter/wiki-link parser and a bounded,
 
 - [x] Parse the approved safe frontmatter subset, including optional aliases, without evaluating YAML or rewriting source.
 - [x] Parse titles, ATX/Setext headings, wiki links, escapes, ignored regions, exact UTF-16 ranges, and bounded issues.
-- [ ] Resolve note and heading targets deterministically, including broken, ambiguous, case, Unicode, duplicate-ID, and same-file cases.
-- [ ] Scan only accepted contained Markdown files; skip hidden, symlinked, excluded, generated, oversized, and over-budget input with visible issues.
-- [ ] Build a versioned memory-only project index with stale-result protection and active-buffer overlay support.
+- [x] Resolve note and heading targets deterministically, including broken, ambiguous, case, Unicode, duplicate-ID, and same-file cases.
+- [x] Scan only accepted contained Markdown files; skip hidden, symlinked, excluded, generated, oversized, and over-budget input with visible issues.
+- [x] Build a versioned memory-only project index with stale-result protection and active-buffer overlay support.
 - [ ] Pass representative fixtures and measure the approved large-project performance budget before advancing.
 
 ## Next slices
@@ -32,6 +32,7 @@ Implement the approved safe Markdown/frontmatter/wiki-link parser and a bounded,
 
 ## Completed checkpoint
 
+- The second 0.5.2 checkpoint adds deterministic candidate and heading resolution, collision-visible duplicate-ID handling, source-context backlinks, bounded project traversal, explicit exclusion reasons, stable-read retry, scan caps, and a versioned memory-only index session whose pending work is invalidated by newer disk or active-buffer state. Twenty-nine focused lore tests pass; the full suite has 224 passing tests across thirty-one files, frontend build passes, and Svelte/TypeScript checks report zero errors and warnings. The next step connects this tested boundary to the selected Tauri folder and measures the approved fixture.
 - The first 0.5.2 checkpoint adds focused, dependency-free lore modules for safe frontmatter, title, ATX/Setext heading, and wiki-link parsing. It validates optional aliases without enabling YAML aliases or tags, records exact UTF-16 and human-readable locations, ignores metadata/code/comments, reports malformed input without rewriting it, and normalizes Unicode names consistently. Fourteen focused tests pass; the full suite has 209 passing tests across twenty-seven files, frontend build passes, and Svelte/TypeScript checks report zero errors and warnings.
 - Slice 0.5.1 defines the durable connected-lore semantics in `docs/CONNECTED_LORE_FORMAT.md`. The user approved optional structured-note aliases, rooted project-relative path links, collision-visible name resolution, documented escapes and ignored regions, and a memory-only version-one index on 2026-08-22.
 - Milestone 0.4 is complete. The app recognizes, adopts, and creates portable UUID-identified world projects while preserving ordinary folders; creates nine optional structured Markdown note types; keeps private practice, recovery, recent locations, and navigation app-local; reconnects moved worlds; and handles live copies only through an explicit same/independent/ordinary choice.
