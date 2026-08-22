@@ -10,26 +10,28 @@ Connected lore is complete. The active milestone makes a long manuscript underst
 
 ## Active slice
 
-**0.6.1 — Portable manuscript-order and scene/chapter metadata decision gate**
+**0.6.2 — Bounded manuscript-structure parser and validator**
 
 ### Intended outcome
 
-Define the smallest inspectable, portable structure that can order chapter and scene Markdown without making existing prose proprietary, then obtain explicit approval before any project format or writer-authored metadata is changed.
+Implement the approved version-one structure as a pure, bounded, non-mutating model that can distinguish valid, malformed, invalid, and newer files before any project integration or write path exists.
 
 ### Acceptance criteria
 
-- [x] Document whether order belongs in one visible project-level file, distributed note frontmatter, or a deliberately limited combination, including the source of truth and merge/churn tradeoffs.
-- [x] Define stable chapter/scene identity, optional metadata, ordinary-folder compatibility, and behavior for missing, duplicate, moved, externally edited, or malformed entries.
-- [x] Define safe preview, compare-before-write, rollback, undo, and recovery boundaries for future reorder, split, merge, and compile operations.
-- [x] Specify deterministic Markdown/plain-text compilation order and make DOCX/PDF explicitly later output adapters rather than new prose stores.
-- [x] Preserve current version-one manifests and existing Markdown byte-for-byte until an explicit migration or opt-in action is approved.
-- [ ] Record the accepted decision and turn it into the next bounded implementation slice only after user approval.
+- [ ] Parse at most 10 MiB of JSON into explicit valid, malformed, invalid, or unsupported-version results without reading any referenced source.
+- [ ] Validate file, manuscript, chapter, scene, source-binding, metadata, and nesting rules with bounded, path-specific issues.
+- [ ] Reject duplicate manuscript/item IDs, repeated source and overview bindings, invalid note IDs, unsupported nesting, and more than 10,000 total outline items.
+- [ ] Preserve a deep copy of unknown supported-version fields for future guarded mutation while exposing only validated normalized model data.
+- [ ] Add deterministic serialization for newly created in-memory structures without yet creating a project file or changing Markdown.
+- [ ] Pass focused tests, the full frontend suite, Svelte/TypeScript checks, and the frontend build; document results and the next source-reconciliation slice.
 
 ## Next slices
 
-1. 0.6.2 — Implement and validate the approved portable manuscript model without yet adding reorder UI.
+1. 0.6.3 — Read and reconcile referenced folders, overviews, and scene sources through contained stable filesystem boundaries without mutation.
 
 ## Completed checkpoint
+
+- Slice 0.6.1 is complete. The approved format uses one visible `200-crappy-words.manuscripts.json` file for portable order and compact outline metadata while scene prose remains in ordinary Markdown. A chapter is primarily a folder or logical container with an optional `chapter.md` overview and separate scene files; a conventional one-file chapter remains supported only when it has no child scenes. Multiple books and loose scenes are allowed. Existing files may bind by path without modification, optional stable note IDs support explicit move repair, and metadata remains descriptive until continuity semantics are separately approved. Structural writes require preview, compare-before-write, atomic replacement, and guarded in-session undo; compile follows deterministic order and never silently omits unavailable prose. The user approved the revised gate on 2026-08-22.
 
 - Milestone 0.5 and slice 0.5.8 are complete. Connected-lore navigation now keeps at most fifty session-only editor/reference contexts. Visible Back and Forward controls and Command/Ctrl+`[`/`]` restore unchanged project-relative destinations, exact editor selections, side-reference state, and appropriate focus; new navigation after Back truncates the forward branch. Every source fingerprint is revalidated through contained stable reads, and changed or unavailable entries are skipped with an accessible explanation rather than restoring stale coordinates. History clears on project replacement and process exit and is never written to app data.
 - Final packaged macOS QA exercised side-reference opening, exact selection restoration, Back/Forward keyboard navigation, explicit Open in editor, branch replacement, external reference refresh, stale-forward skipping, and restart clearing against byte-restored disposable files. The final 2,000-note/24.78 MiB fixture measured 236.33 ms full indexing, 7.49 ms longest cooperative work, 6.40 ms incremental update, 0.0001 ms warm lookup, 8.07/3.45 ms cold/warm completion, 6.86/13.79 ms cold/warm search, and 4.55/1.97 ms cold/warm mention analysis; every approved target passed. The frontend suite has 271 passing tests across forty-two files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged builds pass, Rust formatting/tests/checks pass, and the production dependency audit reports zero vulnerabilities.
@@ -60,7 +62,7 @@ Define the smallest inspectable, portable structure that can order chapter and s
 
 ## Blockers and decision gates
 
-The proposal is ready in `docs/MANUSCRIPT_FORMAT.md`. Implementation is deliberately waiting for user approval because the visible structure file would become writer-authored project data. Existing version-one manifests and Markdown remain untouched.
+No blocker. The permanent-format gate is approved. Slice 0.6.2 is deliberately pure and non-mutating; project creation, source repair, reorder writes, and UI remain later guarded slices.
 
 ## Handoff protocol
 

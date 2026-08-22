@@ -143,7 +143,7 @@ The approved portable manifest and optional Markdown metadata are documented in 
 
 The approved wiki-link semantics, indexing limits, and privacy boundary are documented in [`docs/CONNECTED_LORE_FORMAT.md`](docs/CONNECTED_LORE_FORMAT.md).
 
-The proposed portable manuscript-order and scene/chapter metadata model is documented for approval in [`docs/MANUSCRIPT_FORMAT.md`](docs/MANUSCRIPT_FORMAT.md).
+The approved portable manuscript-order and scene/chapter metadata model is documented in [`docs/MANUSCRIPT_FORMAT.md`](docs/MANUSCRIPT_FORMAT.md).
 
 The current native capability and selected-folder access model is documented in [`docs/SECURITY_AND_PERMISSIONS.md`](docs/SECURITY_AND_PERMISSIONS.md).
 

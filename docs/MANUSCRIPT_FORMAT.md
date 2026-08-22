@@ -1,6 +1,6 @@
 # Proposed portable manuscript structure
 
-Status: **proposed for the 0.6.1 decision gate; not yet approved or implemented**
+Status: **approved on 2026-08-22; implementation begins in bounded slices**
 
 This document proposes the smallest portable model that can order chapters and scenes, hold planning metadata, and compile a long manuscript without turning prose into an app-owned format. Existing projects, manifests, and Markdown files must remain byte-for-byte unchanged until the writer explicitly opts in after this proposal is approved.
 
@@ -197,9 +197,9 @@ The first output adapters are Markdown and plain text. They write only to a writ
 - Version-one `200-crappy-words.project.json` remains unchanged; the new file has its own version and migration policy.
 - Ordinary folders and projects without the structure file retain all current behavior.
 
-## Approval questions
+## Approved decision
 
-Implementation should begin only after confirming these choices:
+The user approved these choices on 2026-08-22:
 
 1. Use one visible `200-crappy-words.manuscripts.json` file as the source of order and compact outline metadata.
 2. Keep prose in Markdown and avoid new required frontmatter; bind existing files by path with an optional stable note ID.
