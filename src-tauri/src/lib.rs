@@ -1,6 +1,12 @@
 use std::fs;
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::path::{Component, Path};
+use std::time::{SystemTime, UNIX_EPOCH};
 use tauri_plugin_fs::FsExt;
+
+const MANUSCRIPT_STRUCTURE_FILE: &str = "200-crappy-words.manuscripts.json";
+const MAX_MANUSCRIPT_STRUCTURE_BYTES: usize = 10 * 1024 * 1024;
 
 #[tauri::command]
 fn rename_lore_file_no_clobber(
@@ -101,6 +107,167 @@ fn rename_lore_file_no_clobber_impl(
     Ok(())
 }
 
+#[tauri::command]
+fn replace_manuscript_structure_atomic(
+    app: tauri::AppHandle,
+    root_path: String,
+    expected_text: String,
+    new_text: String,
+) -> Result<(), String> {
+    let canonical_root = fs::canonicalize(&root_path)
+        .map_err(|error| format!("The selected project root is unavailable: {error}"))?;
+    let structure_path = canonical_root.join(MANUSCRIPT_STRUCTURE_FILE);
+    let scope = app.fs_scope();
+    if !scope.is_allowed(&canonical_root) || !scope.is_allowed(&structure_path) {
+        return Err("The manuscript structure is outside the filesystem scope granted by the native folder picker.".into());
+    }
+    replace_manuscript_structure_atomic_impl(&canonical_root, &expected_text, &new_text)
+}
+
+#[cfg(unix)]
+fn replace_manuscript_structure_atomic_impl(
+    root_path: &Path,
+    expected_text: &str,
+    new_text: &str,
+) -> Result<(), String> {
+    if expected_text.len() > MAX_MANUSCRIPT_STRUCTURE_BYTES
+        || new_text.len() > MAX_MANUSCRIPT_STRUCTURE_BYTES
+    {
+        return Err("The manuscript structure exceeds the 10 MiB mutation limit.".into());
+    }
+    validate_new_manuscript_structure(new_text)?;
+
+    let canonical_root = fs::canonicalize(root_path)
+        .map_err(|error| format!("The selected project root is unavailable: {error}"))?;
+    let structure_path = canonical_root.join(MANUSCRIPT_STRUCTURE_FILE);
+    let metadata = fs::symlink_metadata(&structure_path)
+        .map_err(|error| format!("The manuscript structure is unavailable: {error}"))?;
+    if metadata.file_type().is_symlink() || !metadata.is_file() {
+        return Err("The manuscript structure is not a regular non-symbolic file.".into());
+    }
+    let canonical_structure = fs::canonicalize(&structure_path)
+        .map_err(|error| format!("The manuscript structure could not be verified: {error}"))?;
+    canonical_structure
+        .strip_prefix(&canonical_root)
+        .map_err(|_| {
+            "The manuscript structure resolves outside the selected project.".to_string()
+        })?;
+
+    let current = fs::read_to_string(&canonical_structure)
+        .map_err(|error| format!("The manuscript structure could not be read: {error}"))?;
+    if current != expected_text {
+        return Err(
+            "The manuscript structure changed after the preview; nothing was written.".into(),
+        );
+    }
+
+    let (temporary_path, mut temporary) = create_structure_temporary(&canonical_root)?;
+    let mut replaced = false;
+    let result = (|| {
+        temporary
+            .write_all(new_text.as_bytes())
+            .map_err(|error| format!("The replacement could not be staged: {error}"))?;
+        temporary.sync_all().map_err(|error| {
+            format!("The staged replacement could not be synchronized: {error}")
+        })?;
+        fs::set_permissions(&temporary_path, metadata.permissions()).map_err(|error| {
+            format!("The staged replacement permissions could not be retained: {error}")
+        })?;
+        temporary.sync_all().map_err(|error| {
+            format!("The staged replacement metadata could not be synchronized: {error}")
+        })?;
+        drop(temporary);
+
+        let staged = fs::read_to_string(&temporary_path)
+            .map_err(|error| format!("The staged replacement could not be verified: {error}"))?;
+        if staged != new_text {
+            return Err("The staged replacement did not match the validated structure.".into());
+        }
+        let rechecked = fs::read_to_string(&canonical_structure)
+            .map_err(|error| format!("The manuscript structure could not be rechecked: {error}"))?;
+        if rechecked != expected_text {
+            return Err("The manuscript structure changed while the replacement was staged; nothing was written.".into());
+        }
+
+        fs::rename(&temporary_path, &canonical_structure)
+            .map_err(|error| format!("The atomic manuscript replacement failed: {error}"))?;
+        replaced = true;
+        if let Ok(directory) = fs::File::open(&canonical_root) {
+            let _ = directory.sync_all();
+        }
+        let written = fs::read_to_string(&canonical_structure).map_err(|error| {
+            format!("The structure was replaced, but the result could not be reread and needs review: {error}")
+        })?;
+        if written != new_text {
+            return Err(
+                "The structure was replaced, but its reread did not match and needs review.".into(),
+            );
+        }
+        Ok(())
+    })();
+    if !replaced {
+        let _ = fs::remove_file(&temporary_path);
+    }
+    result
+}
+
+#[cfg(not(unix))]
+fn replace_manuscript_structure_atomic_impl(
+    _root_path: &Path,
+    _expected_text: &str,
+    _new_text: &str,
+) -> Result<(), String> {
+    Err("Atomic manuscript replacement is not yet available on this operating system.".into())
+}
+
+#[cfg(unix)]
+fn create_structure_temporary(root_path: &Path) -> Result<(std::path::PathBuf, fs::File), String> {
+    let nonce = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|_| "The system clock could not produce a temporary filename.".to_string())?
+        .as_nanos();
+    for attempt in 0..16 {
+        let path = root_path.join(format!(
+            ".{MANUSCRIPT_STRUCTURE_FILE}.tmp-{}-{nonce}-{attempt}",
+            std::process::id()
+        ));
+        match OpenOptions::new().write(true).create_new(true).open(&path) {
+            Ok(file) => return Ok((path, file)),
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) => {
+                return Err(format!(
+                    "A temporary replacement could not be created: {error}"
+                ))
+            }
+        }
+    }
+    Err("A unique temporary replacement path could not be created.".into())
+}
+
+fn validate_new_manuscript_structure(text: &str) -> Result<(), String> {
+    let value: serde_json::Value = serde_json::from_str(text)
+        .map_err(|error| format!("The replacement is not valid JSON: {error}"))?;
+    let object = value
+        .as_object()
+        .ok_or_else(|| "The replacement manuscript structure must be a JSON object.".to_string())?;
+    if object
+        .get("formatVersion")
+        .and_then(serde_json::Value::as_u64)
+        != Some(1)
+    {
+        return Err("The replacement manuscript structure must use format version 1.".into());
+    }
+    if !object
+        .get("manuscripts")
+        .is_some_and(serde_json::Value::is_array)
+    {
+        return Err(
+            "The replacement manuscript structure must contain a manuscripts array.".into(),
+        );
+    }
+    Ok(())
+}
+
 fn validate_relative_markdown_path(path: &Path) -> Result<(), String> {
     if path.as_os_str().is_empty() || path.is_absolute() {
         return Err("Lore paths must be non-empty and project-relative.".into());
@@ -164,14 +331,17 @@ pub fn run() {
         // selects. Register after fs so those runtime scopes can be restored.
         .plugin(tauri_plugin_persisted_scope::init())
         .plugin(tauri_plugin_store::Builder::new().build())
-        .invoke_handler(tauri::generate_handler![rename_lore_file_no_clobber])
+        .invoke_handler(tauri::generate_handler![
+            rename_lore_file_no_clobber,
+            replace_manuscript_structure_atomic
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 
 #[cfg(test)]
 mod tests {
-    use super::rename_lore_file_no_clobber_impl;
+    use super::{rename_lore_file_no_clobber_impl, replace_manuscript_structure_atomic_impl};
     use std::fs;
     use std::path::PathBuf;
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -244,5 +414,62 @@ mod tests {
         )
         .expect_err("traversal");
         assert!(traversal.contains("cannot contain"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn atomically_replaces_only_the_expected_manuscript_structure() {
+        let fixture = Fixture::new();
+        let original = "{\"formatVersion\":1,\"manuscripts\":[]}\n";
+        let updated =
+            "{\n  \"formatVersion\": 1,\n  \"manuscripts\": [],\n  \"marker\": \"updated\"\n}\n";
+        let path = fixture.0.join(super::MANUSCRIPT_STRUCTURE_FILE);
+        fs::write(&path, original).expect("structure");
+        let permissions = fs::metadata(&path).unwrap().permissions();
+
+        replace_manuscript_structure_atomic_impl(&fixture.0, original, updated)
+            .expect("atomic replacement");
+
+        assert_eq!(fs::read_to_string(&path).unwrap(), updated);
+        assert_eq!(
+            fs::metadata(&path).unwrap().permissions().readonly(),
+            permissions.readonly()
+        );
+        assert!(fs::read_dir(&fixture.0).unwrap().all(|entry| !entry
+            .unwrap()
+            .file_name()
+            .to_string_lossy()
+            .contains(".tmp-")));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn refuses_changed_invalid_and_symbolic_manuscript_replacements() {
+        let fixture = Fixture::new();
+        let original = "{\"formatVersion\":1,\"manuscripts\":[]}\n";
+        let updated = "{\"formatVersion\":1,\"manuscripts\":[],\"safe\":true}\n";
+        let path = fixture.0.join(super::MANUSCRIPT_STRUCTURE_FILE);
+        fs::write(&path, original).expect("structure");
+
+        let changed = replace_manuscript_structure_atomic_impl(&fixture.0, "different", updated)
+            .expect_err("changed source");
+        assert!(changed.contains("changed after the preview"));
+        assert_eq!(fs::read_to_string(&path).unwrap(), original);
+
+        let invalid = replace_manuscript_structure_atomic_impl(&fixture.0, original, "{}")
+            .expect_err("invalid replacement");
+        assert!(invalid.contains("format version 1"));
+        assert_eq!(fs::read_to_string(&path).unwrap(), original);
+
+        fs::remove_file(&path).unwrap();
+        std::os::unix::fs::symlink(fixture.0.join("Lore/target.json"), &path).expect("symlink");
+        fs::write(fixture.0.join("Lore/target.json"), original).expect("target");
+        let symbolic = replace_manuscript_structure_atomic_impl(&fixture.0, original, updated)
+            .expect_err("symbolic structure");
+        assert!(symbolic.contains("non-symbolic"));
+        assert_eq!(
+            fs::read_to_string(fixture.0.join("Lore/target.json")).unwrap(),
+            original
+        );
     }
 }
