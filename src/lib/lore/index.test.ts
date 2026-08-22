@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { buildLoreProjectIndex, LORE_INDEX_FORMAT, LORE_INDEX_VERSION } from "./index";
+import {
+  buildLoreProjectIndex,
+  LORE_INDEX_FORMAT,
+  LORE_INDEX_VERSION,
+  updateLoreProjectIndex,
+} from "./index";
 
 const DUPLICATE_ID = "2cd59970-6ab4-46f9-b54b-a0e35af5b9e1";
 
@@ -57,5 +62,26 @@ describe("memory-only connected-lore index", () => {
         { path: "same.md", text: "Two" },
       ]),
     ).toThrow(/Duplicate lore source path/);
+  });
+
+  it("updates one parse record while globally refreshing resolutions", () => {
+    const initial = buildLoreProjectIndex([
+      { path: "source.md", text: "[[Mara]]" },
+      { path: "target.md", text: "# Not Mara" },
+      { path: "unchanged.md", text: "A large body that should retain its derived record." },
+    ]);
+    const unchanged = initial.documents.get("unchanged.md")!;
+
+    const updated = updateLoreProjectIndex(initial, "target.md", "# Mara");
+
+    expect(updated.generation).toBe(initial.generation + 1);
+    expect(updated.documents.get("source.md")?.outgoing[0]?.resolution).toMatchObject({
+      kind: "resolved",
+      targetPath: "target.md",
+    });
+    expect(updated.documents.get("unchanged.md")).toMatchObject({
+      fingerprint: unchanged.fingerprint,
+      normalizedSearchText: unchanged.normalizedSearchText,
+    });
   });
 });

@@ -1,13 +1,19 @@
 import { fingerprintContent } from "$lib/editor/recovery";
 import { parseMarkdownNote } from "./markdown";
 import { normalizeLoreName } from "./normalize";
-import { createResolutionCatalog, resolveWikiLink } from "./resolve";
+import {
+  createResolutionCatalog,
+  resolveWikiLink,
+  type LoreResolvableDocument,
+} from "./resolve";
 import type {
   LoreBacklink,
   LoreDocumentRecord,
   LoreIndexIssue,
   LoreProjectIndex,
+  LoreIssue,
   ParsedMarkdownNote,
+  ParsedWikiLink,
 } from "./types";
 
 export const LORE_INDEX_FORMAT = "200-crappy-words/lore-index" as const;
@@ -16,6 +22,18 @@ export const LORE_INDEX_VERSION = 1 as const;
 export interface LoreSourceDocument {
   path: string;
   text: string;
+}
+
+export interface CooperativeIndexOptions {
+  batchSize?: number;
+  yieldControl?: () => Promise<void>;
+}
+
+interface IndexableLoreDocument extends LoreResolvableDocument {
+  id: string | null;
+  type: string | null;
+  links: readonly ParsedWikiLink[];
+  issues: readonly LoreIssue[];
 }
 
 export function buildLoreProjectIndex(
@@ -32,17 +50,93 @@ export function buildLoreProjectIndex(
     textByPath.set(source.path, source.text);
   }
 
-  const parsed = [...parsedByPath.values()];
+  return assembleLoreIndex(
+    [...parsedByPath.values()],
+    textByPath,
+    new Map(),
+    generation,
+  );
+}
+
+export async function buildLoreProjectIndexCooperatively(
+  sources: readonly LoreSourceDocument[],
+  generation = 1,
+  options: CooperativeIndexOptions = {},
+): Promise<LoreProjectIndex> {
+  const batchSize = options.batchSize ?? 24;
+  if (!Number.isSafeInteger(batchSize) || batchSize < 1) {
+    throw new RangeError("Lore index batch size must be a positive safe integer.");
+  }
+  const yieldControl = options.yieldControl ?? yieldToMainThread;
+  const parsed: ParsedMarkdownNote[] = [];
+  const preparedRecords = new Map<string, LoreDocumentRecord>();
+  const paths = new Set<string>();
+
+  for (let index = 0; index < sources.length; index += 1) {
+    const source = sources[index]!;
+    if (paths.has(source.path)) {
+      throw new RangeError(`Duplicate lore source path: ${source.path}`);
+    }
+    paths.add(source.path);
+    const document = parseMarkdownNote(source.path, source.text);
+    parsed.push(document);
+    preparedRecords.set(
+      source.path,
+      preparedRecord(document, source.text),
+    );
+    if ((index + 1) % batchSize === 0 && index + 1 < sources.length) {
+      await yieldControl();
+    }
+  }
+  if (sources.length > batchSize) await yieldControl();
+  return assembleLoreIndex(parsed, new Map(), preparedRecords, generation);
+}
+
+export function updateLoreProjectIndex(
+  current: LoreProjectIndex,
+  path: string,
+  text: string | null,
+): LoreProjectIndex {
+  const documents: IndexableLoreDocument[] = [];
+  for (const record of current.documents.values()) {
+    if (record.path !== path) documents.push(recordToIndexable(record));
+  }
+  const textByPath = new Map<string, string>();
+  if (text !== null) {
+    documents.push(parseMarkdownNote(path, text));
+    textByPath.set(path, text);
+  }
+  return assembleLoreIndex(
+    documents,
+    textByPath,
+    current.documents,
+    current.generation + 1,
+  );
+}
+
+function assembleLoreIndex(
+  parsed: readonly IndexableLoreDocument[],
+  textByPath: ReadonlyMap<string, string>,
+  previousRecords: ReadonlyMap<string, LoreDocumentRecord>,
+  generation: number,
+): LoreProjectIndex {
   const catalog = createResolutionCatalog(parsed);
   const issues = duplicateIdIssues(parsed);
   const records = new Map<string, LoreDocumentRecord>();
   const backlinks = new Map<string, LoreBacklink[]>();
 
   for (const document of parsed) {
-    const text = textByPath.get(document.path)!;
+    const text = textByPath.get(document.path);
+    const previous = previousRecords.get(document.path);
+    const previousContext = new Map(
+      previous?.outgoing.map(({ link, context }) => [linkKey(link), context]) ?? [],
+    );
     const outgoing = document.links.map((link) => {
       const resolution = resolveWikiLink(document.path, link, catalog);
-      const context = linkContext(text, link.range.start, link.range.end);
+      const context =
+        text === undefined
+          ? (previousContext.get(linkKey(link)) ?? "")
+          : linkContext(text, link.range.start, link.range.end);
       if (resolution.kind === "resolved") {
         const values = backlinks.get(resolution.targetPath) ?? [];
         values.push({
@@ -58,16 +152,17 @@ export function buildLoreProjectIndex(
 
     records.set(document.path, {
       path: document.path,
-      fingerprint: fingerprintContent(text),
-      size: new TextEncoder().encode(text).byteLength,
+      fingerprint: text === undefined ? previous!.fingerprint : fingerprintContent(text),
+      size: text === undefined ? previous!.size : new TextEncoder().encode(text).byteLength,
       id: document.id,
       type: document.type,
       title: document.title,
-      aliases: document.aliases,
-      headings: document.headings,
+      aliases: [...document.aliases],
+      headings: [...document.headings],
       outgoing,
-      parseIssues: document.issues,
-      normalizedSearchText: normalizeLoreName(text),
+      parseIssues: [...document.issues],
+      normalizedSearchText:
+        text === undefined ? previous!.normalizedSearchText : normalizeLoreName(text),
     });
   }
 
@@ -89,7 +184,7 @@ export function buildLoreProjectIndex(
   };
 }
 
-function duplicateIdIssues(documents: readonly ParsedMarkdownNote[]): LoreIndexIssue[] {
+function duplicateIdIssues(documents: readonly IndexableLoreDocument[]): LoreIndexIssue[] {
   const byId = new Map<string, string[]>();
   for (const document of documents) {
     if (!document.id) continue;
@@ -105,6 +200,60 @@ function duplicateIdIssues(documents: readonly ParsedMarkdownNote[]): LoreIndexI
       paths: paths.sort((first, second) => first.localeCompare(second)),
     }))
     .sort((first, second) => first.paths[0]!.localeCompare(second.paths[0]!));
+}
+
+function recordToIndexable(record: LoreDocumentRecord): IndexableLoreDocument {
+  return {
+    path: record.path,
+    id: record.id,
+    type: record.type,
+    title: record.title,
+    aliases: record.aliases,
+    headings: record.headings,
+    links: record.outgoing.map(({ link }) => link),
+    issues: record.parseIssues,
+  };
+}
+
+function preparedRecord(
+  document: ParsedMarkdownNote,
+  text: string,
+): LoreDocumentRecord {
+  return {
+    path: document.path,
+    fingerprint: fingerprintContent(text),
+    size: new TextEncoder().encode(text).byteLength,
+    id: document.id,
+    type: document.type,
+    title: document.title,
+    aliases: document.aliases,
+    headings: document.headings,
+    outgoing: document.links.map((link) => ({
+      link,
+      resolution: {
+        kind: "broken-note" as const,
+        candidatePaths: [],
+        message: "Resolution pending.",
+      },
+      context: linkContext(text, link.range.start, link.range.end),
+    })),
+    parseIssues: document.issues,
+    normalizedSearchText: normalizeLoreName(text),
+  };
+}
+
+function linkKey(link: ParsedWikiLink): string {
+  return `${link.range.start}:${link.range.end}:${link.raw}`;
+}
+
+function yieldToMainThread(): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(() => resolve());
+    } else {
+      setTimeout(resolve, 0);
+    }
+  });
 }
 
 function linkContext(text: string, start: number, end: number, limit = 240): string {

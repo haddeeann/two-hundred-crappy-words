@@ -61,6 +61,14 @@ The walkthrough expanded `Lore/Planets`, selected it, opened `velorum.md`, close
 
 Three live filesystem copies exercised every identity choice. **Same project** updated one last-known path without changing either manifest. **Make independent** generated a new UUID and a separate recent entry while preserving an unknown version-one test field and leaving the original unchanged. **Open as folder** displayed the copy as an ordinary path-identified folder, disabled structured-project behavior, kept local history separate, and left its manifest byte-for-byte unchanged. The final app-local `workspace.json` contained absolute recent locations but only project-relative navigation and no creative text. The full suite has 195 passing tests across twenty-four files; Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, Rust formatting/checks pass, and the production dependency audit reports zero vulnerabilities.
 
+## Milestone 0.5.2 initial lore-index checkpoint
+
+Completed successfully on macOS on 2026-08-22 using Computer Use against a freshly packaged build and a disposable ordinary folder. The folder contained two eligible Markdown notes, a hidden Markdown file, a Markdown file beneath `node_modules`, a symbolic-link Markdown path, one resolved labeled link, and one broken note link. The app indexed exactly two notes, visibly explained all three exclusions, and reported `[[Missing Moon]]` at its one-based source line and column.
+
+Editing the open chapter added `[[Mara#Unwritten history]]`. Before autosave completed, the lore status increased from four to five issues and reported the missing heading against the alias-resolved “Mara Venn” target while the editor still said Unsaved. Explicit refresh and subsequent autosave retained the correct derived state. Return expanded the disclosure and Tab moved visibly to **Refresh lore index**.
+
+The first packaged attempt also proved the failure boundary: Tauri denied the newly used metadata call, the lore status showed per-file errors, and ordinary opening, editing, and saving remained available. The capability was narrowed to `fs:allow-stat`, whose paths remain constrained by the native picker; the rebuilt app passed. The final suite has 225 passing tests across thirty-one files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS app builds pass, and the measured 2,000-file/24.78 MiB fixture remained within every approved performance budget.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:

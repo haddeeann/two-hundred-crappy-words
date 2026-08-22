@@ -1,4 +1,9 @@
-import { buildLoreProjectIndex, type LoreSourceDocument } from "./index";
+import {
+  buildLoreProjectIndex,
+  buildLoreProjectIndexCooperatively,
+  updateLoreProjectIndex,
+  type LoreSourceDocument,
+} from "./index";
 import type { LoreProjectIndex } from "./types";
 
 export type LoreIndexLoadResult =
@@ -22,10 +27,17 @@ export class LoreIndexSession {
     const revision = ++this.revision;
     const sources = await load();
     if (revision !== this.revision) return { kind: "stale" };
+    const index = await buildLoreProjectIndexCooperatively(
+      sources,
+      this.generation + 1,
+    );
+    if (revision !== this.revision) return { kind: "stale" };
 
     this.diskSources = new Map(sources.map((source) => [source.path, source.text]));
     this.overlays.clear();
-    return { kind: "committed", index: this.reindex() };
+    this.generation = index.generation;
+    this.index = index;
+    return { kind: "committed", index };
   }
 
   invalidatePendingWork(): void {
@@ -36,34 +48,40 @@ export class LoreIndexSession {
     this.revision += 1;
     this.diskSources.set(path, text);
     this.overlays.delete(path);
-    return this.reindex();
+    return this.reindex(path);
   }
 
   removeDiskSource(path: string): LoreProjectIndex {
     this.revision += 1;
     this.diskSources.delete(path);
     this.overlays.delete(path);
-    return this.reindex();
+    return this.reindex(path);
   }
 
   setActiveOverlay(path: string, text: string): LoreProjectIndex {
     this.revision += 1;
     this.overlays.set(path, text);
-    return this.reindex();
+    return this.reindex(path);
   }
 
   clearActiveOverlay(path: string): LoreProjectIndex {
     this.revision += 1;
     this.overlays.delete(path);
-    return this.reindex();
+    return this.reindex(path);
   }
 
-  private reindex(): LoreProjectIndex {
+  private reindex(changedPath?: string): LoreProjectIndex {
     const paths = new Set([...this.diskSources.keys(), ...this.overlays.keys()]);
     const sources = [...paths]
       .sort((first, second) => first.localeCompare(second))
       .map((path) => ({ path, text: this.overlays.get(path) ?? this.diskSources.get(path)! }));
-    this.index = buildLoreProjectIndex(sources, ++this.generation);
+    if (this.index && changedPath) {
+      const source = sources.find(({ path }) => path === changedPath);
+      this.index = updateLoreProjectIndex(this.index, changedPath, source?.text ?? null);
+      this.generation = this.index.generation;
+    } else {
+      this.index = buildLoreProjectIndex(sources, ++this.generation);
+    }
     return this.index;
   }
 }

@@ -120,6 +120,17 @@
     type ProjectNavigationState,
     type RecentProject,
   } from "$lib/project/workspace";
+  import LoreIndexStatus from "$lib/lore/LoreIndexStatus.svelte";
+  import { isMarkdownPath } from "$lib/lore/normalize";
+  import {
+    DEFAULT_MAX_LORE_FILE_BYTES,
+    scanProjectLore,
+    type LoreScanIssue,
+    type LoreScanResult,
+  } from "$lib/lore/scan";
+  import { LoreIndexSession } from "$lib/lore/session";
+  import { tauriLoreScanBackend } from "$lib/lore/tauri-scan";
+  import type { LoreProjectIndex } from "$lib/lore/types";
 
   interface SaveFailure {
     path: string;
@@ -134,6 +145,7 @@
   const RECOVERY_DELAY_MS = 100;
   const DAILY_PROGRESS_DELAY_MS = 100;
   const NAVIGATION_DELAY_MS = 150;
+  const LORE_OVERLAY_DELAY_MS = 180;
 
   let folderPath = $state("");
   let projectStorageKey = $state("");
@@ -191,6 +203,15 @@
   let correctingDailyProgress = $state(false);
   let recentProjects = $state<RecentProject[]>([]);
   let unavailableRecentKeys = $state<string[]>([]);
+  let loreIndex = $state<LoreProjectIndex | null>(null);
+  let loreIndexPhase = $state<
+    "idle" | "indexing" | "ready" | "stale" | "error"
+  >("idle");
+  let loreScanIssues = $state<LoreScanIssue[]>([]);
+  let loreSuppressedIssueCount = $state(0);
+  let loreIndexError = $state("");
+  let loreIndexSession = new LoreIndexSession();
+  let loreOverlayTimer: ReturnType<typeof setTimeout> | null = null;
   let lastDailyProgressFailure: {
     path: string;
     revision: number;
@@ -242,6 +263,37 @@
   const practicePresentation = $derived(
     presentPractice(practiceState, dailyTarget),
   );
+  const loreIssueCount = $derived.by(() => {
+    if (!loreIndex) return loreScanIssues.length + loreSuppressedIssueCount;
+    let count = loreScanIssues.length + loreSuppressedIssueCount + loreIndex.issues.length;
+    for (const document of loreIndex.documents.values()) {
+      count += document.parseIssues.length;
+      count += document.outgoing.filter(
+        ({ resolution }) => resolution.kind !== "resolved",
+      ).length;
+    }
+    return count;
+  });
+  const loreIndexIssueMessages = $derived.by(() => {
+    if (!loreIndex) return [] as string[];
+    const messages = loreIndex.issues.map(({ message, paths }) =>
+      `${paths.join(", ")}: ${message}`,
+    );
+    for (const document of loreIndex.documents.values()) {
+      for (const issue of document.parseIssues) {
+        messages.push(
+          `${document.path}:${issue.range.line}:${issue.range.column}: ${issue.message}`,
+        );
+      }
+      for (const outgoing of document.outgoing) {
+        if (outgoing.resolution.kind === "resolved") continue;
+        messages.push(
+          `${document.path}:${outgoing.link.range.line}:${outgoing.link.range.column}: ${outgoing.resolution.message}`,
+        );
+      }
+    }
+    return messages;
+  });
 
   const autosave = new AutosaveController({
     delayMs: AUTOSAVE_DELAY_MS,
@@ -274,6 +326,7 @@
     },
     onSuccess: (request) => {
       persistedContentByPath.set(request.path, request.content);
+      updateLoreSourceAfterSave(request.path, request.content);
       if (
         forcedSave?.path === request.path &&
         forcedSave.revision === request.revision
@@ -418,6 +471,7 @@
   }
 
   onDestroy(() => {
+    if (loreOverlayTimer) clearTimeout(loreOverlayTimer);
     autosave.dispose();
     recoveryWriter.dispose();
     navigationWriter.dispose();
@@ -471,6 +525,93 @@
 
   function appendError(message: string): void {
     error = error ? `${error} ${message}` : message;
+  }
+
+  function beginLoreIndex(path: string): void {
+    if (loreOverlayTimer) {
+      clearTimeout(loreOverlayTimer);
+      loreOverlayTimer = null;
+    }
+    loreIndexSession.invalidatePendingWork();
+    loreIndexSession = new LoreIndexSession();
+    loreIndex = null;
+    loreScanIssues = [];
+    loreSuppressedIssueCount = 0;
+    loreIndexError = "";
+    loreIndexPhase = "indexing";
+    void refreshLoreIndex(path);
+  }
+
+  async function refreshLoreIndex(path = folderPath): Promise<void> {
+    if (!path) return;
+    const session = loreIndexSession;
+    loreIndexPhase = "indexing";
+    loreIndexError = "";
+    try {
+      const scanPromise: Promise<LoreScanResult> = scanProjectLore(
+        path,
+        tauriLoreScanBackend,
+      );
+      const loaded = await session.rebuild(async () => (await scanPromise).sources);
+      const scanResult = await scanPromise;
+      if (session !== loreIndexSession || path !== folderPath) return;
+      if (loaded.kind === "stale") {
+        loreIndexPhase = "stale";
+        return;
+      }
+      loreScanIssues = scanResult.issues;
+      loreSuppressedIssueCount = scanResult.suppressedIssueCount;
+      loreIndex = loaded.index;
+      syncActiveLoreBuffer();
+      loreIndexPhase = "ready";
+    } catch (cause) {
+      if (session !== loreIndexSession || path !== folderPath) return;
+      loreIndexPhase = "error";
+      loreIndexError = `Indexing could not finish, but writing and saving still work: ${formatError(cause)}`;
+    }
+  }
+
+  function activeLorePath(path = activeFilePath): string | null {
+    if (!folderPath || !path) return null;
+    const relativePath = projectRelativePath(folderPath, path);
+    return relativePath && isMarkdownPath(relativePath) ? relativePath : null;
+  }
+
+  function syncActiveLoreBuffer(): void {
+    if (!loreIndex) return;
+    const relativePath = activeLorePath();
+    if (!relativePath) return;
+    loreIndex =
+      content === persistedContent
+        ? loreIndexSession.replaceDiskSource(relativePath, content)
+        : loreIndexSession.setActiveOverlay(relativePath, content);
+  }
+
+  function scheduleLoreOverlay(): void {
+    if (loreOverlayTimer) clearTimeout(loreOverlayTimer);
+    const path = activeFilePath;
+    const text = content;
+    loreOverlayTimer = setTimeout(() => {
+      loreOverlayTimer = null;
+      if (!loreIndex || path !== activeFilePath || text !== content) return;
+      const relativePath = activeLorePath(path);
+      if (!relativePath) return;
+      loreIndex = loreIndexSession.setActiveOverlay(relativePath, text);
+    }, LORE_OVERLAY_DELAY_MS);
+  }
+
+  function updateLoreSourceAfterSave(path: string, text: string): void {
+    if (!loreIndex) return;
+    const relativePath = activeLorePath(path);
+    if (!relativePath) return;
+    const bytes = new TextEncoder().encode(text).byteLength;
+    if (bytes > DEFAULT_MAX_LORE_FILE_BYTES) {
+      loreIndex = loreIndexSession.removeDiskSource(relativePath);
+      loreIndexPhase = "stale";
+      return;
+    }
+    loreIndex = loreIndexSession.replaceDiskSource(relativePath, text);
+    loreIndexPhase = "ready";
   }
 
   function projectDisplayName(
@@ -634,6 +775,10 @@
     activeFilePath = "";
     content = "";
     persistedContent = "";
+    const lorePath = activeLorePath(path);
+    if (loreIndex && lorePath) {
+      loreIndex = loreIndexSession.clearActiveOverlay(lorePath);
+    }
     practiceState = beginDailyPractice("", practiceState.dailyWords);
     saveState = createSaveState();
     scheduleNavigationState();
@@ -1039,6 +1184,7 @@
       );
     }
 
+    beginLoreIndex(path);
     navigationRevision = 0;
     if (restoredRevision) {
       const request = currentSaveRequest();
@@ -1583,6 +1729,7 @@
           : createSaveState();
         activeFile = entry.name;
         activeFilePath = entry.path;
+        syncActiveLoreBuffer();
         scheduleNavigationState();
 
         if (recovered.revision) {
@@ -1663,6 +1810,7 @@
     }
     content = nextContent;
     saveState = markEdited(saveState);
+    scheduleLoreOverlay();
     if (activeFilePath) {
       recoveryWriter.schedule(
         createRecoveryRecord({
@@ -2182,6 +2330,17 @@
           backup. Recovery drafts are temporary safety copies, not version history.
         </p>
       </details>
+
+      <LoreIndexStatus
+        phase={loreIndexPhase}
+        documentCount={loreIndex?.documents.size ?? 0}
+        issueCount={loreIssueCount}
+        scanIssues={loreScanIssues}
+        indexIssueMessages={loreIndexIssueMessages}
+        suppressedIssueCount={loreSuppressedIssueCount}
+        errorMessage={loreIndexError}
+        onRefresh={() => void refreshLoreIndex()}
+      />
     {/if}
 
     <nav class="files" aria-label="Project files">

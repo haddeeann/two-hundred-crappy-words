@@ -16,6 +16,8 @@ The last opened folder is stored in `settings.json` in Tauri's app-data director
 
 The same directory can contain `.persisted-scope`, which records filesystem access for folders the writer explicitly chose in the native picker. This lets the last folder reopen without granting static access to the rest of the computer. Permission details and limitations are documented in [`SECURITY_AND_PERMISSIONS.md`](SECURITY_AND_PERMISSIONS.md).
 
+The connected-lore index is not another settings file. Version 1 derives Markdown titles, aliases, headings, links, backlink context, and normalized search text in application memory and discards them when the app process ends or the project index is replaced. It does not persist creative text or derived lore data in Tauri app data. Only ordinary recovery behavior may temporarily persist an unsaved active draft as described below.
+
 ## Recovery drafts
 
 While a document has unsaved changes, the application maintains a second local copy in `recovery.json` in Tauri's app-data directory. Tauri resolves that directory according to the operating system and the application identifier `com.pat.two-hundred-crappy-words`.

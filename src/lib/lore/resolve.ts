@@ -7,18 +7,24 @@ import {
 import type {
   LoreLinkResolution,
   ParsedHeading,
-  ParsedMarkdownNote,
   ParsedWikiLink,
 } from "./types";
 
+export interface LoreResolvableDocument {
+  path: string;
+  title: string;
+  aliases: readonly string[];
+  headings: readonly ParsedHeading[];
+}
+
 export interface LoreResolutionCatalog {
-  documents: ReadonlyMap<string, ParsedMarkdownNote>;
+  documents: ReadonlyMap<string, LoreResolvableDocument>;
   names: ReadonlyMap<string, ReadonlySet<string>>;
   paths: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
 export function createResolutionCatalog(
-  documents: readonly ParsedMarkdownNote[],
+  documents: readonly LoreResolvableDocument[],
 ): LoreResolutionCatalog {
   const byPath = new Map(documents.map((document) => [document.path, document]));
   const names = new Map<string, Set<string>>();

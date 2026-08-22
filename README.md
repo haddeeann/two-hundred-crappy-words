@@ -41,6 +41,10 @@ The app now counts words and stores progress toward its default 200-word target 
 - Return through a bounded app-local recent-project list and remove shortcuts without deleting files
 - Restore the selected folder, expanded tree branches, and active file when those paths still exist safely inside the project
 - Reconnect a moved world by stable ID and make an intentional folder copy independent through a guarded manifest update
+- Safely index contained Markdown titles, aliases, headings, and wiki links in memory
+- Resolve `[[Note]]`, labeled, rooted-path, and heading links without guessing through collisions
+- Show broken links, malformed metadata, excluded paths, symlinks, and scan limits in a refreshable lore-index status
+- Reflect the active unsaved Markdown buffer in the derived index without changing save or daily-credit behavior
 
 ## Current limitations
 
@@ -49,6 +53,8 @@ The app now counts words and stores progress toward its default 200-word target 
 - Cursor position and editor scroll position are not restored yet
 - Files and folders cannot be renamed, moved, or deleted in the app
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
+- Wiki-link following, completion, backlinks, and project search are not yet exposed in the editor
+- External file changes require the explicit lore-index refresh until incremental monitoring lands
 - The frameless window does not yet provide maximize/full-screen controls
 - Distribution signing, notarization, and a finished installer are deferred to release readiness
 
@@ -108,7 +114,7 @@ static/                   Static images and icons
 
 ## Status
 
-This is a functional prototype. Its trustworthy-editor, daily-practice, and world-project milestones have passed automated and hands-on macOS QA. The active connected-lore milestone begins with a format and indexing decision before project-wide scanning is implemented.
+This is a functional prototype. Its trustworthy-editor, daily-practice, and world-project milestones have passed automated and hands-on macOS QA. The active connected-lore milestone now has approved link semantics plus a bounded, refreshable, memory-only project index; incremental external-change monitoring and the writer-facing link/navigation tools come next.
 
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
@@ -119,6 +125,8 @@ The deterministic word-count and daily-credit rules being implemented for milest
 The daily ledger's schema, privacy boundaries, and local-date behavior are documented in [`docs/DAILY_PROGRESS.md`](docs/DAILY_PROGRESS.md).
 
 The approved portable manifest and optional Markdown metadata are documented in [`docs/PROJECT_FORMAT.md`](docs/PROJECT_FORMAT.md).
+
+The approved wiki-link semantics, indexing limits, and privacy boundary are documented in [`docs/CONNECTED_LORE_FORMAT.md`](docs/CONNECTED_LORE_FORMAT.md).
 
 The current native capability and selected-folder access model is documented in [`docs/SECURITY_AND_PERMISSIONS.md`](docs/SECURITY_AND_PERMISSIONS.md).
 

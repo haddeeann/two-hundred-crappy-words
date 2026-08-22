@@ -8,7 +8,7 @@ The production webview uses a restrictive Content Security Policy: bundled appli
 
 ## Writing-folder access
 
-The frontend is permitted to call only the filesystem operations it currently uses: list a directory, read a text file, write a text file, and create a directory. Directory creation is used only after the writer explicitly confirms world-project creation or adoption. The application has no delete, rename, shell, or static whole-filesystem (`**`) capability.
+The frontend is permitted to call only the filesystem operations it currently uses: list a directory, inspect file metadata, read a text file, write a text file, and create a directory. Metadata inspection lets the lore index enforce its per-file byte limit and detect a file that changes while being read; it grants no new path because the native picker still defines the runtime scope. Directory creation is used only after the writer explicitly confirms world-project creation or adoption. The application has no delete, rename, shell, or static whole-filesystem (`**`) capability.
 
 Tauri's native folder dialog adds a folder explicitly selected by the writer to the runtime filesystem scope. The official persisted-scope plugin stores those runtime grants in `.persisted-scope` inside the application's local data directory so the remembered project can reopen after an app restart. The filesystem plugin is registered before persisted-scope, as required by the plugin.
 

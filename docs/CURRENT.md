@@ -10,28 +10,30 @@ World projects are complete. The active milestone makes manuscript and world-bib
 
 ## Active slice
 
-**0.5.2 — Safe Markdown parser and initial project index**
+**0.5.3 — Incremental lore refresh**
 
 ### Intended outcome
 
-Implement the approved safe Markdown/frontmatter/wiki-link parser and a bounded, versioned, memory-only index for an explicitly opened project. Preserve exact source locations, ordinary-folder compatibility, symlink and path containment, and non-destructive issue reporting.
+Keep the memory-only lore index truthful after app-owned and external filesystem changes without rescanning on every event or weakening source-write and selected-folder protections. Give the writer an explicit stale/error state and refresh fallback whenever monitoring cannot reconcile safely.
 
 ### Acceptance criteria
 
-- [x] Parse the approved safe frontmatter subset, including optional aliases, without evaluating YAML or rewriting source.
-- [x] Parse titles, ATX/Setext headings, wiki links, escapes, ignored regions, exact UTF-16 ranges, and bounded issues.
-- [x] Resolve note and heading targets deterministically, including broken, ambiguous, case, Unicode, duplicate-ID, and same-file cases.
-- [x] Scan only accepted contained Markdown files; skip hidden, symlinked, excluded, generated, oversized, and over-budget input with visible issues.
-- [x] Build a versioned memory-only project index with stale-result protection and active-buffer overlay support.
-- [ ] Pass representative fixtures and measure the approved large-project performance budget before advancing.
+- [ ] Keep the index current after confirmed app saves and Markdown creation without awarding extra daily credit or writing metadata.
+- [ ] Coalesce external create, content-change, move, and removal events beneath the selected root and update only affected safe Markdown records.
+- [ ] Revalidate containment, exclusions, symlinks, byte limits, and stable reads before accepting an event-driven update.
+- [ ] Preserve an unsaved/recovered active-buffer overlay when its disk file changes and leave source-conflict handling to guarded writes.
+- [ ] Dispose monitoring on folder changes and app teardown; never retain or watch a path outside the current selected root.
+- [ ] Surface monitoring failures as stale with an explicit refresh, and pass focused race tests plus packaged external-change QA.
 
 ## Next slices
 
-1. 0.5.3 — Add incremental refresh after app and external filesystem changes.
-2. 0.5.4 — Add keyboard-friendly link completion plus outgoing and backlink surfaces.
+1. 0.5.4 — Add keyboard-friendly link completion plus outgoing and backlink surfaces.
+2. 0.5.5 — Add fast project search and a keyboard-first quick opener.
 
 ## Completed checkpoint
 
+- Slice 0.5.2 is complete. The selected project now receives a bounded background scan and a keyboard-accessible, explicitly refreshable lore-index status. The index is versioned and memory-only; active unsaved Markdown overlays after 180 ms without changing recovery, autosave, conflict, or daily-credit behavior. A cooperative builder reuses unchanged parse/search records while globally recomputing resolutions and backlinks. On the 2,000-file, 24.78 MiB fixture, full indexing took 222.31 ms total with a 6.94 ms longest work chunk, a single update took 6.65 ms, and warm title/backlink lookup averaged 0.0001 ms—all within the approved 3,000/50/100/50 ms budgets.
+- Packaged macOS QA indexed exactly two eligible disposable notes, showed the expected hidden/dependency/symlink exclusions and broken note at its source location, added a broken-heading issue while the editor still showed Unsaved, retained it through refresh and autosave, and passed Return/Tab focus. QA first exposed a denied metadata call; the corrected narrow `fs:allow-stat` capability then passed. The full suite has 225 passing tests across thirty-one files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged app builds pass, and the core editor remained usable throughout the failed first scan.
 - The second 0.5.2 checkpoint adds deterministic candidate and heading resolution, collision-visible duplicate-ID handling, source-context backlinks, bounded project traversal, explicit exclusion reasons, stable-read retry, scan caps, and a versioned memory-only index session whose pending work is invalidated by newer disk or active-buffer state. Twenty-nine focused lore tests pass; the full suite has 224 passing tests across thirty-one files, frontend build passes, and Svelte/TypeScript checks report zero errors and warnings. The next step connects this tested boundary to the selected Tauri folder and measures the approved fixture.
 - The first 0.5.2 checkpoint adds focused, dependency-free lore modules for safe frontmatter, title, ATX/Setext heading, and wiki-link parsing. It validates optional aliases without enabling YAML aliases or tags, records exact UTF-16 and human-readable locations, ignores metadata/code/comments, reports malformed input without rewriting it, and normalizes Unicode names consistently. Fourteen focused tests pass; the full suite has 209 passing tests across twenty-seven files, frontend build passes, and Svelte/TypeScript checks report zero errors and warnings.
 - Slice 0.5.1 defines the durable connected-lore semantics in `docs/CONNECTED_LORE_FORMAT.md`. The user approved optional structured-note aliases, rooted project-relative path links, collision-visible name resolution, documented escapes and ignored regions, and a memory-only version-one index on 2026-08-22.
@@ -43,7 +45,7 @@ Implement the approved safe Markdown/frontmatter/wiki-link parser and a bounded,
 
 ## Blockers and decision gates
 
-No blocker. The permanent-format decision gate was approved on 2026-08-22. Implementation may proceed within `docs/CONNECTED_LORE_FORMAT.md`; changing those writer-authored semantics requires another approval.
+No blocker. External monitoring remains constrained to the currently selected native-picker scope and does not change the approved writer-authored format. A broader path, persistent creative-text cache, or new link semantics would require another approval.
 
 ## Handoff protocol
 
