@@ -1,8 +1,8 @@
 # Connected lore: index and link semantics
 
-Status: **PROPOSED — approval required before implementation**
+Status: **APPROVED** on 2026-08-22
 
-This document proposes the first durable meaning of wiki links and the first derived project index for 200 Crappy Words. It does not describe shipped behavior yet. Approval is required because writers will place this syntax in portable Markdown and because the proposal adds one optional structured-note frontmatter field.
+This document defines the first durable meaning of wiki links and the first derived project index for 200 Crappy Words. The format is approved for implementation because writers will place this syntax in portable Markdown and because it adds one optional structured-note frontmatter field. Individual sections describe shipped behavior only after their implementation lands.
 
 ## Design goals
 
@@ -78,7 +78,7 @@ Indexing never inserts or normalizes a title, ID, or heading. A mismatch among f
 
 A note may be found by its primary title, approved aliases, filename stem, or project-relative path without its Markdown extension. All names are trimmed, normalized to Unicode NFC, and compared with locale-independent Unicode case folding. Internal whitespace and punctuation remain significant. Names differing only by case or Unicode normalization are treated as colliding so results do not change between case-sensitive and case-insensitive filesystems.
 
-## Proposed optional `aliases` frontmatter
+## Optional `aliases` frontmatter
 
 To satisfy alternate character, place, ship, and faction names without proprietary metadata, extend the approved safe frontmatter subset with one optional field:
 
@@ -193,9 +193,9 @@ Use a generated fixture of 2,000 Markdown files and 25 MiB total accepted text, 
 
 These are milestone budgets and must be measured outside the tight unit-test timing environment before exit. Failure to meet them should favor chunking, worker execution, and smaller in-memory representations before adding a persistent creative-text cache.
 
-## Approval requested
+## Approved decision
 
-The recommended version-one decision is the complete proposal above, especially:
+The user approved the complete version-one decision on 2026-08-22, especially:
 
 1. add optional block-sequence `aliases` to the portable structured-note frontmatter subset;
 2. use project-root-relative paths for explicit disambiguation;
@@ -204,4 +204,4 @@ The recommended version-one decision is the complete proposal above, especially:
 5. ignore links in frontmatter, code, and HTML comments and support the documented backslash escapes; and
 6. keep the creative-text index memory-only until measured performance proves a persistent cache necessary.
 
-Implementation must not begin until this decision is approved or revised.
+Implementation may now proceed in small, tested slices. Any later change to these writer-authored link or frontmatter semantics requires another permanent-format decision gate.

@@ -187,9 +187,19 @@ Version 1 reserves three scalar keys for app-created structured notes:
 - `type`: Lowercase kebab-case note kind. Initial templates use `character`, `location`, `faction`, `species`, `technology`, `spacecraft`, `event`, `scene`, or `chapter`. Unknown values do not make the Markdown uneditable.
 - `title`: Human-facing title. It does not have to equal the filename.
 
+Connected lore also permits one optional block-sequence key on a structured note:
+
+```yaml
+aliases:
+  - "Mara"
+  - "Commander Venn"
+```
+
+`aliases` contains at most 32 JSON-compatible quoted strings. Each alias is trimmed, non-empty, free of control characters, and no longer than 120 Unicode code points. Existing templates continue to emit only `id`, `type`, and `title`; indexing never inserts aliases or rewrites frontmatter. The complete parsing and lookup semantics are documented in [`CONNECTED_LORE_FORMAT.md`](CONNECTED_LORE_FORMAT.md).
+
 No field is required for ordinary Markdown. Missing, invalid, duplicated, or unsupported structured metadata produces a non-destructive warning and disables only the feature that needs it. The app does not repair or normalize frontmatter on open.
 
-The supported subset forbids executable/custom YAML tags and aliases. Later structured editors must preserve unknown keys and the Markdown body, use the same guarded-write protections as prose, and never rewrite frontmatter merely because a file was viewed.
+The supported subset forbids executable/custom YAML tags, YAML anchors, and YAML alias nodes. The app-defined `aliases` key above is only a sequence of quoted strings and does not enable YAML alias syntax. Later structured editors must preserve unknown keys and the Markdown body, use the same guarded-write protections as prose, and never rewrite frontmatter merely because a file was viewed.
 
 Canon status, dates, relationships, scene metadata, and other typed properties are intentionally deferred until the milestone that uses them can define their semantics. Template prompts belong in the Markdown body and remain easy to delete.
 

@@ -10,29 +10,29 @@ World projects are complete. The active milestone makes manuscript and world-bib
 
 ## Active slice
 
-**0.5.1 — Connected-lore index and link semantics**
+**0.5.2 — Safe Markdown parser and initial project index**
 
 ### Intended outcome
 
-Define the durable meaning of indexed notes and wiki links before scanning or writing link syntax across a real project. Keep the index derived and app-local, preserve ordinary Markdown compatibility, make ambiguity and broken targets visible, and establish performance/privacy boundaries that later incremental indexing can test.
+Implement the approved safe Markdown/frontmatter/wiki-link parser and a bounded, versioned, memory-only index for an explicitly opened project. Preserve exact source locations, ordinary-folder compatibility, symlink and path containment, and non-destructive issue reporting.
 
 ### Acceptance criteria
 
-- [x] Inventory the existing world-project, structured-note, filesystem, and recovery constraints that indexing must preserve.
-- [x] Propose which Markdown files, metadata, headings, and paths are indexed and which hidden, generated, metadata, symbolic-link, or configured paths are excluded.
-- [x] Specify note identity and title precedence for structured and ordinary Markdown without silently adding metadata to existing files.
-- [x] Specify `[[Note]]`, `[[Note|label]]`, and heading-link grammar, escaping, normalization, case, ambiguity, and broken-link behavior.
-- [x] Define a versioned in-memory derived index record, invalidation inputs, size limits, and no-network/privacy boundary.
-- [x] Add representative parsing fixtures and performance targets to the proposal.
-- [ ] Pause for approval before implementing semantics that become durable writer-authored Markdown or expanding the approved frontmatter convention.
+- [ ] Parse the approved safe frontmatter subset, including optional aliases, without evaluating YAML or rewriting source.
+- [ ] Parse titles, ATX/Setext headings, wiki links, escapes, ignored regions, exact UTF-16 ranges, and bounded issues.
+- [ ] Resolve note and heading targets deterministically, including broken, ambiguous, case, Unicode, duplicate-ID, and same-file cases.
+- [ ] Scan only accepted contained Markdown files; skip hidden, symlinked, excluded, generated, oversized, and over-budget input with visible issues.
+- [ ] Build a versioned memory-only project index with stale-result protection and active-buffer overlay support.
+- [ ] Pass representative fixtures and measure the approved large-project performance budget before advancing.
 
 ## Next slices
 
-1. 0.5.2 — Implement and test the approved Markdown/frontmatter parser and initial safe full-project index.
-2. 0.5.3 — Add incremental refresh after app and external filesystem changes.
+1. 0.5.3 — Add incremental refresh after app and external filesystem changes.
+2. 0.5.4 — Add keyboard-friendly link completion plus outgoing and backlink surfaces.
 
 ## Completed checkpoint
 
+- Slice 0.5.1 defines the durable connected-lore semantics in `docs/CONNECTED_LORE_FORMAT.md`. The user approved optional structured-note aliases, rooted project-relative path links, collision-visible name resolution, documented escapes and ignored regions, and a memory-only version-one index on 2026-08-22.
 - Milestone 0.4 is complete. The app recognizes, adopts, and creates portable UUID-identified world projects while preserving ordinary folders; creates nine optional structured Markdown note types; keeps private practice, recovery, recent locations, and navigation app-local; reconnects moved worlds; and handles live copies only through an explicit same/independent/ordinary choice.
 - Slice 0.4.5 adds a versioned twelve-entry recent-project repository plus safe project-relative restoration for selected directory, expanded branches, and active file. Missing paths and symlinks fall back safely, a moved world's new absolute path never receives an old path-specific recovery draft, and removing a recent shortcut never touches project files.
 - Backup and portability boundaries are explained in-app and in `docs/BACKUP_AND_PORTABILITY.md`. `workspace.json` contains recent absolute locations and relative navigation, but no creative text; the project manifest remains free of machine/editor state.
@@ -41,7 +41,7 @@ Define the durable meaning of indexed notes and wiki links before scanning or wr
 
 ## Blockers and decision gates
 
-Decision gate reached. `docs/CONNECTED_LORE_FORMAT.md` proposes the complete semantics and recommends an optional block-sequence `aliases` field, project-root-relative path disambiguation, explicit ambiguity instead of silent precedence, documented escaping, and a memory-only creative-text index. Implementation is paused pending user approval or revision.
+No blocker. The permanent-format decision gate was approved on 2026-08-22. Implementation may proceed within `docs/CONNECTED_LORE_FORMAT.md`; changing those writer-authored semantics requires another approval.
 
 ## Handoff protocol
 

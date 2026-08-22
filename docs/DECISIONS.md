@@ -193,11 +193,11 @@ When the same world UUID is opened at a second accessible path, the writer choos
 
 Why: returning to work should restore useful mental context without creating machine-specific churn in creative folders. Stable-key deduplication makes moves calm, while an explicit copy choice prevents two filesystem copies from silently sharing or unexpectedly splitting private practice identity.
 
-## D-022 — Proposed connected-lore names and wiki links
+## D-022 — Connected-lore names and wiki links
 
 - Date: 2026-08-22
-- Status: proposed, pending user approval
+- Status: accepted
 
 The recommended first connected-lore format indexes regular project Markdown locally, derives titles without modifying ordinary files, adds an optional safe `aliases` string sequence to structured-note frontmatter, and gives `[[Note]]`, labeled links, heading links, rooted path disambiguation, escaping, normalization, and ambiguity explicit portable semantics. The creative-text index remains in memory in version 1 rather than creating another persistent manuscript copy.
 
-Why: backlinks, search, rename safety, and missing-note creation must agree on what a note and target mean. Choosing these rules before implementation avoids silently changing writer-authored links later. The full proposal, limits, fixtures, and decision points are in [`CONNECTED_LORE_FORMAT.md`](CONNECTED_LORE_FORMAT.md).
+Why: backlinks, search, rename safety, and missing-note creation must agree on what a note and target mean. Choosing these rules before implementation avoids silently changing writer-authored links later. The full approved format, limits, fixtures, and decision points are in [`CONNECTED_LORE_FORMAT.md`](CONNECTED_LORE_FORMAT.md). The user approved this format gate on 2026-08-22.
