@@ -7,6 +7,11 @@ import {
   manuscriptSourceRepairCandidates,
   planManuscriptSourceRepair,
 } from "./repair";
+import {
+  executeManuscriptSourceRepair,
+  undoManuscriptSourceRepair,
+  type ManuscriptRepairIo,
+} from "./repair-execution";
 import { MANUSCRIPT_STRUCTURE_FILE, parseManuscriptStructure } from "./structure";
 
 const ROOT = "/world";
@@ -115,10 +120,32 @@ async function movedFixture(options: { occupied?: boolean; duplicate?: boolean; 
       ? [{ path: "Lore/duplicate.md", text: markdown(NOTE_ID, "Duplicate") }]
       : []),
   ];
-  const result = await loadManuscriptProject(ROOT, backend(root), {
-    loreIndex: buildLoreProjectIndex(loreSources, 1),
+  const loreIndex = buildLoreProjectIndex(loreSources, 1);
+  const projectBackend = backend(root);
+  const result = await loadManuscriptProject(ROOT, projectBackend, {
+    loreIndex,
   });
-  return { result, structure };
+  return { result, structure, root, loreIndex, projectBackend };
+}
+
+function structureNode(root: TestNode): Extract<TestNode, { type: "file" }> {
+  if (root.type !== "directory") throw new Error("expected root directory");
+  const node = root.children[MANUSCRIPT_STRUCTURE_FILE];
+  if (node?.type !== "file") throw new Error("expected structure file");
+  return node;
+}
+
+function repairIo(fixture: Awaited<ReturnType<typeof movedFixture>>): ManuscriptRepairIo {
+  return {
+    reload: () => loadManuscriptProject(ROOT, fixture.projectBackend, {
+      loreIndex: fixture.loreIndex,
+    }),
+    async replaceAtomic(expectedText, newText) {
+      const node = structureNode(fixture.root);
+      if (node.text !== expectedText) throw new Error("changed structure");
+      node.text = newText;
+    },
+  };
 }
 
 describe("manuscript moved-source repair planning", () => {
@@ -184,5 +211,43 @@ describe("manuscript moved-source repair planning", () => {
     expect(planManuscriptSourceRepair({ kind: "absent" }, `${SCENE_ID}:source`)).toMatchObject({
       kind: "unavailable",
     });
+  });
+
+  it("rechecks, replaces, rereads, and supports fingerprint-guarded undo", async () => {
+    const fixture = await movedFixture();
+    const candidate = manuscriptSourceRepairCandidates(fixture.result)[0]!;
+    const plan = planManuscriptSourceRepair(fixture.result, candidate.key);
+    if (plan.kind !== "ready") throw new Error(plan.reason);
+
+    const executed = await executeManuscriptSourceRepair(plan, repairIo(fixture));
+    expect(executed).toMatchObject({ kind: "success" });
+    if (executed.kind !== "success") throw new Error(executed.message);
+    expect(JSON.parse(structureNode(fixture.root).text).manuscripts[0].items[0].source.path)
+      .toBe("Manuscript/moved.md");
+
+    const undone = await undoManuscriptSourceRepair(executed.undo, repairIo(fixture));
+    expect(undone).toMatchObject({ kind: "success" });
+    expect(structureNode(fixture.root).text).toBe(fixture.structure);
+  });
+
+  it("writes nothing when the structure, candidate, or atomic replacement changes", async () => {
+    const changedStructure = await movedFixture();
+    const firstCandidate = manuscriptSourceRepairCandidates(changedStructure.result)[0]!;
+    const firstPlan = planManuscriptSourceRepair(changedStructure.result, firstCandidate.key);
+    if (firstPlan.kind !== "ready") throw new Error(firstPlan.reason);
+    structureNode(changedStructure.root).text += " ";
+    expect(await executeManuscriptSourceRepair(firstPlan, repairIo(changedStructure)))
+      .toMatchObject({ kind: "failed", message: expect.stringContaining("changed after preview") });
+
+    const failedAtomic = await movedFixture();
+    const secondCandidate = manuscriptSourceRepairCandidates(failedAtomic.result)[0]!;
+    const secondPlan = planManuscriptSourceRepair(failedAtomic.result, secondCandidate.key);
+    if (secondPlan.kind !== "ready") throw new Error(secondPlan.reason);
+    const original = structureNode(failedAtomic.root).text;
+    expect(await executeManuscriptSourceRepair(secondPlan, {
+      ...repairIo(failedAtomic),
+      async replaceAtomic() { throw new Error("permission denied"); },
+    })).toMatchObject({ kind: "failed", message: expect.stringContaining("permission denied") });
+    expect(structureNode(failedAtomic.root).text).toBe(original);
   });
 });
