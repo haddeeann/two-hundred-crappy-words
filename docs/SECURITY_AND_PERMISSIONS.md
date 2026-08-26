@@ -22,7 +22,7 @@ The official filesystem plugin's `watch` feature is enabled only to observe the 
 
 ## App-local data
 
-Manuscript source-path repair and descriptive metadata editing use one dedicated native structure-replacement command rather than granting a general rename or replace permission. It accepts only the fixed root `200-crappy-words.manuscripts.json` inside the live picker scope, requires a regular non-symbolic file and exact expected text, validates the complete version-one replacement within the 10 MiB limit, stages a create-new sibling file with retained permissions, rechecks the source, atomically renames, and rereads the exact result. It cannot move or rewrite a Markdown source.
+Manuscript source-path repair, descriptive metadata editing, and sibling reordering use one dedicated native structure-replacement command rather than granting a general rename or replace permission. It accepts only the fixed root `200-crappy-words.manuscripts.json` inside the live picker scope, requires a regular non-symbolic file and exact expected text, validates the complete version-one replacement within the 10 MiB limit, stages a create-new sibling file with retained permissions, rechecks the source, atomically renames, and rereads the exact result. It cannot move or rewrite a Markdown source.
 
 The default filesystem permission also permits Tauri's application-specific data directories. Settings, draft recovery, and persisted scope metadata live there. See [`DATA_AND_RECOVERY.md`](DATA_AND_RECOVERY.md) for the content and cleanup behavior of settings and draft records.
 

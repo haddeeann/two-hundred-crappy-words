@@ -10,26 +10,28 @@ Connected lore is complete. The active milestone makes a long manuscript underst
 
 ## Active slice
 
-**0.6.8 — Accessible previewed manuscript reordering**
+**0.6.9 — Synopsis-focused corkboard layout gate**
 
 ### Intended outcome
 
-Let a writer move a chapter, loose scene, or chapter scene earlier or later in its current outline through explicit keyboard-accessible controls, a frozen structure-only preview, and exact guarded Undo.
+Approve the first visual planning workspace before implementation. The recommendation is a dedicated main-pane corkboard with vertically stacked chapter sections and ordered scene cards inside each section, plus a loose-scenes section when needed; it reuses the portable outline order and stores no separate card coordinates.
 
 ### Acceptance criteria
 
-- [ ] Define one pure planner for moving an item before its previous sibling or after its next sibling while preserving the selected item, sibling group, and every nested value exactly.
-- [ ] Expose named Move earlier and Move later controls wherever a sibling destination exists; keyboard operation must be first-class and drag-and-drop must not be required.
-- [ ] Preview the moved item, neighboring item, direction, old/new positions, and exact JSON array path in a keyboard-contained dialog; cancellation must leave every project byte unchanged.
-- [ ] Freeze the consented plan, recheck the complete structure fingerprint, validate and atomically replace only the structure file, reread before success, and expose one guarded session-only Undo.
-- [ ] Refresh and focus the moved outline item immediately while preserving unknown supported fields, all metadata, Markdown bytes, source bindings, and daily credit.
-- [ ] Pass focused boundary/race/undo tests, Svelte/TypeScript checks, frontend/package builds, and disposable packaged macOS QA before the corkboard layout decision gate.
+- [ ] Confirm whether the corkboard should use the recommended stacked chapter sections, chapter columns, or a different writer-preferred spatial model.
+- [ ] Confirm that opening Corkboard intentionally replaces the main editor pane until a scene is opened, while unsaved editor state continues through the existing save/recovery boundary.
+- [ ] Define cards that foreground title and synopsis, show only present status/POV/location/date/target/labels, retain unavailable-source warnings, and keep long planning notes behind an explicit expansion.
+- [ ] Keep the central structure order authoritative; do not store freeform coordinates or invent a second order, and keep Move earlier/later available without requiring drag-and-drop.
+- [ ] Specify keyboard traversal, open/edit-details/reorder actions, focus return, responsive behavior, and the loose-scene presentation before coding the visual surface.
+- [ ] After approval, implement read-only presentation first, then reuse the already verified metadata and reorder mutations rather than creating a second write path.
 
 ## Next slices
 
-1. 0.6.9 — Choose and implement the first synopsis-focused corkboard layout over the same ordered structure.
+1. 0.6.10 — Show verified scene, chapter, and manuscript word counts against optional targets.
 
 ## Completed checkpoint
+
+- Slice 0.6.8 is complete. Chapters, loose scenes, and scenes within a chapter now expose explicit **Earlier** or **Later** controls only where an adjacent sibling exists; no drag gesture is required. The pure planner swaps one selected raw JSON object with its immediate neighbor inside the exact top-level `items` or chapter `children` array, validates the complete replacement, and preserves nested metadata, source bindings, and unknown supported fields. Its keyboard-contained modal freezes the manuscript, container, item, neighbor, direction, one-based positions, and JSON array path. Confirmation rereads and regenerates the same plan, atomically replaces only the structure, verifies the result, refreshes and focuses the moved row, and replaces the shared one-step fingerprint-guarded Undo. Packaged macOS QA covered visual/accessibility semantics, exact scene and chapter previews, initial Cancel focus, Shift+Tab containment, Escape with all hashes stable, successful movement at both hierarchy levels, correct boundary-control reversal, moved-row focus, unknown-field preservation, byte-stable Markdown, `0 / 200`, exact original-hash Undo, stale-preview refusal, and final single-item boundary behavior. A final review removed repeated full-outline searches from row rendering so control presentation remains linear. The full frontend suite has 328 passing tests across forty-eight files, Svelte/TypeScript checks report zero errors and warnings, frontend and final packaged macOS app builds pass, four native tests pass, Rust formatting/checks pass, and the production dependency audit reports zero vulnerabilities.
 
 - Slice 0.6.7 is complete. Every chapter and scene now exposes **Edit details…** for its approved descriptive title, synopsis, point of view, location, story date, status, labels, planning notes, optional word target, and compile inclusion. The keyboard-contained dialog distinguishes unchanged, invalid, missing, and exact old/new values at their JSON paths; blank optional values remove their fields, labels use one ordered value per line, and the complete version-one parser enforces all bounds. Confirmation freezes the original verified structure and semantic plan, replans after a fresh reread, uses the existing picker-scoped atomic replacement, verifies the exact result, refreshes the outline, and replaces the shared one-step fingerprint-guarded Undo. Unknown supported fields and unaffected order survive the JSON-domain clone; scene and overview Markdown never change and no words are added to Today. Packaged macOS QA covered visual and accessibility semantics, initial title focus, Tab/Shift+Tab containment, Escape cancellation with all hashes stable, exact validation, a nine-field scene edit, immediate chips/synopsis/notes display, preserved unknown fields, byte-stable Markdown, `0 / 200`, exact original-hash Undo, and stale-preview refusal after an external structure edit. The full frontend suite has 322 passing tests across forty-seven files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS app builds pass, four native tests pass, Rust formatting/checks pass, and the production dependency audit reports zero vulnerabilities.
 

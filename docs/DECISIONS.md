@@ -228,3 +228,21 @@ Why: the user's established workflow keeps every scene in its own file and treat
 A manuscript structure mutation freezes the exact writer-reviewed plan until it is cancelled or confirmed. Confirmation freshly scans any identity-bearing Markdown, rereads and compares the structure and relevant sources, derives the same complete validated replacement again, and writes only through the fixed-file native atomic replacement. A successful operation may retain one exact inverse in memory, but that Undo becomes unavailable immediately if the current structure text or fingerprint no longer matches the just-written result. Neither the preview nor Undo is persisted.
 
 Why: filesystem watchers should update awareness without silently changing what the writer consented to. Reusing one narrow replacement boundary for source repair, metadata editing, and later reorder keeps external edits from being overwritten and makes the recoverable promise precise. The first implementation repairs only a uniquely resolved moved stable-ID binding and never moves or rewrites its Markdown source.
+
+## D-026 — Initial reorder is an explicit adjacent-sibling swap
+
+- Date: 2026-08-25
+- Status: accepted
+
+The first reorder action moves a top-level chapter or loose scene one position within its manuscript's `items` array, or a scene one position within its chapter's `children` array. It exposes named Earlier and Later controls wherever the adjacent destination exists, requires a preview that identifies both items and the exact array, and uses the frozen atomic replacement plus one guarded inverse from D-025. Drag-and-drop is not required. A scene transfer between chapters is deferred as a separately previewed move because it changes both parentage and order.
+
+Why: an adjacent swap has exact keyboard semantics, a small understandable diff, and no hidden position system. Keeping cross-chapter transfer separate prevents a simple reorder control from silently changing story hierarchy and leaves room to preview that more consequential move clearly.
+
+## D-027 — Proposed corkboard uses stacked chapter sections
+
+- Date: 2026-08-25
+- Status: proposed; awaiting user review
+
+The recommended first corkboard is a dedicated main-pane planning workspace. Chapters appear as vertically stacked sections containing ordered scene cards, with a comparable loose-scenes section when present. Cards foreground title and synopsis, add only metadata that exists, retain source-health warnings, and keep long planning notes behind expansion. Opening Corkboard temporarily replaces the editor pane without discarding its existing safe draft state; opening a scene returns to that scene in the editor. The visible card order remains the central manuscript order, and no freeform coordinates or second order are persisted.
+
+Why: stacked sections keep the complete chapter hierarchy legible on a laptop, avoid nested horizontal scrolling, adapt to narrow widths, and provide a natural linear keyboard traversal. Chapter columns provide stronger at-a-glance spatial comparison but become wide quickly; a freeform canvas is harder to navigate accessibly and would require new portable position metadata before it could be trustworthy.
