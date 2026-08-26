@@ -188,6 +188,7 @@
   import ManuscriptOutline from "$lib/manuscript/ManuscriptOutline.svelte";
   import ManuscriptRepairDialog from "$lib/manuscript/ManuscriptRepairDialog.svelte";
   import ManuscriptReorderDialog from "$lib/manuscript/ManuscriptReorderDialog.svelte";
+  import ManuscriptSceneMoveDialog from "$lib/manuscript/ManuscriptSceneMoveDialog.svelte";
   import {
     planManuscriptCreation,
     retitleManuscriptCreationPlan,
@@ -223,6 +224,12 @@
     type ManuscriptReorderPlan,
   } from "$lib/manuscript/reorder";
   import { executeManuscriptReorder } from "$lib/manuscript/reorder-execution";
+  import {
+    manuscriptSceneMoveDestinations,
+    planManuscriptSceneMove,
+    type ManuscriptSceneMovePlan,
+  } from "$lib/manuscript/relocate";
+  import { executeManuscriptSceneMove } from "$lib/manuscript/relocate-execution";
   import { MANUSCRIPT_STRUCTURE_FILE } from "$lib/manuscript/structure";
 
   interface SaveFailure {
@@ -368,6 +375,11 @@
   let manuscriptMetadataError = $state("");
   let manuscriptReorderPlan = $state<ManuscriptReorderPlan | null>(null);
   let manuscriptReorderError = $state("");
+  let manuscriptSceneMoveItemId = $state("");
+  let manuscriptSceneMoveBaseProject = $state<ManuscriptProjectLoadResult | null>(null);
+  let manuscriptSceneMoveDestinationKey = $state("");
+  let manuscriptSceneMoveDestinationIndex = $state(0);
+  let manuscriptSceneMoveError = $state("");
   let manuscriptOutlineFocusItemId = $state("");
   let manuscriptOutlineFocusRevision = $state(0);
   let manuscriptCorkboardId = $state("");
@@ -410,7 +422,8 @@
       manuscriptRepairBusy ||
       Boolean(manuscriptRepairKey) ||
       Boolean(manuscriptMetadataItemId) ||
-      Boolean(manuscriptReorderPlan),
+      Boolean(manuscriptReorderPlan) ||
+      Boolean(manuscriptSceneMoveItemId),
   );
   const manuscriptCreationPlan = $derived.by(() => {
     if (manuscriptCreationBasePlan?.kind !== "ready") {
@@ -427,6 +440,22 @@
       manuscriptMetadataBaseProject,
       manuscriptMetadataItemId,
       manuscriptMetadataDraft,
+    );
+  });
+  const manuscriptSceneMoveDestinationsForDialog = $derived.by(() => {
+    if (!manuscriptSceneMoveBaseProject || !manuscriptSceneMoveItemId) return [];
+    return manuscriptSceneMoveDestinations(
+      manuscriptSceneMoveBaseProject,
+      manuscriptSceneMoveItemId,
+    );
+  });
+  const manuscriptSceneMovePlan = $derived.by<ManuscriptSceneMovePlan | null>(() => {
+    if (!manuscriptSceneMoveBaseProject || !manuscriptSceneMoveItemId) return null;
+    return planManuscriptSceneMove(
+      manuscriptSceneMoveBaseProject,
+      manuscriptSceneMoveItemId,
+      manuscriptSceneMoveDestinationKey,
+      manuscriptSceneMoveDestinationIndex,
     );
   });
   const manuscriptCorkboard = $derived.by(() => {
@@ -778,6 +807,7 @@
     resetManuscriptRepair(true);
     resetManuscriptMetadata(true);
     resetManuscriptReorder(true);
+    resetManuscriptSceneMove(true);
     manuscriptCorkboardId = "";
     manuscriptCorkboardFocusItemId = "";
     manuscriptCorkboardEditorSelection = { start: 0, end: 0 };
@@ -1277,6 +1307,86 @@
     manuscriptRepairBusy = false;
     resetManuscriptReorder(true);
     focusManuscriptMutationItem(plan.target.itemId, manuscriptMutationSurface);
+  }
+
+  function canMoveManuscriptScene(itemId: string): boolean {
+    return manuscriptSceneMoveDestinations(manuscriptProject, itemId).length > 0;
+  }
+
+  function beginManuscriptSceneMove(
+    itemId: string,
+    surface: "outline" | "corkboard" = "outline",
+  ): void {
+    if (!itemId || worldProjectBusy || manuscriptRepairBusy) return;
+    const destinations = manuscriptSceneMoveDestinations(manuscriptProject, itemId);
+    if (destinations.length === 0) {
+      manuscriptRepairNotice = "This scene has no other legal container in its manuscript.";
+      return;
+    }
+    manuscriptSceneMoveItemId = itemId;
+    manuscriptSceneMoveBaseProject = manuscriptProject;
+    manuscriptSceneMoveDestinationKey = destinations[0]!.key;
+    manuscriptSceneMoveDestinationIndex = 0;
+    manuscriptSceneMoveError = "";
+    manuscriptMutationSurface = surface;
+  }
+
+  function selectManuscriptSceneMoveDestination(key: string): void {
+    const destination = manuscriptSceneMoveDestinationsForDialog.find(
+      (candidate) => candidate.key === key,
+    );
+    if (!destination || manuscriptRepairBusy) return;
+    manuscriptSceneMoveDestinationKey = key;
+    manuscriptSceneMoveDestinationIndex = 0;
+    manuscriptSceneMoveError = "";
+  }
+
+  function resetManuscriptSceneMove(force = false): void {
+    if (manuscriptRepairBusy && !force) return;
+    manuscriptSceneMoveItemId = "";
+    manuscriptSceneMoveBaseProject = null;
+    manuscriptSceneMoveDestinationKey = "";
+    manuscriptSceneMoveDestinationIndex = 0;
+    manuscriptSceneMoveError = "";
+  }
+
+  function cancelManuscriptSceneMove(): void {
+    const itemId = manuscriptSceneMoveItemId;
+    const surface = manuscriptMutationSurface;
+    resetManuscriptSceneMove();
+    if (!itemId) return;
+    void tick().then(() => {
+      document.getElementById(`move-scene-${surface}-${itemId}`)?.focus();
+    });
+  }
+
+  async function confirmManuscriptSceneMove(): Promise<void> {
+    const plan = manuscriptSceneMovePlan;
+    if (!folderPath || !loreIndex || manuscriptRepairBusy || plan?.kind !== "ready") return;
+    const rootPath = folderPath;
+    const session = loreIndexSession;
+    manuscriptRepairBusy = true;
+    manuscriptSceneMoveError = "";
+    const result = await executeManuscriptSceneMove(plan, manuscriptRepairIo(rootPath));
+    if (rootPath !== folderPath || session !== loreIndexSession) {
+      manuscriptRepairBusy = false;
+      resetManuscriptSceneMove(true);
+      error = "The project changed while the scene container was being saved. Refresh the project before continuing.";
+      return;
+    }
+    if (result.kind === "failed") {
+      manuscriptRepairBusy = false;
+      manuscriptSceneMoveError = result.message;
+      void refreshManuscriptStructure(rootPath, session, loreIndex);
+      return;
+    }
+    const focusSurface = manuscriptMutationSurface;
+    manuscriptProject = result.project;
+    manuscriptRepairUndo = result.undo;
+    manuscriptRepairNotice = `Moved ${plan.target.sceneTitle} to ${plan.target.destinationContainerLabel}. No Markdown file was changed.`;
+    manuscriptRepairBusy = false;
+    resetManuscriptSceneMove(true);
+    focusManuscriptMutationItem(plan.target.sceneId, focusSurface);
   }
 
   function focusManuscriptMutationItem(
@@ -4097,6 +4207,8 @@
           onRepairSource={beginManuscriptRepair}
           onEditMetadata={beginManuscriptMetadataEdit}
           onReorder={beginManuscriptReorder}
+          canMoveScene={canMoveManuscriptScene}
+          onMoveScene={beginManuscriptSceneMove}
           onOpenCorkboard={openManuscriptCorkboard}
           onUndoRepair={() => void undoLastManuscriptRepair()}
         />
@@ -4200,6 +4312,8 @@
             canReferenceSource={Boolean(activeFilePath)}
             onEditMetadata={(itemId) => beginManuscriptMetadataEdit(itemId, "corkboard")}
             onReorder={(itemId, direction) => beginManuscriptReorder(itemId, direction, "corkboard")}
+            canMoveScene={canMoveManuscriptScene}
+            onMoveScene={(itemId) => beginManuscriptSceneMove(itemId, "corkboard")}
           />
         {:else}
           <textarea
@@ -4317,6 +4431,23 @@
         executionError={manuscriptReorderError}
         onCancel={() => resetManuscriptReorder()}
         onConfirm={() => void confirmManuscriptReorder()}
+      />
+    {/if}
+    {#if manuscriptSceneMoveItemId && manuscriptSceneMovePlan}
+      <ManuscriptSceneMoveDialog
+        destinations={manuscriptSceneMoveDestinationsForDialog}
+        destinationKey={manuscriptSceneMoveDestinationKey}
+        destinationIndex={manuscriptSceneMoveDestinationIndex}
+        plan={manuscriptSceneMovePlan}
+        busy={manuscriptRepairBusy}
+        executionError={manuscriptSceneMoveError}
+        onDestination={selectManuscriptSceneMoveDestination}
+        onPosition={(index) => {
+          manuscriptSceneMoveDestinationIndex = index;
+          manuscriptSceneMoveError = "";
+        }}
+        onCancel={cancelManuscriptSceneMove}
+        onConfirm={() => void confirmManuscriptSceneMove()}
       />
     {/if}
     <div class="practice-bar" aria-label="Writing progress">

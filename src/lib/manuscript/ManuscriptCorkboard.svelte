@@ -22,6 +22,8 @@
     canReferenceSource: boolean;
     onEditMetadata: (itemId: string) => void;
     onReorder: (itemId: string, direction: ManuscriptReorderDirection) => void;
+    canMoveScene: (itemId: string) => boolean;
+    onMoveScene: (itemId: string) => void;
   }
 
   interface PositionedScene {
@@ -44,6 +46,8 @@
     canReferenceSource,
     onEditMetadata,
     onReorder,
+    canMoveScene,
+    onMoveScene,
   }: Props = $props();
   let board = $state<HTMLElement>();
   const blocks = $derived.by(() => corkboardBlocks(manuscript));
@@ -123,9 +127,18 @@
   itemTitle: string,
   canMoveEarlier: boolean,
   canMoveLater: boolean,
+  canMoveContainer: boolean,
 )}
   <div class="item-actions" aria-label={`Plan ${itemTitle}`}>
     <button type="button" disabled={busy} onclick={() => onEditMetadata(itemId)}>Edit details…</button>
+    {#if canMoveContainer}
+      <button
+        type="button"
+        id={`move-scene-corkboard-${itemId}`}
+        disabled={busy}
+        onclick={() => onMoveScene(itemId)}
+      >Move to…</button>
+    {/if}
     {#if canMoveEarlier}
       <button
         type="button"
@@ -201,7 +214,13 @@
     <div class="card-source">
       {@render sourceAction("Open scene", scene.source)}
     </div>
-    {@render itemActions(scene.item.id, scene.item.title, canMoveEarlier, canMoveLater)}
+    {@render itemActions(
+      scene.item.id,
+      scene.item.title,
+      canMoveEarlier,
+      canMoveLater,
+      canMoveScene(scene.item.id),
+    )}
   </article>
 {/snippet}
 
@@ -235,6 +254,7 @@
           chapter.item.title,
           topLevelIndex > 0,
           topLevelIndex < manuscript.items.length - 1,
+          false,
         )}
       </div>
     </header>

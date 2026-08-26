@@ -30,6 +30,8 @@
     onRepairSource: (key: string) => void;
     onEditMetadata: (itemId: string) => void;
     onReorder: (itemId: string, direction: ManuscriptReorderDirection) => void;
+    canMoveScene: (itemId: string) => boolean;
+    onMoveScene: (itemId: string) => void;
     onOpenCorkboard: (manuscriptId: string) => void;
     onUndoRepair: () => void;
   }
@@ -49,6 +51,8 @@
     onRepairSource,
     onEditMetadata,
     onReorder,
+    canMoveScene,
+    onMoveScene,
     onOpenCorkboard,
     onUndoRepair,
   }: Props = $props();
@@ -219,6 +223,15 @@
       disabled={repairBusy}
       onclick={() => onEditMetadata(scene.item.id)}
     >Edit details…</button>
+    {#if canMoveScene(scene.item.id)}
+      <button
+        type="button"
+        class="details"
+        id={`move-scene-outline-${scene.item.id}`}
+        disabled={repairBusy}
+        onclick={() => onMoveScene(scene.item.id)}
+      >Move to…</button>
+    {/if}
     {@render reorderControls(scene.item.id, scene.item.title, canMoveEarlier, canMoveLater)}
   </li>
 {/snippet}
