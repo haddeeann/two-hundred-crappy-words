@@ -30,6 +30,10 @@
     type SaveFailureDecision,
   } from "$lib/editor/navigation-guard";
   import {
+    initialWritingLayout,
+    transitionWritingLayout,
+  } from "$lib/editor/writing-layout";
+  import {
     assessRecovery,
     createRecoveryRecord,
     fingerprintContent,
@@ -259,6 +263,7 @@
   let content = $state("");
   let activeFile = $state("");
   let activeFilePath = $state("");
+  let writingLayout = $state(initialWritingLayout());
   let persistedContent = $state("");
   let saveState = $state(createSaveState());
   let error = $state("");
@@ -368,6 +373,7 @@
   let manuscriptCorkboardId = $state("");
   let manuscriptCorkboardFocusItemId = $state("");
   let manuscriptCorkboardFocusRevision = $state(0);
+  let manuscriptCorkboardEditorSelection = { start: 0, end: 0 };
   let manuscriptMutationSurface: "outline" | "corkboard" = "outline";
   let lastDailyProgressFailure: {
     path: string;
@@ -394,6 +400,7 @@
   const dirty = $derived(
     activeFilePath !== "" && hasUnsavedChanges(saveState),
   );
+  const focusMode = $derived(writingLayout.mode === "focus");
   const worldProjectBusy = $derived(
     adoptionBusy ||
       newWorldProjectBusy ||
@@ -773,6 +780,8 @@
     resetManuscriptReorder(true);
     manuscriptCorkboardId = "";
     manuscriptCorkboardFocusItemId = "";
+    manuscriptCorkboardEditorSelection = { start: 0, end: 0 };
+    writingLayout = transitionWritingLayout(writingLayout, { kind: "project-replaced" });
     loreIndexPhase = "indexing";
     void refreshLoreIndex(path);
   }
@@ -961,6 +970,60 @@
       return;
     }
     await openIndexedLorePath(relativePath, null);
+  }
+
+  async function referenceManuscriptSource(
+    relativePath: string,
+    fingerprint: string,
+    closeCorkboard = false,
+  ): Promise<void> {
+    if (!activeFilePath) {
+      error = "Open a draft before adding a manuscript reference beside it.";
+      return;
+    }
+    if (!(await historySourceMatches(relativePath, fingerprint))) {
+      error = "That manuscript source changed before it could be referenced. The outline is refreshing instead.";
+      await refreshManuscriptStructure();
+      return;
+    }
+    if (closeCorkboard) {
+      manuscriptCorkboardId = "";
+      await tick();
+      if (editorInput) {
+        const start = Math.min(
+          manuscriptCorkboardEditorSelection.start,
+          editorInput.value.length,
+        );
+        const end = Math.min(
+          Math.max(start, manuscriptCorkboardEditorSelection.end),
+          editorInput.value.length,
+        );
+        editorInput.setSelectionRange(start, end);
+      }
+    }
+    await openLoreReference(relativePath);
+  }
+
+  function setWritingFocus(enabled: boolean): void {
+    const start = editorInput?.selectionStart ?? 0;
+    const end = editorInput?.selectionEnd ?? start;
+    const next = transitionWritingLayout(writingLayout, enabled
+      ? {
+          kind: "enter-focus",
+          hasActiveDraft: Boolean(activeFilePath),
+          corkboardOpen: Boolean(manuscriptCorkboard),
+        }
+      : { kind: "exit-focus" });
+    if (next === writingLayout || next.mode === writingLayout.mode) return;
+    writingLayout = next;
+    void tick().then(() => {
+      if (!editorInput) return;
+      editorInput.focus({ preventScroll: true });
+      editorInput.setSelectionRange(
+        Math.min(start, editorInput.value.length),
+        Math.min(Math.max(start, end), editorInput.value.length),
+      );
+    });
   }
 
   function beginManuscriptRepair(key: string): void {
@@ -1240,6 +1303,10 @@
       return;
     }
     dismissLoreCompletion();
+    manuscriptCorkboardEditorSelection = {
+      start: editorInput?.selectionStart ?? 0,
+      end: editorInput?.selectionEnd ?? 0,
+    };
     manuscriptCorkboardFocusItemId = "";
     manuscriptCorkboardId = manuscriptId;
   }
@@ -3596,6 +3663,11 @@
       closeLoreReference();
       return;
     }
+    if (focusMode && event.key === "Escape") {
+      event.preventDefault();
+      setWritingFocus(false);
+      return;
+    }
     adoptionFormKeydown(event);
     if (event.defaultPrevented) return;
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
@@ -3666,8 +3738,8 @@
   <span class="window-title" data-tauri-drag-region>200 Crappy Words</span>
 </div>
 
-<div class="app">
-  <aside class="sidebar">
+<div class="app" class:focus-mode={focusMode}>
+  <aside class="sidebar" hidden={focusMode}>
     <h1 class="app-title">200 Crappy Words</h1>
 
     <button class="open-btn" onclick={openFolder} disabled={worldProjectBusy}
@@ -4020,6 +4092,8 @@
           focusRevision={manuscriptOutlineFocusRevision}
           onRefresh={() => void refreshManuscriptStructure()}
           onOpenSource={(path, fingerprint) => void openManuscriptSource(path, fingerprint)}
+          onReferenceSource={(path, fingerprint) => void referenceManuscriptSource(path, fingerprint)}
+          canReferenceSource={Boolean(activeFilePath)}
           onRepairSource={beginManuscriptRepair}
           onEditMetadata={beginManuscriptMetadataEdit}
           onReorder={beginManuscriptReorder}
@@ -4059,12 +4133,12 @@
     {/if}
   </aside>
 
-  <div class="divider"></div>
+  <div class="divider" hidden={focusMode}></div>
 
   <main class="editor">
     <div class="editor-header">
       <div class="editor-heading-main">
-        <nav class="lore-history" aria-label="Connected lore navigation history">
+        {#if !focusMode}<nav class="lore-history" aria-label="Connected lore navigation history">
           <button
             type="button"
             aria-label="Back through connected lore navigation"
@@ -4079,7 +4153,7 @@
             disabled={!canGoForwardThroughLore || restoringLoreHistory || worldProjectBusy}
             onclick={() => void goThroughLoreHistory("forward")}
           >→</button>
-        </nav>
+        </nav>{/if}
         <span>
           {manuscriptCorkboard
             ? `Corkboard · ${manuscriptCorkboard.manuscript.title}`
@@ -4097,10 +4171,22 @@
             class:save-error={saveState.phase === "error"}
             aria-live="polite"
           >{saveStatus}</span>
+          <button
+            type="button"
+            class="focus-mode-button"
+            aria-pressed={focusMode}
+            title={focusMode ? "Return project navigation" : "Hide navigation and focus on this draft"}
+            onclick={() => setWritingFocus(!focusMode)}
+          >{focusMode ? "Exit focus" : "Focus"}</button>
         {/if}
       </div>
     </div>
-    <div class="writing-split" class:corkboard-mode={Boolean(manuscriptCorkboard)}>
+    <div
+      class="writing-split"
+      class:corkboard-mode={Boolean(manuscriptCorkboard)}
+      class:focus-mode={focusMode}
+      class:has-reference={Boolean(loreReference)}
+    >
       <div class="editor-workspace">
         {#if manuscriptCorkboard}
           <ManuscriptCorkboard
@@ -4110,6 +4196,8 @@
             focusRevision={manuscriptCorkboardFocusRevision}
             onClose={closeManuscriptCorkboard}
             onOpenSource={(path, fingerprint) => void openManuscriptSourceFromCorkboard(path, fingerprint)}
+            onReferenceSource={(path, fingerprint) => void referenceManuscriptSource(path, fingerprint, true)}
+            canReferenceSource={Boolean(activeFilePath)}
             onEditMetadata={(itemId) => beginManuscriptMetadataEdit(itemId, "corkboard")}
             onReorder={(itemId, direction) => beginManuscriptReorder(itemId, direction, "corkboard")}
           />
@@ -4157,7 +4245,7 @@
         />
       {/if}
     </div>
-    {#if currentLoreConnections}
+    {#if currentLoreConnections && !focusMode}
       <LoreConnections
         connections={currentLoreConnections}
         onOpen={(item) => void openLoreConnection(item)}
@@ -4400,6 +4488,11 @@
     padding: 1rem;
     background-color: #252526;
     overflow-y: auto;
+  }
+
+  .sidebar[hidden],
+  .divider[hidden] {
+    display: none;
   }
 
   .app-title {
@@ -4781,6 +4874,26 @@
     cursor: default;
   }
 
+  .focus-mode-button {
+    flex: 0 0 auto;
+    padding: 0.28rem 0.5rem;
+    border: 1px solid #4d6252;
+    border-radius: 4px;
+    background: #29322b;
+    color: #b8d8bd;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .focus-mode-button:hover {
+    background: #344038;
+  }
+
+  .focus-mode-button:focus-visible {
+    outline: 2px solid #75beff;
+    outline-offset: 2px;
+  }
+
   .history-notice {
     max-width: min(34vw, 28rem);
     overflow: hidden;
@@ -4805,6 +4918,15 @@
 
   .writing-split .editor-workspace {
     min-width: 0;
+  }
+
+  .writing-split.focus-mode {
+    background: #181818;
+  }
+
+  .writing-split.focus-mode:not(.has-reference) .editor-workspace {
+    max-width: 58rem;
+    margin: 0 auto;
   }
 
   .save-status {

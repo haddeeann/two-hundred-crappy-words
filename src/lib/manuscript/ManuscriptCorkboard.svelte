@@ -18,6 +18,8 @@
     focusRevision: number;
     onClose: () => void;
     onOpenSource: (path: string, fingerprint: string) => void;
+    onReferenceSource: (path: string, fingerprint: string) => void;
+    canReferenceSource: boolean;
     onEditMetadata: (itemId: string) => void;
     onReorder: (itemId: string, direction: ManuscriptReorderDirection) => void;
   }
@@ -38,6 +40,8 @@
     focusRevision,
     onClose,
     onOpenSource,
+    onReferenceSource,
+    canReferenceSource,
     onEditMetadata,
     onReorder,
   }: Props = $props();
@@ -143,12 +147,24 @@
 
 {#snippet sourceAction(label: string, state: ManuscriptSourceState)}
   {#if state.kind === "ready"}
-    <button
-      type="button"
-      class="open-source"
-      title={`Open ${state.resolvedPath}`}
-      onclick={() => onOpenSource(state.resolvedPath, state.fingerprint)}
-    >{label}</button>
+    <div class="source-actions">
+      <button
+        type="button"
+        class="open-source"
+        title={`Open ${state.resolvedPath}`}
+        onclick={() => onOpenSource(state.resolvedPath, state.fingerprint)}
+      >{label}</button>
+      <button
+        type="button"
+        class="reference-source"
+        disabled={!canReferenceSource}
+        aria-label={`Open ${label.replace(/^Open /u, "")} as a read-only reference`}
+        title={canReferenceSource
+          ? `Open ${state.resolvedPath} beside the active draft`
+          : "Open a draft before adding a reference"}
+        onclick={() => onReferenceSource(state.resolvedPath, state.fingerprint)}
+      >Reference</button>
+    </div>
     <small>{state.resolvedPath}</small>
   {:else}
     <p class="source-warning" role="status">{sourceMessage(state)}</p>
@@ -321,6 +337,9 @@
   .notes p { margin-top: 0.35rem; line-height: 1.4; white-space: pre-wrap; }
   .card-source { display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem; margin-top: auto; padding-top: 0.75rem; }
   .open-source { padding: 0.38rem 0.55rem; border-color: #4d6980; background: #27343f; color: #b9d9f1; }
+  .source-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .reference-source { padding: 0.38rem 0.55rem; border-color: #4d6252; background: #29322b; color: #acd2b2; }
+  .reference-source:disabled { opacity: 0.45; cursor: default; }
   small { overflow-wrap: anywhere; color: #858585; font-size: 0.68rem; }
   .source-warning { margin-top: 0.55rem; color: #efb0a6; font-size: 0.75rem; line-height: 1.4; }
   .item-actions { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.65rem; padding-top: 0.55rem; border-top: 1px solid #45413a; }

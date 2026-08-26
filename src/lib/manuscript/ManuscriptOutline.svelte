@@ -25,6 +25,8 @@
     focusRevision: number;
     onRefresh: () => void;
     onOpenSource: (path: string, fingerprint: string) => void;
+    onReferenceSource: (path: string, fingerprint: string) => void;
+    canReferenceSource: boolean;
     onRepairSource: (key: string) => void;
     onEditMetadata: (itemId: string) => void;
     onReorder: (itemId: string, direction: ManuscriptReorderDirection) => void;
@@ -42,6 +44,8 @@
     focusRevision,
     onRefresh,
     onOpenSource,
+    onReferenceSource,
+    canReferenceSource,
     onRepairSource,
     onEditMetadata,
     onReorder,
@@ -112,13 +116,25 @@
   repairKey = "",
 )}
   <div class={`source-row ${className}`}>
-    {#if state.kind === "ready"}
-      <button
-        type="button"
-        class="source-open"
-        onclick={() => onOpenSource(state.resolvedPath, state.fingerprint)}
-        title={`Open ${state.resolvedPath}`}
-      >{label}</button>
+  {#if state.kind === "ready"}
+      <div class="source-actions">
+        <button
+          type="button"
+          class="source-open"
+          onclick={() => onOpenSource(state.resolvedPath, state.fingerprint)}
+          title={`Open ${state.resolvedPath}`}
+        >{label}</button>
+        <button
+          type="button"
+          class="source-reference"
+          disabled={!canReferenceSource}
+          aria-label={`Open ${label} as a read-only reference`}
+          title={canReferenceSource
+            ? `Open ${state.resolvedPath} beside the active draft`
+            : "Open a draft before adding a reference"}
+          onclick={() => onReferenceSource(state.resolvedPath, state.fingerprint)}
+        >Reference</button>
+      </div>
       <small>{state.resolvedPath}</small>
     {:else}
       <span>{label}</span>
@@ -424,6 +440,26 @@
     font: inherit;
     text-align: left;
     cursor: pointer;
+  }
+  .source-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .source-reference {
+    padding: 0.16rem 0.32rem;
+    border: 1px solid #4d6252;
+    border-radius: 4px;
+    background: #29322b;
+    color: #acd2b2;
+    font: inherit;
+    font-size: 0.68rem;
+    cursor: pointer;
+  }
+  .source-reference:disabled {
+    opacity: 0.45;
+    cursor: default;
   }
   .repair {
     width: fit-content;

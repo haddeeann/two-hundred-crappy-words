@@ -15,16 +15,16 @@
 <aside
   id="lore-reference-pane"
   class="reference"
-  aria-label="Lore reference"
+  aria-label="Read-only reference"
   tabindex="-1"
 >
   <header>
     <div>
       <span class="eyebrow">Read-only reference</span>
-      <h2>{reference.phase === "ready" ? reference.title : "Lore reference"}</h2>
+      <h2>{reference.phase === "ready" ? reference.title : "Reference"}</h2>
       <p>{reference.path}</p>
     </div>
-    <button type="button" class="close" aria-label="Close lore reference" onclick={onClose}>×</button>
+    <button type="button" class="close" aria-label="Close read-only reference" onclick={onClose}>×</button>
   </header>
 
   {#if reference.phase === "loading"}
