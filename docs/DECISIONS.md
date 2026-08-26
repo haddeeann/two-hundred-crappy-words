@@ -241,8 +241,10 @@ Why: an adjacent swap has exact keyboard semantics, a small understandable diff,
 ## D-027 — Proposed corkboard uses stacked chapter sections
 
 - Date: 2026-08-25
-- Status: proposed; awaiting user review
+- Status: accepted
 
 The recommended first corkboard is a dedicated main-pane planning workspace. Chapters appear as vertically stacked sections containing ordered scene cards, with a comparable loose-scenes section when present. Cards foreground title and synopsis, add only metadata that exists, retain source-health warnings, and keep long planning notes behind expansion. Opening Corkboard temporarily replaces the editor pane without discarding its existing safe draft state; opening a scene returns to that scene in the editor. The visible card order remains the central manuscript order, and no freeform coordinates or second order are persisted.
 
 Why: stacked sections keep the complete chapter hierarchy legible on a laptop, avoid nested horizontal scrolling, adapt to narrow widths, and provide a natural linear keyboard traversal. Chapter columns provide stronger at-a-glance spatial comparison but become wide quickly; a freeform canvas is harder to navigate accessibly and would require new portable position metadata before it could be trustworthy.
+
+The user approved the recommended layout and main-pane behavior on 2026-08-25.
