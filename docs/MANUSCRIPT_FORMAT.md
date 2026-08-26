@@ -180,6 +180,8 @@ The first reorder mutation moves one selected item before its previous sibling o
 
 The corkboard is a derived view of that same authoritative order, not another manuscript model. It renders vertically stacked chapter sections and exact-position runs of loose scenes, with responsive cards inside each section; it stores no card coordinates, alternate ordering, or app-local planning copy. Its metadata and sibling-order controls invoke the same preview, comparison, atomic replacement, and guarded Undo paths as the compact outline, and return focus to the changed card after success.
 
+Structural word counts are derived during the same stable, bounded source reconciliation. Only a binding in the authoritative `ready` state contributes a number. A valid leading structured-note metadata block is excluded before the shared deterministic tokenizer runs; chapter overview notes are never prose. One-file chapters count their source, chapter containers roll up their children, and manuscript totals follow the same tree while propagating `includeInCompile: false` through a chapter subtree. The UI distinguishes included words, excluded words, and unavailable sources, and uses partial language whenever an included source cannot be verified. Targets remain descriptive structure metadata and do not alter counting or daily practice.
+
 Split and merge are later multi-file transactions. They must preview new and changed paths, use create-new writes for destinations, guard every existing source, update structure only after prose writes succeed, and exactly roll back completed steps on failure. If the implementation cannot prove that boundary on a filesystem, it must refuse the operation rather than risk partial loss.
 
 ## Deterministic compile contract
@@ -202,7 +204,7 @@ The first output adapters are Markdown and plain text. They write only to a writ
 
 - The structure file contains writer-authored titles, synopses, notes, and project-relative paths, so it is creative project data and travels with project backups.
 - It contains no absolute path, username, device state, daily history, recovery text, account, telemetry, or permission grant.
-- The app creates no app-local manuscript cache containing prose. Derived outline and corkboard state remain in memory.
+- The app creates no app-local manuscript cache containing prose. Derived outline, corkboard, and word-count state remain in memory.
 - No network access is introduced.
 - Version-one `200-crappy-words.project.json` remains unchanged; the new file has its own version and migration policy.
 - Ordinary folders and projects without the structure file retain all current behavior.

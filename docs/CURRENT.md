@@ -1,6 +1,6 @@
 # Current work
 
-Last updated: 2026-08-25
+Last updated: 2026-08-26
 
 ## Active milestone
 
@@ -10,26 +10,28 @@ Connected lore is complete. The active milestone makes a long manuscript underst
 
 ## Active slice
 
-**0.6.10 — Verified manuscript word counts and targets**
+**0.6.11 — Manuscript/reference split views and focus mode**
 
 ### Intended outcome
 
-Show trustworthy scene, chapter, and manuscript totals from the same fingerprint-verified sources used by the outline, compare those totals with optional item targets without changing daily-writing credit, and keep unavailable or excluded prose explicit rather than presenting a misleading total.
+Let a writer keep one verified manuscript or reference source visible beside the active draft, then deliberately reduce the interface to the writing surface without changing source ownership, save/recovery behavior, or daily-credit semantics.
 
 ### Acceptance criteria
 
-- [ ] Define one shared structural-count summary over reconciled source states so outline and corkboard cannot disagree.
-- [ ] Count only stable, fingerprint-verified Markdown bodies with the existing deterministic word tokenizer; never infer a count for missing, moved, ambiguous, unsafe, unreadable, unstable, or oversized sources.
-- [ ] Avoid double-counting chapter overview notes and any prose binding reused through an invalid/conflicting structure; respect explicit compile exclusion in aggregate included totals.
-- [ ] Show scene counts and optional target progress, chapter rollups, and a manuscript rollup with clear partial/unavailable language whenever the complete total cannot be verified.
-- [ ] Keep counts read-only and memory-derived: no structure write, Markdown rewrite, persistent cache, or daily-credit change.
-- [ ] Add focused automated coverage and packaged macOS QA for complete, excluded, target-bearing, unavailable, and externally refreshed sources.
+- [ ] Inventory and reuse the existing read-only lore reference boundary instead of introducing another source reader or unguarded navigation path.
+- [ ] Define how a manuscript source opens beside the active draft, how the writer swaps or closes it, and how keyboard focus returns without losing editor selection.
+- [ ] Define focus mode as an ephemeral presentation state: keep autosave, recovery, conflicts, progress, and the active file intact while hiding nonessential navigation.
+- [ ] Provide explicit, keyboard-accessible entry and exit actions with no reliance on hover, drag, or a global shortcut alone.
+- [ ] Revalidate split-view sources after external changes and show unavailable state rather than stale prose.
+- [ ] Add automated state coverage and packaged macOS QA for split opening/replacement/closing, focus-mode entry/exit, unsaved drafts, external changes, and restart clearing.
 
 ## Next slices
 
-1. 0.6.11 — Add manuscript/reference split views and a distraction-reducing focus mode.
+1. 0.6.12 — Support safe scene splitting, merging, and cross-container moves.
 
 ## Completed checkpoint
+
+- Slice 0.6.10 is complete. The stable reconciliation read now counts each authoritative `ready` prose binding with the existing deterministic Unicode tokenizer while excluding a valid leading structured-note metadata block. A shared memory-only summary powers both outline and corkboard, so scenes show verified words and optional targets, chapters roll up their one-file prose or child scenes, and manuscripts show included totals. Chapter overview notes never count as prose; parent and child compile exclusions propagate into separate excluded totals; moved, missing, conflicting, ambiguous, unsafe, unreadable, unstable, oversized, or limit-blocked sources produce explicit partial/unavailable language rather than an inferred number. No count writes the structure, Markdown, app data, or daily ledger. Packaged macOS QA covered a target-bearing chapter, a target-bearing ready scene, a moved unavailable scene, an excluded ready scene, identical outline/corkboard totals, readable laptop layout, and a live external edit from six to nine words and back while Today stayed `0 / 200`. The temporary structure and Markdown fixture returned to their exact original SHA-256 hashes. The frontend suite has 333 passing tests across forty-nine files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, four native tests and Rust formatting pass, and no known moderate/high production dependency advisory remains.
 
 - Slice 0.6.9 is complete. The approved main-pane corkboard now pairs its exact-order stacked chapter and loose-scene sections with the same guarded **Edit details…**, **Earlier**, and **Later** mutations already verified in the outline. Controls appear only for valid sibling moves, remain keyboard accessible, disable during structure work, and return focus to the changed card after confirmation. Metadata and reorder dialogs still freeze the exact semantic preview, freshly compare the portable structure, atomically replace only that file, and feed the shared fingerprint-guarded one-step Undo; no parallel board write path, coordinate store, Markdown edit, or daily credit exists. Packaged macOS QA covered a two-chapter/two-scene board, exact metadata and reorder previews, immediate card/chip/order refresh, moved-card focus, boundary-control reversal, shared Undo, exact baseline structure restoration, byte-stable Markdown, and an unchanged `14 / 200` daily total. The disposable fixture was restored to its original structure and source hashes. The frontend suite has 328 passing tests across forty-eight files, Svelte/TypeScript checks report zero errors and warnings, frontend plus packaged macOS builds pass, four native tests and Rust formatting pass, and the dependency refresh removes all known moderate/high advisories; three low-severity development-server cookie advisories remain upstream in the current compatible SvelteKit line.
 

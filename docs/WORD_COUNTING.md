@@ -30,3 +30,11 @@ Positive changes are added to today's credit. Deletion, replacement with the sam
 Save and autosave events never affect credit. Reopening a file, accepting a recovery draft, or deliberately reloading an externally changed file establishes a new baseline and does not credit existing text. This avoids credit being created merely by navigating, restarting, recovering, or resolving a conflict.
 
 The app-local daily ledger stores the local date, project identity, counters, and monotonic revisions needed for restart persistence. It does not store manuscript text merely to calculate progress; its schema and clock behavior are documented in [`DAILY_PROGRESS.md`](DAILY_PROGRESS.md).
+
+## Structural manuscript counts
+
+The optional portable manuscript structure derives planning counts from the same stable, fingerprint-verified source reads used by its outline and corkboard. It applies the document tokenizer above to Markdown prose after a valid leading structured-note metadata block; metadata fields are not manuscript words. Chapter overview notes are planning material and never contribute prose words.
+
+A `ready` scene or one-file chapter can show its verified count and optional structural target. A chapter container rolls up its child scenes, and the manuscript rolls up its top-level items. `includeInCompile: false` on a chapter excludes its complete subtree; the same value on a scene excludes that scene. Included and excluded verified words remain distinguishable. Any moved, missing, ambiguous, conflicting, identity-mismatched, unsafe, unreadable, unstable, oversized, or read-limit-blocked binding remains visibly unavailable and makes the affected rollup explicitly partial; the app never guesses its size.
+
+These planning counts are memory-derived. Opening, refreshing, or externally changing a structural source can update them, but it never creates daily credit and never writes prose, the portable structure, or an app-local count cache.

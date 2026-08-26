@@ -78,6 +78,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Open a manuscript as a main-pane corkboard with stacked chapter sections, exact-position loose-scene sections, responsive ordered cards, descriptive metadata, expandable planning notes, and source-health warnings
 - Return to an existing draft without losing its save state, or open a fingerprint-verified scene, chapter prose file, or chapter overview through the existing guarded editor flow
 - Edit details and move current siblings directly from corkboard cards through the same exact previews, atomic structure replacement, focus return, and guarded one-step Undo as the outline
+- Show fingerprint-verified scene words and optional targets plus chapter/manuscript rollups in both outline and corkboard, with explicit partial, excluded, and unavailable totals
 
 ## Current limitations
 
@@ -85,7 +86,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Ordinary folders still use their absolute path as local progress identity until explicitly adopted
 - Cursor position and editor scroll position are not restored yet
 - Folders and ordinary files cannot be renamed, moved, or deleted in the app; only eligible stable-ID lore notes have the previewed rename flow
-- Manuscript structure can be inspected, initially created/imported, repaired after a uniquely identified source move, edited and reordered from either outline or corkboard, but cross-chapter moves, path-only replacement, counts, and compile/export are still in progress
+- Manuscript structure can be inspected, initially created/imported, repaired after a uniquely identified source move, edited and reordered from either outline or corkboard, and counted from verified prose, but cross-chapter moves, path-only replacement, split/focus views, and compile/export are still in progress
 - The first importer intentionally maps only immediate Markdown and one level of chapter folders; deeper folders remain visible as skipped and require later manual structure tools
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
 - The frameless window does not yet provide maximize/full-screen controls
@@ -147,7 +148,7 @@ static/                   Static images and icons
 
 ## Status
 
-This is a functional prototype. Its trustworthy-editor, daily-practice, world-project, and connected-lore milestones have passed automated and hands-on macOS QA. Connected lore includes approved link semantics, a bounded incrementally refreshed memory-only index, keyboard completion, outgoing/backlink navigation, project search, read-only side references, safe missing-note creation, bounded unlinked mentions, previewed no-clobber lore renames with conflict-aware link repair, and session-only Back/Forward navigation that revalidates every destination. The active novel-structure milestone now has an approved portable format, bounded parser and source reconciliation, a compact outline, explicit previewed create-new/import, previewed atomic repair for uniquely moved stable-ID sources, exact chapter/scene metadata editing, accessible previewed sibling reordering, and an approved stacked-section corkboard that reuses those guarded editing actions. The next slice adds verified scene, chapter, and manuscript word counts against optional targets.
+This is a functional prototype. Its trustworthy-editor, daily-practice, world-project, and connected-lore milestones have passed automated and hands-on macOS QA. Connected lore includes approved link semantics, a bounded incrementally refreshed memory-only index, keyboard completion, outgoing/backlink navigation, project search, read-only side references, safe missing-note creation, bounded unlinked mentions, previewed no-clobber lore renames with conflict-aware link repair, and session-only Back/Forward navigation that revalidates every destination. The active novel-structure milestone now has an approved portable format, bounded parser and source reconciliation, a compact outline, explicit previewed create-new/import, previewed atomic repair for uniquely moved stable-ID sources, exact chapter/scene metadata editing, accessible previewed sibling reordering, an approved stacked-section corkboard that reuses those guarded editing actions, and verified scene/chapter/manuscript counts with honest target, exclusion, and unavailable-source treatment. The next slice adds manuscript/reference split views and a distraction-reducing focus mode.
 
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
