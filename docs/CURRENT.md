@@ -18,10 +18,10 @@ Move an existing loose scene into a chapter, a chapter scene into the top level,
 
 ### Acceptance criteria
 
-- [ ] Define a pure relocation planner over the raw version-one JSON so the complete scene object, unknown supported fields, source binding, and stable ID survive unchanged.
-- [ ] Treat top-level loose scenes and each chapter's `children` array as explicit destinations; do not infer a chapter from filesystem location or move the Markdown file.
-- [ ] Preview the manuscript, scene, old container/position, destination container/position, and exact affected JSON arrays before confirmation.
-- [ ] Freshly reread and regenerate the same relocation before one atomic structure replacement; reuse the shared fingerprint-guarded one-step Undo.
+- [x] Define a pure relocation planner over the raw version-one JSON so the complete scene object, unknown supported fields, source binding, and stable ID survive unchanged.
+- [x] Treat top-level loose scenes and each chapter's `children` array as explicit destinations; do not infer a chapter from filesystem location or move the Markdown file.
+- [x] Preview the manuscript, scene, old container/position, destination container/position, and exact affected JSON arrays before confirmation.
+- [x] Freshly reread and regenerate the same relocation before one atomic structure replacement; reuse the shared fingerprint-guarded one-step Undo.
 - [ ] Provide a keyboard-contained destination/position workflow and return focus to the moved scene in its new outline location.
 - [ ] Cover loose-to-chapter, chapter-to-loose, chapter-to-chapter, same-container refusal, stale preview, unknown-field preservation, exact Undo, and packaged macOS QA.
 
@@ -30,6 +30,8 @@ Move an existing loose scene into a chapter, a chapter scene into the top level,
 1. 0.6.12b — Support safe scene splitting and adjacent-scene merging with previewed multi-file transactions.
 
 ## Completed checkpoint
+
+- Slice 0.6.12a implementation checkpoint `426cc5b` is pushed. Verified scenes now expose **Move to…** in both outline and corkboard when another legal container exists. The destination/position dialog shows both exact JSON arrays and one-based positions, excludes the current container, prose-owning chapters, and other manuscripts, and states that no folder or Markdown file moves. The pure planner transfers the complete raw scene object, validates the whole replacement, and the executor freshly replans before one atomic structure-file replacement and shared exact Undo. Cancel returns focus to its invoking control; success targets the moved scene in the active surface. Seven focused relocation tests cover chapter-to-chapter, loose-to-chapter, chapter-to-loose, destination bounds, same-container and non-scene refusal, unknown fields, proxy-backed input, stale preview, failed atomic write, and exact-byte Undo. The full frontend suite has 342 passing tests across fifty-one files, Svelte/TypeScript checks report zero errors and warnings, four native tests pass, the packaged macOS `.app` bundle builds, and the moderate-threshold dependency audit passes with the three already-documented low cookie advisories. Final packaged interaction QA remains before this slice is complete.
 
 - Slice 0.6.11 is complete. Every fingerprint-verified manuscript scene, chapter prose source, and chapter overview now offers an explicit **Reference** action in both outline and corkboard when an active draft exists. It rechecks the manuscript fingerprint, then reuses the established contained, stable, read-only lore reference loader, replacement behavior, live watcher invalidation, navigation history, Escape close, Open-in-editor path, and focus restoration; no second reader or source copy was introduced. Corkboard reference entry restores the pre-board editor selection before opening the split. The new ephemeral **Focus** layout hides project navigation and connections, retains filename, save state, daily progress, the active draft, and any open reference, narrows a solo editor to a calm reading width, preserves selection, exposes a visible **Exit focus**, and resets on project replacement or restart. Packaged macOS QA covered outline and corkboard entry, exact selection restoration, split visual/accessibility semantics, Focus with and without a reference, external reference edit/removal/recovery, Escape close, a deliberately unwritable unsaved draft through Focus entry/exit and later save, unchanged daily semantics, and restart clearing. QA corrected one duplicated Corkboard accessible verb before the final package. The temporary fixture returned to its exact original hashes. The frontend suite has 335 passing tests across fifty files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, and four native tests plus Rust formatting pass.
 
@@ -84,7 +86,7 @@ Move an existing loose scene into a chapter, a chapter scene into the top level,
 
 ## Blockers and decision gates
 
-No blocker. Slice 0.6.6 established the approved compare-before-write, atomic replacement, exact reread, frozen preview, and guarded in-session Undo boundary. Metadata editing should reuse that boundary rather than introduce another structure-writing path.
+The feature implementation and automated verification are complete and pushed. Final packaged macOS interaction QA is temporarily blocked because the Mac is locked and Computer Use cannot unlock it. Unlocking the Mac is the only required user action; no product decision is waiting.
 
 ## Handoff protocol
 
