@@ -23,6 +23,7 @@
     onRepairSource: (key: string) => void;
     onEditMetadata: (itemId: string) => void;
     onReorder: (itemId: string, direction: ManuscriptReorderDirection) => void;
+    onOpenCorkboard: (manuscriptId: string) => void;
     onUndoRepair: () => void;
   }
 
@@ -39,6 +40,7 @@
     onRepairSource,
     onEditMetadata,
     onReorder,
+    onOpenCorkboard,
     onUndoRepair,
   }: Props = $props();
 
@@ -239,7 +241,16 @@
     {/if}
     {#each result.reconciled.manuscripts as entry (entry.manuscript.id)}
       <section aria-labelledby={`manuscript-${entry.manuscript.id}`}>
-        <h2 id={`manuscript-${entry.manuscript.id}`}>{entry.manuscript.title}</h2>
+        <div class="manuscript-heading">
+          <h2 id={`manuscript-${entry.manuscript.id}`}>{entry.manuscript.title}</h2>
+          <button
+            type="button"
+            class="corkboard-open"
+            id={`open-corkboard-${entry.manuscript.id}`}
+            disabled={repairBusy}
+            onclick={() => onOpenCorkboard(entry.manuscript.id)}
+          >Open corkboard</button>
+        </div>
         {#if entry.items.length === 0}
           <p>No chapters or loose scenes yet.</p>
         {:else}
@@ -303,6 +314,21 @@
     margin: 0;
     color: #e0e0e0;
     font-size: 0.82rem;
+  }
+  .manuscript-heading {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  .corkboard-open {
+    padding: 0.24rem 0.4rem;
+    border: 1px solid #635845;
+    border-radius: 4px;
+    background: #342f27;
+    color: #e2c99e;
+    font: inherit;
+    cursor: pointer;
   }
   ol,
   ul {

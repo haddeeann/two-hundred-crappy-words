@@ -178,6 +178,7 @@
   } from "$lib/lore/reconcile";
   import { tauriLoreScanBackend } from "$lib/lore/tauri-scan";
   import type { LoreProjectIndex, SourceRange } from "$lib/lore/types";
+  import ManuscriptCorkboard from "$lib/manuscript/ManuscriptCorkboard.svelte";
   import ManuscriptCreationDialog from "$lib/manuscript/ManuscriptCreationDialog.svelte";
   import ManuscriptMetadataDialog from "$lib/manuscript/ManuscriptMetadataDialog.svelte";
   import ManuscriptOutline from "$lib/manuscript/ManuscriptOutline.svelte";
@@ -364,6 +365,7 @@
   let manuscriptReorderError = $state("");
   let manuscriptOutlineFocusItemId = $state("");
   let manuscriptOutlineFocusRevision = $state(0);
+  let manuscriptCorkboardId = $state("");
   let lastDailyProgressFailure: {
     path: string;
     revision: number;
@@ -416,6 +418,12 @@
       manuscriptMetadataItemId,
       manuscriptMetadataDraft,
     );
+  });
+  const manuscriptCorkboard = $derived.by(() => {
+    if (!manuscriptCorkboardId || manuscriptProject.kind !== "ready") return null;
+    return manuscriptProject.reconciled.manuscripts.find(
+      (entry) => entry.manuscript.id === manuscriptCorkboardId,
+    ) ?? null;
   });
   const saveStatus = $derived.by(() => {
     if (!activeFilePath) return "";
@@ -760,6 +768,7 @@
     resetManuscriptRepair(true);
     resetManuscriptMetadata(true);
     resetManuscriptReorder(true);
+    manuscriptCorkboardId = "";
     loreIndexPhase = "indexing";
     void refreshLoreIndex(path);
   }
@@ -1194,6 +1203,37 @@
     resetManuscriptReorder(true);
     manuscriptOutlineFocusItemId = plan.target.itemId;
     manuscriptOutlineFocusRevision += 1;
+  }
+
+  function openManuscriptCorkboard(manuscriptId: string): void {
+    if (
+      manuscriptProject.kind !== "ready" ||
+      !manuscriptProject.reconciled.manuscripts.some(
+        (entry) => entry.manuscript.id === manuscriptId,
+      )
+    ) {
+      manuscriptRepairNotice = "That manuscript is not available in the current verified structure.";
+      return;
+    }
+    dismissLoreCompletion();
+    manuscriptCorkboardId = manuscriptId;
+  }
+
+  function closeManuscriptCorkboard(): void {
+    const manuscriptId = manuscriptCorkboardId;
+    manuscriptCorkboardId = "";
+    void tick().then(() => {
+      document.getElementById(`open-corkboard-${manuscriptId}`)?.focus();
+    });
+  }
+
+  async function openManuscriptSourceFromCorkboard(
+    path: string,
+    fingerprint: string,
+  ): Promise<void> {
+    manuscriptCorkboardId = "";
+    await tick();
+    await openManuscriptSource(path, fingerprint);
   }
 
   async function preferredManuscriptImportDirectory(): Promise<string> {
@@ -3958,6 +3998,7 @@
           onRepairSource={beginManuscriptRepair}
           onEditMetadata={beginManuscriptMetadataEdit}
           onReorder={beginManuscriptReorder}
+          onOpenCorkboard={openManuscriptCorkboard}
           onUndoRepair={() => void undoLastManuscriptRepair()}
         />
       {/if}
@@ -4015,7 +4056,9 @@
           >→</button>
         </nav>
         <span>
-          {activeFile ? activeFile : "No file open"}
+          {manuscriptCorkboard
+            ? `Corkboard · ${manuscriptCorkboard.manuscript.title}`
+            : activeFile || "No file open"}
           {#if dirty}<span class="dirty-dot" aria-hidden="true">●</span>{/if}
         </span>
       </div>
@@ -4032,9 +4075,16 @@
         {/if}
       </div>
     </div>
-    <div class="writing-split">
+    <div class="writing-split" class:corkboard-mode={Boolean(manuscriptCorkboard)}>
       <div class="editor-workspace">
-        <textarea
+        {#if manuscriptCorkboard}
+          <ManuscriptCorkboard
+            manuscript={manuscriptCorkboard}
+            onClose={closeManuscriptCorkboard}
+            onOpenSource={(path, fingerprint) => void openManuscriptSourceFromCorkboard(path, fingerprint)}
+          />
+        {:else}
+          <textarea
         class="editor-input"
         placeholder="Start writing your 200 crappy words..."
         aria-label="Document editor"
@@ -4056,17 +4106,18 @@
         onkeyup={handleEditorCaretChange}
         onclick={handleEditorCaretChange}
         onselect={handleEditorCaretChange}
-        ></textarea>
-        {#if loreCompletionContext && loreCompletionItems.length > 0}
-          <LoreCompletion
-            candidates={loreCompletionItems}
-            selectedIndex={loreCompletionSelectedIndex}
-            mode={loreCompletionContext.mode}
-            onSelect={(candidate) => void acceptLoreCompletion(candidate)}
-          />
+          ></textarea>
+          {#if loreCompletionContext && loreCompletionItems.length > 0}
+            <LoreCompletion
+              candidates={loreCompletionItems}
+              selectedIndex={loreCompletionSelectedIndex}
+              mode={loreCompletionContext.mode}
+              onSelect={(candidate) => void acceptLoreCompletion(candidate)}
+            />
+          {/if}
         {/if}
       </div>
-      {#if loreReference}
+      {#if loreReference && !manuscriptCorkboard}
         <LoreReferencePane
           reference={loreReference}
           onClose={() => closeLoreReference()}
