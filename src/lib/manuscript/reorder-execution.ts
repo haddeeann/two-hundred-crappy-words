@@ -1,0 +1,87 @@
+import type { ManuscriptProjectLoadResult } from "./source-reconciliation";
+import {
+  planManuscriptReorder,
+  type ManuscriptReorderPlan,
+} from "./reorder";
+import type {
+  ManuscriptRepairExecutionResult,
+  ManuscriptRepairIo,
+  ManuscriptRepairUndo,
+} from "./repair-execution";
+
+export async function executeManuscriptReorder(
+  plan: Extract<ManuscriptReorderPlan, { kind: "ready" }>,
+  io: ManuscriptRepairIo,
+): Promise<ManuscriptRepairExecutionResult> {
+  const current = await safelyReload(io);
+  if (current.kind !== "ready") return current;
+  if (
+    current.project.fingerprint !== plan.target.structureFingerprint ||
+    current.project.text !== plan.originalText
+  ) {
+    return failed("The manuscript structure changed after preview; nothing was written.");
+  }
+  const refreshed = planManuscriptReorder(
+    current.project,
+    plan.target.itemId,
+    plan.target.direction,
+  );
+  if (
+    refreshed.kind !== "ready" ||
+    refreshed.updatedText !== plan.updatedText ||
+    refreshed.target.neighborId !== plan.target.neighborId ||
+    refreshed.target.oldPosition !== plan.target.oldPosition ||
+    refreshed.target.newPosition !== plan.target.newPosition ||
+    refreshed.target.arrayJsonPath !== plan.target.arrayJsonPath
+  ) {
+    return failed("The reorder preview is stale; review it again before writing.");
+  }
+
+  try {
+    await io.replaceAtomic(plan.originalText, plan.updatedText);
+  } catch (cause) {
+    return failed(`The reorder was not confirmed: ${formatError(cause)}`);
+  }
+  const reloaded = await safelyReload(io);
+  if (reloaded.kind !== "ready") {
+    return failed(`The replacement may have completed, but verification failed: ${reloaded.message}`);
+  }
+  if (
+    reloaded.project.fingerprint !== plan.updatedFingerprint ||
+    reloaded.project.text !== plan.updatedText
+  ) {
+    return failed("The replacement completed, but the reread did not match and needs review.");
+  }
+  const undo: ManuscriptRepairUndo = {
+    label: `Undo move for ${plan.target.itemTitle}`,
+    expectedText: plan.updatedText,
+    expectedFingerprint: plan.updatedFingerprint,
+    restoreText: plan.originalText,
+    restoreFingerprint: plan.target.structureFingerprint,
+  };
+  return { kind: "success", project: reloaded.project, undo };
+}
+
+async function safelyReload(
+  io: ManuscriptRepairIo,
+): Promise<
+  | { kind: "ready"; project: Extract<ManuscriptProjectLoadResult, { kind: "ready" }> }
+  | { kind: "failed"; message: string }
+> {
+  try {
+    const project = await io.reload();
+    return project.kind === "ready"
+      ? { kind: "ready", project }
+      : { kind: "failed", message: `The manuscript structure is ${project.kind} and cannot be mutated.` };
+  } catch (cause) {
+    return { kind: "failed", message: `The manuscript structure could not be reloaded: ${formatError(cause)}` };
+  }
+}
+
+function failed(message: string): ManuscriptRepairExecutionResult {
+  return { kind: "failed", message };
+}
+
+function formatError(cause: unknown): string {
+  return cause instanceof Error ? cause.message : String(cause);
+}

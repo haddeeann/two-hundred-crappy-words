@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { tick } from "svelte";
+  import type { ManuscriptReorderDirection } from "./reorder";
   import type {
     ManuscriptProjectLoadResult,
     ManuscriptSourceState,
@@ -14,10 +16,13 @@
     repairBusy: boolean;
     repairNotice: string;
     repairUndoLabel: string;
+    focusItemId: string;
+    focusRevision: number;
     onRefresh: () => void;
     onOpenSource: (path: string, fingerprint: string) => void;
     onRepairSource: (key: string) => void;
     onEditMetadata: (itemId: string) => void;
+    onReorder: (itemId: string, direction: ManuscriptReorderDirection) => void;
     onUndoRepair: () => void;
   }
 
@@ -27,12 +32,24 @@
     repairBusy,
     repairNotice,
     repairUndoLabel,
+    focusItemId,
+    focusRevision,
     onRefresh,
     onOpenSource,
     onRepairSource,
     onEditMetadata,
+    onReorder,
     onUndoRepair,
   }: Props = $props();
+
+  $effect(() => {
+    const itemId = focusItemId;
+    const revision = focusRevision;
+    if (!itemId || revision < 1) return;
+    void tick().then(() => {
+      document.getElementById(`manuscript-item-${itemId}`)?.focus();
+    });
+  });
 
   const summary = $derived.by(() => {
     if (result.kind !== "ready") return "Manuscript structure: needs attention";
@@ -119,8 +136,42 @@
   {#if item.notes}<small class="planning-notes">Notes · {item.notes}</small>{/if}
 {/snippet}
 
-{#snippet sceneRow(scene: ReconciledManuscriptScene)}
-  <li class="scene-row">
+{#snippet reorderControls(
+  itemId: string,
+  itemTitle: string,
+  canMoveEarlier: boolean,
+  canMoveLater: boolean,
+)}
+  {#if canMoveEarlier || canMoveLater}
+    <div class="reorder-actions" aria-label={`Reorder ${itemTitle}`}>
+      {#if canMoveEarlier}
+        <button
+          type="button"
+          disabled={repairBusy}
+          aria-label={`Move ${itemTitle} earlier`}
+          title={`Move ${itemTitle} earlier`}
+          onclick={() => onReorder(itemId, "earlier")}
+        >↑ Earlier</button>
+      {/if}
+      {#if canMoveLater}
+        <button
+          type="button"
+          disabled={repairBusy}
+          aria-label={`Move ${itemTitle} later`}
+          title={`Move ${itemTitle} later`}
+          onclick={() => onReorder(itemId, "later")}
+        >↓ Later</button>
+      {/if}
+    </div>
+  {/if}
+{/snippet}
+
+{#snippet sceneRow(
+  scene: ReconciledManuscriptScene,
+  canMoveEarlier: boolean,
+  canMoveLater: boolean,
+)}
+  <li class="scene-row" id={`manuscript-item-${scene.item.id}`} tabindex="-1">
     {@render sourceRow(scene.item.title, scene.source, "scene-source", `${scene.item.id}:source`)}
     {@render metadataRows(scene.item)}
     {#if !scene.item.includeInCompile}<small>Excluded from compile</small>{/if}
@@ -130,11 +181,16 @@
       disabled={repairBusy}
       onclick={() => onEditMetadata(scene.item.id)}
     >Edit details…</button>
+    {@render reorderControls(scene.item.id, scene.item.title, canMoveEarlier, canMoveLater)}
   </li>
 {/snippet}
 
-{#snippet chapterRow(chapter: ReconciledManuscriptChapter)}
-  <li class="chapter-row">
+{#snippet chapterRow(
+  chapter: ReconciledManuscriptChapter,
+  canMoveEarlier: boolean,
+  canMoveLater: boolean,
+)}
+  <li class="chapter-row" id={`manuscript-item-${chapter.item.id}`} tabindex="-1">
     <div class="chapter-heading">
       <strong>{chapter.item.title}</strong>
       {@render metadataRows(chapter.item)}
@@ -144,6 +200,7 @@
         disabled={repairBusy}
         onclick={() => onEditMetadata(chapter.item.id)}
       >Edit details…</button>
+      {@render reorderControls(chapter.item.id, chapter.item.title, canMoveEarlier, canMoveLater)}
     </div>
     {#if chapter.folder && chapter.folder.kind !== "ready"}
       <small class="source-warning">{chapter.folder.message}</small>
@@ -156,8 +213,8 @@
     {/if}
     {#if chapter.children.length > 0}
       <ol class="scene-list">
-        {#each chapter.children as scene (scene.item.id)}
-          {@render sceneRow(scene)}
+        {#each chapter.children as scene, childIndex (scene.item.id)}
+          {@render sceneRow(scene, childIndex > 0, childIndex < chapter.children.length - 1)}
         {/each}
       </ol>
     {/if}
@@ -187,11 +244,11 @@
           <p>No chapters or loose scenes yet.</p>
         {:else}
           <ol class="outline-list">
-            {#each entry.items as item (item.item.id)}
+            {#each entry.items as item, itemIndex (item.item.id)}
               {#if "children" in item}
-                {@render chapterRow(item)}
+                {@render chapterRow(item, itemIndex > 0, itemIndex < entry.items.length - 1)}
               {:else}
-                {@render sceneRow(item)}
+                {@render sceneRow(item, itemIndex > 0, itemIndex < entry.items.length - 1)}
               {/if}
             {/each}
           </ol>
@@ -330,6 +387,27 @@
     text-decoration-color: #53616c;
     text-underline-offset: 2px;
     cursor: pointer;
+  }
+  .reorder-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.18rem;
+  }
+  .reorder-actions button {
+    padding: 0.18rem 0.35rem;
+    border: 1px solid #4f5962;
+    border-radius: 4px;
+    background: #292f34;
+    color: #b6c9d8;
+    font: inherit;
+    cursor: pointer;
+  }
+  .scene-row:focus-visible,
+  .chapter-row:focus-visible {
+    border-radius: 3px;
+    outline: 2px solid #75beff;
+    outline-offset: 2px;
   }
   .repair-status {
     display: flex;

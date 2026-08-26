@@ -182,6 +182,7 @@
   import ManuscriptMetadataDialog from "$lib/manuscript/ManuscriptMetadataDialog.svelte";
   import ManuscriptOutline from "$lib/manuscript/ManuscriptOutline.svelte";
   import ManuscriptRepairDialog from "$lib/manuscript/ManuscriptRepairDialog.svelte";
+  import ManuscriptReorderDialog from "$lib/manuscript/ManuscriptReorderDialog.svelte";
   import {
     planManuscriptCreation,
     retitleManuscriptCreationPlan,
@@ -211,6 +212,12 @@
     type ManuscriptMetadataTarget,
   } from "$lib/manuscript/metadata";
   import { executeManuscriptMetadataEdit } from "$lib/manuscript/metadata-execution";
+  import {
+    planManuscriptReorder,
+    type ManuscriptReorderDirection,
+    type ManuscriptReorderPlan,
+  } from "$lib/manuscript/reorder";
+  import { executeManuscriptReorder } from "$lib/manuscript/reorder-execution";
   import { MANUSCRIPT_STRUCTURE_FILE } from "$lib/manuscript/structure";
 
   interface SaveFailure {
@@ -353,6 +360,10 @@
     ...EMPTY_MANUSCRIPT_METADATA_DRAFT,
   });
   let manuscriptMetadataError = $state("");
+  let manuscriptReorderPlan = $state<ManuscriptReorderPlan | null>(null);
+  let manuscriptReorderError = $state("");
+  let manuscriptOutlineFocusItemId = $state("");
+  let manuscriptOutlineFocusRevision = $state(0);
   let lastDailyProgressFailure: {
     path: string;
     revision: number;
@@ -386,7 +397,8 @@
       manuscriptCreationVisible ||
       manuscriptRepairBusy ||
       Boolean(manuscriptRepairKey) ||
-      Boolean(manuscriptMetadataItemId),
+      Boolean(manuscriptMetadataItemId) ||
+      Boolean(manuscriptReorderPlan),
   );
   const manuscriptCreationPlan = $derived.by(() => {
     if (manuscriptCreationBasePlan?.kind !== "ready") {
@@ -747,6 +759,7 @@
     resetManuscriptCreation(true);
     resetManuscriptRepair(true);
     resetManuscriptMetadata(true);
+    resetManuscriptReorder(true);
     loreIndexPhase = "indexing";
     void refreshLoreIndex(path);
   }
@@ -1125,6 +1138,62 @@
     manuscriptRepairNotice = `Updated details for ${itemTitle}. No Markdown file was changed.`;
     manuscriptRepairBusy = false;
     resetManuscriptMetadata(true);
+  }
+
+  function beginManuscriptReorder(
+    itemId: string,
+    direction: ManuscriptReorderDirection,
+  ): void {
+    if (!itemId || worldProjectBusy || manuscriptRepairBusy) return;
+    const plan = planManuscriptReorder(manuscriptProject, itemId, direction);
+    if (plan.kind !== "ready") {
+      manuscriptRepairNotice = plan.reason;
+      return;
+    }
+    manuscriptReorderPlan = plan;
+    manuscriptReorderError = "";
+  }
+
+  function resetManuscriptReorder(force = false): void {
+    if (manuscriptRepairBusy && !force) return;
+    manuscriptReorderPlan = null;
+    manuscriptReorderError = "";
+  }
+
+  async function confirmManuscriptReorder(): Promise<void> {
+    const plan = manuscriptReorderPlan;
+    if (
+      !folderPath ||
+      !loreIndex ||
+      manuscriptRepairBusy ||
+      plan?.kind !== "ready"
+    ) {
+      return;
+    }
+    const rootPath = folderPath;
+    const session = loreIndexSession;
+    manuscriptRepairBusy = true;
+    manuscriptReorderError = "";
+    const result = await executeManuscriptReorder(plan, manuscriptRepairIo(rootPath));
+    if (rootPath !== folderPath || session !== loreIndexSession) {
+      manuscriptRepairBusy = false;
+      resetManuscriptReorder(true);
+      error = "The project changed while the manuscript order was being saved. Refresh the project before continuing.";
+      return;
+    }
+    if (result.kind === "failed") {
+      manuscriptRepairBusy = false;
+      manuscriptReorderError = result.message;
+      void refreshManuscriptStructure(rootPath, session, loreIndex);
+      return;
+    }
+    manuscriptProject = result.project;
+    manuscriptRepairUndo = result.undo;
+    manuscriptRepairNotice = `Moved ${plan.target.itemTitle} ${plan.target.direction}. No Markdown file was changed.`;
+    manuscriptRepairBusy = false;
+    resetManuscriptReorder(true);
+    manuscriptOutlineFocusItemId = plan.target.itemId;
+    manuscriptOutlineFocusRevision += 1;
   }
 
   async function preferredManuscriptImportDirectory(): Promise<string> {
@@ -3428,7 +3497,12 @@
 
   function handleKeydown(event: KeyboardEvent) {
     if (event.defaultPrevented) return;
-    if (manuscriptCreationVisible || manuscriptRepairKey || manuscriptMetadataItemId) return;
+    if (
+      manuscriptCreationVisible ||
+      manuscriptRepairKey ||
+      manuscriptMetadataItemId ||
+      manuscriptReorderPlan
+    ) return;
     if (
       (event.ctrlKey || event.metaKey) &&
       !event.shiftKey &&
@@ -3877,10 +3951,13 @@
           repairBusy={manuscriptRepairBusy}
           repairNotice={manuscriptRepairNotice}
           repairUndoLabel={manuscriptRepairUndo?.label ?? ""}
+          focusItemId={manuscriptOutlineFocusItemId}
+          focusRevision={manuscriptOutlineFocusRevision}
           onRefresh={() => void refreshManuscriptStructure()}
           onOpenSource={(path, fingerprint) => void openManuscriptSource(path, fingerprint)}
           onRepairSource={beginManuscriptRepair}
           onEditMetadata={beginManuscriptMetadataEdit}
+          onReorder={beginManuscriptReorder}
           onUndoRepair={() => void undoLastManuscriptRepair()}
         />
       {/if}
@@ -4062,6 +4139,15 @@
         }}
         onCancel={() => resetManuscriptMetadata()}
         onConfirm={() => void confirmManuscriptMetadataEdit()}
+      />
+    {/if}
+    {#if manuscriptReorderPlan}
+      <ManuscriptReorderDialog
+        plan={manuscriptReorderPlan}
+        busy={manuscriptRepairBusy}
+        executionError={manuscriptReorderError}
+        onCancel={() => resetManuscriptReorder()}
+        onConfirm={() => void confirmManuscriptReorder()}
       />
     {/if}
     <div class="practice-bar" aria-label="Writing progress">

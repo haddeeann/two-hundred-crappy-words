@@ -6,6 +6,8 @@ import {
   canReorderManuscriptItem,
   planManuscriptReorder,
 } from "./reorder";
+import { executeManuscriptReorder } from "./reorder-execution";
+import { undoManuscriptSourceRepair, type ManuscriptRepairIo } from "./repair-execution";
 import {
   parseManuscriptStructure,
   type ManuscriptOutlineItem,
@@ -155,5 +157,47 @@ describe("manuscript reorder planning", () => {
     expect(planManuscriptReorder(proxied, SECOND_CHAPTER_ID, "earlier"))
       .toMatchObject({ kind: "ready" });
     expect(JSON.stringify(result.source)).toBe(originalSource);
+  });
+
+  it("rechecks, replaces, rereads, and restores exact bytes through Undo", async () => {
+    let text = sourceText();
+    const plan = planManuscriptReorder(project(text), SECOND_SCENE_ID, "earlier");
+    if (plan.kind !== "ready") throw new Error(plan.reason);
+    const io: ManuscriptRepairIo = {
+      async reload() { return project(text); },
+      async replaceAtomic(expectedText, newText) {
+        if (text !== expectedText) throw new Error("changed");
+        text = newText;
+      },
+    };
+
+    const moved = await executeManuscriptReorder(plan, io);
+    expect(moved).toMatchObject({ kind: "success" });
+    if (moved.kind !== "success") throw new Error(moved.message);
+    expect(JSON.parse(text).manuscripts[0].items[0].children[0].id).toBe(SECOND_SCENE_ID);
+
+    const undone = await undoManuscriptSourceRepair(moved.undo, io);
+    expect(undone).toMatchObject({ kind: "success" });
+    expect(text).toBe(sourceText());
+  });
+
+  it("writes nothing after an external structure change or atomic failure", async () => {
+    let text = sourceText();
+    const plan = planManuscriptReorder(project(text), LOOSE_SCENE_ID, "later");
+    if (plan.kind !== "ready") throw new Error(plan.reason);
+    text = `${text.trimEnd()} \n`;
+    let writes = 0;
+    expect(await executeManuscriptReorder(plan, {
+      async reload() { return project(text); },
+      async replaceAtomic() { writes += 1; },
+    })).toMatchObject({ kind: "failed", message: expect.stringContaining("changed after preview") });
+    expect(writes).toBe(0);
+
+    text = sourceText();
+    expect(await executeManuscriptReorder(plan, {
+      async reload() { return project(text); },
+      async replaceAtomic() { throw new Error("permission denied"); },
+    })).toMatchObject({ kind: "failed", message: expect.stringContaining("permission denied") });
+    expect(text).toBe(sourceText());
   });
 });
