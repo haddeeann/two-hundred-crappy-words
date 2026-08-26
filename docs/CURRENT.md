@@ -10,26 +10,28 @@ Connected lore is complete. The active milestone makes a long manuscript underst
 
 ## Active slice
 
-**0.6.7 — Previewed chapter and scene metadata editing**
+**0.6.8 — Accessible previewed manuscript reordering**
 
 ### Intended outcome
 
-Let a writer edit the approved descriptive metadata for a chapter or scene through a precise, reversible structure-only preview, then establish the same accessible mutation semantics that reorder will reuse.
+Let a writer move a chapter, loose scene, or chapter scene earlier or later in its current outline through explicit keyboard-accessible controls, a frozen structure-only preview, and exact guarded Undo.
 
 ### Acceptance criteria
 
-- [ ] Define a compact editor for title, synopsis, point of view, location, story date, status, labels, notes, and optional word target using the approved version-one bounds and omission semantics.
-- [ ] Preview the exact old and new values plus JSON field paths in a keyboard-contained confirmation; cancellation must leave every project byte unchanged.
-- [ ] Preserve unknown supported fields and unaffected order/metadata, validate the complete replacement, and freeze the consented preview until confirmation or cancellation.
-- [ ] Recheck the structure fingerprint immediately before the same contained atomic replacement used by path repair, reread before success, and expose one guarded session-only Undo.
-- [ ] Refresh the outline immediately, keep Markdown and daily credit unchanged, and make missing optional metadata distinguishable from intentionally blank text where the format permits it.
-- [ ] Pass focused validation/race/undo tests, Svelte/TypeScript checks, frontend/package builds, and disposable packaged macOS QA before beginning reorder controls.
+- [ ] Define one pure planner for moving an item before its previous sibling or after its next sibling while preserving the selected item, sibling group, and every nested value exactly.
+- [ ] Expose named Move earlier and Move later controls wherever a sibling destination exists; keyboard operation must be first-class and drag-and-drop must not be required.
+- [ ] Preview the moved item, neighboring item, direction, old/new positions, and exact JSON array path in a keyboard-contained dialog; cancellation must leave every project byte unchanged.
+- [ ] Freeze the consented plan, recheck the complete structure fingerprint, validate and atomically replace only the structure file, reread before success, and expose one guarded session-only Undo.
+- [ ] Refresh and focus the moved outline item immediately while preserving unknown supported fields, all metadata, Markdown bytes, source bindings, and daily credit.
+- [ ] Pass focused boundary/race/undo tests, Svelte/TypeScript checks, frontend/package builds, and disposable packaged macOS QA before the corkboard layout decision gate.
 
 ## Next slices
 
-1. 0.6.8 — Add accessible previewed reorder semantics for scenes and chapters, then begin the synopsis-focused corkboard.
+1. 0.6.9 — Choose and implement the first synopsis-focused corkboard layout over the same ordered structure.
 
 ## Completed checkpoint
+
+- Slice 0.6.7 is complete. Every chapter and scene now exposes **Edit details…** for its approved descriptive title, synopsis, point of view, location, story date, status, labels, planning notes, optional word target, and compile inclusion. The keyboard-contained dialog distinguishes unchanged, invalid, missing, and exact old/new values at their JSON paths; blank optional values remove their fields, labels use one ordered value per line, and the complete version-one parser enforces all bounds. Confirmation freezes the original verified structure and semantic plan, replans after a fresh reread, uses the existing picker-scoped atomic replacement, verifies the exact result, refreshes the outline, and replaces the shared one-step fingerprint-guarded Undo. Unknown supported fields and unaffected order survive the JSON-domain clone; scene and overview Markdown never change and no words are added to Today. Packaged macOS QA covered visual and accessibility semantics, initial title focus, Tab/Shift+Tab containment, Escape cancellation with all hashes stable, exact validation, a nine-field scene edit, immediate chips/synopsis/notes display, preserved unknown fields, byte-stable Markdown, `0 / 200`, exact original-hash Undo, and stale-preview refusal after an external structure edit. The full frontend suite has 322 passing tests across forty-seven files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS app builds pass, four native tests pass, Rust formatting/checks pass, and the production dependency audit reports zero vulnerabilities.
 
 - Slice 0.6.6 is complete. Only a binding whose stable note ID resolves uniquely to one verified moved Markdown source, with the old path unoccupied, now exposes **Review path repair…**. The keyboard-contained modal freezes the consented manuscript item, binding, old and suggested paths, stable ID, and exact JSON field. Confirmation performs a fresh full lore scan, stable source/ID and structure checks, replans the same replacement, then uses a picker-scope-bound native same-directory atomic replacement and exact reread. Supported unknown fields and unaffected values/order survive the validated JSON-domain clone; prose is never moved or rewritten. Success refreshes the outline immediately and offers one session-only exact inverse, which disappears as soon as any external structure change breaks its fingerprint. Packaged macOS QA covered visual/accessibility semantics, Tab/Shift+Tab/Escape cancellation with all hashes stable, successful repair, preserved unknown fields, byte-stable Markdown, `0 / 200`, exact original-byte Undo, stale-preview refusal, duplicate-ID refusal, and external Undo invalidation. QA also caught and corrected reactive-proxy cloning and a parallel native-fixture collision. The full frontend suite has 315 passing tests across forty-six files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS app builds pass, and Rust formatting, repeated tests, and checks pass.
 
