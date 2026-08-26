@@ -92,6 +92,7 @@ function fakeScene(item: ManuscriptScene) {
       resolvedPath: item.source.path,
       fingerprint: "source",
       bytes: 1,
+      wordCount: 1,
     },
   };
 }

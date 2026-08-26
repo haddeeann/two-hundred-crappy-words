@@ -180,8 +180,8 @@ describe("manuscript project source reconciliation", () => {
             items: [
               {
                 folder: { kind: "ready", path: "Manuscript/01 Signals" },
-                overview: { kind: "ready", noteId: OVERVIEW_ID },
-                children: [{ source: { kind: "ready", noteId: SCENE_NOTE_ID } }],
+                overview: { kind: "ready", noteId: OVERVIEW_ID, wordCount: 3 },
+                children: [{ source: { kind: "ready", noteId: SCENE_NOTE_ID, wordCount: 3 } }],
               },
             ],
           },

@@ -72,6 +72,7 @@ function project(text = sourceText()): Extract<ManuscriptProjectLoadResult, { ki
               resolvedPath: "arrival.md",
               fingerprint: "source",
               bytes: 12,
+              wordCount: 2,
             },
           }],
         }],

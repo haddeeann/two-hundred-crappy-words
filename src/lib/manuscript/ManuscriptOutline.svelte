@@ -9,6 +9,11 @@
     ReconciledManuscriptScene,
   } from "./source-reconciliation";
   import type { ManuscriptOutlineMetadata } from "./structure";
+  import ManuscriptWordCount from "./ManuscriptWordCount.svelte";
+  import {
+    buildManuscriptWordCountIndex,
+    type ManuscriptWordCountIndex,
+  } from "./word-count";
 
   interface Props {
     result: Exclude<ManuscriptProjectLoadResult, { kind: "absent" }>;
@@ -62,6 +67,14 @@
       0,
     );
     return `Manuscript outline: ${books} ${books === 1 ? "book" : "books"} · ${scenes} ${scenes === 1 ? "scene" : "scenes"}`;
+  });
+  const wordCounts = $derived.by(() => {
+    const values = new Map<string, ManuscriptWordCountIndex>();
+    if (result.kind !== "ready") return values;
+    for (const manuscript of result.reconciled.manuscripts) {
+      values.set(manuscript.manuscript.id, buildManuscriptWordCountIndex(manuscript));
+    }
+    return values;
   });
 
   function sceneCount(item: ReconciledManuscriptItem): number {
@@ -125,13 +138,12 @@
 
 {#snippet metadataRows(item: ManuscriptOutlineMetadata)}
   {#if item.synopsis}<small class="synopsis">{item.synopsis}</small>{/if}
-  {#if item.status || item.pov || item.location || item.storyDate || item.targetWords || item.labels?.length}
+  {#if item.status || item.pov || item.location || item.storyDate || item.labels?.length}
     <div class="metadata" aria-label="Outline details">
       {#if item.status}<span>Status · {item.status}</span>{/if}
       {#if item.pov}<span>POV · {item.pov}</span>{/if}
       {#if item.location}<span>Location · {item.location}</span>{/if}
       {#if item.storyDate}<span>Date · {item.storyDate}</span>{/if}
-      {#if item.targetWords}<span>Target · {item.targetWords.toLocaleString()} words</span>{/if}
       {#each item.labels ?? [] as label (label)}<span>#{label}</span>{/each}
     </div>
   {/if}
@@ -172,11 +184,19 @@
   scene: ReconciledManuscriptScene,
   canMoveEarlier: boolean,
   canMoveLater: boolean,
+  counts: ManuscriptWordCountIndex,
 )}
+  {@const sceneCount = counts.items.get(scene.item.id)}
   <li class="scene-row" id={`manuscript-item-${scene.item.id}`} tabindex="-1">
     {@render sourceRow(scene.item.title, scene.source, "scene-source", `${scene.item.id}:source`)}
     {@render metadataRows(scene.item)}
-    {#if !scene.item.includeInCompile}<small>Excluded from compile</small>{/if}
+    {#if sceneCount}
+      <ManuscriptWordCount
+        summary={sceneCount}
+        targetWords={sceneCount.targetWords}
+        effectiveIncluded={sceneCount.effectiveIncluded}
+      />
+    {/if}
     <button
       type="button"
       class="details"
@@ -191,11 +211,20 @@
   chapter: ReconciledManuscriptChapter,
   canMoveEarlier: boolean,
   canMoveLater: boolean,
+  counts: ManuscriptWordCountIndex,
 )}
+  {@const chapterCount = counts.items.get(chapter.item.id)}
   <li class="chapter-row" id={`manuscript-item-${chapter.item.id}`} tabindex="-1">
     <div class="chapter-heading">
       <strong>{chapter.item.title}</strong>
       {@render metadataRows(chapter.item)}
+      {#if chapterCount}
+        <ManuscriptWordCount
+          summary={chapterCount}
+          targetWords={chapterCount.targetWords}
+          effectiveIncluded={chapterCount.effectiveIncluded}
+        />
+      {/if}
       <button
         type="button"
         class="details"
@@ -216,7 +245,7 @@
     {#if chapter.children.length > 0}
       <ol class="scene-list">
         {#each chapter.children as scene, childIndex (scene.item.id)}
-          {@render sceneRow(scene, childIndex > 0, childIndex < chapter.children.length - 1)}
+          {@render sceneRow(scene, childIndex > 0, childIndex < chapter.children.length - 1, counts)}
         {/each}
       </ol>
     {/if}
@@ -240,31 +269,35 @@
       </div>
     {/if}
     {#each result.reconciled.manuscripts as entry (entry.manuscript.id)}
-      <section aria-labelledby={`manuscript-${entry.manuscript.id}`}>
-        <div class="manuscript-heading">
-          <h2 id={`manuscript-${entry.manuscript.id}`}>{entry.manuscript.title}</h2>
-          <button
-            type="button"
-            class="corkboard-open"
-            id={`open-corkboard-${entry.manuscript.id}`}
-            disabled={repairBusy}
-            onclick={() => onOpenCorkboard(entry.manuscript.id)}
-          >Open corkboard</button>
-        </div>
-        {#if entry.items.length === 0}
-          <p>No chapters or loose scenes yet.</p>
-        {:else}
-          <ol class="outline-list">
-            {#each entry.items as item, itemIndex (item.item.id)}
-              {#if "children" in item}
-                {@render chapterRow(item, itemIndex > 0, itemIndex < entry.items.length - 1)}
-              {:else}
-                {@render sceneRow(item, itemIndex > 0, itemIndex < entry.items.length - 1)}
-              {/if}
-            {/each}
-          </ol>
-        {/if}
-      </section>
+      {@const counts = wordCounts.get(entry.manuscript.id)}
+      {#if counts}
+        <section aria-labelledby={`manuscript-${entry.manuscript.id}`}>
+          <div class="manuscript-heading">
+            <h2 id={`manuscript-${entry.manuscript.id}`}>{entry.manuscript.title}</h2>
+            <ManuscriptWordCount summary={counts.manuscript} />
+            <button
+              type="button"
+              class="corkboard-open"
+              id={`open-corkboard-${entry.manuscript.id}`}
+              disabled={repairBusy}
+              onclick={() => onOpenCorkboard(entry.manuscript.id)}
+            >Open corkboard</button>
+          </div>
+          {#if entry.items.length === 0}
+            <p>No chapters or loose scenes yet.</p>
+          {:else}
+            <ol class="outline-list">
+              {#each entry.items as item, itemIndex (item.item.id)}
+                {#if "children" in item}
+                  {@render chapterRow(item, itemIndex > 0, itemIndex < entry.items.length - 1, counts)}
+                {:else}
+                  {@render sceneRow(item, itemIndex > 0, itemIndex < entry.items.length - 1, counts)}
+                {/if}
+              {/each}
+            </ol>
+          {/if}
+        </section>
+      {/if}
     {/each}
   {:else if result.kind === "invalid"}
     <p class="source-warning" role="status">The structure is invalid and was not used.</p>

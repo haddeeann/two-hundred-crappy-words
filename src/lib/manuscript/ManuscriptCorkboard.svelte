@@ -8,6 +8,8 @@
   } from "./source-reconciliation";
   import type { ManuscriptReorderDirection } from "./reorder";
   import type { ManuscriptOutlineMetadata } from "./structure";
+  import ManuscriptWordCount from "./ManuscriptWordCount.svelte";
+  import { buildManuscriptWordCountIndex } from "./word-count";
 
   interface Props {
     manuscript: ReconciledManuscript;
@@ -41,6 +43,7 @@
   }: Props = $props();
   let board = $state<HTMLElement>();
   const blocks = $derived.by(() => corkboardBlocks(manuscript));
+  const wordCounts = $derived(buildManuscriptWordCountIndex(manuscript));
 
   onMount(() => board?.focus());
 
@@ -94,15 +97,13 @@
 </script>
 
 {#snippet metadata(item: ManuscriptOutlineMetadata)}
-  {#if item.status || item.pov || item.location || item.storyDate || item.targetWords || item.labels?.length || !item.includeInCompile}
+  {#if item.status || item.pov || item.location || item.storyDate || item.labels?.length}
     <div class="metadata" aria-label="Planning details">
       {#if item.status}<span>{item.status}</span>{/if}
       {#if item.pov}<span>POV · {item.pov}</span>{/if}
       {#if item.location}<span>{item.location}</span>{/if}
       {#if item.storyDate}<span>{item.storyDate}</span>{/if}
-      {#if item.targetWords}<span>{item.targetWords.toLocaleString()} words</span>{/if}
       {#each item.labels ?? [] as label (label)}<span>#{label}</span>{/each}
-      {#if !item.includeInCompile}<span class="excluded">Excluded from compile</span>{/if}
     </div>
   {/if}
   {#if item.notes}
@@ -159,6 +160,7 @@
   canMoveEarlier: boolean,
   canMoveLater: boolean,
 )}
+  {@const sceneCount = wordCounts.items.get(scene.item.id)}
   <article
     class="scene-card"
     id={`corkboard-item-${scene.item.id}`}
@@ -173,6 +175,13 @@
       <p class="empty-synopsis">No synopsis yet.</p>
     {/if}
     {@render metadata(scene.item)}
+    {#if sceneCount}
+      <ManuscriptWordCount
+        summary={sceneCount}
+        targetWords={sceneCount.targetWords}
+        effectiveIncluded={sceneCount.effectiveIncluded}
+      />
+    {/if}
     <div class="card-source">
       {@render sourceAction("Open scene", scene.source)}
     </div>
@@ -181,6 +190,7 @@
 {/snippet}
 
 {#snippet chapterSection(chapter: ReconciledManuscriptChapter, topLevelIndex: number)}
+  {@const chapterCount = wordCounts.items.get(chapter.item.id)}
   <section
     class="chapter"
     id={`corkboard-item-${chapter.item.id}`}
@@ -193,6 +203,13 @@
         <h2 id={`corkboard-chapter-${chapter.item.id}`}>{chapter.item.title}</h2>
         {#if chapter.item.synopsis}<p class="chapter-synopsis">{chapter.item.synopsis}</p>{/if}
         {@render metadata(chapter.item)}
+        {#if chapterCount}
+          <ManuscriptWordCount
+            summary={chapterCount}
+            targetWords={chapterCount.targetWords}
+            effectiveIncluded={chapterCount.effectiveIncluded}
+          />
+        {/if}
       </div>
       <div class="chapter-sources">
         {#if chapter.overview}{@render sourceAction("Open chapter overview", chapter.overview)}{/if}
@@ -231,6 +248,7 @@
       <span class="eyebrow">Corkboard</span>
       <h1 id="corkboard-heading">{manuscript.manuscript.title}</h1>
       <p>Chapters and scenes follow the portable manuscript order. Scene prose remains in Markdown.</p>
+      <ManuscriptWordCount summary={wordCounts.manuscript} />
     </div>
     <button type="button" class="close-board" onclick={onClose}>Return to editor</button>
   </header>
@@ -298,7 +316,6 @@
   .empty-synopsis { color: #7f7b74; font-style: italic; }
   .metadata { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.55rem; }
   .metadata span { padding: 0.13rem 0.35rem; border-radius: 999px; background: #353b3f; color: #b7c8d3; font-size: 0.68rem; }
-  .metadata span.excluded { background: #413630; color: #d9b6a5; }
   .notes { margin-top: 0.55rem; color: #aaa49b; font-size: 0.75rem; }
   .notes summary { width: fit-content; cursor: pointer; }
   .notes p { margin-top: 0.35rem; line-height: 1.4; white-space: pre-wrap; }

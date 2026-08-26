@@ -18,6 +18,7 @@ import {
   type ManuscriptStructure,
   type ManuscriptStructureIssue,
 } from "./structure";
+import { countManuscriptSourceWords } from "./word-count";
 
 export const DEFAULT_MAX_MANUSCRIPT_SOURCE_BYTES = 10 * 1024 * 1024;
 export const DEFAULT_MAX_MANUSCRIPT_TOTAL_SOURCE_BYTES = 100 * 1024 * 1024;
@@ -35,7 +36,7 @@ interface AvailableSourceState {
 }
 
 export type ManuscriptSourceState =
-  | ({ kind: "ready" } & AvailableSourceState)
+  | ({ kind: "ready"; wordCount: number } & AvailableSourceState)
   | ({
       kind: "moved";
       suggestedPath: string;
@@ -379,6 +380,7 @@ async function reconcileDeclaredBinding(
     resolvedPath: binding.path,
     fingerprint: loaded.fingerprint,
     bytes: loaded.bytes,
+    wordCount: countManuscriptSourceWords(loaded.text),
     ...(binding.noteId ? { noteId: binding.noteId } : {}),
   };
 }
