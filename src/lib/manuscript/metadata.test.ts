@@ -7,6 +7,8 @@ import {
   planManuscriptMetadataEdit,
   type ManuscriptMetadataDraft,
 } from "./metadata";
+import { executeManuscriptMetadataEdit } from "./metadata-execution";
+import { undoManuscriptSourceRepair, type ManuscriptRepairIo } from "./repair-execution";
 import { parseManuscriptStructure } from "./structure";
 
 const MANUSCRIPT_ID = "7339b0ee-5f87-493d-bcad-e56636d7cb26";
@@ -184,5 +186,48 @@ describe("manuscript metadata edit planning", () => {
     expect(planManuscriptMetadataEdit(proxied, SCENE_ID, draft({ status: "done" })))
       .toMatchObject({ kind: "ready" });
     expect(manuscriptMetadataEditorState(result, "missing")).toMatchObject({ kind: "unavailable" });
+  });
+
+  it("rechecks, replaces, rereads, and restores exact bytes through Undo", async () => {
+    let text = sourceText();
+    const initial = project(text);
+    const plan = planManuscriptMetadataEdit(initial, SCENE_ID, draft({ status: "revised" }));
+    if (plan.kind !== "ready") throw new Error(plan.kind);
+    const io: ManuscriptRepairIo = {
+      async reload() { return project(text); },
+      async replaceAtomic(expectedText, newText) {
+        if (text !== expectedText) throw new Error("changed");
+        text = newText;
+      },
+    };
+
+    const edited = await executeManuscriptMetadataEdit(plan, io);
+    expect(edited).toMatchObject({ kind: "success" });
+    if (edited.kind !== "success") throw new Error(edited.message);
+    expect(JSON.parse(text).manuscripts[0].items[0].children[0].status).toBe("revised");
+
+    const undone = await undoManuscriptSourceRepair(edited.undo, io);
+    expect(undone).toMatchObject({ kind: "success" });
+    expect(text).toBe(sourceText());
+  });
+
+  it("writes nothing after an external structure change or atomic failure", async () => {
+    let text = sourceText();
+    const plan = planManuscriptMetadataEdit(project(text), SCENE_ID, draft({ status: "done" }));
+    if (plan.kind !== "ready") throw new Error(plan.kind);
+    text = `${text.trimEnd()} \n`;
+    let writes = 0;
+    expect(await executeManuscriptMetadataEdit(plan, {
+      async reload() { return project(text); },
+      async replaceAtomic() { writes += 1; },
+    })).toMatchObject({ kind: "failed", message: expect.stringContaining("changed after preview") });
+    expect(writes).toBe(0);
+
+    text = sourceText();
+    expect(await executeManuscriptMetadataEdit(plan, {
+      async reload() { return project(text); },
+      async replaceAtomic() { throw new Error("permission denied"); },
+    })).toMatchObject({ kind: "failed", message: expect.stringContaining("permission denied") });
+    expect(text).toBe(sourceText());
   });
 });

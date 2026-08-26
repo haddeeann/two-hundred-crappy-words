@@ -179,6 +179,7 @@
   import { tauriLoreScanBackend } from "$lib/lore/tauri-scan";
   import type { LoreProjectIndex, SourceRange } from "$lib/lore/types";
   import ManuscriptCreationDialog from "$lib/manuscript/ManuscriptCreationDialog.svelte";
+  import ManuscriptMetadataDialog from "$lib/manuscript/ManuscriptMetadataDialog.svelte";
   import ManuscriptOutline from "$lib/manuscript/ManuscriptOutline.svelte";
   import ManuscriptRepairDialog from "$lib/manuscript/ManuscriptRepairDialog.svelte";
   import {
@@ -203,6 +204,13 @@
     type ManuscriptRepairIo,
     type ManuscriptRepairUndo,
   } from "$lib/manuscript/repair-execution";
+  import {
+    manuscriptMetadataEditorState,
+    planManuscriptMetadataEdit,
+    type ManuscriptMetadataDraft,
+    type ManuscriptMetadataTarget,
+  } from "$lib/manuscript/metadata";
+  import { executeManuscriptMetadataEdit } from "$lib/manuscript/metadata-execution";
   import { MANUSCRIPT_STRUCTURE_FILE } from "$lib/manuscript/structure";
 
   interface SaveFailure {
@@ -219,6 +227,18 @@
   const DAILY_PROGRESS_DELAY_MS = 100;
   const NAVIGATION_DELAY_MS = 150;
   const LORE_OVERLAY_DELAY_MS = 180;
+  const EMPTY_MANUSCRIPT_METADATA_DRAFT: ManuscriptMetadataDraft = {
+    title: "",
+    synopsis: "",
+    pov: "",
+    location: "",
+    storyDate: "",
+    status: "",
+    labels: "",
+    notes: "",
+    targetWords: "",
+    includeInCompile: true,
+  };
 
   let folderPath = $state("");
   let projectStorageKey = $state("");
@@ -326,6 +346,13 @@
   let manuscriptRepairError = $state("");
   let manuscriptRepairUndo = $state<ManuscriptRepairUndo | null>(null);
   let manuscriptRepairNotice = $state("");
+  let manuscriptMetadataItemId = $state("");
+  let manuscriptMetadataTarget = $state<ManuscriptMetadataTarget | null>(null);
+  let manuscriptMetadataBaseProject = $state<ManuscriptProjectLoadResult | null>(null);
+  let manuscriptMetadataDraft = $state<ManuscriptMetadataDraft>({
+    ...EMPTY_MANUSCRIPT_METADATA_DRAFT,
+  });
+  let manuscriptMetadataError = $state("");
   let lastDailyProgressFailure: {
     path: string;
     revision: number;
@@ -358,7 +385,8 @@
       loreRenameBusy ||
       manuscriptCreationVisible ||
       manuscriptRepairBusy ||
-      Boolean(manuscriptRepairKey),
+      Boolean(manuscriptRepairKey) ||
+      Boolean(manuscriptMetadataItemId),
   );
   const manuscriptCreationPlan = $derived.by(() => {
     if (manuscriptCreationBasePlan?.kind !== "ready") {
@@ -367,6 +395,14 @@
     return retitleManuscriptCreationPlan(
       manuscriptCreationBasePlan,
       manuscriptCreationTitle,
+    );
+  });
+  const manuscriptMetadataPlan = $derived.by(() => {
+    if (!manuscriptMetadataBaseProject || !manuscriptMetadataItemId) return null;
+    return planManuscriptMetadataEdit(
+      manuscriptMetadataBaseProject,
+      manuscriptMetadataItemId,
+      manuscriptMetadataDraft,
     );
   });
   const saveStatus = $derived.by(() => {
@@ -710,6 +746,7 @@
     manuscriptLoading = false;
     resetManuscriptCreation(true);
     resetManuscriptRepair(true);
+    resetManuscriptMetadata(true);
     loreIndexPhase = "indexing";
     void refreshLoreIndex(path);
   }
@@ -938,7 +975,7 @@
     ) {
       manuscriptRepairUndo = null;
       manuscriptRepairNotice =
-        "The manuscript structure changed after the repair, so its one-step Undo is no longer available.";
+        "The manuscript structure changed after the last edit, so its one-step Undo is no longer available.";
     }
   }
 
@@ -1027,8 +1064,67 @@
     }
     manuscriptProject = result.project;
     manuscriptRepairUndo = null;
-    manuscriptRepairNotice = "The last manuscript source-path repair was undone exactly.";
+    manuscriptRepairNotice = "The last manuscript structure change was undone exactly.";
     manuscriptRepairBusy = false;
+  }
+
+  function beginManuscriptMetadataEdit(itemId: string): void {
+    if (!itemId || worldProjectBusy || manuscriptRepairBusy) return;
+    const editor = manuscriptMetadataEditorState(manuscriptProject, itemId);
+    if (editor.kind !== "ready") {
+      manuscriptRepairNotice = editor.reason;
+      return;
+    }
+    manuscriptMetadataItemId = itemId;
+    manuscriptMetadataTarget = editor.target;
+    manuscriptMetadataBaseProject = manuscriptProject;
+    manuscriptMetadataDraft = { ...editor.draft };
+    manuscriptMetadataError = "";
+  }
+
+  function resetManuscriptMetadata(force = false): void {
+    if (manuscriptRepairBusy && !force) return;
+    manuscriptMetadataItemId = "";
+    manuscriptMetadataTarget = null;
+    manuscriptMetadataBaseProject = null;
+    manuscriptMetadataDraft = { ...EMPTY_MANUSCRIPT_METADATA_DRAFT };
+    manuscriptMetadataError = "";
+  }
+
+  async function confirmManuscriptMetadataEdit(): Promise<void> {
+    const plan = manuscriptMetadataPlan;
+    if (
+      !folderPath ||
+      !loreIndex ||
+      !manuscriptMetadataItemId ||
+      manuscriptRepairBusy ||
+      plan?.kind !== "ready"
+    ) {
+      return;
+    }
+    const rootPath = folderPath;
+    const session = loreIndexSession;
+    manuscriptRepairBusy = true;
+    manuscriptMetadataError = "";
+    const result = await executeManuscriptMetadataEdit(plan, manuscriptRepairIo(rootPath));
+    if (rootPath !== folderPath || session !== loreIndexSession) {
+      manuscriptRepairBusy = false;
+      resetManuscriptMetadata(true);
+      error = "The project changed while the manuscript details were being saved. Refresh the project before continuing.";
+      return;
+    }
+    if (result.kind === "failed") {
+      manuscriptRepairBusy = false;
+      manuscriptMetadataError = result.message;
+      void refreshManuscriptStructure(rootPath, session, loreIndex);
+      return;
+    }
+    const itemTitle = plan.target.itemTitle;
+    manuscriptProject = result.project;
+    manuscriptRepairUndo = result.undo;
+    manuscriptRepairNotice = `Updated details for ${itemTitle}. No Markdown file was changed.`;
+    manuscriptRepairBusy = false;
+    resetManuscriptMetadata(true);
   }
 
   async function preferredManuscriptImportDirectory(): Promise<string> {
@@ -3332,7 +3428,7 @@
 
   function handleKeydown(event: KeyboardEvent) {
     if (event.defaultPrevented) return;
-    if (manuscriptCreationVisible || manuscriptRepairKey) return;
+    if (manuscriptCreationVisible || manuscriptRepairKey || manuscriptMetadataItemId) return;
     if (
       (event.ctrlKey || event.metaKey) &&
       !event.shiftKey &&
@@ -3784,6 +3880,7 @@
           onRefresh={() => void refreshManuscriptStructure()}
           onOpenSource={(path, fingerprint) => void openManuscriptSource(path, fingerprint)}
           onRepairSource={beginManuscriptRepair}
+          onEditMetadata={beginManuscriptMetadataEdit}
           onUndoRepair={() => void undoLastManuscriptRepair()}
         />
       {/if}
@@ -3951,6 +4048,20 @@
         executionError={manuscriptRepairError}
         onCancel={closeManuscriptRepair}
         onConfirm={() => void confirmManuscriptRepair()}
+      />
+    {/if}
+    {#if manuscriptMetadataItemId && manuscriptMetadataTarget && manuscriptMetadataPlan}
+      <ManuscriptMetadataDialog
+        target={manuscriptMetadataTarget}
+        draft={manuscriptMetadataDraft}
+        plan={manuscriptMetadataPlan}
+        busy={manuscriptRepairBusy}
+        executionError={manuscriptMetadataError}
+        onDraft={(draft) => {
+          manuscriptMetadataDraft = draft;
+        }}
+        onCancel={() => resetManuscriptMetadata()}
+        onConfirm={() => void confirmManuscriptMetadataEdit()}
       />
     {/if}
     <div class="practice-bar" aria-label="Writing progress">

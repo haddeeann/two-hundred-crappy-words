@@ -6,6 +6,7 @@
     ReconciledManuscriptItem,
     ReconciledManuscriptScene,
   } from "./source-reconciliation";
+  import type { ManuscriptOutlineMetadata } from "./structure";
 
   interface Props {
     result: Exclude<ManuscriptProjectLoadResult, { kind: "absent" }>;
@@ -16,6 +17,7 @@
     onRefresh: () => void;
     onOpenSource: (path: string, fingerprint: string) => void;
     onRepairSource: (key: string) => void;
+    onEditMetadata: (itemId: string) => void;
     onUndoRepair: () => void;
   }
 
@@ -28,6 +30,7 @@
     onRefresh,
     onOpenSource,
     onRepairSource,
+    onEditMetadata,
     onUndoRepair,
   }: Props = $props();
 
@@ -101,10 +104,32 @@
   </div>
 {/snippet}
 
+{#snippet metadataRows(item: ManuscriptOutlineMetadata)}
+  {#if item.synopsis}<small class="synopsis">{item.synopsis}</small>{/if}
+  {#if item.status || item.pov || item.location || item.storyDate || item.targetWords || item.labels?.length}
+    <div class="metadata" aria-label="Outline details">
+      {#if item.status}<span>Status · {item.status}</span>{/if}
+      {#if item.pov}<span>POV · {item.pov}</span>{/if}
+      {#if item.location}<span>Location · {item.location}</span>{/if}
+      {#if item.storyDate}<span>Date · {item.storyDate}</span>{/if}
+      {#if item.targetWords}<span>Target · {item.targetWords.toLocaleString()} words</span>{/if}
+      {#each item.labels ?? [] as label (label)}<span>#{label}</span>{/each}
+    </div>
+  {/if}
+  {#if item.notes}<small class="planning-notes">Notes · {item.notes}</small>{/if}
+{/snippet}
+
 {#snippet sceneRow(scene: ReconciledManuscriptScene)}
   <li class="scene-row">
     {@render sourceRow(scene.item.title, scene.source, "scene-source", `${scene.item.id}:source`)}
+    {@render metadataRows(scene.item)}
     {#if !scene.item.includeInCompile}<small>Excluded from compile</small>{/if}
+    <button
+      type="button"
+      class="details"
+      disabled={repairBusy}
+      onclick={() => onEditMetadata(scene.item.id)}
+    >Edit details…</button>
   </li>
 {/snippet}
 
@@ -112,7 +137,13 @@
   <li class="chapter-row">
     <div class="chapter-heading">
       <strong>{chapter.item.title}</strong>
-      {#if chapter.item.status}<small>{chapter.item.status}</small>{/if}
+      {@render metadataRows(chapter.item)}
+      <button
+        type="button"
+        class="details"
+        disabled={repairBusy}
+        onclick={() => onEditMetadata(chapter.item.id)}
+      >Edit details…</button>
     </div>
     {#if chapter.folder && chapter.folder.kind !== "ready"}
       <small class="source-warning">{chapter.folder.message}</small>
@@ -234,6 +265,31 @@
   .chapter-heading strong {
     color: #d9d9d9;
   }
+  .synopsis,
+  .planning-notes {
+    margin-top: 0.18rem;
+    white-space: pre-wrap;
+    line-height: 1.35;
+  }
+  .synopsis {
+    color: #b7b7b7;
+  }
+  .planning-notes {
+    color: #929292;
+  }
+  .metadata {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+    margin-top: 0.18rem;
+  }
+  .metadata span {
+    padding: 0.1rem 0.28rem;
+    border-radius: 999px;
+    background: #30363b;
+    color: #aebdca;
+    font-size: 0.67rem;
+  }
   .overview-source {
     margin-top: 0.28rem;
     padding-left: 0.45rem;
@@ -261,6 +317,18 @@
     background: #26323d;
     color: #b8d5ee;
     font: inherit;
+    cursor: pointer;
+  }
+  .details {
+    width: fit-content;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #aebdca;
+    font: inherit;
+    text-decoration: underline;
+    text-decoration-color: #53616c;
+    text-underline-offset: 2px;
     cursor: pointer;
   }
   .repair-status {
