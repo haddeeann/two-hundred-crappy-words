@@ -1,6 +1,6 @@
 # Current work
 
-Last updated: 2026-08-22
+Last updated: 2026-08-25
 
 ## Active milestone
 
@@ -10,26 +10,28 @@ Connected lore is complete. The active milestone makes a long manuscript underst
 
 ## Active slice
 
-**0.6.6 — Previewed stable-ID source-path repair**
+**0.6.7 — Previewed chapter and scene metadata editing**
 
 ### Intended outcome
 
-Let a writer repair an outline binding after a uniquely identified Markdown source moves, while preserving the rest of the structure byte-for-byte in meaning and never moving or rewriting prose.
+Let a writer edit the approved descriptive metadata for a chapter or scene through a precise, reversible structure-only preview, then establish the same accessible mutation semantics that reorder will reuse.
 
 ### Acceptance criteria
 
-- [ ] Offer repair only for a binding with a unique stable note ID at one verified moved candidate; keep path-only missing, duplicate-ID, identity-mismatch, occupied-old-path, and converged-path cases unavailable.
-- [ ] Show a keyboard-contained preview naming the manuscript item, old path, suggested path, and exact structure-field change; cancellation must leave every project byte unchanged.
-- [ ] Reparse the supported-version structure, preserve unknown fields and all unaffected ordering/metadata, update only the previewed binding path, and validate the complete replacement before confirmation is enabled.
-- [ ] On confirmation, stable-read and fingerprint-check the structure and candidate source again, compare the candidate note ID, and abort visibly on any external change or newly introduced conflict.
-- [ ] Replace the structure through a contained atomic write, reread it before success, refresh the outline immediately, and retain one session-only inverse only while the just-written fingerprint still matches.
-- [ ] Never move or rewrite Markdown, award no daily credit for repair/undo, and pass focused rollback/race tests, Svelte/TypeScript checks, frontend/package builds, and disposable packaged macOS QA.
+- [ ] Define a compact editor for title, synopsis, point of view, location, story date, status, labels, notes, and optional word target using the approved version-one bounds and omission semantics.
+- [ ] Preview the exact old and new values plus JSON field paths in a keyboard-contained confirmation; cancellation must leave every project byte unchanged.
+- [ ] Preserve unknown supported fields and unaffected order/metadata, validate the complete replacement, and freeze the consented preview until confirmation or cancellation.
+- [ ] Recheck the structure fingerprint immediately before the same contained atomic replacement used by path repair, reread before success, and expose one guarded session-only Undo.
+- [ ] Refresh the outline immediately, keep Markdown and daily credit unchanged, and make missing optional metadata distinguishable from intentionally blank text where the format permits it.
+- [ ] Pass focused validation/race/undo tests, Svelte/TypeScript checks, frontend/package builds, and disposable packaged macOS QA before beginning reorder controls.
 
 ## Next slices
 
-1. 0.6.7 — Add previewed chapter/scene metadata editing without changing prose, then begin accessible reorder semantics.
+1. 0.6.8 — Add accessible previewed reorder semantics for scenes and chapters, then begin the synopsis-focused corkboard.
 
 ## Completed checkpoint
+
+- Slice 0.6.6 is complete. Only a binding whose stable note ID resolves uniquely to one verified moved Markdown source, with the old path unoccupied, now exposes **Review path repair…**. The keyboard-contained modal freezes the consented manuscript item, binding, old and suggested paths, stable ID, and exact JSON field. Confirmation performs a fresh full lore scan, stable source/ID and structure checks, replans the same replacement, then uses a picker-scope-bound native same-directory atomic replacement and exact reread. Supported unknown fields and unaffected values/order survive the validated JSON-domain clone; prose is never moved or rewritten. Success refreshes the outline immediately and offers one session-only exact inverse, which disappears as soon as any external structure change breaks its fingerprint. Packaged macOS QA covered visual/accessibility semantics, Tab/Shift+Tab/Escape cancellation with all hashes stable, successful repair, preserved unknown fields, byte-stable Markdown, `0 / 200`, exact original-byte Undo, stale-preview refusal, duplicate-ID refusal, and external Undo invalidation. QA also caught and corrected reactive-proxy cloning and a parallel native-fixture collision. The full frontend suite has 315 passing tests across forty-six files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS app builds pass, and Rust formatting, repeated tests, and checks pass.
 
 - Slice 0.6.5 is complete. When and only when the fixed root structure file is absent and the lore index is ready, the app offers an explicit creation action. Its keyboard-contained modal previews either one empty manuscript or a bounded import from the world project's preferred manuscript folder, the selected directory, or a conventional root `Manuscript` folder. Import maps immediate directories to chapter containers, a case-insensitive single `chapter.md` to overview notes, remaining immediate Markdown to naturally ordered scenes, and top-level Markdown to loose scenes; nested/non-Markdown/hidden paths are listed as skipped rather than silently disappearing. It examines at most 20,000 visible entries, relies on the approved 10,000-item and source-byte limits, stable-reads every accepted source, generates local UUIDs, and reuses only lore IDs unique across the current index. Symbolic links, unreadable folders, duplicate IDs, unsafe paths, limits, changed sources, and changed directory layouts block creation. Confirmation rechecks absence, layout, source fingerprints, IDs, and the fully validated serialized structure before a native create-new write; it never creates or rewrites Markdown. Packaged macOS QA covered visual and accessibility semantics, selected title, empty/import switching, exact natural hierarchy, visible skips, Escape cancellation with absence preserved, a post-preview scene addition refused with no write, refreshed successful import, immediate outline refresh, retained `0 / 200`, byte-stable Markdown hashes, reused unique IDs, and an external version-99 structure collision that remained hash/content stable. The full suite has 308 passing tests across forty-five files, Svelte/TypeScript checks report zero errors and warnings, and frontend plus final packaged macOS builds pass.
 
@@ -70,7 +72,7 @@ Let a writer repair an outline binding after a uniquely identified Markdown sour
 
 ## Blockers and decision gates
 
-No blocker. Slice 0.6.6 is the first replacement write to an existing structure, so it must add the approved compare-before-write, atomic replacement, reread, and guarded in-session undo boundary before any reorder or metadata mutation reuses that path.
+No blocker. Slice 0.6.6 established the approved compare-before-write, atomic replacement, exact reread, frozen preview, and guarded in-session Undo boundary. Metadata editing should reuse that boundary rather than introduce another structure-writing path.
 
 ## Handoff protocol
 

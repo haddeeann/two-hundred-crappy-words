@@ -69,6 +69,8 @@ The app now counts words and stores progress toward its default 200-word target 
 - Explicitly create the first portable structure as an empty manuscript or from a full preview of existing Markdown
 - Import immediate folders as chapter containers, `chapter.md` as optional overview notes, and naturally ordered Markdown files as scenes while listing every skipped visible path
 - Recheck the import layout and every source before a create-new write, refuse external changes or an existing structure, and never rewrite imported Markdown
+- Preview and repair a uniquely moved stable-ID manuscript source by changing only its exact structure binding
+- Recheck the structure and Markdown identity before atomic replacement, preserve unknown supported JSON fields, and offer one fingerprint-guarded session Undo
 
 ## Current limitations
 
@@ -76,7 +78,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Ordinary folders still use their absolute path as local progress identity until explicitly adopted
 - Cursor position and editor scroll position are not restored yet
 - Folders and ordinary files cannot be renamed, moved, or deleted in the app; only eligible stable-ID lore notes have the previewed rename flow
-- Manuscript structure can be inspected and initially created/imported, but metadata editing, source repair, reordering, corkboard views, counts, and compile/export are still in progress
+- Manuscript structure can be inspected, initially created/imported, and repaired after a uniquely identified source move, but metadata editing, path-only replacement, reordering, corkboard views, counts, and compile/export are still in progress
 - The first importer intentionally maps only immediate Markdown and one level of chapter folders; deeper folders remain visible as skipped and require later manual structure tools
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
 - The frameless window does not yet provide maximize/full-screen controls
@@ -138,7 +140,7 @@ static/                   Static images and icons
 
 ## Status
 
-This is a functional prototype. Its trustworthy-editor, daily-practice, world-project, and connected-lore milestones have passed automated and hands-on macOS QA. Connected lore includes approved link semantics, a bounded incrementally refreshed memory-only index, keyboard completion, outgoing/backlink navigation, project search, read-only side references, safe missing-note creation, bounded unlinked mentions, previewed no-clobber lore renames with conflict-aware link repair, and session-only Back/Forward navigation that revalidates every destination. The active novel-structure milestone now has an approved portable format, bounded parser and source reconciliation, a read-only outline, and explicit previewed create-new/import of the first structure file; the next slice adds compare-before-write repair for uniquely moved stable-ID sources.
+This is a functional prototype. Its trustworthy-editor, daily-practice, world-project, and connected-lore milestones have passed automated and hands-on macOS QA. Connected lore includes approved link semantics, a bounded incrementally refreshed memory-only index, keyboard completion, outgoing/backlink navigation, project search, read-only side references, safe missing-note creation, bounded unlinked mentions, previewed no-clobber lore renames with conflict-aware link repair, and session-only Back/Forward navigation that revalidates every destination. The active novel-structure milestone now has an approved portable format, bounded parser and source reconciliation, a read-only outline, explicit previewed create-new/import, and previewed atomic repair plus exact in-session Undo for uniquely moved stable-ID sources. The next slice adds descriptive chapter and scene metadata editing through the same guarded structure-write boundary.
 
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 

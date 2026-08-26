@@ -172,6 +172,8 @@ Every later structural mutation must:
 
 A reorder changes only the structure file. After a successful in-session reorder, Undo may write the exact inverse only if the file still matches the app's just-written fingerprint. Undo is not persisted and is not a substitute for project backup or version control.
 
+The first shipped replacement mutation applies this boundary to stable-ID source-path repair. The action is offered only when one verified indexed Markdown note owns the binding ID, the declared path is unoccupied, and no identity or resolved-path conflict exists. Its modal freezes the exact old path, suggested path, note ID, and JSON field until cancel or confirm. Confirmation freshly scans indexed Markdown, rereads both source and structure, and refuses any changed fingerprint, duplicate ID, occupied path, or different plan. It consistently formats the complete validated JSON replacement while retaining unknown supported-version fields and all unaffected values; it never moves or rewrites Markdown. The one exact in-memory Undo disappears when any other structure edit changes the just-written fingerprint.
+
 Split and merge are later multi-file transactions. They must preview new and changed paths, use create-new writes for destinations, guard every existing source, update structure only after prose writes succeed, and exactly roll back completed steps on failure. If the implementation cannot prove that boundary on a filesystem, it must refuse the operation rather than risk partial loss.
 
 ## Deterministic compile contract
