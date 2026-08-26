@@ -82,7 +82,7 @@ Goal: support a long manuscript as scenes and chapters while retaining ordinary 
 - [x] Add chapter and scene metadata: synopsis, point of view, location, story date, status, and notes.
 - [x] Add a reorderable corkboard over the completed outline and sibling reorder controls.
 - [x] Show scene, chapter, and manuscript word counts and targets.
-- [ ] Add manuscript/reference split views and focus mode.
+- [x] Add manuscript/reference split views and focus mode.
 - [ ] Support safe scene splitting, merging, and reordering.
 - [ ] Compile/export to Markdown and plain text, then add DOCX and PDF after format review.
 

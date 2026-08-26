@@ -10,26 +10,28 @@ Connected lore is complete. The active milestone makes a long manuscript underst
 
 ## Active slice
 
-**0.6.11 — Manuscript/reference split views and focus mode**
+**0.6.12a — Cross-container scene moves**
 
 ### Intended outcome
 
-Let a writer keep one verified manuscript or reference source visible beside the active draft, then deliberately reduce the interface to the writing surface without changing source ownership, save/recovery behavior, or daily-credit semantics.
+Move an existing loose scene into a chapter, a chapter scene into the top level, or a scene between chapters without rewriting prose, changing its stable identity, or hiding the exact old/new hierarchy from the writer.
 
 ### Acceptance criteria
 
-- [ ] Inventory and reuse the existing read-only lore reference boundary instead of introducing another source reader or unguarded navigation path.
-- [ ] Define how a manuscript source opens beside the active draft, how the writer swaps or closes it, and how keyboard focus returns without losing editor selection.
-- [ ] Define focus mode as an ephemeral presentation state: keep autosave, recovery, conflicts, progress, and the active file intact while hiding nonessential navigation.
-- [ ] Provide explicit, keyboard-accessible entry and exit actions with no reliance on hover, drag, or a global shortcut alone.
-- [ ] Revalidate split-view sources after external changes and show unavailable state rather than stale prose.
-- [ ] Add automated state coverage and packaged macOS QA for split opening/replacement/closing, focus-mode entry/exit, unsaved drafts, external changes, and restart clearing.
+- [ ] Define a pure relocation planner over the raw version-one JSON so the complete scene object, unknown supported fields, source binding, and stable ID survive unchanged.
+- [ ] Treat top-level loose scenes and each chapter's `children` array as explicit destinations; do not infer a chapter from filesystem location or move the Markdown file.
+- [ ] Preview the manuscript, scene, old container/position, destination container/position, and exact affected JSON arrays before confirmation.
+- [ ] Freshly reread and regenerate the same relocation before one atomic structure replacement; reuse the shared fingerprint-guarded one-step Undo.
+- [ ] Provide a keyboard-contained destination/position workflow and return focus to the moved scene in its new outline location.
+- [ ] Cover loose-to-chapter, chapter-to-loose, chapter-to-chapter, same-container refusal, stale preview, unknown-field preservation, exact Undo, and packaged macOS QA.
 
 ## Next slices
 
-1. 0.6.12 — Support safe scene splitting, merging, and cross-container moves.
+1. 0.6.12b — Support safe scene splitting and adjacent-scene merging with previewed multi-file transactions.
 
 ## Completed checkpoint
+
+- Slice 0.6.11 is complete. Every fingerprint-verified manuscript scene, chapter prose source, and chapter overview now offers an explicit **Reference** action in both outline and corkboard when an active draft exists. It rechecks the manuscript fingerprint, then reuses the established contained, stable, read-only lore reference loader, replacement behavior, live watcher invalidation, navigation history, Escape close, Open-in-editor path, and focus restoration; no second reader or source copy was introduced. Corkboard reference entry restores the pre-board editor selection before opening the split. The new ephemeral **Focus** layout hides project navigation and connections, retains filename, save state, daily progress, the active draft, and any open reference, narrows a solo editor to a calm reading width, preserves selection, exposes a visible **Exit focus**, and resets on project replacement or restart. Packaged macOS QA covered outline and corkboard entry, exact selection restoration, split visual/accessibility semantics, Focus with and without a reference, external reference edit/removal/recovery, Escape close, a deliberately unwritable unsaved draft through Focus entry/exit and later save, unchanged daily semantics, and restart clearing. QA corrected one duplicated Corkboard accessible verb before the final package. The temporary fixture returned to its exact original hashes. The frontend suite has 335 passing tests across fifty files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, and four native tests plus Rust formatting pass.
 
 - Slice 0.6.10 is complete. The stable reconciliation read now counts each authoritative `ready` prose binding with the existing deterministic Unicode tokenizer while excluding a valid leading structured-note metadata block. A shared memory-only summary powers both outline and corkboard, so scenes show verified words and optional targets, chapters roll up their one-file prose or child scenes, and manuscripts show included totals. Chapter overview notes never count as prose; parent and child compile exclusions propagate into separate excluded totals; moved, missing, conflicting, ambiguous, unsafe, unreadable, unstable, oversized, or limit-blocked sources produce explicit partial/unavailable language rather than an inferred number. No count writes the structure, Markdown, app data, or daily ledger. Packaged macOS QA covered a target-bearing chapter, a target-bearing ready scene, a moved unavailable scene, an excluded ready scene, identical outline/corkboard totals, readable laptop layout, and a live external edit from six to nine words and back while Today stayed `0 / 200`. The temporary structure and Markdown fixture returned to their exact original SHA-256 hashes. The frontend suite has 333 passing tests across forty-nine files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, four native tests and Rust formatting pass, and no known moderate/high production dependency advisory remains.
 

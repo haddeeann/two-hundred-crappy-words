@@ -248,3 +248,12 @@ The recommended first corkboard is a dedicated main-pane planning workspace. Cha
 Why: stacked sections keep the complete chapter hierarchy legible on a laptop, avoid nested horizontal scrolling, adapt to narrow widths, and provide a natural linear keyboard traversal. Chapter columns provide stronger at-a-glance spatial comparison but become wide quickly; a freeform canvas is harder to navigate accessibly and would require new portable position metadata before it could be trustworthy.
 
 The user approved the recommended layout and main-pane behavior on 2026-08-25.
+
+## D-028 — Manuscript references reuse the side pane; Focus is ephemeral
+
+- Date: 2026-08-26
+- Status: adopted for the prototype, subject to usability testing
+
+A verified manuscript scene, one-file chapter, or chapter overview can open beside an existing active draft through the same read-only reference pane used by connected lore. The action is explicit in outline and corkboard, rechecks the structural fingerprint before delegating to the existing stable reference loader, replaces at most the current reference, and never opens a second editable copy. Focus mode hides the project sidebar and connected-lore connection panel while retaining the active draft, filename, save state, daily progress, optional reference, and a visible exit action. It is memory-only and resets on project replacement or restart.
+
+Why: writers should be able to consult another scene or chapter note without sacrificing the exact place where they are drafting, but separate reference implementations would create inconsistent stale-source and navigation behavior. A deliberately modest focus layout removes the busiest navigation surfaces while keeping safety and practice feedback visible; retaining an optional reference supports continuity work without making Focus a trap or a separate document mode.
