@@ -169,6 +169,14 @@ Accessibility inspection exposed one level-one manuscript heading, level-two sec
 
 Echo was then made deliberately unwritable and edited to force an unsaved draft plus visible save failure. Opening Corkboard retained the active file's `Save failed` state, and Return restored the exact unsaved sentence while focusing **Open corkboard** in the sidebar. Restoring write access and pressing Command+S saved that sentence normally, proving the visual workspace does not discard the editor's existing save/recovery state. The temporary structure and all added sources were then removed, restoring the original structure and pre-existing Markdown hashes exactly. The frontend suite remains at 328 passing tests across forty-eight files, Svelte/TypeScript checks report zero errors and warnings, and frontend plus packaged macOS app builds pass.
 
+## Milestone 0.6.9b corkboard planning-actions checkpoint
+
+Completed successfully on macOS on 2026-08-25 using Computer Use against a freshly packaged app bundle and a temporary extension of the disposable manuscript. The board contained two ordered chapters and two ordered scenes in Chapter 1. Accessibility inspection exposed **Edit details…** on every card and chapter, plus only the valid named **Earlier** or **Later** sibling actions at each boundary. Visual inspection showed the compact action bars fitting the approved responsive stacked-section layout.
+
+Editing Echo from its corkboard card opened the existing exact metadata planner. Changing its location and status previewed the same JSON paths and old/new values as the outline action; confirmation refreshed the card immediately, returned focus to Echo on the board, left all Markdown byte-stable, and left Today at `14 / 200`. The shared sidebar Undo restored the exact extended-baseline structure SHA-256.
+
+Moving Echo earlier from its card opened the existing reorder preview with the exact chapter `children` array, positions, neighbor, and before/after relationship. Confirmation reordered the board immediately, reversed the available boundary controls, returned focus to Echo, and again left Today at `14 / 200`. **Undo move for Echo** restored Arrival then Echo and the exact extended-baseline structure SHA-256. The temporary scene and chapter were removed afterward, restoring the original structure and existing Markdown hashes exactly. The full frontend suite has 328 passing tests across forty-eight files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, four native tests pass, Rust formatting passes, and the compatible dependency refresh leaves no known moderate/high advisories.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:

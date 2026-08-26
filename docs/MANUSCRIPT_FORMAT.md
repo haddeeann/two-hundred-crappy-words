@@ -178,6 +178,8 @@ The metadata editor applies the same replacement boundary to one selected chapte
 
 The first reorder mutation moves one selected item before its previous sibling or after its next sibling. Top-level chapters and loose scenes share their manuscript's `items` order; a chapter scene moves only inside that chapter's `children` order. The preview names the item, neighbor, direction, one-based positions, container, and exact sibling-array JSON path. Confirmation freshly rereads and derives the same swap, preserves the complete raw item objects, validates and atomically replaces only the structure file, and focuses the moved outline row after success. Cross-chapter transfer is a later move operation rather than an ambiguous extension of this sibling-order action.
 
+The corkboard is a derived view of that same authoritative order, not another manuscript model. It renders vertically stacked chapter sections and exact-position runs of loose scenes, with responsive cards inside each section; it stores no card coordinates, alternate ordering, or app-local planning copy. Its metadata and sibling-order controls invoke the same preview, comparison, atomic replacement, and guarded Undo paths as the compact outline, and return focus to the changed card after success.
+
 Split and merge are later multi-file transactions. They must preview new and changed paths, use create-new writes for destinations, guard every existing source, update structure only after prose writes succeed, and exactly roll back completed steps on failure. If the implementation cannot prove that boundary on a filesystem, it must refuse the operation rather than risk partial loss.
 
 ## Deterministic compile contract
@@ -200,7 +202,7 @@ The first output adapters are Markdown and plain text. They write only to a writ
 
 - The structure file contains writer-authored titles, synopses, notes, and project-relative paths, so it is creative project data and travels with project backups.
 - It contains no absolute path, username, device state, daily history, recovery text, account, telemetry, or permission grant.
-- The app creates no app-local manuscript cache containing prose. Derived outline state remains in memory.
+- The app creates no app-local manuscript cache containing prose. Derived outline and corkboard state remain in memory.
 - No network access is introduced.
 - Version-one `200-crappy-words.project.json` remains unchanged; the new file has its own version and migration policy.
 - Ordinary folders and projects without the structure file retain all current behavior.

@@ -10,27 +10,28 @@ Connected lore is complete. The active milestone makes a long manuscript underst
 
 ## Active slice
 
-**0.6.9 — Synopsis-focused corkboard layout gate**
+**0.6.10 — Verified manuscript word counts and targets**
 
 ### Intended outcome
 
-Deliver the approved dedicated main-pane corkboard with vertically stacked chapter sections and ordered scene cards inside each section, plus loose-scene sections that preserve their exact top-level position; reuse the portable outline order and existing guarded actions without storing separate card coordinates.
+Show trustworthy scene, chapter, and manuscript totals from the same fingerprint-verified sources used by the outline, compare those totals with optional item targets without changing daily-writing credit, and keep unavailable or excluded prose explicit rather than presenting a misleading total.
 
 ### Acceptance criteria
 
-- [x] Confirm whether the corkboard should use the recommended stacked chapter sections, chapter columns, or a different writer-preferred spatial model. The user approved stacked sections on 2026-08-25.
-- [x] Confirm that opening Corkboard intentionally replaces the main editor pane until a scene is opened, while unsaved editor state continues through the existing save/recovery boundary.
-- [x] Define cards that foreground title and synopsis, show only present status/POV/location/date/target/labels, retain unavailable-source warnings, and keep long planning notes behind an explicit expansion.
-- [x] Keep the central structure order authoritative; do not store freeform coordinates or invent a second order. Contiguous loose-scene runs remain in their exact top-level positions.
-- [ ] Complete card-level keyboard traversal for edit-details and reorder actions, mutation focus return, and responsive packaged action QA.
-- [x] Implement the read-only presentation first with verified source opening, board-entry focus, Return-to-editor focus, responsive cards, and unsaved-draft preservation.
-- [ ] Reuse the already verified metadata and reorder mutations from corkboard cards rather than creating a second write path, then complete packaged action QA.
+- [ ] Define one shared structural-count summary over reconciled source states so outline and corkboard cannot disagree.
+- [ ] Count only stable, fingerprint-verified Markdown bodies with the existing deterministic word tokenizer; never infer a count for missing, moved, ambiguous, unsafe, unreadable, unstable, or oversized sources.
+- [ ] Avoid double-counting chapter overview notes and any prose binding reused through an invalid/conflicting structure; respect explicit compile exclusion in aggregate included totals.
+- [ ] Show scene counts and optional target progress, chapter rollups, and a manuscript rollup with clear partial/unavailable language whenever the complete total cannot be verified.
+- [ ] Keep counts read-only and memory-derived: no structure write, Markdown rewrite, persistent cache, or daily-credit change.
+- [ ] Add focused automated coverage and packaged macOS QA for complete, excluded, target-bearing, unavailable, and externally refreshed sources.
 
 ## Next slices
 
-1. 0.6.10 — Show verified scene, chapter, and manuscript word counts against optional targets.
+1. 0.6.11 — Add manuscript/reference split views and a distraction-reducing focus mode.
 
 ## Completed checkpoint
+
+- Slice 0.6.9 is complete. The approved main-pane corkboard now pairs its exact-order stacked chapter and loose-scene sections with the same guarded **Edit details…**, **Earlier**, and **Later** mutations already verified in the outline. Controls appear only for valid sibling moves, remain keyboard accessible, disable during structure work, and return focus to the changed card after confirmation. Metadata and reorder dialogs still freeze the exact semantic preview, freshly compare the portable structure, atomically replace only that file, and feed the shared fingerprint-guarded one-step Undo; no parallel board write path, coordinate store, Markdown edit, or daily credit exists. Packaged macOS QA covered a two-chapter/two-scene board, exact metadata and reorder previews, immediate card/chip/order refresh, moved-card focus, boundary-control reversal, shared Undo, exact baseline structure restoration, byte-stable Markdown, and an unchanged `14 / 200` daily total. The disposable fixture was restored to its original structure and source hashes. The frontend suite has 328 passing tests across forty-eight files, Svelte/TypeScript checks report zero errors and warnings, frontend plus packaged macOS builds pass, four native tests and Rust formatting pass, and the dependency refresh removes all known moderate/high advisories; three low-severity development-server cookie advisories remain upstream in the current compatible SvelteKit line.
 
 - Slice 0.6.9a is complete. The approved corkboard now opens per manuscript as a dedicated main-pane planning workspace without changing or duplicating portable data. It renders the exact top-level sequence as stacked chapter sections and contiguous loose-scene sections, then lays each chapter's children out as responsive ordered cards. Cards foreground title and synopsis, show only present descriptive chips, identify compile exclusion, keep long planning notes in native disclosures, retain unavailable-source warnings, and open only fingerprint-verified scenes, chapter prose, or chapter overviews through the existing guarded editor path. Opening the board does not replace the active file or its save/recovery state; Return restores focus to the invoking sidebar action, while opening a verified card focuses the editor. Packaged macOS QA covered the full four-item mixed hierarchy, visual laptop layout, heading/section/card accessibility, keyboard entry and notes expansion, separate loose-scene runs, an empty chapter, a moved non-actionable scene, verified scene opening, unchanged structure hash, and a deliberately unwritable unsaved draft that survived a board round trip before saving normally. The disposable structure and added sources were restored exactly afterward. The frontend suite remains at 328 passing tests across forty-eight files, Svelte/TypeScript checks report zero errors and warnings, and frontend plus packaged macOS app builds pass.
 
