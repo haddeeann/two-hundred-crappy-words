@@ -366,6 +366,9 @@
   let manuscriptOutlineFocusItemId = $state("");
   let manuscriptOutlineFocusRevision = $state(0);
   let manuscriptCorkboardId = $state("");
+  let manuscriptCorkboardFocusItemId = $state("");
+  let manuscriptCorkboardFocusRevision = $state(0);
+  let manuscriptMutationSurface: "outline" | "corkboard" = "outline";
   let lastDailyProgressFailure: {
     path: string;
     revision: number;
@@ -769,6 +772,7 @@
     resetManuscriptMetadata(true);
     resetManuscriptReorder(true);
     manuscriptCorkboardId = "";
+    manuscriptCorkboardFocusItemId = "";
     loreIndexPhase = "indexing";
     void refreshLoreIndex(path);
   }
@@ -1090,7 +1094,10 @@
     manuscriptRepairBusy = false;
   }
 
-  function beginManuscriptMetadataEdit(itemId: string): void {
+  function beginManuscriptMetadataEdit(
+    itemId: string,
+    surface: "outline" | "corkboard" = "outline",
+  ): void {
     if (!itemId || worldProjectBusy || manuscriptRepairBusy) return;
     const editor = manuscriptMetadataEditorState(manuscriptProject, itemId);
     if (editor.kind !== "ready") {
@@ -1102,6 +1109,7 @@
     manuscriptMetadataBaseProject = manuscriptProject;
     manuscriptMetadataDraft = { ...editor.draft };
     manuscriptMetadataError = "";
+    manuscriptMutationSurface = surface;
   }
 
   function resetManuscriptMetadata(force = false): void {
@@ -1142,16 +1150,19 @@
       return;
     }
     const itemTitle = plan.target.itemTitle;
+    const focusSurface = manuscriptMutationSurface;
     manuscriptProject = result.project;
     manuscriptRepairUndo = result.undo;
     manuscriptRepairNotice = `Updated details for ${itemTitle}. No Markdown file was changed.`;
     manuscriptRepairBusy = false;
     resetManuscriptMetadata(true);
+    focusManuscriptMutationItem(plan.target.itemId, focusSurface);
   }
 
   function beginManuscriptReorder(
     itemId: string,
     direction: ManuscriptReorderDirection,
+    surface: "outline" | "corkboard" = "outline",
   ): void {
     if (!itemId || worldProjectBusy || manuscriptRepairBusy) return;
     const plan = planManuscriptReorder(manuscriptProject, itemId, direction);
@@ -1161,6 +1172,7 @@
     }
     manuscriptReorderPlan = plan;
     manuscriptReorderError = "";
+    manuscriptMutationSurface = surface;
   }
 
   function resetManuscriptReorder(force = false): void {
@@ -1201,7 +1213,19 @@
     manuscriptRepairNotice = `Moved ${plan.target.itemTitle} ${plan.target.direction}. No Markdown file was changed.`;
     manuscriptRepairBusy = false;
     resetManuscriptReorder(true);
-    manuscriptOutlineFocusItemId = plan.target.itemId;
+    focusManuscriptMutationItem(plan.target.itemId, manuscriptMutationSurface);
+  }
+
+  function focusManuscriptMutationItem(
+    itemId: string,
+    surface: "outline" | "corkboard",
+  ): void {
+    if (surface === "corkboard" && manuscriptCorkboardId) {
+      manuscriptCorkboardFocusItemId = itemId;
+      manuscriptCorkboardFocusRevision += 1;
+      return;
+    }
+    manuscriptOutlineFocusItemId = itemId;
     manuscriptOutlineFocusRevision += 1;
   }
 
@@ -1216,6 +1240,7 @@
       return;
     }
     dismissLoreCompletion();
+    manuscriptCorkboardFocusItemId = "";
     manuscriptCorkboardId = manuscriptId;
   }
 
@@ -4080,8 +4105,13 @@
         {#if manuscriptCorkboard}
           <ManuscriptCorkboard
             manuscript={manuscriptCorkboard}
+            busy={manuscriptRepairBusy}
+            focusItemId={manuscriptCorkboardFocusItemId}
+            focusRevision={manuscriptCorkboardFocusRevision}
             onClose={closeManuscriptCorkboard}
             onOpenSource={(path, fingerprint) => void openManuscriptSourceFromCorkboard(path, fingerprint)}
+            onEditMetadata={(itemId) => beginManuscriptMetadataEdit(itemId, "corkboard")}
+            onReorder={(itemId, direction) => beginManuscriptReorder(itemId, direction, "corkboard")}
           />
         {:else}
           <textarea

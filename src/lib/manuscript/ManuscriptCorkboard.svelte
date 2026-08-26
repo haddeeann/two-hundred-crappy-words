@@ -1,41 +1,75 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import type {
     ManuscriptSourceState,
     ReconciledManuscript,
     ReconciledManuscriptChapter,
     ReconciledManuscriptScene,
   } from "./source-reconciliation";
+  import type { ManuscriptReorderDirection } from "./reorder";
   import type { ManuscriptOutlineMetadata } from "./structure";
 
   interface Props {
     manuscript: ReconciledManuscript;
+    busy: boolean;
+    focusItemId: string;
+    focusRevision: number;
     onClose: () => void;
     onOpenSource: (path: string, fingerprint: string) => void;
+    onEditMetadata: (itemId: string) => void;
+    onReorder: (itemId: string, direction: ManuscriptReorderDirection) => void;
+  }
+
+  interface PositionedScene {
+    scene: ReconciledManuscriptScene;
+    topLevelIndex: number;
   }
 
   type CorkboardBlock =
-    | { kind: "chapter"; chapter: ReconciledManuscriptChapter }
-    | { kind: "loose-scenes"; key: string; scenes: ReconciledManuscriptScene[] };
+    | { kind: "chapter"; chapter: ReconciledManuscriptChapter; topLevelIndex: number }
+    | { kind: "loose-scenes"; key: string; scenes: PositionedScene[] };
 
-  let { manuscript, onClose, onOpenSource }: Props = $props();
+  let {
+    manuscript,
+    busy,
+    focusItemId,
+    focusRevision,
+    onClose,
+    onOpenSource,
+    onEditMetadata,
+    onReorder,
+  }: Props = $props();
   let board = $state<HTMLElement>();
   const blocks = $derived.by(() => corkboardBlocks(manuscript));
 
   onMount(() => board?.focus());
 
+  $effect(() => {
+    const itemId = focusItemId;
+    const revision = focusRevision;
+    if (!itemId || revision < 1) return;
+    void tick().then(() => {
+      document.getElementById(`corkboard-item-${itemId}`)?.focus();
+    });
+  });
+
   function corkboardBlocks(value: ReconciledManuscript): CorkboardBlock[] {
     const result: CorkboardBlock[] = [];
-    for (const item of value.items) {
+    for (let topLevelIndex = 0; topLevelIndex < value.items.length; topLevelIndex += 1) {
+      const item = value.items[topLevelIndex]!;
       if ("children" in item) {
-        result.push({ kind: "chapter", chapter: item });
+        result.push({ kind: "chapter", chapter: item, topLevelIndex });
         continue;
       }
       const previous = result.at(-1);
       if (previous?.kind === "loose-scenes") {
-        previous.scenes.push(item);
+        previous.scenes.push({ scene: item, topLevelIndex });
       } else {
-        result.push({ kind: "loose-scenes", key: item.item.id, scenes: [item] });
+        result.push({
+          kind: "loose-scenes",
+          key: item.item.id,
+          scenes: [{ scene: item, topLevelIndex }],
+        });
       }
     }
     return result;
@@ -79,6 +113,33 @@
   {/if}
 {/snippet}
 
+{#snippet itemActions(
+  itemId: string,
+  itemTitle: string,
+  canMoveEarlier: boolean,
+  canMoveLater: boolean,
+)}
+  <div class="item-actions" aria-label={`Plan ${itemTitle}`}>
+    <button type="button" disabled={busy} onclick={() => onEditMetadata(itemId)}>Edit details…</button>
+    {#if canMoveEarlier}
+      <button
+        type="button"
+        disabled={busy}
+        aria-label={`Move ${itemTitle} earlier`}
+        onclick={() => onReorder(itemId, "earlier")}
+      >↑ Earlier</button>
+    {/if}
+    {#if canMoveLater}
+      <button
+        type="button"
+        disabled={busy}
+        aria-label={`Move ${itemTitle} later`}
+        onclick={() => onReorder(itemId, "later")}
+      >↓ Later</button>
+    {/if}
+  </div>
+{/snippet}
+
 {#snippet sourceAction(label: string, state: ManuscriptSourceState)}
   {#if state.kind === "ready"}
     <button
@@ -93,8 +154,17 @@
   {/if}
 {/snippet}
 
-{#snippet sceneCard(scene: ReconciledManuscriptScene)}
-  <article class="scene-card" aria-labelledby={`corkboard-scene-${scene.item.id}`}>
+{#snippet sceneCard(
+  scene: ReconciledManuscriptScene,
+  canMoveEarlier: boolean,
+  canMoveLater: boolean,
+)}
+  <article
+    class="scene-card"
+    id={`corkboard-item-${scene.item.id}`}
+    tabindex="-1"
+    aria-labelledby={`corkboard-scene-${scene.item.id}`}
+  >
     <div class="card-number" aria-hidden="true">Scene</div>
     <h3 id={`corkboard-scene-${scene.item.id}`}>{scene.item.title}</h3>
     {#if scene.item.synopsis}
@@ -106,11 +176,17 @@
     <div class="card-source">
       {@render sourceAction("Open scene", scene.source)}
     </div>
+    {@render itemActions(scene.item.id, scene.item.title, canMoveEarlier, canMoveLater)}
   </article>
 {/snippet}
 
-{#snippet chapterSection(chapter: ReconciledManuscriptChapter)}
-  <section class="chapter" aria-labelledby={`corkboard-chapter-${chapter.item.id}`}>
+{#snippet chapterSection(chapter: ReconciledManuscriptChapter, topLevelIndex: number)}
+  <section
+    class="chapter"
+    id={`corkboard-item-${chapter.item.id}`}
+    tabindex="-1"
+    aria-labelledby={`corkboard-chapter-${chapter.item.id}`}
+  >
     <header class="chapter-header">
       <div>
         <span class="section-label">Chapter</span>
@@ -121,6 +197,12 @@
       <div class="chapter-sources">
         {#if chapter.overview}{@render sourceAction("Open chapter overview", chapter.overview)}{/if}
         {#if chapter.source}{@render sourceAction("Open chapter prose", chapter.source)}{/if}
+        {@render itemActions(
+          chapter.item.id,
+          chapter.item.title,
+          topLevelIndex > 0,
+          topLevelIndex < manuscript.items.length - 1,
+        )}
       </div>
     </header>
 
@@ -129,8 +211,12 @@
     {/if}
     {#if chapter.children.length > 0}
       <div class="cards">
-        {#each chapter.children as scene (scene.item.id)}
-          {@render sceneCard(scene)}
+        {#each chapter.children as scene, childIndex (scene.item.id)}
+          {@render sceneCard(
+            scene,
+            childIndex > 0,
+            childIndex < chapter.children.length - 1,
+          )}
         {/each}
       </div>
     {:else if !chapter.source}
@@ -158,7 +244,7 @@
     <div class="board-sections">
       {#each blocks as block (block.kind === "chapter" ? block.chapter.item.id : block.key)}
         {#if block.kind === "chapter"}
-          {@render chapterSection(block.chapter)}
+          {@render chapterSection(block.chapter, block.topLevelIndex)}
         {:else}
           <section class="chapter loose" aria-labelledby={`loose-scenes-${block.key}`}>
             <header class="chapter-header">
@@ -168,8 +254,12 @@
               </div>
             </header>
             <div class="cards">
-              {#each block.scenes as scene (scene.item.id)}
-                {@render sceneCard(scene)}
+              {#each block.scenes as positioned (positioned.scene.item.id)}
+                {@render sceneCard(
+                  positioned.scene,
+                  positioned.topLevelIndex > 0,
+                  positioned.topLevelIndex < manuscript.items.length - 1,
+                )}
               {/each}
             </div>
           </section>
@@ -201,6 +291,7 @@
   .chapter-sources small { max-width: 20rem; text-align: right; }
   .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr)); gap: 0.75rem; }
   .scene-card { display: flex; min-height: 10rem; flex-direction: column; padding: 0.85rem; border: 1px solid #49443b; border-radius: 5px; background: #2a2824; box-shadow: 0 3px 12px rgb(0 0 0 / 20%); }
+  .scene-card:focus-visible, .chapter:focus-visible { outline: 2px solid #75beff; outline-offset: 2px; }
   .scene-card h3 { margin-top: 0.1rem; color: #f0eee8; font-size: 0.96rem; }
   .synopsis, .empty-synopsis { margin-top: 0.45rem; line-height: 1.45; white-space: pre-wrap; }
   .synopsis { color: #c6c1b8; }
@@ -215,6 +306,9 @@
   .open-source { padding: 0.38rem 0.55rem; border-color: #4d6980; background: #27343f; color: #b9d9f1; }
   small { overflow-wrap: anywhere; color: #858585; font-size: 0.68rem; }
   .source-warning { margin-top: 0.55rem; color: #efb0a6; font-size: 0.75rem; line-height: 1.4; }
+  .item-actions { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.65rem; padding-top: 0.55rem; border-top: 1px solid #45413a; }
+  .item-actions button { padding: 0.3rem 0.45rem; border-color: #4d5357; background: #2b3033; color: #becbd3; font-size: 0.73rem; }
+  .item-actions button:disabled { opacity: 0.55; cursor: default; }
   .empty-section, .empty-board { color: #8f8f8f; }
   .empty-board { max-width: 78rem; margin: 3rem auto; text-align: center; }
   .empty-board h2 { color: #cfcfcf; }
