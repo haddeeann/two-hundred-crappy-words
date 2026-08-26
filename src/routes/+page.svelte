@@ -166,6 +166,7 @@
     type LoreScanIssue,
     type LoreScanResult,
   } from "$lib/lore/scan";
+  import { buildLoreProjectIndexCooperatively } from "$lib/lore/index";
   import { LoreIndexSession } from "$lib/lore/session";
   import {
     LoreChangeMonitor,
@@ -179,6 +180,7 @@
   import type { LoreProjectIndex, SourceRange } from "$lib/lore/types";
   import ManuscriptCreationDialog from "$lib/manuscript/ManuscriptCreationDialog.svelte";
   import ManuscriptOutline from "$lib/manuscript/ManuscriptOutline.svelte";
+  import ManuscriptRepairDialog from "$lib/manuscript/ManuscriptRepairDialog.svelte";
   import {
     planManuscriptCreation,
     retitleManuscriptCreationPlan,
@@ -191,6 +193,16 @@
     loadManuscriptProject,
     type ManuscriptProjectLoadResult,
   } from "$lib/manuscript/source-reconciliation";
+  import {
+    planManuscriptSourceRepair,
+    type ManuscriptSourceRepairPlan,
+  } from "$lib/manuscript/repair";
+  import {
+    executeManuscriptSourceRepair,
+    undoManuscriptSourceRepair,
+    type ManuscriptRepairIo,
+    type ManuscriptRepairUndo,
+  } from "$lib/manuscript/repair-execution";
   import { MANUSCRIPT_STRUCTURE_FILE } from "$lib/manuscript/structure";
 
   interface SaveFailure {
@@ -308,6 +320,12 @@
   let manuscriptCreationBusy = $state(false);
   let manuscriptCreationError = $state("");
   let manuscriptCreationRevision = 0;
+  let manuscriptRepairKey = $state("");
+  let manuscriptRepairPlan = $state<ManuscriptSourceRepairPlan | null>(null);
+  let manuscriptRepairBusy = $state(false);
+  let manuscriptRepairError = $state("");
+  let manuscriptRepairUndo = $state<ManuscriptRepairUndo | null>(null);
+  let manuscriptRepairNotice = $state("");
   let lastDailyProgressFailure: {
     path: string;
     revision: number;
@@ -338,7 +356,9 @@
       newWorldProjectBusy ||
       structuredNoteBusy ||
       loreRenameBusy ||
-      manuscriptCreationVisible,
+      manuscriptCreationVisible ||
+      manuscriptRepairBusy ||
+      Boolean(manuscriptRepairKey),
   );
   const manuscriptCreationPlan = $derived.by(() => {
     if (manuscriptCreationBasePlan?.kind !== "ready") {
@@ -689,6 +709,7 @@
     manuscriptProject = { kind: "absent" };
     manuscriptLoading = false;
     resetManuscriptCreation(true);
+    resetManuscriptRepair(true);
     loreIndexPhase = "indexing";
     void refreshLoreIndex(path);
   }
@@ -848,6 +869,7 @@
       ) {
         return;
       }
+      invalidateManuscriptRepairUndo(result);
       manuscriptProject = result;
     } catch (cause) {
       if (
@@ -876,6 +898,137 @@
       return;
     }
     await openIndexedLorePath(relativePath, null);
+  }
+
+  function beginManuscriptRepair(key: string): void {
+    if (manuscriptRepairBusy || worldProjectBusy || !key) return;
+    const plan = planManuscriptSourceRepair(manuscriptProject, key);
+    if (plan.kind !== "ready") {
+      manuscriptRepairNotice = plan.reason;
+      return;
+    }
+    manuscriptRepairError = "";
+    manuscriptRepairPlan = plan;
+    manuscriptRepairKey = key;
+  }
+
+  function closeManuscriptRepair(): void {
+    if (manuscriptRepairBusy) return;
+    manuscriptRepairKey = "";
+    manuscriptRepairPlan = null;
+    manuscriptRepairError = "";
+  }
+
+  function resetManuscriptRepair(force = false): void {
+    if (manuscriptRepairBusy && !force) return;
+    manuscriptRepairKey = "";
+    manuscriptRepairPlan = null;
+    manuscriptRepairBusy = false;
+    manuscriptRepairError = "";
+    manuscriptRepairUndo = null;
+    manuscriptRepairNotice = "";
+  }
+
+  function invalidateManuscriptRepairUndo(result: ManuscriptProjectLoadResult): void {
+    if (!manuscriptRepairUndo) return;
+    if (
+      result.kind !== "ready" ||
+      result.fingerprint !== manuscriptRepairUndo.expectedFingerprint ||
+      result.text !== manuscriptRepairUndo.expectedText
+    ) {
+      manuscriptRepairUndo = null;
+      manuscriptRepairNotice =
+        "The manuscript structure changed after the repair, so its one-step Undo is no longer available.";
+    }
+  }
+
+  function manuscriptRepairIo(
+    rootPath: string,
+  ): ManuscriptRepairIo {
+    return {
+      reload: async () => {
+        const scan = await scanProjectLore(rootPath, tauriLoreScanBackend);
+        const currentIndex = await buildLoreProjectIndexCooperatively(scan.sources);
+        return loadManuscriptProject(rootPath, tauriLoreScanBackend, {
+          loreIndex: currentIndex,
+        });
+      },
+      replaceAtomic: (expectedText, newText) =>
+        invoke<void>("replace_manuscript_structure_atomic", {
+          rootPath,
+          expectedText,
+          newText,
+        }),
+    };
+  }
+
+  async function confirmManuscriptRepair(): Promise<void> {
+    const plan = manuscriptRepairPlan;
+    if (
+      !folderPath ||
+      !loreIndex ||
+      !manuscriptRepairKey ||
+      manuscriptRepairBusy ||
+      plan?.kind !== "ready"
+    ) {
+      return;
+    }
+    const rootPath = folderPath;
+    const session = loreIndexSession;
+    manuscriptRepairBusy = true;
+    manuscriptRepairError = "";
+    const result = await executeManuscriptSourceRepair(
+      plan,
+      manuscriptRepairIo(rootPath),
+    );
+    if (rootPath !== folderPath || session !== loreIndexSession) {
+      manuscriptRepairBusy = false;
+      manuscriptRepairKey = "";
+      manuscriptRepairPlan = null;
+      error = "The project changed while the manuscript repair was running. Refresh the project before continuing.";
+      return;
+    }
+    if (result.kind === "failed") {
+      manuscriptRepairBusy = false;
+      manuscriptRepairError = result.message;
+      void refreshManuscriptStructure(rootPath, session, loreIndex);
+      return;
+    }
+    manuscriptRepairKey = "";
+    manuscriptRepairPlan = null;
+    manuscriptProject = result.project;
+    manuscriptRepairUndo = result.undo;
+    manuscriptRepairNotice = `Updated ${plan.candidate.bindingLabel.toLowerCase()} for ${plan.candidate.itemTitle}. The Markdown file was not changed.`;
+    manuscriptRepairBusy = false;
+  }
+
+  async function undoLastManuscriptRepair(): Promise<void> {
+    const undo = manuscriptRepairUndo;
+    if (!folderPath || !loreIndex || !undo || manuscriptRepairBusy) return;
+    const rootPath = folderPath;
+    const session = loreIndexSession;
+    manuscriptRepairBusy = true;
+    const result = await undoManuscriptSourceRepair(
+      undo,
+      manuscriptRepairIo(rootPath),
+    );
+    if (rootPath !== folderPath || session !== loreIndexSession) {
+      manuscriptRepairBusy = false;
+      manuscriptRepairUndo = null;
+      error = "The project changed while Undo was running. Refresh the project before continuing.";
+      return;
+    }
+    if (result.kind === "failed") {
+      manuscriptRepairBusy = false;
+      manuscriptRepairUndo = null;
+      manuscriptRepairNotice = result.message;
+      void refreshManuscriptStructure(rootPath, session, loreIndex);
+      return;
+    }
+    manuscriptProject = result.project;
+    manuscriptRepairUndo = null;
+    manuscriptRepairNotice = "The last manuscript source-path repair was undone exactly.";
+    manuscriptRepairBusy = false;
   }
 
   async function preferredManuscriptImportDirectory(): Promise<string> {
@@ -3179,7 +3332,7 @@
 
   function handleKeydown(event: KeyboardEvent) {
     if (event.defaultPrevented) return;
-    if (manuscriptCreationVisible) return;
+    if (manuscriptCreationVisible || manuscriptRepairKey) return;
     if (
       (event.ctrlKey || event.metaKey) &&
       !event.shiftKey &&
@@ -3625,8 +3778,13 @@
         <ManuscriptOutline
           result={manuscriptProject}
           loading={manuscriptLoading}
+          repairBusy={manuscriptRepairBusy}
+          repairNotice={manuscriptRepairNotice}
+          repairUndoLabel={manuscriptRepairUndo?.label ?? ""}
           onRefresh={() => void refreshManuscriptStructure()}
           onOpenSource={(path, fingerprint) => void openManuscriptSource(path, fingerprint)}
+          onRepairSource={beginManuscriptRepair}
+          onUndoRepair={() => void undoLastManuscriptRepair()}
         />
       {/if}
     {/if}
@@ -3784,6 +3942,15 @@
         onRefresh={() => void refreshManuscriptCreationPreview()}
         onCancel={() => resetManuscriptCreation()}
         onConfirm={() => void confirmManuscriptCreation()}
+      />
+    {/if}
+    {#if manuscriptRepairKey && manuscriptRepairPlan}
+      <ManuscriptRepairDialog
+        plan={manuscriptRepairPlan}
+        busy={manuscriptRepairBusy}
+        executionError={manuscriptRepairError}
+        onCancel={closeManuscriptRepair}
+        onConfirm={() => void confirmManuscriptRepair()}
       />
     {/if}
     <div class="practice-bar" aria-label="Writing progress">

@@ -186,6 +186,20 @@ describe("manuscript moved-source repair planning", () => {
     });
   });
 
+  it("plans from a reactive-proxy-compatible JSON source", async () => {
+    const { result } = await movedFixture();
+    if (result.kind !== "ready") throw new Error(`unexpected ${result.kind}`);
+    const proxiedResult = {
+      ...result,
+      source: new Proxy(result.source, {}),
+    };
+
+    expect(planManuscriptSourceRepair(proxiedResult, `${SCENE_ID}:source`)).toMatchObject({
+      kind: "ready",
+      jsonPath: "manuscripts[0].items[0].source.path",
+    });
+  });
+
   it("does not offer repair when the old path is occupied", async () => {
     const { result } = await movedFixture({ occupied: true });
     expect(manuscriptSourceRepairCandidates(result)).toEqual([]);

@@ -10,11 +10,26 @@
   interface Props {
     result: Exclude<ManuscriptProjectLoadResult, { kind: "absent" }>;
     loading: boolean;
+    repairBusy: boolean;
+    repairNotice: string;
+    repairUndoLabel: string;
     onRefresh: () => void;
     onOpenSource: (path: string, fingerprint: string) => void;
+    onRepairSource: (key: string) => void;
+    onUndoRepair: () => void;
   }
 
-  let { result, loading, onRefresh, onOpenSource }: Props = $props();
+  let {
+    result,
+    loading,
+    repairBusy,
+    repairNotice,
+    repairUndoLabel,
+    onRefresh,
+    onOpenSource,
+    onRepairSource,
+    onUndoRepair,
+  }: Props = $props();
 
   const summary = $derived.by(() => {
     if (result.kind !== "ready") return "Manuscript structure: needs attention";
@@ -47,9 +62,20 @@
     }
     return state.message;
   }
+
+  function activateRepair(event: KeyboardEvent, key: string): void {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    onRepairSource(key);
+  }
 </script>
 
-{#snippet sourceRow(label: string, state: ManuscriptSourceState, className = "")}
+{#snippet sourceRow(
+  label: string,
+  state: ManuscriptSourceState,
+  className = "",
+  repairKey = "",
+)}
   <div class={`source-row ${className}`}>
     {#if state.kind === "ready"}
       <button
@@ -62,13 +88,22 @@
     {:else}
       <span>{label}</span>
       <small class:source-warning={state.kind !== "moved"}>{sourceLabel(state)}</small>
+      {#if state.kind === "moved" && !state.declaredPathOccupied && state.noteId && repairKey}
+        <button
+          type="button"
+          class="repair"
+          disabled={repairBusy}
+          onclick={() => onRepairSource(repairKey)}
+          onkeydown={(event) => activateRepair(event, repairKey)}
+        >Review path repair…</button>
+      {/if}
     {/if}
   </div>
 {/snippet}
 
 {#snippet sceneRow(scene: ReconciledManuscriptScene)}
   <li class="scene-row">
-    {@render sourceRow(scene.item.title, scene.source, "scene-source")}
+    {@render sourceRow(scene.item.title, scene.source, "scene-source", `${scene.item.id}:source`)}
     {#if !scene.item.includeInCompile}<small>Excluded from compile</small>{/if}
   </li>
 {/snippet}
@@ -83,10 +118,10 @@
       <small class="source-warning">{chapter.folder.message}</small>
     {/if}
     {#if chapter.overview}
-      {@render sourceRow("Chapter overview", chapter.overview, "overview-source")}
+      {@render sourceRow("Chapter overview", chapter.overview, "overview-source", `${chapter.item.id}:overview`)}
     {/if}
     {#if chapter.source}
-      {@render sourceRow("Chapter prose", chapter.source, "chapter-source")}
+      {@render sourceRow("Chapter prose", chapter.source, "chapter-source", `${chapter.item.id}:source`)}
     {/if}
     {#if chapter.children.length > 0}
       <ol class="scene-list">
@@ -103,8 +138,17 @@
   {#if result.kind === "ready"}
     <p class="boundary">
       Order and planning come from the visible structure file. Scene prose stays
-      in Markdown; this view does not repair or rewrite anything.
+      in Markdown. Any suggested path repair requires a separate preview.
     </p>
+    {#if repairNotice}
+      <div class="repair-status" role="status" aria-live="polite">
+        <span>{repairNotice}</span>
+        {#if repairUndoLabel}
+          <button type="button" disabled={repairBusy} onclick={onUndoRepair}
+            >{repairBusy ? "Checking…" : repairUndoLabel}</button>
+        {/if}
+      </div>
+    {/if}
     {#each result.reconciled.manuscripts as entry (entry.manuscript.id)}
       <section aria-labelledby={`manuscript-${entry.manuscript.id}`}>
         <h2 id={`manuscript-${entry.manuscript.id}`}>{entry.manuscript.title}</h2>
@@ -209,6 +253,38 @@
     text-align: left;
     cursor: pointer;
   }
+  .repair {
+    width: fit-content;
+    padding: 0.22rem 0.38rem;
+    border: 1px solid #596978;
+    border-radius: 4px;
+    background: #26323d;
+    color: #b8d5ee;
+    font: inherit;
+    cursor: pointer;
+  }
+  .repair-status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    margin: 0.45rem 0;
+    padding: 0.5rem;
+    border: 1px solid #43604c;
+    border-radius: 4px;
+    background: #202c24;
+    color: #bfdbc5;
+    line-height: 1.35;
+  }
+  .repair-status button {
+    padding: 0.25rem 0.4rem;
+    border: 1px solid #58735e;
+    border-radius: 4px;
+    background: #2b3d30;
+    color: #d0e6d5;
+    font: inherit;
+    cursor: pointer;
+  }
   small {
     overflow-wrap: anywhere;
     color: #909090;
@@ -234,7 +310,10 @@
   .refresh:hover:not(:disabled) {
     background: #333333;
   }
-  .refresh:disabled {
+  button:hover:not(:disabled) {
+    filter: brightness(1.12);
+  }
+  button:disabled {
     opacity: 0.6;
     cursor: default;
   }

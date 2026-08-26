@@ -90,7 +90,7 @@ export function planManuscriptSourceRepair(
     };
   }
 
-  const source = structuredClone(result.source);
+  const source = cloneJsonRecord(result.source);
   const path = rawBindingPath(source, located);
   if (!path) {
     return { kind: "unavailable", reason: "The previewed binding could not be located in the source structure." };
@@ -260,4 +260,12 @@ function recordAt(values: unknown[] | null, index: number): Record<string, unkno
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function cloneJsonRecord(value: Record<string, unknown>): Record<string, unknown> {
+  const cloned: unknown = JSON.parse(JSON.stringify(value));
+  if (!isRecord(cloned)) {
+    throw new TypeError("The validated manuscript structure did not clone to a JSON object.");
+  }
+  return cloned;
 }

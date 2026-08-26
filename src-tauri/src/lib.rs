@@ -344,7 +344,10 @@ mod tests {
     use super::{rename_lore_file_no_clobber_impl, replace_manuscript_structure_atomic_impl};
     use std::fs;
     use std::path::PathBuf;
+    use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    static FIXTURE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
     struct Fixture(PathBuf);
 
@@ -355,10 +358,12 @@ mod tests {
                 .expect("clock")
                 .as_nanos();
             let path = std::env::temp_dir().join(format!(
-                "two-hundred-crappy-words-rename-{}-{nonce}",
-                std::process::id()
+                "two-hundred-crappy-words-rename-{}-{nonce}-{}",
+                std::process::id(),
+                FIXTURE_SEQUENCE.fetch_add(1, Ordering::Relaxed)
             ));
-            fs::create_dir_all(path.join("Lore")).expect("fixture folders");
+            fs::create_dir(&path).expect("unique fixture root");
+            fs::create_dir(path.join("Lore")).expect("fixture folders");
             Self(path)
         }
     }
