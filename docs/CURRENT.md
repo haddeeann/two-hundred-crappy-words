@@ -87,7 +87,7 @@ Split one verified active scene at the writer's collapsed caret into two adjacen
 
 ## Blockers and decision gates
 
-Awaiting approval of proposed D-029 before implementing the prose-rewriting split transaction. The recommendation keeps the original scene ID, metadata, source path, and left-hand prose together; creates a minimal adjacent right-hand scene at a previewed new path; and permits Undo to remove only the unchanged file created by that exact split while restoring the original prose and structure exactly. A later merge slice must separately choose and preview what happens to its retired second Markdown source.
+No blocker. D-029 was approved on 2026-08-27: the original scene ID, metadata, source path, and left-hand prose stay together; a minimal adjacent right-hand scene uses a previewed new path; and Undo may remove only the unchanged file created by that exact split while restoring the original prose and structure exactly. A later merge slice must separately choose and preview what happens to its retired second Markdown source.
 
 ## Handoff protocol
 
