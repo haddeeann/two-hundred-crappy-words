@@ -199,6 +199,14 @@ Confirmed moves covered Arrival from Signals to Landfall, loose Interlude into L
 
 For stale-preview QA, Reply's move dialog remained open while an external root value changed. Confirmation refused with `The manuscript structure changed after preview; nothing was written.`, disabled itself, retained Reply in Signals, and preserved the external value. Closing the dialog returned focus to Reply's corkboard action and external restoration refreshed both views automatically. The temporary structure and all Markdown files then matched their exact original SHA-256 hashes. The full frontend suite has 342 passing tests across fifty-one files, Svelte/TypeScript checks report zero errors and warnings, four native tests pass, the packaged macOS app builds, and the moderate-threshold dependency audit passes with three low compatible-line advisories remaining.
 
+## Milestone 0.6.12b rollback-safe scene-split checkpoint
+
+Completed successfully on macOS on 2026-08-27 using Computer Use against the freshly built production `.app` and a new disposable one-chapter manuscript. A collapsed caret before the second paragraph opened **Split scene…** with initial focus on the new title, a non-colliding sibling Markdown suggestion, the exact left and right prose bytes, the original/new identity relationship, all three affected files, compile-exclusion behavior, and the no-daily-credit promise. Confirmation immediately showed two files and two ordered outline scenes. Direct JSON inspection proved the original UUID, synopsis, exclusion, and unknown nested field remained on the left; the right received a fresh UUID, minimal source/title identity, and inherited only explicit compile exclusion. The editor contained the exact left half, both scene totals were eight words, and Today remained `0 / 200`.
+
+**Undo split of Arrival** restored the complete original prose and exact original structure SHA-256 and removed only the unchanged app-created right source. A second split followed by an external edit to the right source refreshed its word count from eight to fifteen, removed Undo automatically, and announced that a scene or structure change made it unsafe. Both scene files, the edited external sentence, and the split structure remained intact.
+
+The full frontend suite has 352 passing tests across fifty-three files; Svelte/TypeScript reports zero errors and warnings. Eight Rust tests cover normal apply/Undo, stale or colliding sources, non-reconstructing halves, exact rollback at each simulated commit phase, changed-file Undo refusal, and interrupted Undo rollback. Rust formatting and Clippy with warnings denied pass. The production `.app` bundle built and ran; the optional DMG wrapper stalled in Finder automation after producing the valid app bundle, so it was stopped without affecting packaged-app QA.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:

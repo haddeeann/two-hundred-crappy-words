@@ -83,7 +83,8 @@ Goal: support a long manuscript as scenes and chapters while retaining ordinary 
 - [x] Add a reorderable corkboard over the completed outline and sibling reorder controls.
 - [x] Show scene, chapter, and manuscript word counts and targets.
 - [x] Add manuscript/reference split views and focus mode.
-- [ ] Support safe scene splitting, merging, and reordering.
+- [x] Support safe scene splitting and reordering within and across containers.
+- [ ] Support safe adjacent scene merging with an explicit retired-source disposition.
 - [ ] Compile/export to Markdown and plain text, then add DOCX and PDF after format review.
 
 Specification: [`docs/milestones/0.6-novel-structure.md`](docs/milestones/0.6-novel-structure.md)

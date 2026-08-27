@@ -10,27 +10,28 @@ Connected lore is complete. The active milestone makes a long manuscript underst
 
 ## Active slice
 
-**0.6.12b — Safe scene split transaction**
+**0.6.12c — Safe adjacent scene merge**
 
 ### Intended outcome
 
-Split one verified active scene at the writer's collapsed caret into two adjacent scene files without losing, duplicating, or silently reinterpreting a character of prose.
+Merge two adjacent verified scenes without deleting prose or silently discarding the retired scene's portable planning metadata.
 
 ### Acceptance criteria
 
-- [ ] Offer Split only when the active editor is the fingerprint-verified source of exactly one scene, its selection is collapsed, and both resulting prose halves are non-empty.
-- [ ] Preview the exact caret boundary, unchanged left/right prose ownership, new scene title, contained sibling Markdown destination, new stable ID, adjacent structure insertion, and every file that will change.
-- [ ] Revalidate the active saved buffer, source fingerprint, structure fingerprint, destination absence, and complete semantic plan immediately before writing.
-- [ ] Use create-new for the right-hand scene, guarded atomic replacement for the original source and structure, and exact rollback of every completed step on any later failure.
-- [ ] Keep the original scene object and stable ID on the left; create a minimal adjacent scene on the right, inheriting only an explicit compile exclusion when required to preserve current compile intent.
-- [ ] Provide a fingerprint-guarded in-session Undo across all three paths, refresh outline/corkboard/editor state, preserve daily-credit semantics, and complete packaged macOS failure-path QA.
+- [ ] Approve which adjacent scene survives, how the prose boundary is joined, what happens to the retired Markdown source, and how non-source metadata on the retired scene remains recoverable.
+- [ ] Limit the first merge to two adjacent fingerprint-verified scenes in one exact structure array; never infer a merge across containers or manuscripts.
+- [ ] Preview both complete source paths, the exact prose join, the surviving and retired stable identities, metadata disposition, portable structure change, and every affected file.
+- [ ] Revalidate both saved sources, both fingerprints, structure fingerprint, any retirement destination, and the complete semantic plan immediately before writing.
+- [ ] Use a picker-scoped native transaction with no-clobber retirement, guarded atomic source/structure replacement, and exact rollback after every completed step.
+- [ ] Provide fingerprint-guarded one-step Undo, immediate outline/corkboard/editor refresh, unchanged daily credit, and packaged macOS failure-path QA.
 
 ## Next slices
 
-1. 0.6.12c — Merge adjacent scenes with an explicit, non-destructive disposition for the retired source file.
-2. 0.6.13 — Compile verified manuscript order to Markdown and plain text.
+1. 0.6.13 — Compile verified manuscript order to Markdown and plain text.
 
 ## Completed checkpoint
+
+- Slice 0.6.12b is complete. A saved active Markdown source now offers **Split scene…** at a collapsed caret only when it fingerprint-matches exactly one verified manuscript scene and leaves prose on both sides. The keyboard-contained preview lets the writer name the new scene and review a non-colliding sibling path, the exact left/right bytes, identity ownership, compile-exclusion inheritance, all three affected files, and daily-credit boundary. The pure planner preserves the complete original object and stable ID on the left, inserts one minimal fresh-UUID scene immediately to its right, and validates the complete portable structure. Confirmation freshly rescans and replans, then a picker-scoped native transaction creates the right source without clobbering, atomically replaces the left source and structure, verifies all three, and retains exact rollback backups for every interruption point. Shared one-step Undo restores the original source and structure and removes only the unchanged app-created right source; any edit to either scene or structure retires Undo instead. Packaged macOS QA verified exact boundary previews, two immediately refreshed scene rows/files, preserved unknown left metadata, minimal right metadata, inherited compile exclusion, fresh UUID, exact Undo restoration/removal, watcher-driven external-edit invalidation, and unchanged `0 / 200` daily progress. The frontend suite has 352 passing tests across fifty-three files, Svelte/TypeScript checks report zero errors and warnings, eight native tests and Clippy with warnings denied pass, and the production macOS `.app` bundle builds. The full DMG helper stalled in Finder automation after the valid `.app` was produced; app-only packaging remains the release-development command.
 
 - Slice 0.6.12a is complete. Verified scenes now expose **Move to…** in both outline and corkboard when another legal container exists. The destination/position dialog shows both exact JSON arrays and one-based positions, excludes the current container, prose-owning chapters, and other manuscripts, and states that no folder or Markdown file moves. The pure planner transfers the complete raw scene object, validates the whole replacement, and the executor freshly replans before one atomic structure-file replacement and shared exact Undo. Packaged macOS QA covered visual/accessibility semantics, Tab/Shift+Tab containment, Escape, outline and corkboard entry, exact position selection, chapter-to-chapter, loose-to-chapter, chapter-to-loose, immediate count/order refresh, moved-row/card focus, unknown-field retention, byte-stable Markdown, shared exact Undo, stale-preview refusal, automatic external refresh, and unchanged `0 / 200` daily progress. QA caught document-level focus after Escape; `d7ce4d9` delays restoration until after modal unmount, and the corrected package returns focus to the invoking **Move to…** button. The disposable structure and all three Markdown files returned to their exact original SHA-256 hashes. The full frontend suite has 342 passing tests across fifty-one files, Svelte/TypeScript checks report zero errors and warnings, four native tests pass, the packaged macOS `.app` bundle builds, and the moderate-threshold dependency audit passes with the three already-documented low cookie advisories.
 
@@ -87,7 +88,7 @@ Split one verified active scene at the writer's collapsed caret into two adjacen
 
 ## Blockers and decision gates
 
-No blocker. D-029 was approved on 2026-08-27: the original scene ID, metadata, source path, and left-hand prose stay together; a minimal adjacent right-hand scene uses a previewed new path; and Undo may remove only the unchanged file created by that exact split while restoring the original prose and structure exactly. A later merge slice must separately choose and preview what happens to its retired second Markdown source.
+User input is required at D-030 before merge implementation. The recommendation is: the left scene survives; its exact prose is joined to the right prose with a separately previewed boundary choice; the right source is renamed without clobbering to a visible non-Markdown `.retired` backup rather than deleted; and merge is initially refused when the retired scene contains descriptive metadata that would otherwise disappear from the portable structure. Alternatives and tradeoffs are recorded in D-030.
 
 ## Handoff protocol
 
