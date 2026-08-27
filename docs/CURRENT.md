@@ -1,6 +1,6 @@
 # Current work
 
-Last updated: 2026-08-26
+Last updated: 2026-08-27
 
 ## Active milestone
 
@@ -10,28 +10,29 @@ Connected lore is complete. The active milestone makes a long manuscript underst
 
 ## Active slice
 
-**0.6.12a — Cross-container scene moves**
+**0.6.12b — Safe scene split transaction**
 
 ### Intended outcome
 
-Move an existing loose scene into a chapter, a chapter scene into the top level, or a scene between chapters without rewriting prose, changing its stable identity, or hiding the exact old/new hierarchy from the writer.
+Split one verified active scene at the writer's collapsed caret into two adjacent scene files without losing, duplicating, or silently reinterpreting a character of prose.
 
 ### Acceptance criteria
 
-- [x] Define a pure relocation planner over the raw version-one JSON so the complete scene object, unknown supported fields, source binding, and stable ID survive unchanged.
-- [x] Treat top-level loose scenes and each chapter's `children` array as explicit destinations; do not infer a chapter from filesystem location or move the Markdown file.
-- [x] Preview the manuscript, scene, old container/position, destination container/position, and exact affected JSON arrays before confirmation.
-- [x] Freshly reread and regenerate the same relocation before one atomic structure replacement; reuse the shared fingerprint-guarded one-step Undo.
-- [ ] Provide a keyboard-contained destination/position workflow and return focus to the moved scene in its new outline location.
-- [ ] Cover loose-to-chapter, chapter-to-loose, chapter-to-chapter, same-container refusal, stale preview, unknown-field preservation, exact Undo, and packaged macOS QA.
+- [ ] Offer Split only when the active editor is the fingerprint-verified source of exactly one scene, its selection is collapsed, and both resulting prose halves are non-empty.
+- [ ] Preview the exact caret boundary, unchanged left/right prose ownership, new scene title, contained sibling Markdown destination, new stable ID, adjacent structure insertion, and every file that will change.
+- [ ] Revalidate the active saved buffer, source fingerprint, structure fingerprint, destination absence, and complete semantic plan immediately before writing.
+- [ ] Use create-new for the right-hand scene, guarded atomic replacement for the original source and structure, and exact rollback of every completed step on any later failure.
+- [ ] Keep the original scene object and stable ID on the left; create a minimal adjacent scene on the right, inheriting only an explicit compile exclusion when required to preserve current compile intent.
+- [ ] Provide a fingerprint-guarded in-session Undo across all three paths, refresh outline/corkboard/editor state, preserve daily-credit semantics, and complete packaged macOS failure-path QA.
 
 ## Next slices
 
-1. 0.6.12b — Support safe scene splitting and adjacent-scene merging with previewed multi-file transactions.
+1. 0.6.12c — Merge adjacent scenes with an explicit, non-destructive disposition for the retired source file.
+2. 0.6.13 — Compile verified manuscript order to Markdown and plain text.
 
 ## Completed checkpoint
 
-- Slice 0.6.12a implementation checkpoint `426cc5b` is pushed. Verified scenes now expose **Move to…** in both outline and corkboard when another legal container exists. The destination/position dialog shows both exact JSON arrays and one-based positions, excludes the current container, prose-owning chapters, and other manuscripts, and states that no folder or Markdown file moves. The pure planner transfers the complete raw scene object, validates the whole replacement, and the executor freshly replans before one atomic structure-file replacement and shared exact Undo. Cancel returns focus to its invoking control; success targets the moved scene in the active surface. Seven focused relocation tests cover chapter-to-chapter, loose-to-chapter, chapter-to-loose, destination bounds, same-container and non-scene refusal, unknown fields, proxy-backed input, stale preview, failed atomic write, and exact-byte Undo. The full frontend suite has 342 passing tests across fifty-one files, Svelte/TypeScript checks report zero errors and warnings, four native tests pass, the packaged macOS `.app` bundle builds, and the moderate-threshold dependency audit passes with the three already-documented low cookie advisories. Final packaged interaction QA remains before this slice is complete.
+- Slice 0.6.12a is complete. Verified scenes now expose **Move to…** in both outline and corkboard when another legal container exists. The destination/position dialog shows both exact JSON arrays and one-based positions, excludes the current container, prose-owning chapters, and other manuscripts, and states that no folder or Markdown file moves. The pure planner transfers the complete raw scene object, validates the whole replacement, and the executor freshly replans before one atomic structure-file replacement and shared exact Undo. Packaged macOS QA covered visual/accessibility semantics, Tab/Shift+Tab containment, Escape, outline and corkboard entry, exact position selection, chapter-to-chapter, loose-to-chapter, chapter-to-loose, immediate count/order refresh, moved-row/card focus, unknown-field retention, byte-stable Markdown, shared exact Undo, stale-preview refusal, automatic external refresh, and unchanged `0 / 200` daily progress. QA caught document-level focus after Escape; `d7ce4d9` delays restoration until after modal unmount, and the corrected package returns focus to the invoking **Move to…** button. The disposable structure and all three Markdown files returned to their exact original SHA-256 hashes. The full frontend suite has 342 passing tests across fifty-one files, Svelte/TypeScript checks report zero errors and warnings, four native tests pass, the packaged macOS `.app` bundle builds, and the moderate-threshold dependency audit passes with the three already-documented low cookie advisories.
 
 - Slice 0.6.11 is complete. Every fingerprint-verified manuscript scene, chapter prose source, and chapter overview now offers an explicit **Reference** action in both outline and corkboard when an active draft exists. It rechecks the manuscript fingerprint, then reuses the established contained, stable, read-only lore reference loader, replacement behavior, live watcher invalidation, navigation history, Escape close, Open-in-editor path, and focus restoration; no second reader or source copy was introduced. Corkboard reference entry restores the pre-board editor selection before opening the split. The new ephemeral **Focus** layout hides project navigation and connections, retains filename, save state, daily progress, the active draft, and any open reference, narrows a solo editor to a calm reading width, preserves selection, exposes a visible **Exit focus**, and resets on project replacement or restart. Packaged macOS QA covered outline and corkboard entry, exact selection restoration, split visual/accessibility semantics, Focus with and without a reference, external reference edit/removal/recovery, Escape close, a deliberately unwritable unsaved draft through Focus entry/exit and later save, unchanged daily semantics, and restart clearing. QA corrected one duplicated Corkboard accessible verb before the final package. The temporary fixture returned to its exact original hashes. The frontend suite has 335 passing tests across fifty files, Svelte/TypeScript checks report zero errors and warnings, frontend and packaged macOS builds pass, and four native tests plus Rust formatting pass.
 
@@ -86,7 +87,7 @@ Move an existing loose scene into a chapter, a chapter scene into the top level,
 
 ## Blockers and decision gates
 
-The feature implementation and automated verification are complete and pushed. Final packaged macOS interaction QA is temporarily blocked because the Mac is locked and Computer Use cannot unlock it. Unlocking the Mac is the only required user action; no product decision is waiting.
+No blocker. A later merge slice must choose and preview what happens to the retired second Markdown source; the active split slice does not need that destructive-file decision.
 
 ## Handoff protocol
 
