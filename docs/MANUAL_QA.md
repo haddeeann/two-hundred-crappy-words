@@ -205,7 +205,7 @@ Completed successfully on macOS on 2026-08-27 using Computer Use against the fre
 
 **Undo split of Arrival** restored the complete original prose and exact original structure SHA-256 and removed only the unchanged app-created right source. A second split followed by an external edit to the right source refreshed its word count from eight to fifteen, removed Undo automatically, and announced that a scene or structure change made it unsafe. Both scene files, the edited external sentence, and the split structure remained intact.
 
-The full frontend suite has 352 passing tests across fifty-three files; Svelte/TypeScript reports zero errors and warnings. Eight Rust tests cover normal apply/Undo, stale or colliding sources, non-reconstructing halves, exact rollback at each simulated commit phase, changed-file Undo refusal, and interrupted Undo rollback. Rust formatting and Clippy with warnings denied pass. The production `.app` bundle built and ran; the optional DMG wrapper stalled in Finder automation after producing the valid app bundle, so it was stopped without affecting packaged-app QA.
+The full frontend suite has 353 passing tests across fifty-three files, including a final action-visibility regression; Svelte/TypeScript reports zero errors and warnings. Eight Rust tests cover normal apply/Undo, stale or colliding sources, non-reconstructing halves, exact rollback at each simulated commit phase, changed-file Undo refusal, and interrupted Undo rollback. Rust formatting and Clippy with warnings denied pass. The production `.app` bundle built and ran; the optional DMG wrapper stalled in Finder automation after producing the valid app bundle, so it was stopped without affecting packaged-app QA.
 
 ## Start safely
 

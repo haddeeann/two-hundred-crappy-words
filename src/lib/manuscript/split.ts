@@ -18,6 +18,10 @@ export interface ManuscriptSceneSplitRequest {
   newSourcePath: string;
 }
 
+export type ManuscriptSceneSplitAvailability =
+  | { kind: "available"; sceneTitle: string }
+  | { kind: "unavailable"; reason: string };
+
 export interface ManuscriptSceneSplitTarget {
   manuscriptTitle: string;
   sceneId: string;
@@ -64,37 +68,13 @@ export function planManuscriptSceneSplit(
   result: ManuscriptProjectLoadResult,
   request: ManuscriptSceneSplitRequest,
 ): ManuscriptSceneSplitPlan {
-  if (result.kind !== "ready") {
-    return unavailable("The manuscript structure is not currently valid and verified.");
-  }
-  const located = locateReadyScene(result, request.sourcePath);
-  if (!located) {
-    return unavailable("The active file is not the verified source of exactly one manuscript scene.");
-  }
-  if (
-    located.scene.source.kind !== "ready" ||
-    located.scene.source.fingerprint !== request.sourceFingerprint ||
-    fingerprintContent(request.sourceText) !== request.sourceFingerprint
-  ) {
-    return unavailable("The active scene text no longer matches the verified source.");
-  }
-  if (
-    !Number.isSafeInteger(request.caretOffset) ||
-    request.caretOffset <= 0 ||
-    request.caretOffset >= request.sourceText.length
-  ) {
-    return unavailable("Place the caret inside the scene with prose on both sides.");
-  }
-  if (splitsSurrogatePair(request.sourceText, request.caretOffset)) {
-    return unavailable("The caret cannot divide one Unicode character.");
-  }
+  const assessment = assessSceneSplitAvailability(result, request);
+  if (assessment.kind === "unavailable") return assessment;
+  const { located, project } = assessment;
   const leftSourceText = request.sourceText.slice(0, request.caretOffset);
   const rightSourceText = request.sourceText.slice(request.caretOffset);
-  if (!leftSourceText.trim() || !rightSourceText.trim()) {
-    return unavailable("The split must leave non-whitespace prose in both scenes.");
-  }
 
-  const source = cloneJsonRecord(result.source);
+  const source = cloneJsonRecord(project.source);
   const rawItems = rawContainerArray(source, located);
   if (!rawItems) return unavailable("The scene's structure array could not be located safely.");
   const sourceIndex = located.sourceChildIndex ?? located.sourceItemIndex;
@@ -131,9 +111,9 @@ export function planManuscriptSceneSplit(
       newSceneId: request.newSceneId,
       newSceneTitle: request.newSceneTitle,
       newSourcePath: request.newSourcePath,
-      structureFingerprint: result.fingerprint,
+      structureFingerprint: project.fingerprint,
     },
-    originalStructureText: result.text,
+    originalStructureText: project.text,
     updatedStructureText,
     updatedStructureFingerprint: fingerprintContent(updatedStructureText),
     originalSourceText: request.sourceText,
@@ -142,6 +122,19 @@ export function planManuscriptSceneSplit(
     rightSourceText,
     rightSourceFingerprint: fingerprintContent(rightSourceText),
   };
+}
+
+export function manuscriptSceneSplitAvailability(
+  result: ManuscriptProjectLoadResult,
+  request: Pick<
+    ManuscriptSceneSplitRequest,
+    "sourcePath" | "sourceText" | "sourceFingerprint" | "caretOffset"
+  >,
+): ManuscriptSceneSplitAvailability {
+  const assessment = assessSceneSplitAvailability(result, request);
+  return assessment.kind === "available"
+    ? { kind: "available", sceneTitle: assessment.located.scene.item.title }
+    : assessment;
 }
 
 export function suggestSplitScenePath(sourcePath: string, attempt = 2): string {
@@ -197,6 +190,51 @@ function locateReadyScene(
   return match;
 }
 
+function assessSceneSplitAvailability(
+  result: ManuscriptProjectLoadResult,
+  request: Pick<
+    ManuscriptSceneSplitRequest,
+    "sourcePath" | "sourceText" | "sourceFingerprint" | "caretOffset"
+  >,
+):
+  | {
+      kind: "available";
+      located: LocatedScene;
+      project: Extract<ManuscriptProjectLoadResult, { kind: "ready" }>;
+    }
+  | { kind: "unavailable"; reason: string } {
+  if (result.kind !== "ready") {
+    return unavailable("The manuscript structure is not currently valid and verified.");
+  }
+  const located = locateReadyScene(result, request.sourcePath);
+  if (!located) {
+    return unavailable("The active file is not the verified source of exactly one manuscript scene.");
+  }
+  if (
+    located.scene.source.kind !== "ready" ||
+    located.scene.source.fingerprint !== request.sourceFingerprint ||
+    fingerprintContent(request.sourceText) !== request.sourceFingerprint
+  ) {
+    return unavailable("The active scene text no longer matches the verified source.");
+  }
+  if (
+    !Number.isSafeInteger(request.caretOffset) ||
+    request.caretOffset <= 0 ||
+    request.caretOffset >= request.sourceText.length
+  ) {
+    return unavailable("Place the caret inside the scene with prose on both sides.");
+  }
+  if (splitsSurrogatePair(request.sourceText, request.caretOffset)) {
+    return unavailable("The caret cannot divide one Unicode character.");
+  }
+  const leftSourceText = request.sourceText.slice(0, request.caretOffset);
+  const rightSourceText = request.sourceText.slice(request.caretOffset);
+  if (!leftSourceText.trim() || !rightSourceText.trim()) {
+    return unavailable("The split must leave non-whitespace prose in both scenes.");
+  }
+  return { kind: "available", located, project: result };
+}
+
 function rawContainerArray(source: Record<string, unknown>, located: LocatedScene): unknown[] | null {
   const manuscripts = Array.isArray(source.manuscripts) ? source.manuscripts : null;
   const manuscript = recordAt(manuscripts, located.manuscriptIndex);
@@ -235,6 +273,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function unavailable(reason: string): ManuscriptSceneSplitPlan {
+function unavailable(reason: string): { kind: "unavailable"; reason: string } {
   return { kind: "unavailable", reason };
 }

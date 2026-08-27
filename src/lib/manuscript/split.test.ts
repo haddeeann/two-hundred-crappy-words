@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { fingerprintContent } from "$lib/editor/recovery";
 import type { ManuscriptProjectLoadResult } from "./source-reconciliation";
 import {
+  manuscriptSceneSplitAvailability,
   planManuscriptSceneSplit,
   suggestSplitScenePath,
   type ManuscriptSceneSplitRequest,
@@ -114,6 +115,18 @@ function projectWithSceneText(text: string) {
 }
 
 describe("manuscript scene split planning", () => {
+  it("exposes the action only for an exact verified scene and valid collapsed boundary", () => {
+    const eligible = request();
+    expect(manuscriptSceneSplitAvailability(project(), eligible)).toEqual({
+      kind: "available",
+      sceneTitle: "Arrival",
+    });
+    expect(manuscriptSceneSplitAvailability(project(), { ...eligible, sourcePath: "Lore/mars.md" }))
+      .toMatchObject({ kind: "unavailable", reason: expect.stringContaining("exactly one") });
+    expect(manuscriptSceneSplitAvailability(project(), { ...eligible, caretOffset: 0 }))
+      .toMatchObject({ kind: "unavailable", reason: expect.stringContaining("inside") });
+  });
+
   it("keeps the complete original object on the left and inserts one minimal excluded scene", () => {
     const plan = planManuscriptSceneSplit(project(), request());
     if (plan.kind !== "ready") throw new Error(plan.reason);

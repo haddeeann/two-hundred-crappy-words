@@ -233,6 +233,7 @@
   } from "$lib/manuscript/relocate";
   import { executeManuscriptSceneMove } from "$lib/manuscript/relocate-execution";
   import {
+    manuscriptSceneSplitAvailability,
     planManuscriptSceneSplit,
     suggestSplitScenePath,
     type ManuscriptSceneSplitPlan,
@@ -343,6 +344,8 @@
   let loreChangeMonitor: LoreChangeMonitor | null = null;
   let stopLoreWatch: (() => void) | null = null;
   let editorInput = $state<HTMLTextAreaElement>();
+  let editorSelectionStart = $state(0);
+  let editorSelectionEnd = $state(0);
   let loreCompletionContext = $state<WikiLinkCompletionContext | null>(null);
   let loreCompletionItems = $state<LoreCompletionCandidate[]>([]);
   let loreCompletionSelectedIndex = $state(0);
@@ -485,6 +488,21 @@
       manuscriptSceneSplitBaseProject,
       manuscriptSceneSplitRequest,
     );
+  });
+  const activeSceneSplitAvailability = $derived.by(() => {
+    const sourcePath = activeLorePath();
+    if (
+      !sourcePath ||
+      dirty ||
+      content !== persistedContent ||
+      editorSelectionStart !== editorSelectionEnd
+    ) return { kind: "unavailable" as const };
+    return manuscriptSceneSplitAvailability(manuscriptProject, {
+      sourcePath,
+      sourceText: content,
+      sourceFingerprint: fingerprintContent(content),
+      caretOffset: editorSelectionStart,
+    });
   });
   const manuscriptCorkboard = $derived.by(() => {
     if (!manuscriptCorkboardId || manuscriptProject.kind !== "ready") return null;
@@ -1513,6 +1531,8 @@
     void tick().then(() => {
       editorInput?.focus({ preventScroll: true });
       editorInput?.setSelectionRange(caret, caret);
+      editorSelectionStart = caret;
+      editorSelectionEnd = caret;
     });
   }
 
@@ -1595,6 +1615,8 @@
     await tick();
     editorInput?.focus({ preventScroll: true });
     editorInput?.setSelectionRange(content.length, content.length);
+    editorSelectionStart = content.length;
+    editorSelectionEnd = content.length;
   }
 
   async function undoLastManuscriptSceneSplit(): Promise<void> {
@@ -1637,6 +1659,8 @@
       persistedContent = undo.restoredSourceText;
       saveState = createSaveState();
       practiceState = beginDailyPractice(content, practiceState.dailyWords);
+      editorSelectionStart = 0;
+      editorSelectionEnd = 0;
     }
     manuscriptProject = result.project;
     manuscriptSceneSplitUndo = null;
@@ -2167,7 +2191,10 @@
 
   function handleEditorCaretChange(event: Event): void {
     if (insertingLoreCompletion) return;
-    updateLoreCompletion(event.currentTarget as HTMLTextAreaElement);
+    const textarea = event.currentTarget as HTMLTextAreaElement;
+    editorSelectionStart = textarea.selectionStart;
+    editorSelectionEnd = textarea.selectionEnd;
+    updateLoreCompletion(textarea);
   }
 
   async function openLoreConnection(item: LoreConnectionItem): Promise<void> {
@@ -3783,6 +3810,8 @@
           : createSaveState();
         activeFile = entry.name;
         activeFilePath = entry.path;
+        editorSelectionStart = 0;
+        editorSelectionEnd = 0;
         opened = true;
         dismissedLoreCompletion = "";
         clearLoreCompletion();
@@ -3849,6 +3878,8 @@
   function handleContentInput(event: Event) {
     const textarea = event.currentTarget as HTMLTextAreaElement;
     const nextContent = textarea.value;
+    editorSelectionStart = textarea.selectionStart;
+    editorSelectionEnd = textarea.selectionEnd;
     const now = new Date();
     refreshDailyDate(content, now);
     const previousDailyWords = practiceState.dailyWords;
@@ -4544,11 +4575,11 @@
             class:save-error={saveState.phase === "error"}
             aria-live="polite"
           >{saveStatus}</span>
-          {#if !manuscriptCorkboard}
+          {#if !manuscriptCorkboard && activeSceneSplitAvailability.kind === "available"}
             <button
               type="button"
               class="focus-mode-button"
-              title="Split a saved manuscript scene at the collapsed caret"
+              title={`Split ${activeSceneSplitAvailability.sceneTitle} at the collapsed caret`}
               disabled={dirty || saveState.phase === "saving" || worldProjectBusy}
               onclick={() => void beginManuscriptSceneSplit()}
             >Split scene…</button>
