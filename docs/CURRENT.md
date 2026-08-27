@@ -87,7 +87,7 @@ Split one verified active scene at the writer's collapsed caret into two adjacen
 
 ## Blockers and decision gates
 
-No blocker. A later merge slice must choose and preview what happens to the retired second Markdown source; the active split slice does not need that destructive-file decision.
+Awaiting approval of proposed D-029 before implementing the prose-rewriting split transaction. The recommendation keeps the original scene ID, metadata, source path, and left-hand prose together; creates a minimal adjacent right-hand scene at a previewed new path; and permits Undo to remove only the unchanged file created by that exact split while restoring the original prose and structure exactly. A later merge slice must separately choose and preview what happens to its retired second Markdown source.
 
 ## Handoff protocol
 
