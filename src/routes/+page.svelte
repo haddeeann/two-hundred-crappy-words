@@ -2,6 +2,7 @@
   import { onDestroy, onMount, tick } from "svelte";
   import { message, open } from "@tauri-apps/plugin-dialog";
   import {
+    exists,
     mkdir,
     readDir,
     readTextFile,
@@ -189,6 +190,7 @@
   import ManuscriptRepairDialog from "$lib/manuscript/ManuscriptRepairDialog.svelte";
   import ManuscriptReorderDialog from "$lib/manuscript/ManuscriptReorderDialog.svelte";
   import ManuscriptSceneMoveDialog from "$lib/manuscript/ManuscriptSceneMoveDialog.svelte";
+  import ManuscriptSceneSplitDialog from "$lib/manuscript/ManuscriptSceneSplitDialog.svelte";
   import {
     planManuscriptCreation,
     retitleManuscriptCreationPlan,
@@ -230,6 +232,18 @@
     type ManuscriptSceneMovePlan,
   } from "$lib/manuscript/relocate";
   import { executeManuscriptSceneMove } from "$lib/manuscript/relocate-execution";
+  import {
+    planManuscriptSceneSplit,
+    suggestSplitScenePath,
+    type ManuscriptSceneSplitPlan,
+    type ManuscriptSceneSplitRequest,
+  } from "$lib/manuscript/split";
+  import {
+    executeManuscriptSceneSplit,
+    undoManuscriptSceneSplit,
+    type ManuscriptSceneSplitIo,
+    type ManuscriptSceneSplitUndo,
+  } from "$lib/manuscript/split-execution";
   import { MANUSCRIPT_STRUCTURE_FILE } from "$lib/manuscript/structure";
 
   interface SaveFailure {
@@ -380,6 +394,11 @@
   let manuscriptSceneMoveDestinationKey = $state("");
   let manuscriptSceneMoveDestinationIndex = $state(0);
   let manuscriptSceneMoveError = $state("");
+  let manuscriptSceneSplitBaseProject = $state<ManuscriptProjectLoadResult | null>(null);
+  let manuscriptSceneSplitRequest = $state<ManuscriptSceneSplitRequest | null>(null);
+  let manuscriptSceneSplitBusy = $state(false);
+  let manuscriptSceneSplitError = $state("");
+  let manuscriptSceneSplitUndo = $state<ManuscriptSceneSplitUndo | null>(null);
   let manuscriptOutlineFocusItemId = $state("");
   let manuscriptOutlineFocusRevision = $state(0);
   let manuscriptCorkboardId = $state("");
@@ -423,7 +442,9 @@
       Boolean(manuscriptRepairKey) ||
       Boolean(manuscriptMetadataItemId) ||
       Boolean(manuscriptReorderPlan) ||
-      Boolean(manuscriptSceneMoveItemId),
+      Boolean(manuscriptSceneMoveItemId) ||
+      manuscriptSceneSplitBusy ||
+      Boolean(manuscriptSceneSplitRequest),
   );
   const manuscriptCreationPlan = $derived.by(() => {
     if (manuscriptCreationBasePlan?.kind !== "ready") {
@@ -456,6 +477,13 @@
       manuscriptSceneMoveItemId,
       manuscriptSceneMoveDestinationKey,
       manuscriptSceneMoveDestinationIndex,
+    );
+  });
+  const manuscriptSceneSplitPlan = $derived.by<ManuscriptSceneSplitPlan | null>(() => {
+    if (!manuscriptSceneSplitBaseProject || !manuscriptSceneSplitRequest) return null;
+    return planManuscriptSceneSplit(
+      manuscriptSceneSplitBaseProject,
+      manuscriptSceneSplitRequest,
     );
   });
   const manuscriptCorkboard = $derived.by(() => {
@@ -808,6 +836,8 @@
     resetManuscriptMetadata(true);
     resetManuscriptReorder(true);
     resetManuscriptSceneMove(true);
+    resetManuscriptSceneSplit(true);
+    manuscriptSceneSplitUndo = null;
     manuscriptCorkboardId = "";
     manuscriptCorkboardFocusItemId = "";
     manuscriptCorkboardEditorSelection = { start: 0, end: 0 };
@@ -971,7 +1001,7 @@
       ) {
         return;
       }
-      invalidateManuscriptRepairUndo(result);
+      invalidateManuscriptUndo(result);
       manuscriptProject = result;
     } catch (cause) {
       if (
@@ -1085,16 +1115,30 @@
     manuscriptRepairNotice = "";
   }
 
-  function invalidateManuscriptRepairUndo(result: ManuscriptProjectLoadResult): void {
-    if (!manuscriptRepairUndo) return;
+  function invalidateManuscriptUndo(result: ManuscriptProjectLoadResult): void {
     if (
-      result.kind !== "ready" ||
-      result.fingerprint !== manuscriptRepairUndo.expectedFingerprint ||
-      result.text !== manuscriptRepairUndo.expectedText
+      manuscriptRepairUndo &&
+      (result.kind !== "ready" ||
+        result.fingerprint !== manuscriptRepairUndo.expectedFingerprint ||
+        result.text !== manuscriptRepairUndo.expectedText)
     ) {
       manuscriptRepairUndo = null;
       manuscriptRepairNotice =
         "The manuscript structure changed after the last edit, so its one-step Undo is no longer available.";
+    }
+    if (!manuscriptSceneSplitUndo) return;
+    const left = loreIndex?.documents.get(manuscriptSceneSplitUndo.sourcePath);
+    const right = loreIndex?.documents.get(manuscriptSceneSplitUndo.destinationPath);
+    if (
+      result.kind !== "ready" ||
+      result.fingerprint !== manuscriptSceneSplitUndo.expectedStructureFingerprint ||
+      result.text !== manuscriptSceneSplitUndo.expectedStructureText ||
+      left?.fingerprint !== manuscriptSceneSplitUndo.expectedLeftSourceFingerprint ||
+      right?.fingerprint !== manuscriptSceneSplitUndo.expectedRightSourceFingerprint
+    ) {
+      manuscriptSceneSplitUndo = null;
+      manuscriptRepairNotice =
+        "A split scene or the manuscript structure changed, so the guarded split Undo is no longer available.";
     }
   }
 
@@ -1154,6 +1198,7 @@
     manuscriptRepairPlan = null;
     manuscriptProject = result.project;
     manuscriptRepairUndo = result.undo;
+    manuscriptSceneSplitUndo = null;
     manuscriptRepairNotice = `Updated ${plan.candidate.bindingLabel.toLowerCase()} for ${plan.candidate.itemTitle}. The Markdown file was not changed.`;
     manuscriptRepairBusy = false;
   }
@@ -1185,6 +1230,14 @@
     manuscriptRepairUndo = null;
     manuscriptRepairNotice = "The last manuscript structure change was undone exactly.";
     manuscriptRepairBusy = false;
+  }
+
+  async function undoLastManuscriptChange(): Promise<void> {
+    if (manuscriptSceneSplitUndo) {
+      await undoLastManuscriptSceneSplit();
+      return;
+    }
+    await undoLastManuscriptRepair();
   }
 
   function beginManuscriptMetadataEdit(
@@ -1246,6 +1299,7 @@
     const focusSurface = manuscriptMutationSurface;
     manuscriptProject = result.project;
     manuscriptRepairUndo = result.undo;
+    manuscriptSceneSplitUndo = null;
     manuscriptRepairNotice = `Updated details for ${itemTitle}. No Markdown file was changed.`;
     manuscriptRepairBusy = false;
     resetManuscriptMetadata(true);
@@ -1303,6 +1357,7 @@
     }
     manuscriptProject = result.project;
     manuscriptRepairUndo = result.undo;
+    manuscriptSceneSplitUndo = null;
     manuscriptRepairNotice = `Moved ${plan.target.itemTitle} ${plan.target.direction}. No Markdown file was changed.`;
     manuscriptRepairBusy = false;
     resetManuscriptReorder(true);
@@ -1385,10 +1440,213 @@
     const focusSurface = manuscriptMutationSurface;
     manuscriptProject = result.project;
     manuscriptRepairUndo = result.undo;
+    manuscriptSceneSplitUndo = null;
     manuscriptRepairNotice = `Moved ${plan.target.sceneTitle} to ${plan.target.destinationContainerLabel}. No Markdown file was changed.`;
     manuscriptRepairBusy = false;
     resetManuscriptSceneMove(true);
     focusManuscriptMutationItem(plan.target.sceneId, focusSurface);
+  }
+
+  async function beginManuscriptSceneSplit(): Promise<void> {
+    if (!folderPath || !activeFilePath || worldProjectBusy || manuscriptRepairBusy) return;
+    const openingPath = activeFilePath;
+    await saveFile();
+    if (openingPath !== activeFilePath) return;
+    if (dirty || content !== persistedContent || saveState.phase === "error") {
+      manuscriptRepairNotice = "Save this scene successfully before splitting it.";
+      return;
+    }
+    const sourcePath = activeLorePath();
+    const start = editorInput?.selectionStart ?? -1;
+    const end = editorInput?.selectionEnd ?? -1;
+    if (!sourcePath || start !== end) {
+      manuscriptRepairNotice = "Place one collapsed caret inside a saved manuscript scene before splitting.";
+      return;
+    }
+    let attempt = 2;
+    let newSourcePath = suggestSplitScenePath(sourcePath, attempt);
+    while (attempt < 100 && await exists(await join(folderPath, newSourcePath))) {
+      attempt += 1;
+      newSourcePath = suggestSplitScenePath(sourcePath, attempt);
+    }
+    const baseRequest: ManuscriptSceneSplitRequest = {
+      sourcePath,
+      sourceText: content,
+      sourceFingerprint: fingerprintContent(content),
+      caretOffset: start,
+      newSceneId: crypto.randomUUID(),
+      newSceneTitle: "New scene",
+      newSourcePath,
+    };
+    const basePlan = planManuscriptSceneSplit(manuscriptProject, baseRequest);
+    if (basePlan.kind !== "ready") {
+      manuscriptRepairNotice = basePlan.reason;
+      return;
+    }
+    manuscriptSceneSplitBaseProject = manuscriptProject;
+    manuscriptSceneSplitRequest = {
+      ...baseRequest,
+      newSceneTitle: `${basePlan.target.sceneTitle} — continued`,
+    };
+    manuscriptSceneSplitError = "";
+    manuscriptRepairNotice = "";
+  }
+
+  function updateManuscriptSceneSplitRequest(request: ManuscriptSceneSplitRequest): void {
+    if (manuscriptSceneSplitBusy) return;
+    manuscriptSceneSplitRequest = request;
+    manuscriptSceneSplitError = "";
+  }
+
+  function resetManuscriptSceneSplit(force = false): void {
+    if (manuscriptSceneSplitBusy && !force) return;
+    manuscriptSceneSplitBaseProject = null;
+    manuscriptSceneSplitRequest = null;
+    manuscriptSceneSplitBusy = false;
+    manuscriptSceneSplitError = "";
+  }
+
+  function closeManuscriptSceneSplit(): void {
+    if (manuscriptSceneSplitBusy) return;
+    const caret = manuscriptSceneSplitRequest?.caretOffset ?? 0;
+    resetManuscriptSceneSplit();
+    void tick().then(() => {
+      editorInput?.focus({ preventScroll: true });
+      editorInput?.setSelectionRange(caret, caret);
+    });
+  }
+
+  function manuscriptSceneSplitIo(rootPath: string): ManuscriptSceneSplitIo {
+    return {
+      reload: async () => {
+        const scan = await scanProjectLore(rootPath, tauriLoreScanBackend);
+        const currentIndex = await buildLoreProjectIndexCooperatively(scan.sources);
+        return loadManuscriptProject(rootPath, tauriLoreScanBackend, {
+          loreIndex: currentIndex,
+        });
+      },
+      readSource: async (relativePath) => readTextFile(await join(rootPath, relativePath)),
+      sourceExists: async (relativePath) => exists(await join(rootPath, relativePath)),
+      splitAtomic: (request) =>
+        invoke("split_manuscript_scene_atomic", {
+          request: { rootPath, ...request },
+        }),
+      undoAtomic: (request) =>
+        invoke("undo_manuscript_scene_split_atomic", {
+          request: { rootPath, ...request },
+        }),
+    };
+  }
+
+  async function refreshSceneSplitDirectories(
+    rootPath: string,
+    ...relativePaths: string[]
+  ): Promise<void> {
+    const directories = new Set(
+      relativePaths.map((relativePath) => {
+        const separator = relativePath.lastIndexOf("/");
+        return separator < 0 ? "" : relativePath.slice(0, separator);
+      }),
+    );
+    for (const directory of directories) {
+      await refreshDirectory(directory ? await join(rootPath, directory) : rootPath);
+    }
+  }
+
+  async function confirmManuscriptSceneSplit(): Promise<void> {
+    const plan = manuscriptSceneSplitPlan;
+    if (!folderPath || !loreIndex || manuscriptSceneSplitBusy || plan?.kind !== "ready") return;
+    const rootPath = folderPath;
+    const session = loreIndexSession;
+    const sourceAbsolutePath = activeFilePath;
+    manuscriptSceneSplitBusy = true;
+    manuscriptSceneSplitError = "";
+    const result = await executeManuscriptSceneSplit(plan, manuscriptSceneSplitIo(rootPath));
+    if (rootPath !== folderPath || session !== loreIndexSession || sourceAbsolutePath !== activeFilePath) {
+      resetManuscriptSceneSplit(true);
+      error = "The project or active scene changed while the split was running. Refresh before continuing.";
+      return;
+    }
+    if (result.kind === "failed") {
+      manuscriptSceneSplitBusy = false;
+      manuscriptSceneSplitError = result.message;
+      void refreshLoreIndex(rootPath);
+      return;
+    }
+
+    content = plan.leftSourceText;
+    persistedContent = plan.leftSourceText;
+    persistedContentByPath.set(sourceAbsolutePath, plan.leftSourceText);
+    saveState = createSaveState();
+    lastSaveFailure = null;
+    forcedSave = null;
+    practiceState = beginDailyPractice(plan.leftSourceText, practiceState.dailyWords);
+    manuscriptProject = result.project;
+    manuscriptRepairUndo = null;
+    manuscriptSceneSplitUndo = null;
+    manuscriptRepairNotice = `Split ${plan.target.sceneTitle} into two scene files. Undo remains available until either scene or the structure changes.`;
+    if (result.cleanupWarnings.length > 0) {
+      appendError(`The split is verified, but temporary backup cleanup needs review: ${result.cleanupWarnings.join(" ")}`);
+    }
+    resetManuscriptSceneSplit(true);
+    await refreshSceneSplitDirectories(rootPath, plan.target.sourcePath, plan.target.newSourcePath);
+    await refreshLoreIndex(rootPath);
+    manuscriptSceneSplitUndo = result.undo;
+    await tick();
+    editorInput?.focus({ preventScroll: true });
+    editorInput?.setSelectionRange(content.length, content.length);
+  }
+
+  async function undoLastManuscriptSceneSplit(): Promise<void> {
+    const undo = manuscriptSceneSplitUndo;
+    if (!folderPath || !loreIndex || !undo || manuscriptSceneSplitBusy) return;
+    const activeRelativePath = activeLorePath();
+    if (
+      (activeRelativePath === undo.sourcePath || activeRelativePath === undo.destinationPath) &&
+      (dirty || content !== persistedContent)
+    ) {
+      manuscriptRepairNotice = "Save or discard changes in the split scenes before using Undo.";
+      return;
+    }
+    const rootPath = folderPath;
+    const session = loreIndexSession;
+    manuscriptSceneSplitBusy = true;
+    const result = await undoManuscriptSceneSplit(undo, manuscriptSceneSplitIo(rootPath));
+    if (rootPath !== folderPath || session !== loreIndexSession) {
+      manuscriptSceneSplitBusy = false;
+      manuscriptSceneSplitUndo = null;
+      error = "The project changed while scene-split Undo was running. Refresh before continuing.";
+      return;
+    }
+    if (result.kind === "failed") {
+      manuscriptSceneSplitBusy = false;
+      manuscriptSceneSplitUndo = null;
+      manuscriptRepairNotice = result.message;
+      void refreshLoreIndex(rootPath);
+      return;
+    }
+
+    const sourceAbsolutePath = await join(rootPath, undo.sourcePath);
+    const destinationAbsolutePath = await join(rootPath, undo.destinationPath);
+    persistedContentByPath.set(sourceAbsolutePath, undo.restoredSourceText);
+    persistedContentByPath.delete(destinationAbsolutePath);
+    if (activeRelativePath === undo.sourcePath || activeRelativePath === undo.destinationPath) {
+      activeFilePath = sourceAbsolutePath;
+      activeFile = undo.sourcePath.split("/").at(-1) ?? undo.sourcePath;
+      content = undo.restoredSourceText;
+      persistedContent = undo.restoredSourceText;
+      saveState = createSaveState();
+      practiceState = beginDailyPractice(content, practiceState.dailyWords);
+    }
+    manuscriptProject = result.project;
+    manuscriptSceneSplitUndo = null;
+    manuscriptRepairNotice = "The scene split was undone exactly; the unchanged right-hand file was removed.";
+    manuscriptSceneSplitBusy = false;
+    if (result.cleanupWarnings.length > 0) {
+      appendError(`Undo is verified, but temporary backup cleanup needs review: ${result.cleanupWarnings.join(" ")}`);
+    }
+    await refreshSceneSplitDirectories(rootPath, undo.sourcePath, undo.destinationPath);
+    await refreshLoreIndex(rootPath);
   }
 
   function focusManuscriptMutationItem(
@@ -3745,7 +4003,8 @@
       manuscriptCreationVisible ||
       manuscriptRepairKey ||
       manuscriptMetadataItemId ||
-      manuscriptReorderPlan
+      manuscriptReorderPlan ||
+      manuscriptSceneSplitRequest
     ) return;
     if (
       (event.ctrlKey || event.metaKey) &&
@@ -4197,9 +4456,9 @@
         <ManuscriptOutline
           result={manuscriptProject}
           loading={manuscriptLoading}
-          repairBusy={manuscriptRepairBusy}
+          repairBusy={manuscriptRepairBusy || manuscriptSceneSplitBusy}
           repairNotice={manuscriptRepairNotice}
-          repairUndoLabel={manuscriptRepairUndo?.label ?? ""}
+          repairUndoLabel={manuscriptSceneSplitUndo?.label ?? manuscriptRepairUndo?.label ?? ""}
           focusItemId={manuscriptOutlineFocusItemId}
           focusRevision={manuscriptOutlineFocusRevision}
           onRefresh={() => void refreshManuscriptStructure()}
@@ -4212,7 +4471,7 @@
           canMoveScene={canMoveManuscriptScene}
           onMoveScene={beginManuscriptSceneMove}
           onOpenCorkboard={openManuscriptCorkboard}
-          onUndoRepair={() => void undoLastManuscriptRepair()}
+          onUndoRepair={() => void undoLastManuscriptChange()}
         />
       {/if}
     {/if}
@@ -4285,6 +4544,15 @@
             class:save-error={saveState.phase === "error"}
             aria-live="polite"
           >{saveStatus}</span>
+          {#if !manuscriptCorkboard}
+            <button
+              type="button"
+              class="focus-mode-button"
+              title="Split a saved manuscript scene at the collapsed caret"
+              disabled={dirty || saveState.phase === "saving" || worldProjectBusy}
+              onclick={() => void beginManuscriptSceneSplit()}
+            >Split scene…</button>
+          {/if}
           <button
             type="button"
             class="focus-mode-button"
@@ -4450,6 +4718,17 @@
         }}
         onCancel={cancelManuscriptSceneMove}
         onConfirm={() => void confirmManuscriptSceneMove()}
+      />
+    {/if}
+    {#if manuscriptSceneSplitRequest && manuscriptSceneSplitPlan}
+      <ManuscriptSceneSplitDialog
+        request={manuscriptSceneSplitRequest}
+        plan={manuscriptSceneSplitPlan}
+        busy={manuscriptSceneSplitBusy}
+        executionError={manuscriptSceneSplitError}
+        onRequest={updateManuscriptSceneSplitRequest}
+        onCancel={closeManuscriptSceneSplit}
+        onConfirm={() => void confirmManuscriptSceneSplit()}
       />
     {/if}
     <div class="practice-bar" aria-label="Writing progress">
