@@ -1356,7 +1356,9 @@
     resetManuscriptSceneMove();
     if (!itemId) return;
     void tick().then(() => {
-      document.getElementById(`move-scene-${surface}-${itemId}`)?.focus();
+      window.setTimeout(() => {
+        document.getElementById(`move-scene-${surface}-${itemId}`)?.focus();
+      }, 0);
     });
   }
 
