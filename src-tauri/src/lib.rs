@@ -5,6 +5,8 @@ use std::path::{Component, Path};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri_plugin_fs::FsExt;
 
+mod manuscript_split;
+
 const MANUSCRIPT_STRUCTURE_FILE: &str = "200-crappy-words.manuscripts.json";
 const MAX_MANUSCRIPT_STRUCTURE_BYTES: usize = 10 * 1024 * 1024;
 
@@ -333,7 +335,9 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             rename_lore_file_no_clobber,
-            replace_manuscript_structure_atomic
+            replace_manuscript_structure_atomic,
+            manuscript_split::split_manuscript_scene_atomic,
+            manuscript_split::undo_manuscript_scene_split_atomic
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
