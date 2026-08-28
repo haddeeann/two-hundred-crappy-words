@@ -6,8 +6,8 @@ use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri_plugin_fs::FsExt;
 
-const MANUSCRIPT_STRUCTURE_FILE: &str = "200-crappy-words.manuscripts.json";
-const MAX_MANUSCRIPT_FILE_BYTES: usize = 10 * 1024 * 1024;
+pub(crate) const MANUSCRIPT_STRUCTURE_FILE: &str = "200-crappy-words.manuscripts.json";
+pub(crate) const MAX_MANUSCRIPT_FILE_BYTES: usize = 10 * 1024 * 1024;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -452,17 +452,17 @@ fn rollback_undo(
     errors
 }
 
-fn canonical_project_root(root_path: &Path) -> Result<PathBuf, String> {
+pub(crate) fn canonical_project_root(root_path: &Path) -> Result<PathBuf, String> {
     fs::canonicalize(root_path)
         .map_err(|error| format!("The selected project root is unavailable: {error}"))
 }
 
-fn verified_structure_file(root: &Path) -> Result<PathBuf, String> {
+pub(crate) fn verified_structure_file(root: &Path) -> Result<PathBuf, String> {
     let path = root.join(MANUSCRIPT_STRUCTURE_FILE);
     verified_regular_file(root, &path, "The manuscript structure")
 }
 
-fn verified_regular_relative_file(
+pub(crate) fn verified_regular_relative_file(
     root: &Path,
     relative: &Path,
     label: &str,
@@ -471,7 +471,11 @@ fn verified_regular_relative_file(
     verified_regular_file(root, &root.join(relative), label)
 }
 
-fn verified_regular_file(root: &Path, path: &Path, label: &str) -> Result<PathBuf, String> {
+pub(crate) fn verified_regular_file(
+    root: &Path,
+    path: &Path,
+    label: &str,
+) -> Result<PathBuf, String> {
     let metadata =
         fs::symlink_metadata(path).map_err(|error| format!("{label} is unavailable: {error}"))?;
     if metadata.file_type().is_symlink() || !metadata.is_file() {
@@ -509,7 +513,7 @@ fn verified_absent_destination(root: &Path, relative: &Path) -> Result<PathBuf, 
     }
 }
 
-fn validate_relative_markdown_path(path: &Path) -> Result<(), String> {
+pub(crate) fn validate_relative_markdown_path(path: &Path) -> Result<(), String> {
     if path.as_os_str().is_empty() || path.is_absolute() {
         return Err("Scene paths must be non-empty and project-relative.".into());
     }
@@ -530,14 +534,17 @@ fn validate_relative_markdown_path(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-fn validate_text_limit(text: &str, label: &str) -> Result<(), String> {
+pub(crate) fn validate_text_limit(text: &str, label: &str) -> Result<(), String> {
     if text.len() > MAX_MANUSCRIPT_FILE_BYTES {
         return Err(format!("The {label} exceeds the 10 MiB transaction limit."));
     }
     Ok(())
 }
 
-fn validate_structure_replacement(expected: &str, replacement: &str) -> Result<(), String> {
+pub(crate) fn validate_structure_replacement(
+    expected: &str,
+    replacement: &str,
+) -> Result<(), String> {
     validate_text_limit(expected, "existing manuscript structure")?;
     validate_text_limit(replacement, "replacement manuscript structure")?;
     validate_structure_json(expected)?;
@@ -566,7 +573,7 @@ fn validate_structure_json(text: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn require_exact_text(path: &Path, expected: &str, message: &str) -> Result<(), String> {
+pub(crate) fn require_exact_text(path: &Path, expected: &str, message: &str) -> Result<(), String> {
     let current =
         fs::read_to_string(path).map_err(|error| format!("{message} Read failed: {error}"))?;
     if current != expected {
@@ -575,7 +582,7 @@ fn require_exact_text(path: &Path, expected: &str, message: &str) -> Result<(), 
     Ok(())
 }
 
-struct TempArtifact {
+pub(crate) struct TempArtifact {
     path: PathBuf,
     preserve: bool,
 }
@@ -588,15 +595,15 @@ impl TempArtifact {
         }
     }
 
-    fn path(&self) -> &Path {
+    pub(crate) fn path(&self) -> &Path {
         &self.path
     }
 
-    fn preserve(&mut self) {
+    pub(crate) fn preserve(&mut self) {
         self.preserve = true;
     }
 
-    fn cleanup(&mut self) -> Result<(), String> {
+    pub(crate) fn cleanup(&mut self) -> Result<(), String> {
         match fs::remove_file(&self.path) {
             Ok(()) => {
                 self.preserve = true;
@@ -622,7 +629,11 @@ impl Drop for TempArtifact {
     }
 }
 
-fn stage_replacement(path: &Path, text: &str, label: &str) -> Result<TempArtifact, String> {
+pub(crate) fn stage_replacement(
+    path: &Path,
+    text: &str,
+    label: &str,
+) -> Result<TempArtifact, String> {
     let parent = path
         .parent()
         .ok_or_else(|| format!("The {label} path has no parent."))?;
@@ -646,7 +657,7 @@ fn stage_replacement(path: &Path, text: &str, label: &str) -> Result<TempArtifac
     Ok(artifact)
 }
 
-fn create_backup_link(path: &Path, label: &str) -> Result<TempArtifact, String> {
+pub(crate) fn create_backup_link(path: &Path, label: &str) -> Result<TempArtifact, String> {
     let parent = path
         .parent()
         .ok_or_else(|| format!("The {label} path has no parent."))?;
@@ -737,7 +748,7 @@ fn unique_path(parent: &Path, label: &str, attempt: u8) -> Result<PathBuf, Strin
 }
 
 #[cfg(unix)]
-fn verify_same_file(source: &Path, target: &Path) -> Result<(), String> {
+pub(crate) fn verify_same_file(source: &Path, target: &Path) -> Result<(), String> {
     use std::os::unix::fs::MetadataExt;
     let source_metadata = fs::symlink_metadata(source)
         .map_err(|error| format!("A transaction source could not be rechecked: {error}"))?;
@@ -806,7 +817,7 @@ fn format_transaction_failure(
     )
 }
 
-fn sync_parent(path: &Path) {
+pub(crate) fn sync_parent(path: &Path) {
     if let Some(parent) = path.parent() {
         if let Ok(directory) = fs::File::open(parent) {
             let _ = directory.sync_all();

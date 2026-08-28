@@ -5,6 +5,7 @@ use std::path::{Component, Path};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri_plugin_fs::FsExt;
 
+mod manuscript_merge;
 mod manuscript_split;
 
 const MANUSCRIPT_STRUCTURE_FILE: &str = "200-crappy-words.manuscripts.json";
@@ -336,6 +337,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             rename_lore_file_no_clobber,
             replace_manuscript_structure_atomic,
+            manuscript_merge::merge_manuscript_scenes_atomic,
+            manuscript_merge::undo_manuscript_scene_merge_atomic,
             manuscript_split::split_manuscript_scene_atomic,
             manuscript_split::undo_manuscript_scene_split_atomic
         ])
