@@ -18,7 +18,7 @@ Merge two adjacent verified scenes without deleting prose or silently discarding
 
 ### Acceptance criteria
 
-- [ ] Approve which adjacent scene survives, how the prose boundary is joined, what happens to the retired Markdown source, and how non-source metadata on the retired scene remains recoverable.
+- [x] Approve which adjacent scene survives, how the prose boundary is joined, what happens to the retired Markdown source, and how non-source metadata on the retired scene remains recoverable.
 - [ ] Limit the first merge to two adjacent fingerprint-verified scenes in one exact structure array; never infer a merge across containers or manuscripts.
 - [ ] Preview both complete source paths, the exact prose join, the surviving and retired stable identities, metadata disposition, portable structure change, and every affected file.
 - [ ] Revalidate both saved sources, both fingerprints, structure fingerprint, any retirement destination, and the complete semantic plan immediately before writing.
@@ -88,7 +88,7 @@ Merge two adjacent verified scenes without deleting prose or silently discarding
 
 ## Blockers and decision gates
 
-User input is required at D-030 before merge implementation. The recommendation is: the left scene survives; its exact prose is joined to the right prose with a separately previewed boundary choice; the right source is renamed without clobbering to a visible non-Markdown `.retired` backup rather than deleted; and merge is initially refused when the retired scene contains descriptive metadata that would otherwise disappear from the portable structure. Alternatives and tradeoffs are recorded in D-030.
+No blocker. D-030 was approved on 2026-08-27: the left scene survives, the prose join is previewed, the right Markdown source is renamed without clobbering to a visible non-Markdown `.retired` backup rather than deleted, and the first merge refuses a right scene whose descriptive or unknown metadata would otherwise leave the portable structure.
 
 ## Handoff protocol
 

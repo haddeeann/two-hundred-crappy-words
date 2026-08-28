@@ -271,10 +271,10 @@ Why: the left side begins at the original scene's opening and is the least surpr
 
 The user approved this boundary on 2026-08-27.
 
-## D-030 — Proposed adjacent-scene merge retirement boundary
+## D-030 — Adjacent-scene merge retires the right source visibly
 
 - Date: 2026-08-27
-- Status: proposed; user input required
+- Status: accepted
 
 The recommended first merge operates only on two adjacent, fingerprint-verified scenes in the same manuscript array. The left scene survives with its complete object, stable ID, metadata, and source path. Its prose is followed by the right scene's prose using an explicitly previewed boundary choice: preserve the exact existing boundary, or insert one blank line when the current boundary has none. The right scene leaves active structure only after its exact Markdown source is renamed without clobbering to a visible sibling such as `scene.md.retired`; it is not deleted or rewritten. Undo may move that exact unchanged retired file back and restore both sources and the complete structure only while every affected path still matches the merge result.
 
@@ -283,3 +283,5 @@ The first implementation should refuse a right-hand scene with descriptive metad
 Alternatives considered for the retired Markdown are: leave it at its original `.md` path, which is maximally non-mutating but leaves duplicate searchable prose; move it into an archive directory, which requires choosing or creating project layout and still indexes duplicate Markdown; or delete it after exact guards, which is a cleaner filesystem result but makes in-session Undo the only app-owned recovery boundary. Alternatives for retired metadata are explicit consent to discard it, mechanically append it to the surviving scene's notes, or introduce a new portable retired-items schema. Each either loses planning work, invents semantic prose, or expands the manuscript format, so the restrictive first version is recommended.
 
 Why: merge should reduce two active prose sources to one without treating “remove from compile” as permission to erase writer-owned bytes or planning claims. A visible non-Markdown retirement preserves the exact source, prevents connected-lore duplication, requires no proprietary archive layout, and remains understandable outside the app. Keeping the left identity mirrors the approved split direction and makes split-then-immediate-merge reversible without guessing which scene owns established metadata.
+
+The user approved this boundary on 2026-08-27.
