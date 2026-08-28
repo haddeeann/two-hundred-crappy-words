@@ -190,6 +190,7 @@
   import ManuscriptRepairDialog from "$lib/manuscript/ManuscriptRepairDialog.svelte";
   import ManuscriptReorderDialog from "$lib/manuscript/ManuscriptReorderDialog.svelte";
   import ManuscriptSceneMoveDialog from "$lib/manuscript/ManuscriptSceneMoveDialog.svelte";
+  import ManuscriptSceneMergeDialog from "$lib/manuscript/ManuscriptSceneMergeDialog.svelte";
   import ManuscriptSceneSplitDialog from "$lib/manuscript/ManuscriptSceneSplitDialog.svelte";
   import {
     planManuscriptCreation,
@@ -232,6 +233,20 @@
     type ManuscriptSceneMovePlan,
   } from "$lib/manuscript/relocate";
   import { executeManuscriptSceneMove } from "$lib/manuscript/relocate-execution";
+  import {
+    manuscriptSceneMergeAvailableSceneIds,
+    manuscriptSceneMergeAvailability,
+    planManuscriptSceneMerge,
+    suggestRetiredScenePath,
+    type ManuscriptSceneMergePlan,
+    type ManuscriptSceneMergeRequest,
+  } from "$lib/manuscript/merge";
+  import {
+    executeManuscriptSceneMerge,
+    undoManuscriptSceneMerge,
+    type ManuscriptSceneMergeIo,
+    type ManuscriptSceneMergeUndo,
+  } from "$lib/manuscript/merge-execution";
   import {
     manuscriptSceneSplitAvailability,
     planManuscriptSceneSplit,
@@ -402,6 +417,11 @@
   let manuscriptSceneSplitBusy = $state(false);
   let manuscriptSceneSplitError = $state("");
   let manuscriptSceneSplitUndo = $state<ManuscriptSceneSplitUndo | null>(null);
+  let manuscriptSceneMergeBaseProject = $state<ManuscriptProjectLoadResult | null>(null);
+  let manuscriptSceneMergeRequest = $state<ManuscriptSceneMergeRequest | null>(null);
+  let manuscriptSceneMergeBusy = $state(false);
+  let manuscriptSceneMergeError = $state("");
+  let manuscriptSceneMergeUndo = $state<ManuscriptSceneMergeUndo | null>(null);
   let manuscriptOutlineFocusItemId = $state("");
   let manuscriptOutlineFocusRevision = $state(0);
   let manuscriptCorkboardId = $state("");
@@ -447,7 +467,9 @@
       Boolean(manuscriptReorderPlan) ||
       Boolean(manuscriptSceneMoveItemId) ||
       manuscriptSceneSplitBusy ||
-      Boolean(manuscriptSceneSplitRequest),
+      Boolean(manuscriptSceneSplitRequest) ||
+      manuscriptSceneMergeBusy ||
+      Boolean(manuscriptSceneMergeRequest),
   );
   const manuscriptCreationPlan = $derived.by(() => {
     if (manuscriptCreationBasePlan?.kind !== "ready") {
@@ -489,6 +511,16 @@
       manuscriptSceneSplitRequest,
     );
   });
+  const manuscriptSceneMergePlan = $derived.by<ManuscriptSceneMergePlan | null>(() => {
+    if (!manuscriptSceneMergeBaseProject || !manuscriptSceneMergeRequest) return null;
+    return planManuscriptSceneMerge(
+      manuscriptSceneMergeBaseProject,
+      manuscriptSceneMergeRequest,
+    );
+  });
+  const manuscriptSceneMergeAvailableIds = $derived(
+    manuscriptSceneMergeAvailableSceneIds(manuscriptProject),
+  );
   const activeSceneSplitAvailability = $derived.by(() => {
     const sourcePath = activeLorePath();
     if (
@@ -855,7 +887,9 @@
     resetManuscriptReorder(true);
     resetManuscriptSceneMove(true);
     resetManuscriptSceneSplit(true);
+    resetManuscriptSceneMerge(true);
     manuscriptSceneSplitUndo = null;
+    manuscriptSceneMergeUndo = null;
     manuscriptCorkboardId = "";
     manuscriptCorkboardFocusItemId = "";
     manuscriptCorkboardEditorSelection = { start: 0, end: 0 };
@@ -1144,19 +1178,35 @@
       manuscriptRepairNotice =
         "The manuscript structure changed after the last edit, so its one-step Undo is no longer available.";
     }
-    if (!manuscriptSceneSplitUndo) return;
-    const left = loreIndex?.documents.get(manuscriptSceneSplitUndo.sourcePath);
-    const right = loreIndex?.documents.get(manuscriptSceneSplitUndo.destinationPath);
-    if (
-      result.kind !== "ready" ||
-      result.fingerprint !== manuscriptSceneSplitUndo.expectedStructureFingerprint ||
-      result.text !== manuscriptSceneSplitUndo.expectedStructureText ||
-      left?.fingerprint !== manuscriptSceneSplitUndo.expectedLeftSourceFingerprint ||
-      right?.fingerprint !== manuscriptSceneSplitUndo.expectedRightSourceFingerprint
-    ) {
-      manuscriptSceneSplitUndo = null;
-      manuscriptRepairNotice =
-        "A split scene or the manuscript structure changed, so the guarded split Undo is no longer available.";
+    if (manuscriptSceneSplitUndo) {
+      const left = loreIndex?.documents.get(manuscriptSceneSplitUndo.sourcePath);
+      const right = loreIndex?.documents.get(manuscriptSceneSplitUndo.destinationPath);
+      if (
+        result.kind !== "ready" ||
+        result.fingerprint !== manuscriptSceneSplitUndo.expectedStructureFingerprint ||
+        result.text !== manuscriptSceneSplitUndo.expectedStructureText ||
+        left?.fingerprint !== manuscriptSceneSplitUndo.expectedLeftSourceFingerprint ||
+        right?.fingerprint !== manuscriptSceneSplitUndo.expectedRightSourceFingerprint
+      ) {
+        manuscriptSceneSplitUndo = null;
+        manuscriptRepairNotice =
+          "A split scene or the manuscript structure changed, so the guarded split Undo is no longer available.";
+      }
+    }
+    if (manuscriptSceneMergeUndo) {
+      const left = loreIndex?.documents.get(manuscriptSceneMergeUndo.leftPath);
+      const originalRight = loreIndex?.documents.get(manuscriptSceneMergeUndo.rightPath);
+      if (
+        result.kind !== "ready" ||
+        result.fingerprint !== manuscriptSceneMergeUndo.expectedStructureFingerprint ||
+        result.text !== manuscriptSceneMergeUndo.expectedStructureText ||
+        left?.fingerprint !== manuscriptSceneMergeUndo.expectedMergedLeftFingerprint ||
+        originalRight
+      ) {
+        manuscriptSceneMergeUndo = null;
+        manuscriptRepairNotice =
+          "The merged scene, original right path, or manuscript structure changed, so guarded merge Undo is no longer available.";
+      }
     }
   }
 
@@ -1217,6 +1267,7 @@
     manuscriptProject = result.project;
     manuscriptRepairUndo = result.undo;
     manuscriptSceneSplitUndo = null;
+    manuscriptSceneMergeUndo = null;
     manuscriptRepairNotice = `Updated ${plan.candidate.bindingLabel.toLowerCase()} for ${plan.candidate.itemTitle}. The Markdown file was not changed.`;
     manuscriptRepairBusy = false;
   }
@@ -1251,6 +1302,10 @@
   }
 
   async function undoLastManuscriptChange(): Promise<void> {
+    if (manuscriptSceneMergeUndo) {
+      await undoLastManuscriptSceneMerge();
+      return;
+    }
     if (manuscriptSceneSplitUndo) {
       await undoLastManuscriptSceneSplit();
       return;
@@ -1318,6 +1373,7 @@
     manuscriptProject = result.project;
     manuscriptRepairUndo = result.undo;
     manuscriptSceneSplitUndo = null;
+    manuscriptSceneMergeUndo = null;
     manuscriptRepairNotice = `Updated details for ${itemTitle}. No Markdown file was changed.`;
     manuscriptRepairBusy = false;
     resetManuscriptMetadata(true);
@@ -1376,6 +1432,7 @@
     manuscriptProject = result.project;
     manuscriptRepairUndo = result.undo;
     manuscriptSceneSplitUndo = null;
+    manuscriptSceneMergeUndo = null;
     manuscriptRepairNotice = `Moved ${plan.target.itemTitle} ${plan.target.direction}. No Markdown file was changed.`;
     manuscriptRepairBusy = false;
     resetManuscriptReorder(true);
@@ -1459,6 +1516,7 @@
     manuscriptProject = result.project;
     manuscriptRepairUndo = result.undo;
     manuscriptSceneSplitUndo = null;
+    manuscriptSceneMergeUndo = null;
     manuscriptRepairNotice = `Moved ${plan.target.sceneTitle} to ${plan.target.destinationContainerLabel}. No Markdown file was changed.`;
     manuscriptRepairBusy = false;
     resetManuscriptSceneMove(true);
@@ -1604,6 +1662,7 @@
     manuscriptProject = result.project;
     manuscriptRepairUndo = null;
     manuscriptSceneSplitUndo = null;
+    manuscriptSceneMergeUndo = null;
     manuscriptRepairNotice = `Split ${plan.target.sceneTitle} into two scene files. Undo remains available until either scene or the structure changes.`;
     if (result.cleanupWarnings.length > 0) {
       appendError(`The split is verified, but temporary backup cleanup needs review: ${result.cleanupWarnings.join(" ")}`);
@@ -1670,6 +1729,282 @@
       appendError(`Undo is verified, but temporary backup cleanup needs review: ${result.cleanupWarnings.join(" ")}`);
     }
     await refreshSceneSplitDirectories(rootPath, undo.sourcePath, undo.destinationPath);
+    await refreshLoreIndex(rootPath);
+  }
+
+  function canMergeManuscriptScene(itemId: string): boolean {
+    return manuscriptSceneMergeAvailableIds.has(itemId);
+  }
+
+  async function beginManuscriptSceneMerge(
+    itemId: string,
+    surface: "outline" | "corkboard" = "outline",
+  ): Promise<void> {
+    if (!folderPath || !itemId || worldProjectBusy || manuscriptRepairBusy) return;
+    let availability = manuscriptSceneMergeAvailability(manuscriptProject, itemId);
+    if (availability.kind !== "available") {
+      manuscriptRepairNotice = availability.reason;
+      return;
+    }
+    const activeRelativePath = activeLorePath();
+    if (
+      (activeRelativePath === availability.leftSourcePath ||
+        activeRelativePath === availability.rightSourcePath) &&
+      (dirty || content !== persistedContent)
+    ) {
+      await saveFile();
+      if (dirty || content !== persistedContent || saveState.phase === "error") {
+        manuscriptRepairNotice = "Save the affected scene successfully before merging.";
+        return;
+      }
+    }
+
+    const rootPath = folderPath;
+    const io = manuscriptSceneMergeIo(rootPath);
+    let current: ManuscriptProjectLoadResult;
+    try {
+      current = await io.reload();
+    } catch (cause) {
+      manuscriptRepairNotice = `The manuscript could not be refreshed for merge: ${formatError(cause)}`;
+      return;
+    }
+    if (rootPath !== folderPath) return;
+    availability = manuscriptSceneMergeAvailability(current, itemId);
+    if (availability.kind !== "available") {
+      manuscriptRepairNotice = availability.reason;
+      return;
+    }
+
+    let leftSourceText: string;
+    let rightSourceText: string;
+    try {
+      [leftSourceText, rightSourceText] = await Promise.all([
+        io.readSource(availability.leftSourcePath),
+        io.readSource(availability.rightSourcePath),
+      ]);
+    } catch (cause) {
+      manuscriptRepairNotice = `Both scene sources must be readable before merging: ${formatError(cause)}`;
+      return;
+    }
+    if (
+      fingerprintContent(leftSourceText) !== availability.leftSourceFingerprint ||
+      fingerprintContent(rightSourceText) !== availability.rightSourceFingerprint
+    ) {
+      manuscriptRepairNotice = "One of the adjacent scenes changed while the merge was opening. Refresh and try again.";
+      void refreshLoreIndex(rootPath);
+      return;
+    }
+
+    let attempt = 1;
+    let retiredSourcePath = suggestRetiredScenePath(availability.rightSourcePath, attempt);
+    try {
+      while (attempt < 100 && await io.sourceExists(retiredSourcePath)) {
+        attempt += 1;
+        retiredSourcePath = suggestRetiredScenePath(availability.rightSourcePath, attempt);
+      }
+      if (await io.sourceExists(retiredSourcePath)) {
+        manuscriptRepairNotice = "A non-colliding visible retirement path could not be found safely.";
+        return;
+      }
+    } catch (cause) {
+      manuscriptRepairNotice = `The retirement destination could not be checked safely: ${formatError(cause)}`;
+      return;
+    }
+
+    const request: ManuscriptSceneMergeRequest = {
+      leftSceneId: itemId,
+      leftSourceText,
+      leftSourceFingerprint: availability.leftSourceFingerprint,
+      rightSourceText,
+      rightSourceFingerprint: availability.rightSourceFingerprint,
+      join: "blank-line",
+      retiredSourcePath,
+    };
+    const plan = planManuscriptSceneMerge(current, request);
+    if (plan.kind !== "ready") {
+      manuscriptRepairNotice = plan.reason;
+      return;
+    }
+    manuscriptSceneMergeBaseProject = current;
+    manuscriptSceneMergeRequest = request;
+    manuscriptSceneMergeError = "";
+    manuscriptRepairNotice = "";
+    manuscriptMutationSurface = surface;
+  }
+
+  function updateManuscriptSceneMergeRequest(request: ManuscriptSceneMergeRequest): void {
+    if (manuscriptSceneMergeBusy) return;
+    manuscriptSceneMergeRequest = request;
+    manuscriptSceneMergeError = "";
+  }
+
+  function resetManuscriptSceneMerge(force = false): void {
+    if (manuscriptSceneMergeBusy && !force) return;
+    manuscriptSceneMergeBaseProject = null;
+    manuscriptSceneMergeRequest = null;
+    manuscriptSceneMergeBusy = false;
+    manuscriptSceneMergeError = "";
+  }
+
+  function closeManuscriptSceneMerge(): void {
+    if (manuscriptSceneMergeBusy) return;
+    const itemId = manuscriptSceneMergeRequest?.leftSceneId ?? "";
+    const surface = manuscriptMutationSurface;
+    resetManuscriptSceneMerge();
+    if (!itemId) return;
+    void tick().then(() => {
+      document.getElementById(`merge-scene-${surface}-${itemId}`)?.focus();
+    });
+  }
+
+  function manuscriptSceneMergeIo(rootPath: string): ManuscriptSceneMergeIo {
+    return {
+      reload: async () => {
+        const scan = await scanProjectLore(rootPath, tauriLoreScanBackend);
+        const currentIndex = await buildLoreProjectIndexCooperatively(scan.sources);
+        return loadManuscriptProject(rootPath, tauriLoreScanBackend, {
+          loreIndex: currentIndex,
+        });
+      },
+      readSource: async (relativePath) => readTextFile(await join(rootPath, relativePath)),
+      sourceExists: async (relativePath) => exists(await join(rootPath, relativePath)),
+      mergeAtomic: (request) =>
+        invoke("merge_manuscript_scenes_atomic", {
+          request: { rootPath, ...request },
+        }),
+      undoAtomic: (request) =>
+        invoke("undo_manuscript_scene_merge_atomic", {
+          request: { rootPath, ...request },
+        }),
+    };
+  }
+
+  async function confirmManuscriptSceneMerge(): Promise<void> {
+    const plan = manuscriptSceneMergePlan;
+    if (!folderPath || !loreIndex || manuscriptSceneMergeBusy || plan?.kind !== "ready") return;
+    const rootPath = folderPath;
+    const session = loreIndexSession;
+    const activeRelativePath = activeLorePath();
+    manuscriptSceneMergeBusy = true;
+    manuscriptSceneMergeError = "";
+    const result = await executeManuscriptSceneMerge(plan, manuscriptSceneMergeIo(rootPath));
+    if (rootPath !== folderPath || session !== loreIndexSession) {
+      resetManuscriptSceneMerge(true);
+      error = "The project changed while the scene merge was running. Refresh before continuing.";
+      return;
+    }
+    if (result.kind === "failed") {
+      manuscriptSceneMergeBusy = false;
+      manuscriptSceneMergeError = result.message;
+      void refreshLoreIndex(rootPath);
+      return;
+    }
+
+    const leftAbsolutePath = await join(rootPath, plan.target.leftSourcePath);
+    const rightAbsolutePath = await join(rootPath, plan.target.rightSourcePath);
+    const retiredAbsolutePath = await join(rootPath, plan.target.retiredSourcePath);
+    persistedContentByPath.set(leftAbsolutePath, plan.mergedSourceText);
+    persistedContentByPath.delete(rightAbsolutePath);
+    persistedContentByPath.set(retiredAbsolutePath, plan.originalRightSourceText);
+    if (
+      activeRelativePath === plan.target.leftSourcePath ||
+      activeRelativePath === plan.target.rightSourcePath
+    ) {
+      activeFilePath = leftAbsolutePath;
+      activeFile = plan.target.leftSourcePath.split("/").at(-1) ?? plan.target.leftSourcePath;
+      content = plan.mergedSourceText;
+      persistedContent = plan.mergedSourceText;
+      saveState = createSaveState();
+      lastSaveFailure = null;
+      forcedSave = null;
+      practiceState = beginDailyPractice(content, practiceState.dailyWords);
+      editorSelectionStart = 0;
+      editorSelectionEnd = 0;
+    }
+    manuscriptProject = result.project;
+    manuscriptRepairUndo = null;
+    manuscriptSceneSplitUndo = null;
+    manuscriptSceneMergeUndo = null;
+    manuscriptRepairNotice = `Merged ${plan.target.leftSceneTitle} with ${plan.target.rightSceneTitle}. The exact right source is visible at ${plan.target.retiredSourcePath}.`;
+    if (result.cleanupWarnings.length > 0) {
+      appendError(`The merge is verified, but temporary backup cleanup needs review: ${result.cleanupWarnings.join(" ")}`);
+    }
+    const focusSurface = manuscriptMutationSurface;
+    resetManuscriptSceneMerge(true);
+    await refreshSceneSplitDirectories(
+      rootPath,
+      plan.target.leftSourcePath,
+      plan.target.rightSourcePath,
+      plan.target.retiredSourcePath,
+    );
+    await refreshLoreIndex(rootPath);
+    manuscriptSceneMergeUndo = result.undo;
+    focusManuscriptMutationItem(plan.target.leftSceneId, focusSurface);
+  }
+
+  async function undoLastManuscriptSceneMerge(): Promise<void> {
+    const undo = manuscriptSceneMergeUndo;
+    if (!folderPath || !loreIndex || !undo || manuscriptSceneMergeBusy) return;
+    const activeRelativePath = activeLorePath();
+    if (
+      activeRelativePath !== null &&
+      [undo.leftPath, undo.rightPath, undo.retiredPath].includes(activeRelativePath) &&
+      (dirty || content !== persistedContent)
+    ) {
+      manuscriptRepairNotice = "Save or discard changes in the merged or retired scene before using Undo.";
+      return;
+    }
+    const rootPath = folderPath;
+    const session = loreIndexSession;
+    manuscriptSceneMergeBusy = true;
+    const result = await undoManuscriptSceneMerge(undo, manuscriptSceneMergeIo(rootPath));
+    if (rootPath !== folderPath || session !== loreIndexSession) {
+      manuscriptSceneMergeBusy = false;
+      manuscriptSceneMergeUndo = null;
+      error = "The project changed while scene-merge Undo was running. Refresh before continuing.";
+      return;
+    }
+    if (result.kind === "failed") {
+      manuscriptSceneMergeBusy = false;
+      manuscriptSceneMergeUndo = null;
+      manuscriptRepairNotice = result.message;
+      void refreshLoreIndex(rootPath);
+      return;
+    }
+
+    const leftAbsolutePath = await join(rootPath, undo.leftPath);
+    const rightAbsolutePath = await join(rootPath, undo.rightPath);
+    const retiredAbsolutePath = await join(rootPath, undo.retiredPath);
+    persistedContentByPath.set(leftAbsolutePath, undo.restoredLeftText);
+    persistedContentByPath.set(rightAbsolutePath, undo.restoredRightText);
+    persistedContentByPath.delete(retiredAbsolutePath);
+    if (activeRelativePath === undo.leftPath) {
+      activeFilePath = leftAbsolutePath;
+      activeFile = undo.leftPath.split("/").at(-1) ?? undo.leftPath;
+      content = undo.restoredLeftText;
+      persistedContent = undo.restoredLeftText;
+      saveState = createSaveState();
+      practiceState = beginDailyPractice(content, practiceState.dailyWords);
+      editorSelectionStart = 0;
+      editorSelectionEnd = 0;
+    } else if (activeRelativePath === undo.retiredPath) {
+      activeFilePath = rightAbsolutePath;
+      activeFile = undo.rightPath.split("/").at(-1) ?? undo.rightPath;
+      content = undo.restoredRightText;
+      persistedContent = undo.restoredRightText;
+      saveState = createSaveState();
+      practiceState = beginDailyPractice(content, practiceState.dailyWords);
+      editorSelectionStart = 0;
+      editorSelectionEnd = 0;
+    }
+    manuscriptProject = result.project;
+    manuscriptSceneMergeUndo = null;
+    manuscriptRepairNotice = "The scene merge was undone exactly; both Markdown sources and their structure entry were restored.";
+    manuscriptSceneMergeBusy = false;
+    if (result.cleanupWarnings.length > 0) {
+      appendError(`Undo is verified, but temporary backup cleanup needs review: ${result.cleanupWarnings.join(" ")}`);
+    }
+    await refreshSceneSplitDirectories(rootPath, undo.leftPath, undo.rightPath, undo.retiredPath);
     await refreshLoreIndex(rootPath);
   }
 
@@ -4487,9 +4822,9 @@
         <ManuscriptOutline
           result={manuscriptProject}
           loading={manuscriptLoading}
-          repairBusy={manuscriptRepairBusy || manuscriptSceneSplitBusy}
+          repairBusy={manuscriptRepairBusy || manuscriptSceneSplitBusy || manuscriptSceneMergeBusy}
           repairNotice={manuscriptRepairNotice}
-          repairUndoLabel={manuscriptSceneSplitUndo?.label ?? manuscriptRepairUndo?.label ?? ""}
+          repairUndoLabel={manuscriptSceneMergeUndo?.label ?? manuscriptSceneSplitUndo?.label ?? manuscriptRepairUndo?.label ?? ""}
           focusItemId={manuscriptOutlineFocusItemId}
           focusRevision={manuscriptOutlineFocusRevision}
           onRefresh={() => void refreshManuscriptStructure()}
@@ -4501,6 +4836,8 @@
           onReorder={beginManuscriptReorder}
           canMoveScene={canMoveManuscriptScene}
           onMoveScene={beginManuscriptSceneMove}
+          canMergeScene={canMergeManuscriptScene}
+          onMergeScene={beginManuscriptSceneMerge}
           onOpenCorkboard={openManuscriptCorkboard}
           onUndoRepair={() => void undoLastManuscriptChange()}
         />
@@ -4615,6 +4952,8 @@
             onReorder={(itemId, direction) => beginManuscriptReorder(itemId, direction, "corkboard")}
             canMoveScene={canMoveManuscriptScene}
             onMoveScene={(itemId) => beginManuscriptSceneMove(itemId, "corkboard")}
+            canMergeScene={canMergeManuscriptScene}
+            onMergeScene={(itemId) => void beginManuscriptSceneMerge(itemId, "corkboard")}
           />
         {:else}
           <textarea
@@ -4760,6 +5099,17 @@
         onRequest={updateManuscriptSceneSplitRequest}
         onCancel={closeManuscriptSceneSplit}
         onConfirm={() => void confirmManuscriptSceneSplit()}
+      />
+    {/if}
+    {#if manuscriptSceneMergeRequest && manuscriptSceneMergePlan}
+      <ManuscriptSceneMergeDialog
+        request={manuscriptSceneMergeRequest}
+        plan={manuscriptSceneMergePlan}
+        busy={manuscriptSceneMergeBusy}
+        executionError={manuscriptSceneMergeError}
+        onRequest={updateManuscriptSceneMergeRequest}
+        onCancel={closeManuscriptSceneMerge}
+        onConfirm={() => void confirmManuscriptSceneMerge()}
       />
     {/if}
     <div class="practice-bar" aria-label="Writing progress">

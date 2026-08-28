@@ -24,6 +24,8 @@
     onReorder: (itemId: string, direction: ManuscriptReorderDirection) => void;
     canMoveScene: (itemId: string) => boolean;
     onMoveScene: (itemId: string) => void;
+    canMergeScene: (itemId: string) => boolean;
+    onMergeScene: (itemId: string) => void;
   }
 
   interface PositionedScene {
@@ -48,6 +50,8 @@
     onReorder,
     canMoveScene,
     onMoveScene,
+    canMergeScene,
+    onMergeScene,
   }: Props = $props();
   let board = $state<HTMLElement>();
   const blocks = $derived.by(() => corkboardBlocks(manuscript));
@@ -128,6 +132,7 @@
   canMoveEarlier: boolean,
   canMoveLater: boolean,
   canMoveContainer: boolean,
+  canMerge: boolean,
 )}
   <div class="item-actions" aria-label={`Plan ${itemTitle}`}>
     <button type="button" disabled={busy} onclick={() => onEditMetadata(itemId)}>Edit details…</button>
@@ -138,6 +143,14 @@
         disabled={busy}
         onclick={() => onMoveScene(itemId)}
       >Move to…</button>
+    {/if}
+    {#if canMerge}
+      <button
+        type="button"
+        id={`merge-scene-corkboard-${itemId}`}
+        disabled={busy}
+        onclick={() => onMergeScene(itemId)}
+      >Merge with next…</button>
     {/if}
     {#if canMoveEarlier}
       <button
@@ -220,6 +233,7 @@
       canMoveEarlier,
       canMoveLater,
       canMoveScene(scene.item.id),
+      canMergeScene(scene.item.id),
     )}
   </article>
 {/snippet}
@@ -254,6 +268,7 @@
           chapter.item.title,
           topLevelIndex > 0,
           topLevelIndex < manuscript.items.length - 1,
+          false,
           false,
         )}
       </div>

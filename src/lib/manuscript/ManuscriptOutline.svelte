@@ -32,6 +32,8 @@
     onReorder: (itemId: string, direction: ManuscriptReorderDirection) => void;
     canMoveScene: (itemId: string) => boolean;
     onMoveScene: (itemId: string) => void;
+    canMergeScene: (itemId: string) => boolean;
+    onMergeScene: (itemId: string) => void;
     onOpenCorkboard: (manuscriptId: string) => void;
     onUndoRepair: () => void;
   }
@@ -53,6 +55,8 @@
     onReorder,
     canMoveScene,
     onMoveScene,
+    canMergeScene,
+    onMergeScene,
     onOpenCorkboard,
     onUndoRepair,
   }: Props = $props();
@@ -231,6 +235,15 @@
         disabled={repairBusy}
         onclick={() => onMoveScene(scene.item.id)}
       >Move to…</button>
+    {/if}
+    {#if canMergeScene(scene.item.id)}
+      <button
+        type="button"
+        class="details"
+        id={`merge-scene-outline-${scene.item.id}`}
+        disabled={repairBusy}
+        onclick={() => onMergeScene(scene.item.id)}
+      >Merge with next…</button>
     {/if}
     {@render reorderControls(scene.item.id, scene.item.title, canMoveEarlier, canMoveLater)}
   </li>

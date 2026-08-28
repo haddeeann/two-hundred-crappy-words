@@ -4,6 +4,7 @@ import { fingerprintContent } from "$lib/editor/recovery";
 import type { ManuscriptProjectLoadResult } from "./source-reconciliation";
 import {
   manuscriptSceneMergeAvailability,
+  manuscriptSceneMergeAvailableSceneIds,
   planManuscriptSceneMerge,
   suggestRetiredScenePath,
   type ManuscriptSceneMergeRequest,
@@ -171,6 +172,7 @@ describe("manuscript scene merge planning", () => {
       rightSourcePath: RIGHT_PATH,
       rightSourceFingerprint: fingerprintContent(RIGHT_TEXT),
     });
+    expect([...manuscriptSceneMergeAvailableSceneIds(project())]).toEqual([LEFT_ID]);
     expect(manuscriptSceneMergeAvailability(project(), RIGHT_ID))
       .toMatchObject({ kind: "unavailable", reason: expect.stringContaining("immediately followed") });
     expect(manuscriptSceneMergeAvailability(project(structureText({ synopsis: "Do not drop" })), LEFT_ID))

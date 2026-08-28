@@ -102,6 +102,49 @@ export function manuscriptSceneMergeAvailability(
   };
 }
 
+export function manuscriptSceneMergeAvailableSceneIds(
+  result: ManuscriptProjectLoadResult,
+): ReadonlySet<string> {
+  const available = new Set<string>();
+  if (result.kind !== "ready") return available;
+  for (let manuscriptIndex = 0; manuscriptIndex < result.reconciled.manuscripts.length; manuscriptIndex += 1) {
+    const manuscript = result.reconciled.manuscripts[manuscriptIndex]!;
+    for (let itemIndex = 0; itemIndex < manuscript.items.length; itemIndex += 1) {
+      const item = manuscript.items[itemIndex]!;
+      if ("children" in item) {
+        for (let childIndex = 0; childIndex < item.children.length - 1; childIndex += 1) {
+          const pair: LocatedPair = {
+            left: item.children[childIndex]!,
+            right: item.children[childIndex + 1]!,
+            manuscriptIndex,
+            manuscriptTitle: manuscript.manuscript.title,
+            chapterItemIndex: itemIndex,
+            leftIndex: childIndex,
+            containerLabel: `chapter “${item.item.title}”`,
+            arrayJsonPath: `$.manuscripts[${manuscriptIndex}].items[${itemIndex}].children`,
+          };
+          if (assessLocatedPair(result, pair).kind === "ready") available.add(pair.left.item.id);
+        }
+        continue;
+      }
+      const right = manuscript.items[itemIndex + 1];
+      if (!right || "children" in right) continue;
+      const pair: LocatedPair = {
+        left: item,
+        right,
+        manuscriptIndex,
+        manuscriptTitle: manuscript.manuscript.title,
+        chapterItemIndex: null,
+        leftIndex: itemIndex,
+        containerLabel: `manuscript “${manuscript.manuscript.title}” top level`,
+        arrayJsonPath: `$.manuscripts[${manuscriptIndex}].items`,
+      };
+      if (assessLocatedPair(result, pair).kind === "ready") available.add(pair.left.item.id);
+    }
+  }
+  return available;
+}
+
 export function planManuscriptSceneMerge(
   result: ManuscriptProjectLoadResult,
   request: ManuscriptSceneMergeRequest,
@@ -211,6 +254,19 @@ function assessPair(
   if (!pair) {
     return unavailable("This scene is not immediately followed by another scene in the same container.");
   }
+  return assessLocatedPair(result, pair);
+}
+
+function assessLocatedPair(
+  result: Extract<ManuscriptProjectLoadResult, { kind: "ready" }>,
+  pair: LocatedPair,
+):
+  | {
+      kind: "ready";
+      pair: LocatedPair;
+      project: Extract<ManuscriptProjectLoadResult, { kind: "ready" }>;
+    }
+  | { kind: "unavailable"; reason: string } {
   if (pair.left.source.kind !== "ready" || pair.right.source.kind !== "ready") {
     return unavailable("Both adjacent scene sources must be fingerprint-verified before merging.");
   }
