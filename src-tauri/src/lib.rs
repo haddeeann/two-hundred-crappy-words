@@ -3,6 +3,8 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::{Component, Path};
 use std::time::{SystemTime, UNIX_EPOCH};
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
+use tauri::Emitter;
 use tauri_plugin_fs::FsExt;
 
 mod manuscript_merge;
@@ -10,6 +12,41 @@ mod manuscript_split;
 
 const MANUSCRIPT_STRUCTURE_FILE: &str = "200-crappy-words.manuscripts.json";
 const MAX_MANUSCRIPT_STRUCTURE_BYTES: usize = 10 * 1024 * 1024;
+const MENU_NEW_FILE_ID: &str = "file-new";
+const MENU_OPEN_FOLDER_ID: &str = "file-open-folder";
+const MENU_NEW_FILE_EVENT: &str = "menu-new-file";
+const MENU_OPEN_FOLDER_EVENT: &str = "menu-open-folder";
+
+fn app_menu(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
+    let menu = Menu::default(app)?;
+    let file_menu = menu
+        .items()?
+        .into_iter()
+        .find_map(|item| {
+            let submenu = item.as_submenu()?;
+            (submenu.text().ok()?.as_str() == "File").then(|| submenu.clone())
+        })
+        .ok_or_else(|| tauri::Error::AssetNotFound("the default File menu".into()))?;
+
+    let new_file = MenuItem::with_id(
+        app,
+        MENU_NEW_FILE_ID,
+        "New File…",
+        true,
+        Some("CmdOrCtrl+N"),
+    )?;
+    let open_folder = MenuItem::with_id(
+        app,
+        MENU_OPEN_FOLDER_ID,
+        "Open Folder…",
+        true,
+        Some("CmdOrCtrl+O"),
+    )?;
+    let separator = PredefinedMenuItem::separator(app)?;
+    file_menu.prepend_items(&[&new_file, &open_folder, &separator])?;
+
+    Ok(menu)
+}
 
 #[tauri::command]
 fn rename_lore_file_no_clobber(
@@ -328,6 +365,16 @@ fn verify_same_file(source: &Path, target: &Path) -> Result<(), String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .menu(app_menu)
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            MENU_NEW_FILE_ID => {
+                let _ = app.emit(MENU_NEW_FILE_EVENT, ());
+            }
+            MENU_OPEN_FOLDER_ID => {
+                let _ = app.emit(MENU_OPEN_FOLDER_EVENT, ());
+            }
+            _ => {}
+        })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         // The dialog grants recursive access only to folders the writer

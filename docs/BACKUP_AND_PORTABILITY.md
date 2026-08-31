@@ -26,7 +26,7 @@ Those records are private and are not transmitted by the app. A project-folder b
 
 ## Moving a world project
 
-Move the whole folder, then choose **Open Folder** and select its new location. The UUID in the manifest reconnects app-local goals, history, recent-project identity, and safe project-relative navigation. The recent list updates its last-known location rather than adding a duplicate.
+Move the whole folder, then choose **File → Open Folder…** and select its new location. The UUID in the manifest reconnects app-local goals, history, recent-project identity, and safe project-relative navigation. The recent list updates its last-known location rather than adding a duplicate.
 
 Recovery drafts are intentionally keyed to the old absolute source path. A moved file never inherits a draft merely because its relative name matches; this avoids applying old unsaved text to the wrong disk revision.
 

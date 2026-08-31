@@ -4,7 +4,7 @@ This checklist uses disposable files and is the human checkpoint for milestone 0
 
 ## Latest result
 
-Completed successfully on macOS on 2026-08-31. The latest run finished rollback-safe adjacent-scene merge QA—including exact Undo and post-preview retirement collision refusal—and verified the project-tree-left, writing-tools-right navigation in the packaged app. The disposable manuscript returned to its recorded baseline hashes and Today remained `0 / 200`. Detailed current and historical checkpoints follow.
+Completed successfully on macOS on 2026-08-31. The latest run finished rollback-safe adjacent-scene merge QA—including exact Undo and post-preview retirement collision refusal—and verified the tree-only-left, native-File-menu, writing-tools-right navigation in the packaged app. The disposable manuscript returned to its recorded baseline hashes and Today remained `0 / 200`. Detailed current and historical checkpoints follow.
 
 ## Milestone 0.3 combined checkpoint
 
@@ -211,7 +211,7 @@ Completed successfully on macOS on 2026-08-31 using Computer Use against the pro
 
 Confirmation merged the expected prose, retained the complete left object including an unknown nested field, removed only the minimal right object, renamed the byte-identical right source to visible `right.md.retired`, refreshed outline/files/counts immediately, and left Today at `0 / 200`. **Undo merge** restored the structure, left source, right source, and unrelated final source to their exact baseline SHA-256 hashes and removed the retired path. A second frozen preview followed by externally creating `right.md.retired` refused with `The retired-source destination now exists; nothing was written.` All four baseline hashes remained unchanged and the collision file remained untouched.
 
-The project-tree navigation refinement was then exercised in a fresh package. At launch the left rail contained only **Project files**, Open Folder, New File, and the lazy tree. **Writing tools** was collapsed; opening it produced a labeled right dock with initially collapsed Recent projects, Project & backup info, Lore index, Manuscript outline, and Writing history, plus project and structured-note actions. The close button received focus, Escape closed the dock and returned focus to the toggle, and the narrow default window used an overlay rather than compressing the editor. No disposable project file changed during layout QA.
+The project-tree navigation refinement was then exercised in fresh packages. At launch the left rail contained only **Project files** and the lazy tree. The native **File** menu retained normal Close actions and exposed **New File…** and **Open Folder…**; Command+N focused a destination-labeled filename field above the tree, Escape canceled it, and Command+O opened the native folder picker. **Writing tools** was collapsed; opening it produced a labeled right dock with initially collapsed Recent projects, Project & backup info, Lore index, Manuscript outline, and Writing history, plus project and structured-note actions. The close button received focus, Escape closed the dock and returned focus to the toggle, and the narrow default window used an overlay rather than compressing the editor. No disposable project file changed during navigation or layout QA.
 
 The full frontend suite has 362 passing tests across fifty-five files. Svelte/TypeScript reports zero errors and warnings; the frontend build passes. Twelve Rust tests, formatting, and Clippy with warnings denied pass. The unsigned production macOS `.app` bundle builds and runs.
 
@@ -234,14 +234,14 @@ cd ~/code/two-hundred-crappy-words
 npm run tauri dev
 ```
 
-Use **Open Folder** to choose the printed temporary path. No real writing files are needed for this checklist.
+Use **File → Open Folder…** to choose the printed temporary path. No real writing files are needed for this checklist.
 
 ## Core workflow
 
 - Expand `Lore`, select it, and create `new-world.md`. Confirm the file appears inside `Lore`, not at the root.
 - Open a file, type rapidly, and confirm the status progresses through Unsaved/Saving/Saved without interrupting typing.
 - Press `Command+S`, switch files immediately, and confirm text lands in the correct file.
-- Tab through Open Folder, New File, the project tree, window controls, and editor. Confirm focus is visible and labels make sense with VoiceOver if available.
+- Tab through the project tree, window controls, and editor. Confirm focus is visible and labels make sense with VoiceOver if available. Open the native **File** menu and confirm **New File…** and **Open Folder…** have Command/Ctrl+N and Command/Ctrl+O shortcuts.
 - Confirm the red close control closes safely and the yellow control minimizes. Confirm the blank title-bar area still drags the window.
 
 ## External-change protection

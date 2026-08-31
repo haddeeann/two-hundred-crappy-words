@@ -6,12 +6,12 @@ The app now counts words and stores progress toward its default 200-word target 
 
 ## Current features
 
-- Open a folder from the native folder picker
+- Open a folder from **File → Open Folder…** (`Command+O` on macOS or `Ctrl+O` elsewhere) and the native folder picker
 - Remember and reopen the last selected folder
 - Browse naturally sorted files and lazily expand subfolders in a sidebar
-- Keep the persistent left rail focused on the project file tree and open lore, manuscript planning, project settings, and practice history from a closed-by-default right dock
+- Keep the persistent left rail focused on the project file tree, put folder/file creation in the native **File** menu, and open lore, manuscript planning, project settings, and practice history from a closed-by-default right dock
 - Open and edit plain-text files
-- Select a folder and create a file there without overwriting an existing path
+- Select a folder and create a file there from **File → New File…** (`Command+N` or `Ctrl+N`) without overwriting an existing path
 - Add a `.txt` extension when a new filename has no extension
 - Autosave shortly after typing pauses
 - Save the active file with `Command+S` on macOS or `Ctrl+S` elsewhere

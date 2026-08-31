@@ -11,6 +11,7 @@
   } from "@tauri-apps/plugin-fs";
   import { join } from "@tauri-apps/api/path";
   import { invoke } from "@tauri-apps/api/core";
+  import { listen } from "@tauri-apps/api/event";
   import { load } from "@tauri-apps/plugin-store";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import {
@@ -812,6 +813,31 @@
   onMount(() => {
     const timer = setInterval(() => refreshDailyDate(), 30_000);
     return () => clearInterval(timer);
+  });
+
+  onMount(() => {
+    let disposed = false;
+    let stopListening: Array<() => void> = [];
+
+    void (async () => {
+      const unlisteners: Array<() => void> = [];
+      try {
+        unlisteners.push(await listen("menu-new-file", startNewFile));
+        unlisteners.push(await listen("menu-open-folder", () => void openFolder()));
+        if (disposed) unlisteners.forEach((unlisten) => unlisten());
+        else stopListening = unlisteners;
+      } catch (cause) {
+        unlisteners.forEach((unlisten) => unlisten());
+        if (!disposed) {
+          appendError(`The File menu could not be connected: ${formatError(cause)}`);
+        }
+      }
+    })();
+
+    return () => {
+      disposed = true;
+      stopListening.forEach((unlisten) => unlisten());
+    };
   });
 
   onMount(() => {
@@ -4029,6 +4055,7 @@
   }
 
   async function openFolder() {
+    if (worldProjectBusy) return;
     await navigate(async () => {
       error = "";
       const selected = await open(folderDialogOptions);
@@ -4063,8 +4090,12 @@
   });
 
   function startNewFile() {
+    if (worldProjectBusy) return;
     // Only meaningful once a folder is open.
-    if (!folderPath) return;
+    if (!folderPath) {
+      error = "Open a folder before creating a file.";
+      return;
+    }
     cancelNewWorldProject();
     cancelStructuredNote();
     error = "";
@@ -4505,11 +4536,18 @@
   <aside class="sidebar" hidden={focusMode}>
     <h1 class="app-title">Project files</h1>
 
-    <button class="open-btn" onclick={openFolder} disabled={worldProjectBusy}
-      >Open Folder</button>
-    <button class="open-btn" onclick={startNewFile} disabled={!folderPath || worldProjectBusy}>
-      New File in {selectedDirectoryName}
-    </button>
+    {#if creatingFile}
+      <!-- svelte-ignore a11y_autofocus -->
+      <input
+        class="new-file-input"
+        aria-label={`New file name in ${selectedDirectoryName}`}
+        placeholder="filename.txt"
+        bind:value={newFileName}
+        onkeydown={newFileKeydown}
+        onblur={confirmNewFile}
+        autofocus
+      />
+    {/if}
 
     <section
       id="writing-tools-panel"
@@ -4800,19 +4838,6 @@
           >Cancel</button>
         </div>
       </form>
-    {/if}
-
-    {#if creatingFile}
-      <!-- svelte-ignore a11y_autofocus -->
-      <input
-        class="new-file-input"
-        aria-label="New file name"
-        placeholder="filename.txt"
-        bind:value={newFileName}
-        onkeydown={newFileKeydown}
-        onblur={confirmNewFile}
-        autofocus
-      />
     {/if}
 
     {#if folderPath}
