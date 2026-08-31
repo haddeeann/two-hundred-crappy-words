@@ -1,6 +1,6 @@
 # Current work
 
-Last updated: 2026-08-27
+Last updated: 2026-08-31
 
 ## Active milestone
 
@@ -10,26 +10,29 @@ Connected lore is complete. The active milestone makes a long manuscript underst
 
 ## Active slice
 
-**0.6.12c — Safe adjacent scene merge**
+**0.6.13a — Compile/export product review**
 
 ### Intended outcome
 
-Merge two adjacent verified scenes without deleting prose or silently discarding the retired scene's portable planning metadata.
+Agree on what the first Markdown and plain-text compile should contain, how its structure should read, and where it should be written before implementing an exporter.
 
 ### Acceptance criteria
 
-- [x] Approve which adjacent scene survives, how the prose boundary is joined, what happens to the retired Markdown source, and how non-source metadata on the retired scene remains recoverable.
-- [ ] Limit the first merge to two adjacent fingerprint-verified scenes in one exact structure array; never infer a merge across containers or manuscripts.
-- [ ] Preview both complete source paths, the exact prose join, the surviving and retired stable identities, metadata disposition, portable structure change, and every affected file.
-- [ ] Revalidate both saved sources, both fingerprints, structure fingerprint, any retirement destination, and the complete semantic plan immediately before writing.
-- [ ] Use a picker-scoped native transaction with no-clobber retirement, guarded atomic source/structure replacement, and exact rollback after every completed step.
-- [ ] Provide fingerprint-guarded one-step Undo, immediate outline/corkboard/editor refresh, unchanged daily credit, and packaged macOS failure-path QA.
+- [ ] Approve whether one compile run targets one selected manuscript or every manuscript in the structure.
+- [ ] Approve Markdown heading and scene-boundary rules, which descriptive metadata may appear, and whether compile-excluded material appears only in the report.
+- [ ] Approve the plain-text equivalent, destination and filename defaults, no-clobber behavior, and how unavailable sources block or partially complete an export.
+- [ ] Define the preview/report boundary and confirm that compiling never changes source files, manuscript structure, or daily credit.
 
 ## Next slices
 
-1. 0.6.13 — Compile verified manuscript order to Markdown and plain text.
+1. 0.6.13b — Implement and test a pure verified-order compile planner after the product review.
+2. 0.6.13c — Add no-clobber export, preview/report UI, packaged QA, and milestone documentation.
 
 ## Completed checkpoint
+
+- Slice 0.6.12c is complete. **Merge with next…** appears only for two adjacent fingerprint-verified scenes in one exact array when the right scene has no descriptive or unknown metadata to lose and both scenes share compile inclusion. The preview identifies both titles and UUIDs, the exact array position, all four guarded paths, metadata disposition, source excerpts, and either an exact preserved boundary or only the missing line breaks needed for one blank line. Confirmation freshly rescans and semantically replans, then a picker-scoped native transaction creates a visible non-Markdown `.retired` hard-link without clobbering, atomically replaces the left source and structure, verifies them, and removes the original right name last; every commit and Undo phase has exact rollback coverage. Shared one-step Undo restores both original sources and the complete structure only while the merged source, retired backup, structure, and absent original path still match. Packaged macOS QA covered outline and corkboard action gating, keyboard containment and exact Escape focus return, both boundary choices, immediate counts/tree refresh, unchanged `0 / 200`, exact-hash Undo restoration, and refusal when the retirement destination appeared after preview with every guarded hash unchanged. The frontend suite has 362 passing tests across fifty-five files, Svelte/TypeScript checks report zero errors and warnings, twelve native tests and Clippy with warnings denied pass, and the production macOS `.app` bundle builds.
+
+- The approved navigation refinement is complete. The persistent left rail now contains the conventional lazy project file tree and its file operations. Lore status, manuscript outline/corkboard entry, structured-note templates including characters, project creation and backup context, recent projects, and practice history moved into a **Writing tools** dock on the right. It starts closed, retains collapsed internal categories, returns focus to its toggle on Escape, dismisses for source/reference/corkboard entry and Focus, reserves space on wide windows, and overlays at laptop width instead of crushing the editor. Global save/index errors remain visible outside the closed dock. Packaged visual and accessibility QA verified the tree-only default, named collapsed/expanded state, initial close-button focus, Escape return, and unchanged project data.
 
 - Slice 0.6.12b is complete. A saved active Markdown source now offers **Split scene…** at a collapsed caret only when it fingerprint-matches exactly one verified manuscript scene and leaves prose on both sides. The keyboard-contained preview lets the writer name the new scene and review a non-colliding sibling path, the exact left/right bytes, identity ownership, compile-exclusion inheritance, all three affected files, and daily-credit boundary. The pure planner preserves the complete original object and stable ID on the left, inserts one minimal fresh-UUID scene immediately to its right, and validates the complete portable structure. Confirmation freshly rescans and replans, then a picker-scoped native transaction creates the right source without clobbering, atomically replaces the left source and structure, verifies all three, and retains exact rollback backups for every interruption point. Shared one-step Undo restores the original source and structure and removes only the unchanged app-created right source; any edit to either scene or structure retires Undo instead. Packaged macOS QA verified exact boundary previews, two immediately refreshed scene rows/files, preserved unknown left metadata, minimal right metadata, inherited compile exclusion, fresh UUID, exact Undo restoration/removal, watcher-driven external-edit invalidation, and unchanged `0 / 200` daily progress. A final presentation regression now proves the action is absent from ordinary files, unverified sources, selections, and invalid boundaries rather than merely refusing after a click. The frontend suite has 353 passing tests across fifty-three files, Svelte/TypeScript checks report zero errors and warnings, eight native tests and Clippy with warnings denied pass, and the production macOS `.app` bundle builds. The full DMG helper stalled in Finder automation after the valid `.app` was produced; app-only packaging remains the release-development command.
 
@@ -88,7 +91,7 @@ Merge two adjacent verified scenes without deleting prose or silently discarding
 
 ## Blockers and decision gates
 
-No blocker. D-030 was approved on 2026-08-27: the left scene survives, the prose join is previewed, the right Markdown source is renamed without clobbering to a visible non-Markdown `.retired` backup rather than deleted, and the first merge refuses a right scene whose descriptive or unknown metadata would otherwise leave the portable structure.
+The next implementation is intentionally paused at a product gate: Markdown/plain-text compile headings, separators, metadata, destination, and incomplete-source behavior need a brief writer-facing review. D-030 and slice 0.6.12c are complete. D-031 records the approved project-tree-left and optional-writing-tools-right navigation.
 
 ## Handoff protocol
 

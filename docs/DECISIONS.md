@@ -285,3 +285,12 @@ Alternatives considered for the retired Markdown are: leave it at its original `
 Why: merge should reduce two active prose sources to one without treating “remove from compile” as permission to erase writer-owned bytes or planning claims. A visible non-Markdown retirement preserves the exact source, prevents connected-lore duplication, requires no proprietary archive layout, and remains understandable outside the app. Keeping the left identity mirrors the approved split direction and makes split-then-immediate-merge reversible without guessing which scene owns established metadata.
 
 The user approved this boundary on 2026-08-27.
+
+## D-031 — Project tree stays left; optional writing tools open right
+
+- Date: 2026-08-31
+- Status: accepted, subject to usability testing
+
+The persistent left rail is a conventional project file tree with only folder/file actions. Lore indexing, manuscript outline and corkboard entry, project creation and backup information, structured-note templates including characters, recent projects, and practice history live in an optional **Writing tools** dock on the right. The dock starts closed after launch or project replacement, its internal categories remain collapsed by default, Escape closes it and returns focus to its toggle, and opening a manuscript source, reference, or corkboard dismisses it. Wide windows reserve space for the dock; laptop-width windows overlay it so the editor is not compressed into an unusable column. Focus mode keeps hiding all project navigation.
+
+Why: the filesystem remains the writer's clearest durable mental model and should not compete with derived lore or manuscript interfaces. Keeping the left side predictable makes nested folders behave like a familiar IDE, while a progressive right-side context surface keeps worldbuilding close without crowding the draft. The user approved this direction on 2026-08-31.

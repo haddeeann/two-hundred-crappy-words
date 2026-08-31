@@ -9,6 +9,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Open a folder from the native folder picker
 - Remember and reopen the last selected folder
 - Browse naturally sorted files and lazily expand subfolders in a sidebar
+- Keep the persistent left rail focused on the project file tree and open lore, manuscript planning, project settings, and practice history from a closed-by-default right dock
 - Open and edit plain-text files
 - Select a folder and create a file there without overwriting an existing path
 - Add a `.txt` extension when a new filename has no extension
@@ -82,6 +83,8 @@ The app now counts words and stores progress toward its default 200-word target 
 - Open a verified manuscript scene, chapter prose file, or overview as a read-only reference beside the active draft from either outline or corkboard
 - Enter an ephemeral Focus layout that preserves the draft, selection, save/recovery state, daily progress, and optional reference while hiding project navigation and connections
 - Move a complete scene between the manuscript top level and chapter containers from outline or corkboard through an exact destination/position preview without moving its Markdown source
+- Split one verified saved scene at an exact caret boundary through a rollback-safe three-file transaction and guarded one-step Undo
+- Merge two eligible adjacent verified scenes through a rollback-safe four-path transaction that preserves the left identity and metadata, visibly retires the unchanged right source, and offers guarded one-step Undo
 
 ## Current limitations
 
@@ -89,7 +92,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Ordinary folders still use their absolute path as local progress identity until explicitly adopted
 - Cursor position and editor scroll position are not restored yet
 - Folders and ordinary files cannot be renamed, moved, or deleted in the app; only eligible stable-ID lore notes have the previewed rename flow
-- Manuscript structure can be inspected, initially created/imported, repaired after a uniquely identified source move, edited and reordered within or across containers from either outline or corkboard, counted from verified prose, used in split/focus writing layouts, and safely split at an exact saved-scene caret; path-only replacement, scene merge, and compile/export are still in progress
+- Manuscript structure can be inspected, initially created/imported, repaired after a uniquely identified source move, edited and reordered within or across containers from either outline or corkboard, counted from verified prose, used in split/focus writing layouts, safely split at an exact saved-scene caret, and safely merged for eligible adjacent scenes; path-only replacement and compile/export are still in progress
 - The first importer intentionally maps only immediate Markdown and one level of chapter folders; deeper folders remain visible as skipped and require later manual structure tools
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
 - The frameless window does not yet provide maximize/full-screen controls
@@ -151,7 +154,7 @@ static/                   Static images and icons
 
 ## Status
 
-This is a functional prototype. Its trustworthy-editor, daily-practice, world-project, and connected-lore milestones have passed automated and hands-on macOS QA. Connected lore includes approved link semantics, a bounded incrementally refreshed memory-only index, keyboard completion, outgoing/backlink navigation, project search, read-only side references, safe missing-note creation, bounded unlinked mentions, previewed no-clobber lore renames with conflict-aware link repair, and session-only Back/Forward navigation that revalidates every destination. The active novel-structure milestone now has an approved portable format, bounded parser and source reconciliation, a compact outline, explicit previewed create-new/import, previewed atomic repair for uniquely moved stable-ID sources, exact chapter/scene metadata editing, accessible previewed sibling and cross-container relocation, an approved stacked-section corkboard that reuses those guarded editing actions, verified structural counts, manuscript/reference splits, an ephemeral Focus layout, and a rollback-safe three-file scene split with guarded exact Undo. The next slice is a safe adjacent-scene merge after its retired-source and metadata semantics are approved.
+This is a functional prototype. Its trustworthy-editor, daily-practice, world-project, and connected-lore milestones have passed automated and hands-on macOS QA. Connected lore includes approved link semantics, a bounded incrementally refreshed memory-only index, keyboard completion, outgoing/backlink navigation, project search, read-only side references, safe missing-note creation, bounded unlinked mentions, previewed no-clobber lore renames with conflict-aware link repair, and session-only Back/Forward navigation that revalidates every destination. The active novel-structure milestone now has an approved portable format, bounded parser and source reconciliation, a compact outline, explicit previewed create-new/import, previewed atomic repair for uniquely moved stable-ID sources, exact chapter/scene metadata editing, accessible previewed sibling and cross-container relocation, an approved stacked-section corkboard that reuses those guarded editing actions, verified structural counts, manuscript/reference splits, an ephemeral Focus layout, rollback-safe scene split and adjacent merge transactions with guarded exact Undo, and a project-tree-first navigation layout with optional writing tools on the right. The next slice compiles verified manuscript order to Markdown and plain text.
 
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 

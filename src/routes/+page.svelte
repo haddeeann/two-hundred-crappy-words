@@ -301,6 +301,9 @@
   let activeFile = $state("");
   let activeFilePath = $state("");
   let writingLayout = $state(initialWritingLayout());
+  let writingToolsOpen = $state(false);
+  let writingToolsButton = $state<HTMLButtonElement>();
+  let writingToolsCloseButton = $state<HTMLButtonElement>();
   let persistedContent = $state("");
   let saveState = $state(createSaveState());
   let error = $state("");
@@ -893,6 +896,7 @@
     manuscriptCorkboardId = "";
     manuscriptCorkboardFocusItemId = "";
     manuscriptCorkboardEditorSelection = { start: 0, end: 0 };
+    writingToolsOpen = false;
     writingLayout = transitionWritingLayout(writingLayout, { kind: "project-replaced" });
     loreIndexPhase = "indexing";
     void refreshLoreIndex(path);
@@ -1081,6 +1085,7 @@
       await refreshManuscriptStructure();
       return;
     }
+    writingToolsOpen = false;
     await openIndexedLorePath(relativePath, null);
   }
 
@@ -1113,6 +1118,7 @@
         editorInput.setSelectionRange(start, end);
       }
     }
+    writingToolsOpen = false;
     await openLoreReference(relativePath);
   }
 
@@ -1127,6 +1133,7 @@
         }
       : { kind: "exit-focus" });
     if (next === writingLayout || next.mode === writingLayout.mode) return;
+    if (enabled) writingToolsOpen = false;
     writingLayout = next;
     void tick().then(() => {
       if (!editorInput) return;
@@ -1135,6 +1142,15 @@
         Math.min(start, editorInput.value.length),
         Math.min(Math.max(start, end), editorInput.value.length),
       );
+    });
+  }
+
+  function setWritingTools(open: boolean): void {
+    if (focusMode || writingToolsOpen === open) return;
+    writingToolsOpen = open;
+    void tick().then(() => {
+      if (open) writingToolsCloseButton?.focus({ preventScroll: true });
+      else writingToolsButton?.focus({ preventScroll: true });
     });
   }
 
@@ -2037,6 +2053,7 @@
       end: editorInput?.selectionEnd ?? 0,
     };
     manuscriptCorkboardFocusItemId = "";
+    writingToolsOpen = false;
     manuscriptCorkboardId = manuscriptId;
   }
 
@@ -4400,6 +4417,11 @@
       closeLoreReference();
       return;
     }
+    if (writingToolsOpen && event.key === "Escape") {
+      event.preventDefault();
+      setWritingTools(false);
+      return;
+    }
     if (focusMode && event.key === "Escape") {
       event.preventDefault();
       setWritingFocus(false);
@@ -4475,20 +4497,46 @@
   <span class="window-title" data-tauri-drag-region>200 Crappy Words</span>
 </div>
 
-<div class="app" class:focus-mode={focusMode}>
+<div
+  class="app"
+  class:focus-mode={focusMode}
+  class:tools-open={writingToolsOpen && !focusMode}
+>
   <aside class="sidebar" hidden={focusMode}>
-    <h1 class="app-title">200 Crappy Words</h1>
+    <h1 class="app-title">Project files</h1>
 
     <button class="open-btn" onclick={openFolder} disabled={worldProjectBusy}
       >Open Folder</button>
-    <button
-      class="open-btn"
-      onclick={startNewWorldProject}
-      disabled={worldProjectBusy}
-    >New World Project</button>
     <button class="open-btn" onclick={startNewFile} disabled={!folderPath || worldProjectBusy}>
       New File in {selectedDirectoryName}
     </button>
+
+    <section
+      id="writing-tools-panel"
+      class="writing-tools"
+      aria-label="Writing tools"
+      hidden={!writingToolsOpen || focusMode}
+    >
+      <header class="writing-tools-header">
+        <div>
+          <h2>Writing tools</h2>
+          <p>Lore, manuscript planning, and project settings</p>
+        </div>
+        <button
+          type="button"
+          class="writing-tools-close"
+          aria-label="Close writing tools"
+          title="Close writing tools (Escape)"
+          onclick={() => setWritingTools(false)}
+          bind:this={writingToolsCloseButton}
+        >×</button>
+      </header>
+
+      <button
+        class="open-btn"
+        onclick={startNewWorldProject}
+        disabled={worldProjectBusy}
+      >New World Project</button>
 
     {#if recentProjects.length > 0}
       <details class="recent-projects">
@@ -4767,13 +4815,6 @@
       />
     {/if}
 
-    {#if error}
-      <p class="error" role="alert">{error}</p>
-    {/if}
-    {#if dailyProgressError}
-      <p class="error" role="alert">{dailyProgressError}</p>
-    {/if}
-
     {#if folderPath}
       <details class="project-info">
         <summary>Project & backup info</summary>
@@ -4844,6 +4885,15 @@
       {/if}
     {/if}
 
+      {#if folderPath}
+        <PracticeHistory
+          records={dailyRecordsByDate}
+          todayKey={activeDailyDateKey}
+          onCorrect={correctDailyProgress}
+        />
+      {/if}
+    </section>
+
     <nav class="files" aria-label="Project files">
       {#if folderPath}
         <button
@@ -4864,14 +4914,6 @@
         {@render tree(entries, 0)}
       {/if}
     </nav>
-
-    {#if folderPath}
-      <PracticeHistory
-        records={dailyRecordsByDate}
-        todayKey={activeDailyDateKey}
-        onCorrect={correctDailyProgress}
-      />
-    {/if}
   </aside>
 
   <div class="divider" hidden={focusMode}></div>
@@ -4906,6 +4948,17 @@
         {#if loreHistoryNotice}
           <span class="history-notice" role="status" aria-live="polite">{loreHistoryNotice}</span>
         {/if}
+        {#if !focusMode}
+          <button
+            type="button"
+            class="focus-mode-button writing-tools-button"
+            aria-expanded={writingToolsOpen}
+            aria-controls="writing-tools-panel"
+            title={writingToolsOpen ? "Close writing tools" : "Open lore, manuscript, and project tools"}
+            onclick={() => setWritingTools(!writingToolsOpen)}
+            bind:this={writingToolsButton}
+          >{writingToolsOpen ? "Close tools" : "Writing tools"}</button>
+        {/if}
         {#if activeFile}
           <span
             class="save-status"
@@ -4931,6 +4984,12 @@
         {/if}
       </div>
     </div>
+    {#if error || dailyProgressError}
+      <div class="app-alerts">
+        {#if error}<p class="error" role="alert">{error}</p>{/if}
+        {#if dailyProgressError}<p class="error" role="alert">{dailyProgressError}</p>{/if}
+      </div>
+    {/if}
     <div
       class="writing-split"
       class:corkboard-mode={Boolean(manuscriptCorkboard)}
@@ -5269,9 +5328,11 @@
   }
 
   .app {
+    position: relative;
     display: flex;
     height: calc(100vh - 32px);
     width: 100vw;
+    overflow: hidden;
   }
 
   .sidebar {
@@ -5281,6 +5342,73 @@
     padding: 1rem;
     background-color: #252526;
     overflow-y: auto;
+  }
+
+  .writing-tools {
+    position: absolute;
+    z-index: 5;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 330px;
+    box-sizing: border-box;
+    padding: 1rem;
+    border-left: 1px solid #3c3c3c;
+    background: #252526;
+    overflow-y: auto;
+  }
+
+  .writing-tools[hidden] {
+    display: none;
+  }
+
+  .writing-tools-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .writing-tools-header h2,
+  .writing-tools-header p {
+    margin: 0;
+  }
+
+  .writing-tools-header h2 {
+    color: #ffffff;
+    font-size: 1rem;
+  }
+
+  .writing-tools-header p {
+    margin-top: 0.2rem;
+    color: #999999;
+    font-size: 0.72rem;
+    line-height: 1.35;
+  }
+
+  .writing-tools-close {
+    flex: 0 0 auto;
+    width: 1.8rem;
+    height: 1.8rem;
+    padding: 0;
+    border: 1px solid #484848;
+    border-radius: 4px;
+    background: #292929;
+    color: #d4d4d4;
+    font: inherit;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .writing-tools-close:hover {
+    background: #383838;
+  }
+
+  .writing-tools-close:focus-visible {
+    outline: 2px solid #75beff;
+    outline-offset: 2px;
   }
 
   .sidebar[hidden],
@@ -5606,6 +5734,10 @@
     min-width: 0;
   }
 
+  .app.tools-open .editor {
+    margin-right: 330px;
+  }
+
   .editor-header {
     padding: 0.5rem 1.5rem;
     font-size: 0.8rem;
@@ -5685,6 +5817,23 @@
   .focus-mode-button:focus-visible {
     outline: 2px solid #75beff;
     outline-offset: 2px;
+  }
+
+  .writing-tools-button[aria-expanded="true"] {
+    border-color: #5c7f63;
+    background: #344038;
+    color: #d4ead7;
+  }
+
+  .app-alerts {
+    flex: 0 0 auto;
+    padding: 0.45rem 1.5rem 0;
+    border-bottom: 1px solid #3c3c3c;
+    background: #241f1f;
+  }
+
+  .app-alerts .error {
+    margin-bottom: 0.45rem;
   }
 
   .history-notice {
@@ -5849,5 +5998,21 @@
   .daily-target-input {
     width: 72px;
     padding: 0 0.35rem;
+  }
+
+  @media (max-width: 1100px) {
+    .app.tools-open .editor {
+      margin-right: 0;
+    }
+
+    .writing-tools {
+      box-shadow: -12px 0 28px rgba(0, 0, 0, 0.38);
+    }
+  }
+
+  @media (max-width: 620px) {
+    .writing-tools {
+      width: min(330px, calc(100vw - 3rem));
+    }
   }
 </style>

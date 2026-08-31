@@ -4,9 +4,7 @@ This checklist uses disposable files and is the human checkpoint for milestone 0
 
 ## Latest result
 
-Completed successfully on macOS on 2026-08-19. The run covered nested creation and editing, autosave during navigation, external-change protection and explicit overwrite, moved and read-only files, safe close after write failure, forced-interruption recovery, stale-recovery cleanup, selected-folder restoration, whole-folder removal, native window behavior, keyboard traversal, focus visibility, and visual legibility.
-
-The run found that the native picker initially granted only one directory level. Commit `1c20728` requests recursive scope for the explicitly selected project folder and adds a regression test; nested files were reopened successfully after the fix. No known ordinary interaction in this walkthrough silently lost text.
+Completed successfully on macOS on 2026-08-31. The latest run finished rollback-safe adjacent-scene merge QA—including exact Undo and post-preview retirement collision refusal—and verified the project-tree-left, writing-tools-right navigation in the packaged app. The disposable manuscript returned to its recorded baseline hashes and Today remained `0 / 200`. Detailed current and historical checkpoints follow.
 
 ## Milestone 0.3 combined checkpoint
 
@@ -206,6 +204,16 @@ Completed successfully on macOS on 2026-08-27 using Computer Use against the fre
 **Undo split of Arrival** restored the complete original prose and exact original structure SHA-256 and removed only the unchanged app-created right source. A second split followed by an external edit to the right source refreshed its word count from eight to fifteen, removed Undo automatically, and announced that a scene or structure change made it unsafe. Both scene files, the edited external sentence, and the split structure remained intact.
 
 The full frontend suite has 353 passing tests across fifty-three files, including a final action-visibility regression; Svelte/TypeScript reports zero errors and warnings. Eight Rust tests cover normal apply/Undo, stale or colliding sources, non-reconstructing halves, exact rollback at each simulated commit phase, changed-file Undo refusal, and interrupted Undo rollback. Rust formatting and Clippy with warnings denied pass. The production `.app` bundle built and ran; the optional DMG wrapper stalled in Finder automation after producing the valid app bundle, so it was stopped without affecting packaged-app QA.
+
+## Milestone 0.6.12c rollback-safe adjacent-scene merge checkpoint
+
+Completed successfully on macOS on 2026-08-31 using Computer Use against the production `.app` and a disposable three-scene chapter. Only the first scene exposed **Merge with next…** in outline and corkboard; the second scene correctly withheld it because its right neighbor carried descriptive metadata. The keyboard-contained preview showed both titles and UUIDs, the complete left/right/retired/structure paths, exact JSON array position, metadata disposition, source excerpts, and exact inserted bytes for both preserve and one-blank-line boundary choices. Cancel began focused, Shift+Tab stayed contained, and Escape returned to the exact invoking outline or corkboard action.
+
+Confirmation merged the expected prose, retained the complete left object including an unknown nested field, removed only the minimal right object, renamed the byte-identical right source to visible `right.md.retired`, refreshed outline/files/counts immediately, and left Today at `0 / 200`. **Undo merge** restored the structure, left source, right source, and unrelated final source to their exact baseline SHA-256 hashes and removed the retired path. A second frozen preview followed by externally creating `right.md.retired` refused with `The retired-source destination now exists; nothing was written.` All four baseline hashes remained unchanged and the collision file remained untouched.
+
+The project-tree navigation refinement was then exercised in a fresh package. At launch the left rail contained only **Project files**, Open Folder, New File, and the lazy tree. **Writing tools** was collapsed; opening it produced a labeled right dock with initially collapsed Recent projects, Project & backup info, Lore index, Manuscript outline, and Writing history, plus project and structured-note actions. The close button received focus, Escape closed the dock and returned focus to the toggle, and the narrow default window used an overlay rather than compressing the editor. No disposable project file changed during layout QA.
+
+The full frontend suite has 362 passing tests across fifty-five files. Svelte/TypeScript reports zero errors and warnings; the frontend build passes. Twelve Rust tests, formatting, and Clippy with warnings denied pass. The unsigned production macOS `.app` bundle builds and runs.
 
 ## Start safely
 
