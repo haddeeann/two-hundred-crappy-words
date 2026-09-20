@@ -10,25 +10,30 @@ Connected lore is complete. The active milestone makes a long manuscript underst
 
 ## Active slice
 
-**0.6.13a — Compile/export product review**
+**0.6.13c — No-clobber export and resolution UI**
 
 ### Intended outcome
 
-Agree on what the first Markdown and plain-text compile should contain, how its structure should read, and where it should be written before implementing an exporter.
+Connect the verified compile planner to a compact preview/report, native Save As destination, create-new export write, and explicit ways to resolve unavailable scene sources.
 
 ### Acceptance criteria
 
-- [ ] Approve whether one compile run targets one selected manuscript or every manuscript in the structure.
-- [ ] Approve Markdown heading and scene-boundary rules, which descriptive metadata may appear, and whether compile-excluded material appears only in the report.
-- [ ] Approve the plain-text equivalent, destination and filename defaults, no-clobber behavior, and how unavailable sources block or partially complete an export.
-- [ ] Define the preview/report boundary and confirm that compiling never changes source files, manuscript structure, or daily credit.
+- [ ] Open compile from one named manuscript and choose Markdown or plain text.
+- [ ] Freshly stable-read included sources, then show compact order, word, exclusion, and blocker information without rendering a second full novel reader.
+- [ ] Write only through a native Save As path with create-new/no-clobber protection and refuse source or structure changes after preview.
+- [ ] Offer stable-ID repair, path-only Locate, create-new source, durable exclusion, and previewed structure-only removal for unavailable scene prose.
+- [ ] Show an exact completion report and preserve source files, structure, daily credit, and active editor state.
 
 ## Next slices
 
-1. 0.6.13b — Implement and test a pure verified-order compile planner after the product review.
-2. 0.6.13c — Add no-clobber export, preview/report UI, packaged QA, and milestone documentation.
+1. Complete packaged QA and milestone documentation for Markdown/plain-text export.
+2. Review DOCX/PDF presentation before those later adapters.
 
 ## Completed checkpoint
+
+- Slice 0.6.13b is complete. A dependency-free pure planner now selects exactly one manuscript, follows only its portable pre-order, emits the manuscript and exact chapter titles without planning-only scene titles, strips only valid leading structured frontmatter, preserves Markdown bodies, and inserts deterministic `* * *` scene boundaries. Its conservative plain-text renderer removes familiar headings, emphasis, links, wiki links, code fences, blockquotes, and image notation while retaining visible labels, code contents, lists, paragraphs, unknown constructs, and the same structural boundaries. Included sources must be present in the fresh source map and match their reconciled fingerprints; every non-ready source kind and post-reconciliation change becomes a named blocker, while parent or item exclusions are reported without reading their sources. Five focused tests cover exact output, metadata omission, both adapters, missing and changed refusal, durable parent exclusion, and unfamiliar-syntax preservation. The full frontend suite has 372 passing tests across fifty-seven files and Svelte/TypeScript reports zero diagnostics.
+
+- Slice 0.6.13a is complete. Compile targets one selected manuscript and follows only its explicit structure order; titles and filenames never sort it. Markdown output uses the manuscript title, exact writer-authored chapter headings, scene prose without planning-only scene titles, and deterministic `* * *` boundaries. Planning metadata and chapter overviews remain out of the novel; intentional exclusions appear in the report. Plain text removes familiar Markdown markers while retaining visible words and preserves unfamiliar syntax rather than silently dropping it. A compact pre-write plan shows order, counts, exclusions, blockers, format, and destination; the native Save As step suggests the manuscript title and never overwrites. Unverified included sources block output, but the resolution surface offers stable-ID repair, explicit path-only location, create-new source, durable compile exclusion, or previewed structure-only removal. Removal never deletes prose. Source/structure changes after preview refuse the write, and compile/export never changes sources, structure, or daily credit. The user approved this product boundary on 2026-09-20.
 
 - The approved contextual file actions are complete. Right-clicking a regular file now exposes keyboard-accessible **Rename…** and **Delete…** actions while the resting left rail remains tree-only. Ordinary non-Markdown rename is same-folder, portable-name validated, byte-preserving, and no-clobber; Markdown rename continues through the stable-ID link-repair preview. Delete is a cancel-first move to the operating system Trash, not a permanent unlink: it freshly verifies one contained regular non-symbolic file, protects both root metadata files, resolves active unsaved work through the existing navigation guard, closes the editor only after success, and warns without rewriting when Markdown links or manuscript bindings may become unavailable. Packaged macOS QA covered menu keyboard movement, Escape focus return, rename collision refusal and success, delete dialog containment and cancellation, the Markdown warning, saved active-file deletion, immediate tree/editor refresh, exact source-path absence, and restoration of the writer's prior project. The frontend suite has 367 passing tests across fifty-six files, Svelte/TypeScript reports zero diagnostics, fifteen native tests and Clippy with warnings denied pass, the production dependency audit reports zero vulnerabilities, and the unsigned production `.app` bundle builds and runs.
 
