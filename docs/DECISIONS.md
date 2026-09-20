@@ -314,3 +314,25 @@ One compile run targets one explicitly selected manuscript and traverses only it
 Every included source must be freshly stable-read and fingerprint-consistent. Unavailable or ambiguous material blocks output rather than producing an accidental partial manuscript. The blocker UI must provide deliberate ways forward: repair a uniquely moved stable-ID binding, locate a path-only source, safely create its expected source, durably exclude it, or preview and remove only its structure entry with guarded Undo. Removing an entry never deletes prose. A native Save As step suggests the manuscript title, uses create-new/no-clobber behavior, and never silently overwrites. Preview is a compact order/count/exclusion/blocker plan rather than a second full-novel reader; the completion report names the output and confirms that sources, structure, and daily credit were untouched.
 
 Why: export is where many separate scene files become a consequential whole. Exact order, explicit omissions, writer-owned headings, and a final destination choice make the result predictable, while resolution actions distinguish an intentional outline choice from an accidental missing file without asking the app to guess. The user approved this boundary on 2026-09-20.
+
+## D-034 — Publishing exports follow external standards before personal style
+
+- Date: 2026-09-20
+- Status: accepted
+
+The first direct-publishing artifact is a retailer-neutral reflowable EPUB 3 package, not a styled DOCX or PDF. It uses the same exact verified manuscript traversal as the reading-copy exporters, adds semantic XHTML, navigation, a title page, explicit author and language metadata, and reader-controlled typography, and is not complete until it passes EPUBCheck. Kindle Previewer remains a required packaged QA step because retailer conversion is an external system the app cannot certify.
+
+A later PDF is explicitly a print interior. Its trim size, mirrored margins and page-count-dependent gutter, embedded fonts, pagination, chapter openings, and supported bleed boundary follow current print-on-demand requirements. The default text-heavy US novel preset begins at 6 × 9 inches with no bleed. DOCX is deferred as an optional editable handoff for editors or downstream layout tools rather than treated as the universal publishing result. KPF remains outside the app because it is an Amazon-specific Kindle Create package.
+
+Why: Amazon accepts EPUB directly, Apple requires an EPUB that passes EPUBCheck, Google prefers EPUB, and EPUB is the W3C distribution and interchange standard for digital publications. Print platforms instead need a stable physical page artifact with requirements that do not belong in a reflowable ebook. Following these external contracts produces more useful files and reduces arbitrary product styling. The user explicitly directed the product to research accepted and common self-publishing formats rather than ask for personal layout taste on 2026-09-20. The evidence and review links are retained in `docs/PUBLISHING_EXPORTS.md`.
+
+## D-035 — EPUB generation stays local, deterministic, and picker-scoped
+
+- Date: 2026-09-20
+- Status: accepted
+
+EPUB bytes are built locally from the already verified compile-token stream with the small typed `fflate` ZIP library. A compile session freezes its modification time, and the same plan plus author and language must reproduce the exact approved bytes after Save As. The app then uses create-new binary writing and an exact binary reread. Author and language remain export-only values rather than additions to the portable manuscript structure.
+
+On macOS the Save dialog does not require an EPUB file-type filter because machines without a registered EPUB UTI disable that filtered panel. The app instead supplies the `.epub` default name, rejects a returned destination without that extension, and keeps binary filesystem commands constrained to the path granted by the native picker.
+
+Why: deterministic local generation makes the post-preview stale check meaningful and keeps private prose off external conversion services. A compact maintained ZIP dependency is safer than a bespoke archive writer, while explicit binary commands and the native picker preserve the app's existing least-authority filesystem boundary.

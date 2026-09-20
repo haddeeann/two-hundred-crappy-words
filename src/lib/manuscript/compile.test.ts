@@ -171,6 +171,27 @@ describe("verified manuscript compile planning", () => {
     expect(result.output).not.toContain("**");
   });
 
+  it("retains exact verified section tokens for a later EPUB package", () => {
+    const result = planManuscriptCompile({
+      project: project({ firstText, secondText, excludedText }),
+      manuscriptId: MANUSCRIPT_ID,
+      format: "epub",
+      sourceTexts: new Map([
+        ["Manuscript/one.md", firstText],
+        ["Manuscript/two.md", secondText],
+      ]),
+    });
+    expect(result).toMatchObject({
+      kind: "ready",
+      suggestedFilename: "The Patient Comet.epub",
+      tokens: [
+        { kind: "chapter", title: "Signals in the Dust" },
+        { kind: "scene", chapterTitle: "Signals in the Dust" },
+        { kind: "scene", chapterTitle: "Signals in the Dust" },
+      ],
+    });
+  });
+
   it("blocks unavailable, omitted, or fingerprint-changed included sources", () => {
     const missingProject = project({
       firstText,

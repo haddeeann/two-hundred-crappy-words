@@ -10,7 +10,12 @@
     busy: boolean;
     error: string;
     completedPath: string;
+    epubAuthor: string;
+    epubLanguage: string;
+    epubMetadataError: string;
     onFormat: (format: ManuscriptCompileFormat) => void;
+    onEpubAuthor: (author: string) => void;
+    onEpubLanguage: (language: string) => void;
     onRefresh: () => void;
     onRepair: (itemId: string) => void;
     onEdit: (itemId: string) => void;
@@ -28,7 +33,12 @@
     busy,
     error,
     completedPath,
+    epubAuthor,
+    epubLanguage,
+    epubMetadataError,
     onFormat,
+    onEpubAuthor,
+    onEpubLanguage,
     onRefresh,
     onRepair,
     onEdit,
@@ -83,7 +93,7 @@
     tabindex="-1"
     bind:this={dialog}
   >
-    <span class="eyebrow">Reading copy</span>
+    <span class="eyebrow">Reading and publishing copy</span>
     <h2 id="compile-heading">Compile {plan && plan.kind !== "unavailable" ? plan.manuscriptTitle : "manuscript"}</h2>
 
     {#if completedPath}
@@ -94,6 +104,7 @@
           <p>{plan.summary.words} words · {plan.summary.chapters} chapters · {plan.summary.scenes} prose sources</p>
         {/if}
         <p>Source files, manuscript structure, and daily progress were not changed.</p>
+        {#if format === "epub"}<p>Validate the EPUB in Kindle Previewer before retailer upload.</p>{/if}
       </div>
     {:else}
       <fieldset disabled={busy}>
@@ -116,7 +127,47 @@
           />
           Plain text
         </label>
+        <label>
+          <input
+            type="radio"
+            name="compile-format"
+            checked={format === "epub"}
+            onchange={() => onFormat("epub")}
+          />
+          EPUB 3 ebook
+        </label>
       </fieldset>
+
+      {#if format === "epub"}
+        <section class="publication" aria-labelledby="publication-metadata-heading">
+          <h3 id="publication-metadata-heading">Publication metadata</h3>
+          <label>
+            <span>Author display name</span>
+            <input
+              type="text"
+              disabled={busy}
+              maxlength="200"
+              value={epubAuthor}
+              placeholder="Name used at the retailer"
+              oninput={(event) => onEpubAuthor(event.currentTarget.value)}
+            />
+          </label>
+          <label>
+            <span>Language</span>
+            <input
+              type="text"
+              disabled={busy}
+              value={epubLanguage}
+              placeholder="en or en-US"
+              autocapitalize="none"
+              spellcheck="false"
+              oninput={(event) => onEpubLanguage(event.currentTarget.value)}
+            />
+          </label>
+          <p>These values go only into the exported EPUB. Typography remains reflowable and reader-controlled.</p>
+          {#if epubMetadataError}<p class="problem">{epubMetadataError}</p>{/if}
+        </section>
+      {/if}
 
       {#if !plan}
         <p role="status">{busy ? "Checking structure and prose…" : "Compile preview is unavailable."}</p>
@@ -175,7 +226,7 @@
             {/each}
           </ol>
         </section>
-        <p class="boundary">Scene titles and planning metadata stay out of the reading copy. Sources and structure are rechecked after Save As and before the create-new write.</p>
+        <p class="boundary">Scene titles and planning metadata stay out of the {format === "epub" ? "ebook" : "reading copy"}. Sources and structure are rechecked after Save As and before the create-new write.</p>
       {/if}
     {/if}
 
@@ -190,7 +241,7 @@
         <button
           type="button"
           class="primary"
-          disabled={busy || plan?.kind !== "ready"}
+          disabled={busy || plan?.kind !== "ready" || (format === "epub" && Boolean(epubMetadataError))}
           onclick={onExport}
         >{busy ? "Checking…" : "Save As…"}</button>
       {/if}
@@ -227,6 +278,10 @@
   fieldset { display: flex; gap: 1rem; margin: 0 0 0.75rem; border: 1px solid #444; }
   legend { padding: 0 0.3rem; color: #b8b8b8; }
   label { display: flex; gap: 0.35rem; align-items: center; }
+  .publication { display: grid; gap: 0.65rem; margin-bottom: 0.8rem; }
+  .publication label { display: grid; grid-template-columns: minmax(8rem, 0.45fr) minmax(12rem, 1fr); }
+  .publication input { box-sizing: border-box; width: 100%; padding: 0.42rem 0.5rem; border: 1px solid #555; border-radius: 4px; background: #1f1f1f; color: #fff; font: inherit; }
+  .publication input:focus-visible { outline: 2px solid #75beff; outline-offset: 1px; }
   .summary { display: flex; flex-wrap: wrap; gap: 0.35rem; }
   .summary span { padding: 0.2rem 0.4rem; border-radius: 999px; background: #333; color: #c8e6c9; font-size: 0.72rem; }
   .filename, .boundary, .blockers p { color: #a9a9a9; font-size: 0.76rem; }

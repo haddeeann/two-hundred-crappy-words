@@ -5,8 +5,10 @@
     exists,
     mkdir,
     readDir,
+    readFile,
     readTextFile,
     watch,
+    writeFile,
     writeTextFile,
   } from "@tauri-apps/plugin-fs";
   import { dirname, join } from "@tauri-apps/api/path";
@@ -215,6 +217,11 @@
     type ManuscriptCompileFormat,
     type ManuscriptCompilePlan,
   } from "$lib/manuscript/compile";
+  import {
+    buildManuscriptEpub,
+    equalBytes,
+    validateManuscriptEpubMetadata,
+  } from "$lib/manuscript/epub";
   import {
     DEFAULT_MAX_MANUSCRIPT_SOURCE_BYTES,
     DEFAULT_MAX_MANUSCRIPT_TOTAL_SOURCE_BYTES,
@@ -442,6 +449,9 @@
   let manuscriptCompileCompletedPath = $state("");
   let manuscriptCompileStructureFingerprint = "";
   let manuscriptCompileRevision = 0;
+  let manuscriptCompileEpubAuthor = $state("");
+  let manuscriptCompileEpubLanguage = $state("en");
+  let manuscriptCompileEpubModifiedAt = "";
   let manuscriptSourceResolutionPlan = $state<ManuscriptSourceResolutionPlan | null>(null);
   let manuscriptSourceResolutionBusy = $state(false);
   let manuscriptSourceResolutionError = $state("");
@@ -1400,6 +1410,7 @@
       manuscriptCompilePlan = null;
       manuscriptCompileError = "";
       manuscriptCompileCompletedPath = "";
+      manuscriptCompileEpubModifiedAt = new Date().toISOString();
       await refreshManuscriptCompile();
     });
   }
@@ -1410,6 +1421,16 @@
     manuscriptCompilePlan = null;
     manuscriptCompileError = "";
     void refreshManuscriptCompile();
+  }
+
+  function manuscriptCompileEpubMetadataError(): string {
+    if (manuscriptCompileFormat !== "epub") return "";
+    const result = validateManuscriptEpubMetadata({
+      author: manuscriptCompileEpubAuthor,
+      language: manuscriptCompileEpubLanguage,
+      modifiedAt: manuscriptCompileEpubModifiedAt,
+    });
+    return result.kind === "invalid" ? result.message : "";
   }
 
   function resolveCompileRepair(itemId: string): void {
@@ -1639,19 +1660,48 @@
     const rootPath = folderPath;
     const manuscriptId = manuscriptCompileId;
     const format = manuscriptCompileFormat;
+    const epubMetadata = {
+      author: manuscriptCompileEpubAuthor,
+      language: manuscriptCompileEpubLanguage,
+      modifiedAt: manuscriptCompileEpubModifiedAt,
+    };
+    const metadataCheck = format === "epub"
+      ? validateManuscriptEpubMetadata(epubMetadata)
+      : null;
+    if (metadataCheck?.kind === "invalid") {
+      manuscriptCompileError = metadataCheck.message;
+      return;
+    }
+    const approvedEpub = format === "epub"
+      ? buildManuscriptEpub({
+          manuscriptId: approved.manuscriptId,
+          title: approved.manuscriptTitle,
+          tokens: approved.tokens,
+          metadata: epubMetadata,
+        })
+      : null;
     manuscriptCompileBusy = true;
     manuscriptCompileError = "";
     try {
       const destination = await save({
         title: `Export ${approved.manuscriptTitle}`,
         defaultPath: approved.suggestedFilename,
-        filters: [
-          format === "markdown"
-            ? { name: "Markdown", extensions: ["md"] }
-            : { name: "Plain text", extensions: ["txt"] },
-        ],
+        // macOS can disable Save when an EPUB UTI is not registered on the
+        // machine. Keep the suggested extension, but do not make the native
+        // picker depend on that system registration.
+        filters: format === "epub"
+          ? []
+          : [
+              format === "markdown"
+                ? { name: "Markdown", extensions: ["md"] }
+                : { name: "Plain text", extensions: ["txt"] },
+            ],
       });
       if (!destination) return;
+      if (format === "epub" && !destination.toLowerCase().endsWith(".epub")) {
+        manuscriptCompileError = "EPUB exports must use the .epub filename extension. Nothing was written.";
+        return;
+      }
       if (await exists(destination)) {
         manuscriptCompileError = "That export path already exists. Choose a new filename; the app never overwrites an export.";
         return;
@@ -1661,12 +1711,21 @@
         manuscriptCompileError = "The open project changed after Save As. Nothing was written.";
         return;
       }
+      const refreshedEpub = format === "epub" && refreshed.plan.kind === "ready"
+        ? buildManuscriptEpub({
+            manuscriptId: refreshed.plan.manuscriptId,
+            title: refreshed.plan.manuscriptTitle,
+            tokens: refreshed.plan.tokens,
+            metadata: epubMetadata,
+          })
+        : null;
       if (
         refreshed.project.kind !== "ready" ||
         refreshed.project.fingerprint !== manuscriptCompileStructureFingerprint ||
         refreshed.plan.kind !== "ready" ||
         refreshed.plan.outputFingerprint !== approved.outputFingerprint ||
-        refreshed.plan.output !== approved.output
+        refreshed.plan.output !== approved.output ||
+        (format === "epub" && (!approvedEpub || !refreshedEpub || !equalBytes(refreshedEpub, approvedEpub)))
       ) {
         manuscriptCompilePlan = refreshed.plan;
         manuscriptCompileStructureFingerprint =
@@ -1674,12 +1733,18 @@
         manuscriptCompileError = "The manuscript structure or an included source changed after preview. Nothing was written; review the refreshed plan.";
         return;
       }
-      await writeTextFile(destination, refreshed.plan.output, { createNew: true });
+      if (format === "epub" && refreshedEpub) {
+        await writeFile(destination, refreshedEpub, { createNew: true });
+      } else {
+        await writeTextFile(destination, refreshed.plan.output, { createNew: true });
+      }
       manuscriptCompilePlan = refreshed.plan;
       manuscriptCompileCompletedPath = destination;
       try {
-        const written = await readTextFile(destination);
-        if (written !== refreshed.plan.output) {
+        const verified = format === "epub" && refreshedEpub
+          ? equalBytes(await readFile(destination), refreshedEpub)
+          : await readTextFile(destination) === refreshed.plan.output;
+        if (!verified) {
           manuscriptCompileError = "The export was created, but its contents did not verify exactly. Review the destination before using it.";
         }
       } catch (cause) {
@@ -6026,7 +6091,12 @@
         busy={manuscriptCompileBusy}
         error={manuscriptCompileError}
         completedPath={manuscriptCompileCompletedPath}
+        epubAuthor={manuscriptCompileEpubAuthor}
+        epubLanguage={manuscriptCompileEpubLanguage}
+        epubMetadataError={manuscriptCompileEpubMetadataError()}
         onFormat={setManuscriptCompileFormat}
+        onEpubAuthor={(author) => manuscriptCompileEpubAuthor = author}
+        onEpubLanguage={(language) => manuscriptCompileEpubLanguage = language}
         onRefresh={() => void refreshManuscriptCompile()}
         onRepair={resolveCompileRepair}
         onEdit={resolveCompileMetadata}

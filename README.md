@@ -89,6 +89,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Compile one selected manuscript in exact structure order to a Markdown or readable plain-text copy, with planning-only scene titles, chapter notes, excluded material, and structured frontmatter kept out of the reading copy
 - Review compact counts, exclusions, source blockers, order, format, and suggested filename before native Save As; every export is freshly reverified and created without overwriting
 - Resolve blocked scene sources deliberately by repairing a stable-ID move, locating a path-only file, safely creating the expected source, excluding it from compile, or removing only its structure entry with guarded Undo
+- Export that same verified manuscript as a deterministic reflowable EPUB 3 ebook with explicit author/language metadata, title page, navigation, semantic chapters, reader-controlled typography, and exact binary verification
 
 ## Current limitations
 
@@ -96,7 +97,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Ordinary folders still use their absolute path as local progress identity until explicitly adopted
 - Cursor position and editor scroll position are not restored yet
 - Folders cannot yet be renamed, moved, or deleted in the app; files can be renamed within their current folder or moved to the system Trash, while root project metadata remains protected
-- Manuscript structure can be inspected, initially created/imported, repaired or explicitly resolved when a source is unavailable, edited and reordered within or across containers from either outline or corkboard, counted from verified prose, used in split/focus writing layouts, safely split or merged, and compiled to Markdown or plain text; DOCX and PDF remain behind a separate presentation review
+- Manuscript structure can be inspected, initially created/imported, repaired or explicitly resolved when a source is unavailable, edited and reordered within or across containers from either outline or corkboard, counted from verified prose, used in split/focus writing layouts, safely split or merged, and compiled to Markdown, plain text, or an EPUBCheck-clean EPUB; Kindle Previewer inspection and a separate print-interior PDF remain in progress
 - The first importer intentionally maps only immediate Markdown and one level of chapter folders; deeper folders remain visible as skipped and require later manual structure tools
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
 - The frameless window does not yet provide maximize/full-screen controls
@@ -158,7 +159,7 @@ static/                   Static images and icons
 
 ## Status
 
-This is a functional prototype. Its trustworthy-editor, daily-practice, world-project, and connected-lore milestones have passed automated and hands-on macOS QA. Connected lore includes approved link semantics, a bounded incrementally refreshed memory-only index, keyboard completion, outgoing/backlink navigation, project search, read-only side references, safe missing-note creation, bounded unlinked mentions, previewed no-clobber lore renames with conflict-aware link repair, and session-only Back/Forward navigation that revalidates every destination. The active novel-structure milestone now has an approved portable format, bounded parser and source reconciliation, a compact outline and corkboard, exact metadata and reorder tools, verified structural counts, manuscript/reference splits, Focus, rollback-safe scene split and adjacent merge transactions, a project-tree-first layout, and strict no-clobber Markdown/plain-text compilation with deliberate missing-source resolution. The next product gate reviews presentation requirements before adding DOCX or PDF adapters.
+This is a functional prototype. Its trustworthy-editor, daily-practice, world-project, and connected-lore milestones have passed automated and hands-on macOS QA. Connected lore includes approved link semantics, a bounded incrementally refreshed memory-only index, keyboard completion, outgoing/backlink navigation, project search, read-only side references, safe missing-note creation, bounded unlinked mentions, previewed no-clobber lore renames with conflict-aware link repair, and session-only Back/Forward navigation that revalidates every destination. The active novel-structure milestone now has an approved portable format, bounded parser and source reconciliation, a compact outline and corkboard, exact metadata and reorder tools, verified structural counts, manuscript/reference splits, Focus, rollback-safe scene split and adjacent merge transactions, a project-tree-first layout, strict no-clobber Markdown/plain-text compilation with deliberate missing-source resolution, and an EPUBCheck-clean reflowable EPUB exporter. Kindle Previewer inspection is the remaining EPUB checkpoint; print-interior PDF follows as a distinct production artifact.
 
 Development follows the repository-backed [product roadmap](ROADMAP.md). The current milestone and exact next slice are recorded in [`docs/CURRENT.md`](docs/CURRENT.md), while consequential product and architecture choices are preserved in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
@@ -173,6 +174,8 @@ The approved portable manifest and optional Markdown metadata are documented in 
 The approved wiki-link semantics, indexing limits, and privacy boundary are documented in [`docs/CONNECTED_LORE_FORMAT.md`](docs/CONNECTED_LORE_FORMAT.md).
 
 The approved portable manuscript-order and scene/chapter metadata model is documented in [`docs/MANUSCRIPT_FORMAT.md`](docs/MANUSCRIPT_FORMAT.md).
+
+The research-backed EPUB and print-interior export targets are documented in [`docs/PUBLISHING_EXPORTS.md`](docs/PUBLISHING_EXPORTS.md).
 
 The current native capability and selected-folder access model is documented in [`docs/SECURITY_AND_PERMISSIONS.md`](docs/SECURITY_AND_PERMISSIONS.md).
 

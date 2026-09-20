@@ -30,6 +30,8 @@ Manuscript source-path repair, descriptive metadata editing, and sibling reorder
 
 The default filesystem permission also permits Tauri's application-specific data directories. Settings, draft recovery, and persisted scope metadata live there. See [`DATA_AND_RECOVERY.md`](DATA_AND_RECOVERY.md) for the content and cleanup behavior of settings and draft records.
 
+EPUB export adds the filesystem plugin's binary read and write commands alongside the existing text commands. Their paths are not globally scoped: the output path comes from the native Save dialog and inherits that picker-granted scope. The app writes with create-new protection and rereads the file for exact byte verification; it does not gain shell, network, arbitrary home-directory, or background filesystem access.
+
 ## Native capabilities
 
 The main window has only the native window permissions needed for its current interface: dragging the frameless title bar, minimizing, requesting a close, and completing a close after the safe-save handler approves it. The unused template greeting command and opener plugin have been removed.

@@ -4,7 +4,15 @@ This checklist uses disposable files and is the human checkpoint for milestone 0
 
 ## Latest result
 
-Completed successfully on macOS on 2026-09-20. The latest run verified the complete Markdown/plain-text export and missing-source resolution flow in freshly packaged apps, including exact output, stale-preview refusal, deliberate Locate/Create/Exclude/Remove choices, guarded Undo, keyboard containment, completion reporting, unchanged unrelated sources, and unchanged daily credit. Detailed current and historical checkpoints follow.
+Completed successfully on macOS on 2026-09-20 through the available EPUB checks. The latest run verified EPUB metadata validation, the native Save flow, exact binary reread, official EPUBCheck acceptance, package contents, unchanged sources/structure, and unchanged daily credit in a freshly packaged app. Kindle Previewer is not installed on this Mac, so its external conversion preview remains pending. The earlier Markdown/plain-text and missing-source-resolution checkpoints remain complete. Detailed current and historical checkpoints follow.
+
+## Milestone 0.6.14 standards-based EPUB checkpoint
+
+Completed through filesystem and standards validation on macOS on 2026-09-20 using Computer Use against a freshly built production `.app` and the same disposable manuscript. The compile dialog exposed a distinct **EPUB 3 ebook** choice, required an author display name, canonicalized a valid BCP 47 language, rejected an invalid language inline, showed the exact one-chapter/two-source/nine-word plan, and named the excluded scene. Planning-only scene titles remained report information rather than book content.
+
+The first packaged pass found that macOS disables a native Save panel whose custom `.epub` filter cannot resolve to a registered system UTI. The corrected package keeps the suggested `.epub` filename without depending on that registration, enforces the extension after selection, and explicitly grants only the binary read/write commands needed for the picker-scoped path. The native panel then enabled Save and created `/private/tmp/two-hundred-compile-qa/Patient-Comet-Publishing-QA.epub`; the app reread the exact bytes before reporting completion.
+
+Official EPUBCheck 5.4.0 validated that exact packaged artifact using EPUB 3.4 rules with `0 fatals / 0 errors / 0 warnings / 0 infos`. Direct inspection confirmed an uncompressed, extra-field-free first `mimetype` entry; title, author, language, modification time, manifest, spine, and navigation metadata; semantic XHTML; the exact chapter title and prose order; preserved emphasis; a visible accessible scene break; and no forced body font. The structure and all three source hashes remained at their baselines, excluded prose and planning titles were absent, and Today stayed `0 / 200`. Kindle Previewer is absent from `/Applications` and the user's Applications folder, so that final retailer-conversion check requires a separate approved installation.
 
 ## Milestone 0.6.13 compile/export transport checkpoint
 

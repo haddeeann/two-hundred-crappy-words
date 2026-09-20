@@ -8,7 +8,7 @@ import type {
   ReconciledManuscriptScene,
 } from "./source-reconciliation";
 
-export type ManuscriptCompileFormat = "markdown" | "text";
+export type ManuscriptCompileFormat = "markdown" | "text" | "epub";
 
 export interface ManuscriptCompileEntry {
   itemId: string;
@@ -47,12 +47,18 @@ interface CompilePlanBase {
 export type ManuscriptCompilePlan =
   | { kind: "unavailable"; reason: string }
   | (CompilePlanBase & { kind: "blocked" })
-  | (CompilePlanBase & { kind: "ready"; output: string; outputFingerprint: string });
+  | (CompilePlanBase & {
+      kind: "ready";
+      output: string;
+      outputFingerprint: string;
+      tokens: readonly ManuscriptCompileToken[];
+    });
 
-interface CompileToken {
+export interface ManuscriptCompileToken {
   kind: "chapter" | "scene";
   title?: string;
   body?: string;
+  chapterTitle?: string | null;
 }
 
 /**
@@ -85,7 +91,7 @@ export function planManuscriptCompile({
 
   const entries: ManuscriptCompileEntry[] = [];
   const blockers: ManuscriptCompileBlocker[] = [];
-  const tokens: CompileToken[] = [];
+  const tokens: ManuscriptCompileToken[] = [];
   let chapters = 0;
   let scenes = 0;
   let words = 0;
@@ -102,7 +108,10 @@ export function planManuscriptCompile({
     });
   };
 
-  const addScene = (scene: ReconciledManuscriptScene): void => {
+  const addScene = (
+    scene: ReconciledManuscriptScene,
+    chapterTitle: string | null = null,
+  ): void => {
     if (!scene.item.includeInCompile) {
       addExcludedScene(scene);
       return;
@@ -120,7 +129,7 @@ export function planManuscriptCompile({
     if (scene.source.kind === "ready") {
       words += countManuscriptSourceWords(sourceTexts.get(scene.source.resolvedPath) ?? "");
     }
-    tokens.push({ kind: "scene", body });
+    tokens.push({ kind: "scene", body, chapterTitle });
   };
 
   for (const item of manuscript.items) {
@@ -168,11 +177,11 @@ export function planManuscriptCompile({
             ? sourceTexts.get(chapter.source.resolvedPath) ?? ""
             : "",
         );
-        tokens.push({ kind: "scene", body });
+        tokens.push({ kind: "scene", body, chapterTitle: chapter.item.title });
       }
       continue;
     }
-    for (const child of chapter.children) addScene(child);
+    for (const child of chapter.children) addScene(child, chapter.item.title);
   }
 
   const base: CompilePlanBase = {
@@ -186,14 +195,15 @@ export function planManuscriptCompile({
   };
   if (blockers.length > 0) return { ...base, kind: "blocked" };
 
-  const output = format === "markdown"
-    ? renderMarkdown(manuscript.manuscript.title, tokens)
-    : renderPlainText(manuscript.manuscript.title, tokens);
+  const output = format === "text"
+    ? renderPlainText(manuscript.manuscript.title, tokens)
+    : renderMarkdown(manuscript.manuscript.title, tokens);
   return {
     ...base,
     kind: "ready",
     output,
     outputFingerprint: fingerprintContent(output),
+    tokens,
   };
 }
 
@@ -309,11 +319,11 @@ function stripInlineMarkdown(line: string): string {
     .replace(/\\([\\`*_[\]{}()#+\-.!>])/gu, "$1");
 }
 
-function renderMarkdown(title: string, tokens: readonly CompileToken[]): string {
+function renderMarkdown(title: string, tokens: readonly ManuscriptCompileToken[]): string {
   return renderTokens(`# ${title}`, tokens, (chapter) => `## ${chapter}`, (body) => body);
 }
 
-function renderPlainText(title: string, tokens: readonly CompileToken[]): string {
+function renderPlainText(title: string, tokens: readonly ManuscriptCompileToken[]): string {
   const heading = `${title}\n${"=".repeat(Math.max(3, title.length))}`;
   return renderTokens(
     heading,
@@ -325,12 +335,12 @@ function renderPlainText(title: string, tokens: readonly CompileToken[]): string
 
 function renderTokens(
   title: string,
-  tokens: readonly CompileToken[],
+  tokens: readonly ManuscriptCompileToken[],
   chapter: (title: string) => string,
   scene: (body: string) => string,
 ): string {
   const sections = [title];
-  let previous: CompileToken["kind"] | null = null;
+  let previous: ManuscriptCompileToken["kind"] | null = null;
   for (const token of tokens) {
     if (token.kind === "chapter") {
       sections.push(chapter(token.title ?? ""));
@@ -351,7 +361,8 @@ function suggestedCompileFilename(title: string, format: ManuscriptCompileFormat
     .replace(/\s+/gu, " ")
     .replace(/[ .]+$/gu, "")
     .trim() || "Manuscript";
-  return `${base}.${format === "markdown" ? "md" : "txt"}`;
+  const extension = format === "markdown" ? "md" : format === "text" ? "txt" : "epub";
+  return `${base}.${extension}`;
 }
 
 function trimBlankLines(text: string): string {

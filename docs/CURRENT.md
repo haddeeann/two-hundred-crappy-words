@@ -10,25 +10,31 @@ Connected lore is complete. The active milestone makes a long manuscript underst
 
 ## Active slice
 
-**0.6.14 — DOCX/PDF presentation review**
+**0.6.14 — Standards-based EPUB export**
 
 ### Intended outcome
 
-Decide what a useful, predictable DOCX and PDF reading copy should look like before adding either output adapter.
+Generate a retailer-neutral reflowable ebook from the same verified manuscript plan, using current publishing standards rather than subjective layout preferences.
 
 ### Acceptance criteria
 
-- [ ] Review whether DOCX, PDF, or both belong in the next implementation slice.
-- [ ] Approve page size, margins, typography, chapter openings, scene breaks, headers/footers, page numbers, and optional title-page behavior.
-- [ ] Decide whether PDF should be generated directly or from the same intermediate document model as DOCX.
-- [ ] Define a compact preview/report that remains truthful without becoming a second layout editor.
+- [x] Research current official Amazon KDP, Apple Books, Google Play Books, W3C EPUB, and IngramSpark requirements.
+- [x] Separate reflowable ebook, print-interior, and editable handoff artifacts in the product roadmap.
+- [x] Add explicit author and language inputs without making them proprietary prose metadata.
+- [x] Generate a semantic reflowable EPUB 3 package with navigation, title page, ordered chapters, and deterministic scene boundaries.
+- [x] Validate the generated and packaged-app artifacts with EPUBCheck and complete packaged filesystem/no-mutation QA.
+- [ ] Inspect the packaged-app artifact in Kindle Previewer on macOS.
 
 ## Next slices
 
-1. Hold the DOCX/PDF presentation review with the writer.
-2. Implement only the approved adapter boundary, then complete milestone 0.6 regression QA.
+1. Install Kindle Previewer with the user's approval and inspect the already EPUBCheck-clean packaged-app artifact.
+2. Review the research-derived print-interior contract before implementing its PDF renderer.
 
 ## Completed checkpoint
+
+- Slice 0.6.14 implementation and local/package validation are complete. The compile surface now offers **EPUB 3 ebook** beside Markdown and plain text, requires an export-only author display name and valid BCP 47 language, and reuses the freshly verified exact manuscript traversal. A small typed `fflate` dependency creates a deterministic offline package with an uncompressed first `mimetype`, semantic XHTML, title page, navigation, exact chapter order, visible accessible scene breaks, escaped metadata, reader-controlled typography, and no planning-only titles or excluded prose. Save As retains create-new/no-clobber semantics; on macOS it deliberately avoids requiring the optional EPUB UTI registration that otherwise disables the native Save button, then enforces `.epub` before writing. Explicit binary read/write capabilities remain constrained by the native picker scope. Unit tests cover metadata, canonical language tags, deterministic bytes, the ZIP preamble, package contents, escaping, traversal, and presentation. Official EPUBCheck 5.4.0 reported zero fatals, errors, warnings, or infos for both the generated fixture and the exact packaged-app export under EPUB 3.4 rules. Packaged QA exported a 2.5 KiB EPUB, reread it exactly, preserved the structure and all three Markdown SHA-256 hashes, omitted planning/excluded material, and left Today at `0 / 200`. The full gate has 382 passing frontend tests across sixty files, fifteen passing native tests, strict Rust linting, zero Svelte/TypeScript diagnostics, a zero-vulnerability production dependency audit, and a successful production `.app` build. Kindle Previewer is not installed on this Mac, so that final external-conversion inspection remains the only open acceptance item.
+
+- Slice 0.6.14 now has a research-backed publishing contract in `docs/PUBLISHING_EXPORTS.md`. Amazon accepts EPUB, DOCX, and KPF for reflowable ebooks, while Apple requires EPUB uploads that pass EPUBCheck and Google prefers EPUB 3.3; the first direct-publishing adapter is therefore retailer-neutral reflowable EPUB rather than a styled DOCX. Print PDF is a separate physical-interior artifact with trim, gutter, pagination, and font-embedding requirements; its conservative first preset will follow current print-on-demand guidance. DOCX remains a possible later editorial handoff. The user explicitly directed the product to prefer established publishing requirements and common practice over personal style on 2026-09-20.
 
 - Slice 0.6.13c is complete. A blocked compile now offers every approved deliberate way forward in context: the existing stable-ID repair for a unique move; **Locate source…** only for path-bound items; **Create source…** at the exact expected path with create-new protection and matching stable-ID frontmatter when required; **Exclude from compile…** through the existing metadata preview; and **Remove scene…** through a structure-only preview that never deletes Markdown. Locate and remove preserve the complete structure object, freshly revalidate the structure and selected source, atomically replace only the structure, and feed the shared exact guarded Undo. Create requires a contained real parent, refuses every existing destination, writes either zero bytes or only matching identity frontmatter, and verifies the resulting binding. The keyboard-contained preview names the scene, stable ID, exact JSON path, affected filesystem paths, and safety boundary. Packaged macOS QA exercised Locate plus Undo, zero-byte Create, structure-only Remove plus Undo, durable Exclude plus Undo, automatic return to a freshly ready compile, and exact source/structure preservation with Today at `0 / 200`; QA caught and corrected an imprecise removal-preview JSON path before the final package. The disposable fixture was restored to its exact original structure and source SHA-256 hashes. The final automated gate has 379 passing frontend tests across fifty-nine files, fifteen native tests, strict Rust linting, zero Svelte/TypeScript diagnostics, a zero-vulnerability production dependency audit, and a successful production `.app` build.
 
@@ -101,7 +107,7 @@ Decide what a useful, predictable DOCX and PDF reading copy should look like bef
 
 ## Blockers and decision gates
 
-The next work is a product decision gate: review the presentation contract for DOCX and PDF before implementing either adapter. Markdown/plain-text compile and all approved missing-source resolution paths are complete.
+There is no open preference-only decision gate. EPUB implementation, official EPUBCheck, and packaged filesystem QA are complete. The remaining acceptance step needs Kindle Previewer, which is not installed on this Mac; installing software outside the repository requires user approval. After that inspection, the roadmap can mark EPUB complete and begin the separately researched print-interior PDF slice.
 
 ## Handoff protocol
 
