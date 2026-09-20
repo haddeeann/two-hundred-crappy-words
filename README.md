@@ -9,6 +9,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Open a folder from **File → Open Folder…** (`Command+O` on macOS or `Ctrl+O` elsewhere) and the native folder picker
 - Remember and reopen the last selected folder
 - Browse naturally sorted files and lazily expand subfolders in a sidebar
+- Right-click a file to rename it safely or move it to the system Trash after confirmation; Markdown renames keep their previewed link checks, and Markdown deletion warns that links and manuscript bindings may become unavailable
 - Keep the persistent left rail focused on the project file tree, put folder/file creation in the native **File** menu, and open lore, manuscript planning, project settings, and practice history from a closed-by-default right dock
 - Open and edit plain-text files
 - Select a folder and create a file there from **File → New File…** (`Command+N` or `Ctrl+N`) without overwriting an existing path
@@ -91,7 +92,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Correction audit export is not available yet
 - Ordinary folders still use their absolute path as local progress identity until explicitly adopted
 - Cursor position and editor scroll position are not restored yet
-- Folders and ordinary files cannot be renamed, moved, or deleted in the app; only eligible stable-ID lore notes have the previewed rename flow
+- Folders cannot yet be renamed, moved, or deleted in the app; files can be renamed within their current folder or moved to the system Trash, while root project metadata remains protected
 - Manuscript structure can be inspected, initially created/imported, repaired after a uniquely identified source move, edited and reordered within or across containers from either outline or corkboard, counted from verified prose, used in split/focus writing layouts, safely split at an exact saved-scene caret, and safely merged for eligible adjacent scenes; path-only replacement and compile/export are still in progress
 - The first importer intentionally maps only immediate Markdown and one level of chapter folders; deeper folders remain visible as skipped and require later manual structure tools
 - The editor is intended for text files and does not provide rich-text or Markdown preview features

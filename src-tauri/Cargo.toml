@@ -25,3 +25,4 @@ tauri-plugin-dialog = "2.7.1"
 tauri-plugin-fs = { version = "2.5.1", features = ["watch"] }
 tauri-plugin-store = "2.4.3"
 tauri-plugin-persisted-scope = "2"
+trash = "5.2.9"

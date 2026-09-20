@@ -1,6 +1,6 @@
 # Current work
 
-Last updated: 2026-08-31
+Last updated: 2026-09-20
 
 ## Active milestone
 
@@ -29,6 +29,8 @@ Agree on what the first Markdown and plain-text compile should contain, how its 
 2. 0.6.13c — Add no-clobber export, preview/report UI, packaged QA, and milestone documentation.
 
 ## Completed checkpoint
+
+- The approved contextual file actions are complete. Right-clicking a regular file now exposes keyboard-accessible **Rename…** and **Delete…** actions while the resting left rail remains tree-only. Ordinary non-Markdown rename is same-folder, portable-name validated, byte-preserving, and no-clobber; Markdown rename continues through the stable-ID link-repair preview. Delete is a cancel-first move to the operating system Trash, not a permanent unlink: it freshly verifies one contained regular non-symbolic file, protects both root metadata files, resolves active unsaved work through the existing navigation guard, closes the editor only after success, and warns without rewriting when Markdown links or manuscript bindings may become unavailable. Packaged macOS QA covered menu keyboard movement, Escape focus return, rename collision refusal and success, delete dialog containment and cancellation, the Markdown warning, saved active-file deletion, immediate tree/editor refresh, exact source-path absence, and restoration of the writer's prior project. The frontend suite has 367 passing tests across fifty-six files, Svelte/TypeScript reports zero diagnostics, fifteen native tests and Clippy with warnings denied pass, the production dependency audit reports zero vulnerabilities, and the unsigned production `.app` bundle builds and runs.
 
 - Slice 0.6.12c is complete. **Merge with next…** appears only for two adjacent fingerprint-verified scenes in one exact array when the right scene has no descriptive or unknown metadata to lose and both scenes share compile inclusion. The preview identifies both titles and UUIDs, the exact array position, all four guarded paths, metadata disposition, source excerpts, and either an exact preserved boundary or only the missing line breaks needed for one blank line. Confirmation freshly rescans and semantically replans, then a picker-scoped native transaction creates a visible non-Markdown `.retired` hard-link without clobbering, atomically replaces the left source and structure, verifies them, and removes the original right name last; every commit and Undo phase has exact rollback coverage. Shared one-step Undo restores both original sources and the complete structure only while the merged source, retired backup, structure, and absent original path still match. Packaged macOS QA covered outline and corkboard action gating, keyboard containment and exact Escape focus return, both boundary choices, immediate counts/tree refresh, unchanged `0 / 200`, exact-hash Undo restoration, and refusal when the retirement destination appeared after preview with every guarded hash unchanged. The frontend suite has 362 passing tests across fifty-five files, Svelte/TypeScript checks report zero errors and warnings, twelve native tests and Clippy with warnings denied pass, and the production macOS `.app` bundle builds.
 

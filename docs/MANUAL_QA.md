@@ -215,6 +215,14 @@ The project-tree navigation refinement was then exercised in fresh packages. At 
 
 The full frontend suite has 362 passing tests across fifty-five files. Svelte/TypeScript reports zero errors and warnings; the frontend build passes. Twelve Rust tests, formatting, and Clippy with warnings denied pass. The unsigned production macOS `.app` bundle builds and runs.
 
+## Project-tree rename and Trash checkpoint
+
+Completed successfully on macOS on 2026-09-20 using Computer Use against a freshly built production `.app` and an isolated temporary folder. A regular file's right-click menu exposed **Rename…** and **Delete…**; Arrow Down moved between the two actions and Escape returned focus to the exact tree row. Rename opened a selected inline field, refused an occupied sibling without changing either path, and then completed a safe same-folder rename while preserving focus. The native operation retained no-overwrite and project-scope boundaries.
+
+**Delete…** opened a visually and accessibly named recoverable-deletion dialog with Cancel initially focused. Shift+Tab wrapped to **Move to Trash**, Escape returned to the source row, and the canceled file remained present. A disposable Markdown note added the explicit warning that links and manuscript entries may become unavailable and would not be rewritten. After action-time user confirmation, a saved active text file moved to macOS Trash, disappeared from the tree and exact project path, and closed the editor only after success. The app then reopened the writer's prior project. The temporary folder retains only the two harmless collision/warning fixtures for operating-system cleanup; no real project file was changed.
+
+The full frontend suite has 367 passing tests across fifty-six files. Svelte/TypeScript reports zero errors and warnings; the frontend and unsigned production macOS `.app` builds pass. Fifteen Rust tests, formatting, and Clippy with warnings denied pass, and the production dependency audit reports zero vulnerabilities.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:
@@ -239,6 +247,8 @@ Use **File → Open Folder…** to choose the printed temporary path. No real wr
 ## Core workflow
 
 - Expand `Lore`, select it, and create `new-world.md`. Confirm the file appears inside `Lore`, not at the root.
+- Right-click an ordinary non-Markdown file and choose **Rename…**. Confirm the name becomes an inline selected field, Escape cancels, F2 opens the same field, an existing sibling name is refused without changing either file, and a successful rename preserves the exact bytes and active editor. Confirm a Markdown file opens the previewed lore rename instead of the ordinary inline path.
+- Right-click an ordinary disposable file and choose **Delete…**. Confirm Cancel receives initial focus, Tab and Shift+Tab remain contained, Escape returns focus to the same tree row, and cancellation leaves the file untouched. Reopen the dialog, confirm **Move to Trash**, and verify the file leaves the tree without permanently deleting it. For an active file, confirm pending edits save or reach the normal conflict choice before Trash and the editor closes only after success. For a Markdown file, confirm the dialog warns that links and manuscript bindings may become unavailable and are not rewritten. Confirm folders, symbolic links, and the two root project-metadata files cannot enter this flow.
 - Open a file, type rapidly, and confirm the status progresses through Unsaved/Saving/Saved without interrupting typing.
 - Press `Command+S`, switch files immediately, and confirm text lands in the correct file.
 - Tab through the project tree, window controls, and editor. Confirm focus is visible and labels make sense with VoiceOver if available. Open the native **File** menu and confirm **New File…** and **Open Folder…** have Command/Ctrl+N and Command/Ctrl+O shortcuts.

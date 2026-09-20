@@ -11,6 +11,7 @@ mod manuscript_merge;
 mod manuscript_split;
 
 const MANUSCRIPT_STRUCTURE_FILE: &str = "200-crappy-words.manuscripts.json";
+const WORLD_PROJECT_MANIFEST_FILE: &str = "200-crappy-words.project.json";
 const MAX_MANUSCRIPT_STRUCTURE_BYTES: usize = 10 * 1024 * 1024;
 const MENU_NEW_FILE_ID: &str = "file-new";
 const MENU_OPEN_FOLDER_ID: &str = "file-open-folder";
@@ -80,23 +81,121 @@ fn rename_lore_file_no_clobber_impl(
 ) -> Result<(), String> {
     validate_relative_markdown_path(source_relative)?;
     validate_relative_markdown_path(target_relative)?;
-    if source_relative == target_relative {
-        return Err("The source and destination paths are the same.".into());
-    }
+    rename_regular_file_no_clobber_impl(root_path, source_relative, target_relative)
+}
 
+#[tauri::command]
+fn rename_project_file_no_clobber(
+    app: tauri::AppHandle,
+    root_path: String,
+    source_relative: String,
+    target_name: String,
+) -> Result<(), String> {
+    let source_relative = Path::new(&source_relative);
+    validate_relative_file_path(source_relative)?;
+    reject_generic_markdown_source(source_relative)?;
+    validate_portable_file_name(&target_name)?;
+    let target_relative = source_relative
+        .parent()
+        .unwrap_or_else(|| Path::new(""))
+        .join(&target_name);
+    reject_protected_project_file(source_relative)?;
+    reject_protected_project_file(&target_relative)?;
+
+    let canonical_root = fs::canonicalize(&root_path)
+        .map_err(|error| format!("The selected project root is unavailable: {error}"))?;
+    let source_path = canonical_root.join(source_relative);
+    let target_path = canonical_root.join(&target_relative);
+    let scope = app.fs_scope();
+    if !scope.is_allowed(&canonical_root)
+        || !scope.is_allowed(&source_path)
+        || !scope.is_allowed(&target_path)
+    {
+        return Err("The rename paths are outside the filesystem scope granted by the native folder picker.".into());
+    }
+    rename_regular_file_no_clobber_impl(&canonical_root, source_relative, &target_relative)
+}
+
+#[tauri::command]
+fn trash_project_file(
+    app: tauri::AppHandle,
+    root_path: String,
+    source_relative: String,
+) -> Result<(), String> {
+    let canonical_root = fs::canonicalize(&root_path)
+        .map_err(|error| format!("The selected project root is unavailable: {error}"))?;
+    let source_relative = Path::new(&source_relative);
+    let source_path = canonical_root.join(source_relative);
+    let scope = app.fs_scope();
+    if !scope.is_allowed(&canonical_root) || !scope.is_allowed(&source_path) {
+        return Err(
+            "The file is outside the filesystem scope granted by the native folder picker.".into(),
+        );
+    }
+    trash_project_file_impl(&canonical_root, source_relative, |path| {
+        trash::delete(path).map_err(|error| {
+            format!("The operating system could not move the file to Trash: {error}")
+        })
+    })
+}
+
+fn trash_project_file_impl<F>(
+    root_path: &Path,
+    source_relative: &Path,
+    move_to_trash: F,
+) -> Result<(), String>
+where
+    F: FnOnce(&Path) -> Result<(), String>,
+{
+    validate_relative_file_path(source_relative)?;
+    reject_protected_project_file(source_relative)?;
     let canonical_root = fs::canonicalize(root_path)
         .map_err(|error| format!("The selected project root is unavailable: {error}"))?;
     let source_path = canonical_root.join(source_relative);
     let source_metadata = fs::symlink_metadata(&source_path)
-        .map_err(|error| format!("The source note is unavailable: {error}"))?;
+        .map_err(|error| format!("The source file is unavailable: {error}"))?;
     if source_metadata.file_type().is_symlink() || !source_metadata.is_file() {
-        return Err("The source note is not a regular non-symbolic file.".into());
+        return Err("Only a regular non-symbolic file can be moved to Trash.".into());
     }
     let canonical_source = fs::canonicalize(&source_path)
-        .map_err(|error| format!("The source note could not be verified: {error}"))?;
+        .map_err(|error| format!("The source file could not be verified: {error}"))?;
     canonical_source
         .strip_prefix(&canonical_root)
-        .map_err(|_| "The source note resolves outside the selected project.".to_string())?;
+        .map_err(|_| "The source file resolves outside the selected project.".to_string())?;
+
+    move_to_trash(&canonical_source)?;
+    match fs::symlink_metadata(&source_path) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Ok(_) => Err("The Trash operation returned without removing the project path; check the file before trying again.".into()),
+        Err(error) => Err(format!(
+            "The Trash operation finished, but the original path could not be verified: {error}"
+        )),
+    }
+}
+
+fn rename_regular_file_no_clobber_impl(
+    root_path: &Path,
+    source_relative: &Path,
+    target_relative: &Path,
+) -> Result<(), String> {
+    validate_relative_file_path(source_relative)?;
+    validate_relative_file_path(target_relative)?;
+    if source_relative == target_relative {
+        return Err("The source and destination paths are the same.".into());
+    }
+    let canonical_root = fs::canonicalize(root_path)
+        .map_err(|error| format!("The selected project root is unavailable: {error}"))?;
+    let source_path = canonical_root.join(source_relative);
+    let source_metadata = fs::symlink_metadata(&source_path)
+        .map_err(|error| format!("The source file is unavailable: {error}"))?;
+    if source_metadata.file_type().is_symlink() || !source_metadata.is_file() {
+        return Err("The source is not a regular non-symbolic file.".into());
+    }
+    let canonical_source = fs::canonicalize(&source_path)
+        .map_err(|error| format!("The source file could not be verified: {error}"))?;
+    canonical_source
+        .strip_prefix(&canonical_root)
+        .map_err(|_| "The source file resolves outside the selected project.".to_string())?;
 
     let target_path = canonical_root.join(target_relative);
     let target_parent = target_path
@@ -140,7 +239,7 @@ fn rename_lore_file_no_clobber_impl(
         return Err(match rollback {
             Ok(()) => format!("The old name could not be removed, so the new name was rolled back: {error}"),
             Err(rollback_error) => format!(
-                "The old name could not be removed, and the new name could not be rolled back. Both paths now reference the note and require review: {error}; rollback: {rollback_error}"
+                "The old name could not be removed, and the new name could not be rolled back. Both paths now reference the file and require review: {error}; rollback: {rollback_error}"
             ),
         });
     }
@@ -309,22 +408,91 @@ fn validate_new_manuscript_structure(text: &str) -> Result<(), String> {
 }
 
 fn validate_relative_markdown_path(path: &Path) -> Result<(), String> {
-    if path.as_os_str().is_empty() || path.is_absolute() {
-        return Err("Lore paths must be non-empty and project-relative.".into());
-    }
-    for component in path.components() {
-        if !matches!(component, Component::Normal(_)) {
-            return Err(
-                "Lore paths cannot contain current, parent, root, or prefix segments.".into(),
-            );
-        }
-    }
+    validate_relative_file_path(path)?;
     let extension = path
         .extension()
         .and_then(|value| value.to_str())
         .unwrap_or_default();
     if !extension.eq_ignore_ascii_case("md") && !extension.eq_ignore_ascii_case("markdown") {
         return Err("Lore rename supports only .md and .markdown files.".into());
+    }
+    Ok(())
+}
+
+fn validate_relative_file_path(path: &Path) -> Result<(), String> {
+    if path.as_os_str().is_empty() || path.is_absolute() {
+        return Err("File paths must be non-empty and project-relative.".into());
+    }
+    for component in path.components() {
+        if !matches!(component, Component::Normal(_)) {
+            return Err(
+                "File paths cannot contain current, parent, root, or prefix segments.".into(),
+            );
+        }
+    }
+    Ok(())
+}
+
+fn validate_portable_file_name(name: &str) -> Result<(), String> {
+    let path = Path::new(name);
+    if name.is_empty()
+        || path.components().count() != 1
+        || !matches!(path.components().next(), Some(Component::Normal(_)))
+    {
+        return Err("Enter a filename, not a folder path.".into());
+    }
+    if name.chars().any(|character| {
+        character.is_control()
+            || matches!(character, '<' | '>' | ':' | '"' | '|' | '?' | '*' | '\\')
+    }) {
+        return Err(
+            "The filename contains a character that is not portable across systems.".into(),
+        );
+    }
+    if name.ends_with([' ', '.']) {
+        return Err("A filename cannot end with a space or period.".into());
+    }
+    let base_name = name
+        .split('.')
+        .next()
+        .unwrap_or_default()
+        .to_ascii_uppercase();
+    if matches!(base_name.as_str(), "CON" | "PRN" | "AUX" | "NUL")
+        || (base_name.len() == 4
+            && (base_name.starts_with("COM") || base_name.starts_with("LPT"))
+            && matches!(base_name.as_bytes()[3], b'1'..=b'9'))
+    {
+        return Err("That filename is reserved by the operating system.".into());
+    }
+    Ok(())
+}
+
+fn reject_protected_project_file(path: &Path) -> Result<(), String> {
+    if path.components().count() == 1 {
+        let name = path
+            .file_name()
+            .and_then(|value| value.to_str())
+            .unwrap_or_default();
+        if name.eq_ignore_ascii_case(WORLD_PROJECT_MANIFEST_FILE)
+            || name.eq_ignore_ascii_case(MANUSCRIPT_STRUCTURE_FILE)
+        {
+            return Err(
+                "The app's project metadata files cannot be changed from the file tree.".into(),
+            );
+        }
+    }
+    Ok(())
+}
+
+fn reject_generic_markdown_source(path: &Path) -> Result<(), String> {
+    let extension = path
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or_default();
+    if extension.eq_ignore_ascii_case("md") || extension.eq_ignore_ascii_case("markdown") {
+        return Err(
+            "Markdown files must use the previewed lore rename so links can be checked.".into(),
+        );
     }
     Ok(())
 }
@@ -383,6 +551,8 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             rename_lore_file_no_clobber,
+            rename_project_file_no_clobber,
+            trash_project_file,
             replace_manuscript_structure_atomic,
             manuscript_merge::merge_manuscript_scenes_atomic,
             manuscript_merge::undo_manuscript_scene_merge_atomic,
@@ -395,9 +565,14 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::{rename_lore_file_no_clobber_impl, replace_manuscript_structure_atomic_impl};
+    use super::{
+        reject_generic_markdown_source, reject_protected_project_file,
+        rename_lore_file_no_clobber_impl, rename_regular_file_no_clobber_impl,
+        replace_manuscript_structure_atomic_impl, trash_project_file_impl,
+        validate_portable_file_name,
+    };
     use std::fs;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -473,6 +648,104 @@ mod tests {
         )
         .expect_err("traversal");
         assert!(traversal.contains("cannot contain"));
+    }
+
+    #[test]
+    fn renames_an_ordinary_file_without_changing_its_bytes_or_clobbering() {
+        let fixture = Fixture::new();
+        fs::write(fixture.0.join("draft.txt"), "writer-owned bytes\n").expect("source");
+
+        rename_regular_file_no_clobber_impl(
+            &fixture.0,
+            Path::new("draft.txt"),
+            Path::new("chapter-one.txt"),
+        )
+        .expect("rename");
+
+        assert!(!fixture.0.join("draft.txt").exists());
+        assert_eq!(
+            fs::read_to_string(fixture.0.join("chapter-one.txt")).unwrap(),
+            "writer-owned bytes\n"
+        );
+
+        fs::write(fixture.0.join("second.txt"), "second").expect("second source");
+        fs::write(fixture.0.join("occupied.txt"), "keep").expect("occupied target");
+        let collision = rename_regular_file_no_clobber_impl(
+            &fixture.0,
+            Path::new("second.txt"),
+            Path::new("occupied.txt"),
+        )
+        .expect_err("collision");
+        assert!(collision.contains("already exists"));
+        assert_eq!(
+            fs::read_to_string(fixture.0.join("second.txt")).unwrap(),
+            "second"
+        );
+        assert_eq!(
+            fs::read_to_string(fixture.0.join("occupied.txt")).unwrap(),
+            "keep"
+        );
+    }
+
+    #[test]
+    fn validates_portable_names_and_protects_root_metadata() {
+        for invalid in [
+            "",
+            "../draft.txt",
+            "folder/draft.txt",
+            "folder\\draft.txt",
+            "bad?.txt",
+            "trail.",
+            "CON.txt",
+        ] {
+            assert!(validate_portable_file_name(invalid).is_err(), "{invalid}");
+        }
+        validate_portable_file_name("chapter 01.rtf").expect("portable filename");
+        assert!(
+            reject_protected_project_file(Path::new(super::WORLD_PROJECT_MANIFEST_FILE)).is_err()
+        );
+        assert!(
+            reject_protected_project_file(Path::new(super::MANUSCRIPT_STRUCTURE_FILE)).is_err()
+        );
+        assert!(
+            reject_protected_project_file(Path::new("200-CRAPPY-WORDS.MANUSCRIPTS.JSON")).is_err()
+        );
+        reject_protected_project_file(Path::new("Notes/200-crappy-words.project.json"))
+            .expect("nested ordinary file");
+        assert!(reject_generic_markdown_source(Path::new("draft.MD")).is_err());
+        reject_generic_markdown_source(Path::new("draft.txt")).expect("ordinary file");
+    }
+
+    #[test]
+    fn trashes_only_a_verified_regular_unprotected_file() {
+        let fixture = Fixture::new();
+        let source = fixture.0.join("discard.txt");
+        let mock_trash = fixture.0.join("discarded-copy");
+        fs::write(&source, "recoverable bytes\n").expect("source");
+
+        trash_project_file_impl(&fixture.0, Path::new("discard.txt"), |path| {
+            fs::rename(path, &mock_trash).map_err(|error| error.to_string())
+        })
+        .expect("trash");
+
+        assert!(!source.exists());
+        assert_eq!(
+            fs::read_to_string(&mock_trash).expect("mock trashed file"),
+            "recoverable bytes\n"
+        );
+
+        fs::write(
+            fixture.0.join(super::MANUSCRIPT_STRUCTURE_FILE),
+            "protected",
+        )
+        .expect("protected source");
+        let protected = trash_project_file_impl(
+            &fixture.0,
+            Path::new(super::MANUSCRIPT_STRUCTURE_FILE),
+            |_| panic!("protected metadata must not reach Trash"),
+        )
+        .expect_err("protected metadata");
+        assert!(protected.contains("metadata"));
     }
 
     #[cfg(unix)]

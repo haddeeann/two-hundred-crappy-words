@@ -9,7 +9,7 @@
     watch,
     writeTextFile,
   } from "@tauri-apps/plugin-fs";
-  import { join } from "@tauri-apps/api/path";
+  import { dirname, join } from "@tauri-apps/api/path";
   import { invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
   import { load } from "@tauri-apps/plugin-store";
@@ -52,6 +52,12 @@
     validateFolderName,
     type FileTreeEntry,
   } from "$lib/editor/file-tree";
+  import {
+    planFileDelete,
+    planFileRename,
+    PROTECTED_PROJECT_FILENAMES,
+  } from "$lib/editor/file-rename";
+  import FileDeleteDialog from "$lib/editor/FileDeleteDialog.svelte";
   import {
     ExternalFileChangeError,
     guardedWriteText,
@@ -270,6 +276,12 @@
     diskContent?: string;
   }
 
+  interface FileContextMenuState {
+    entry: FileTreeEntry;
+    x: number;
+    y: number;
+  }
+
   const STORE_FILE = "settings.json";
   const LAST_FOLDER_KEY = "lastFolder";
   const AUTOSAVE_DELAY_MS = 750;
@@ -310,6 +322,20 @@
   let error = $state("");
   let creatingFile = $state(false);
   let newFileName = $state("");
+  let fileContextMenu = $state<FileContextMenuState | null>(null);
+  let fileContextMenuButton = $state<HTMLButtonElement>();
+  let fileContextDeleteButton = $state<HTMLButtonElement>();
+  let fileContextReturnPath = "";
+  let renamingFilePath = $state("");
+  let renamingFileOriginalName = $state("");
+  let renamingFileName = $state("");
+  let renamingFileSiblingNames = $state<string[]>([]);
+  let renamingFileAtProjectRoot = $state(false);
+  let renameFileBusy = $state(false);
+  let renameFileInput = $state<HTMLInputElement>();
+  let deletingFile = $state<FileTreeEntry | null>(null);
+  let deleteFileBusy = $state(false);
+  let deleteFileError = $state("");
   let adoptingWorldProject = $state(false);
   let adoptionName = $state("");
   let adoptionRoles = $state<WorldProjectFolderRole[]>([]);
@@ -380,6 +406,7 @@
   let loreRenameRequestedPath = $state("");
   let loreRenameBusy = $state(false);
   let loreRenameError = $state("");
+  let loreRenameReturnFilePath = "";
   const loreNavigationHistory = new LoreNavigationHistory();
   let loreHistoryRevision = $state(0);
   let restoringLoreHistory = $state(false);
@@ -463,6 +490,9 @@
     adoptionBusy ||
       newWorldProjectBusy ||
       structuredNoteBusy ||
+      renameFileBusy ||
+      deleteFileBusy ||
+      Boolean(deletingFile) ||
       loreRenameBusy ||
       manuscriptCreationVisible ||
       manuscriptRepairBusy ||
@@ -474,6 +504,16 @@
       Boolean(manuscriptSceneSplitRequest) ||
       manuscriptSceneMergeBusy ||
       Boolean(manuscriptSceneMergeRequest),
+  );
+  const fileRenamePlan = $derived(
+    renamingFilePath
+      ? planFileRename({
+          currentName: renamingFileOriginalName,
+          requestedName: renamingFileName,
+          siblingNames: renamingFileSiblingNames,
+          atProjectRoot: renamingFileAtProjectRoot,
+        })
+      : null,
   );
   const manuscriptCreationPlan = $derived.by(() => {
     if (manuscriptCreationBasePlan?.kind !== "ready") {
@@ -903,6 +943,7 @@
     loreRenameRequestedPath = "";
     loreRenameBusy = false;
     loreRenameError = "";
+    loreRenameReturnFilePath = "";
     loreNavigationHistory.clear();
     loreHistoryRevision += 1;
     restoringLoreHistory = false;
@@ -2752,7 +2793,7 @@
     await openIndexedLorePath(path, null, historyOrigin);
   }
 
-  function beginLoreRename(path: string): void {
+  function beginLoreRename(path: string, returnFilePath = ""): void {
     if (!loreIndex) return;
     if (dirty) {
       error = "Save or resolve the active draft before previewing a multi-file lore rename.";
@@ -2764,18 +2805,24 @@
     loreRenameRequestedPath = path;
     loreRenameBusy = false;
     loreRenameError = "";
+    loreRenameReturnFilePath = returnFilePath;
     error = "";
   }
 
   function closeLoreRename(returnFocus = true): void {
     if (loreRenameBusy) return;
+    const returnFilePath = loreRenameReturnFilePath;
     loreRenameSourcePath = "";
     loreRenameRequestedPath = "";
     loreRenameError = "";
+    loreRenameReturnFilePath = "";
     if (returnFocus) {
-      void tick().then(() =>
-        document.getElementById("lore-reference-pane")?.focus({ preventScroll: true }),
-      );
+      if (returnFilePath) focusFileTreePath(returnFilePath);
+      else {
+        void tick().then(() =>
+          document.getElementById("lore-reference-pane")?.focus({ preventScroll: true }),
+        );
+      }
     }
   }
 
@@ -2811,6 +2858,7 @@
     const selectionEnd = editorInput?.selectionEnd ?? selectionStart;
     const rootAtStart = folderPath;
     const sessionAtStart = loreIndexSession;
+    const returnFilePath = loreRenameReturnFilePath;
     loreRenameBusy = true;
     const absolutePath = async (relativePath: string): Promise<string> =>
       join(rootAtStart, ...relativePath.split("/"));
@@ -2909,9 +2957,14 @@
     loreRenameSourcePath = "";
     loreRenameRequestedPath = "";
     loreRenameError = "";
+    loreRenameReturnFilePath = "";
     error = "";
     if (referencePath) {
       await openLoreReference(referencePath, false);
+    }
+    if (returnFilePath) {
+      focusFileTreePath(await absolutePath(currentPlan.targetPath));
+    } else if (referencePath) {
       await focusLoreReference();
     }
     await tick();
@@ -3219,6 +3272,10 @@
     recoveryWriter.cancelPendingThrough(path, revision);
     await recoveryWriter.flush();
     await (await getRecoveryRepository()).remove(path, revision);
+    resetActiveDocumentState(path);
+  }
+
+  function resetActiveDocumentState(path: string): void {
     persistedContentByPath.delete(path);
     forcedSave = null;
     lastSaveFailure = null;
@@ -3233,6 +3290,21 @@
     practiceState = beginDailyPractice("", practiceState.dailyWords);
     saveState = createSaveState();
     scheduleNavigationState();
+  }
+
+  async function clearActiveFileAfterTrash(path: string): Promise<string> {
+    const revision = saveState.currentRevision;
+    autosave.cancelPending();
+    recoveryWriter.cancelPendingThrough(path, revision);
+    let warning = "";
+    try {
+      await recoveryWriter.flush();
+      await (await getRecoveryRepository()).remove(path, revision);
+    } catch (cause) {
+      warning = ` The file is in Trash, but its old recovery record could not be cleared: ${formatError(cause)}`;
+    }
+    resetActiveDocumentState(path);
+    return warning;
   }
 
   async function prepareToLeave(): Promise<boolean> {
@@ -4089,6 +4161,304 @@
     }
   });
 
+  function focusFileTreePath(path: string): void {
+    void tick().then(() => {
+      const selector = `[data-file-path="${CSS.escape(path)}"]`;
+      document.querySelector<HTMLButtonElement>(selector)?.focus({ preventScroll: true });
+    });
+  }
+
+  function openFileContextMenu(event: MouseEvent, entry: FileTreeEntry): void {
+    event.preventDefault();
+    if (entry.isDirectory || entry.isSymlink || worldProjectBusy) return;
+    cancelNewFile();
+    cancelFileRename(false);
+    const target = event.currentTarget as HTMLButtonElement;
+    const bounds = target.getBoundingClientRect();
+    const x = event.clientX || bounds.left + Math.min(bounds.width, 32);
+    const y = event.clientY || bounds.top + bounds.height;
+    fileContextReturnPath = entry.path;
+    fileContextMenu = {
+      entry,
+      x: Math.min(x, Math.max(8, window.innerWidth - 150)),
+      y: Math.min(y, Math.max(8, window.innerHeight - 92)),
+    };
+    void tick().then(() => fileContextMenuButton?.focus());
+  }
+
+  function closeFileContextMenu(returnFocus = true): void {
+    const path = fileContextReturnPath;
+    fileContextMenu = null;
+    if (returnFocus && path) focusFileTreePath(path);
+  }
+
+  function beginContextFileRename(): void {
+    const entry = fileContextMenu?.entry;
+    if (entry) beginTreeFileRename(entry);
+  }
+
+  function handleFileContextMenuKeydown(event: KeyboardEvent): void {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeFileContextMenu();
+      return;
+    }
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    event.preventDefault();
+    const actions = [fileContextMenuButton, fileContextDeleteButton].filter(
+      (button): button is HTMLButtonElement => Boolean(button),
+    );
+    if (actions.length === 0) return;
+    const current = actions.indexOf(document.activeElement as HTMLButtonElement);
+    const direction = event.key === "ArrowDown" ? 1 : -1;
+    actions[(current + direction + actions.length) % actions.length]?.focus();
+  }
+
+  function beginContextFileDelete(): void {
+    const entry = fileContextMenu?.entry;
+    closeFileContextMenu(false);
+    if (!entry || !folderPath) return;
+    const relativePath = projectRelativePath(folderPath, entry.path);
+    if (relativePath === null) {
+      error = "That file is outside the open project and cannot be moved to Trash.";
+      return;
+    }
+    const plan = planFileDelete({
+      name: entry.name,
+      atProjectRoot: !relativePath.includes("/"),
+      isDirectory: entry.isDirectory,
+      isSymlink: entry.isSymlink,
+    });
+    if (plan.kind === "unavailable") {
+      error = plan.reason;
+      focusFileTreePath(entry.path);
+      return;
+    }
+    deletingFile = entry;
+    deleteFileBusy = false;
+    deleteFileError = "";
+    error = "";
+  }
+
+  function isProjectMarkdownFile(entry: FileTreeEntry): boolean {
+    if (!folderPath) return false;
+    const relativePath = projectRelativePath(folderPath, entry.path);
+    return relativePath !== null && isMarkdownPath(relativePath);
+  }
+
+  function cancelFileDelete(): void {
+    if (deleteFileBusy) return;
+    const path = deletingFile?.path ?? "";
+    deletingFile = null;
+    deleteFileError = "";
+    if (path) focusFileTreePath(path);
+  }
+
+  async function confirmFileDelete(): Promise<void> {
+    if (!folderPath || !deletingFile || deleteFileBusy) return;
+    const rootAtStart = folderPath;
+    const sourcePath = deletingFile.path;
+    const sourceRelative = projectRelativePath(rootAtStart, sourcePath);
+    if (sourceRelative === null) {
+      deleteFileError = "That file is outside the open project and cannot be moved to Trash.";
+      return;
+    }
+
+    deleteFileBusy = true;
+    try {
+      await navigate(async () => {
+        try {
+          const sourceEntry = findTreeEntry(entries, sourcePath);
+          if (!sourceEntry) {
+            throw new Error("The source is no longer available in the project tree.");
+          }
+          const currentPlan = planFileDelete({
+            name: sourceEntry.name,
+            atProjectRoot: !sourceRelative.includes("/"),
+            isDirectory: sourceEntry.isDirectory,
+            isSymlink: sourceEntry.isSymlink,
+          });
+          if (currentPlan.kind === "unavailable") {
+            throw new Error(currentPlan.reason);
+          }
+
+          const parentPath = await dirname(sourcePath);
+          await invoke("trash_project_file", {
+            rootPath: rootAtStart,
+            sourceRelative,
+          });
+          persistedContentByPath.delete(sourcePath);
+          let cleanupWarning = "";
+          if (activeFilePath === sourcePath) {
+            cleanupWarning = await clearActiveFileAfterTrash(sourcePath);
+          }
+          try {
+            await refreshDirectory(parentPath);
+          } catch (cause) {
+            cleanupWarning += ` The file is in Trash, but the project tree could not refresh: ${formatError(cause)}`;
+          }
+          if (isMarkdownPath(sourceRelative)) {
+            try {
+              await refreshLoreIndex(rootAtStart);
+            } catch (cause) {
+              cleanupWarning += ` The file is in Trash, but the lore index could not refresh: ${formatError(cause)}`;
+            }
+          }
+          scheduleNavigationState();
+          deletingFile = null;
+          deleteFileError = "";
+          error = cleanupWarning.trim();
+          void tick().then(() =>
+            document.querySelector<HTMLButtonElement>(".root-item")?.focus({
+              preventScroll: true,
+            }),
+          );
+        } catch (cause) {
+          deleteFileError = `Could not move the file to Trash: ${formatError(cause)}`;
+        }
+      });
+    } finally {
+      deleteFileBusy = false;
+    }
+  }
+
+  function beginTreeFileRename(entry: FileTreeEntry): void {
+    closeFileContextMenu(false);
+    if (!folderPath) return;
+    const relativePath = projectRelativePath(folderPath, entry.path);
+    if (relativePath === null) {
+      error = "That file is outside the open project and cannot be renamed.";
+      return;
+    }
+    if (isMarkdownPath(relativePath)) {
+      if (!loreIndex) {
+        error = "Wait for the lore index to finish before renaming a Markdown file safely.";
+        focusFileTreePath(entry.path);
+        return;
+      }
+      beginLoreRename(relativePath, entry.path);
+      return;
+    }
+
+    const atProjectRoot = !relativePath.includes("/");
+    if (
+      atProjectRoot &&
+      PROTECTED_PROJECT_FILENAMES.some(
+        (name) => name.toLocaleLowerCase("en-US") === entry.name.toLocaleLowerCase("en-US"),
+      )
+    ) {
+      error = "Project metadata files cannot be renamed from the file tree.";
+      focusFileTreePath(entry.path);
+      return;
+    }
+    const relativeParent = relativePath.split("/").slice(0, -1).join("/");
+    const absoluteParent = entry.path.slice(0, entry.path.lastIndexOf("/"));
+    const parent = relativeParent
+      ? findTreeEntry(entries, absoluteParent)
+      : null;
+    const siblings = relativeParent ? (parent?.children ?? []) : entries;
+    renamingFilePath = entry.path;
+    renamingFileOriginalName = entry.name;
+    renamingFileName = entry.name;
+    renamingFileSiblingNames = siblings.map(({ name }) => name);
+    renamingFileAtProjectRoot = atProjectRoot;
+    error = "";
+    void tick().then(() => {
+      renameFileInput?.focus();
+      renameFileInput?.select();
+    });
+  }
+
+  function cancelFileRename(returnFocus = true): void {
+    if (renameFileBusy) return;
+    const path = renamingFilePath;
+    renamingFilePath = "";
+    renamingFileOriginalName = "";
+    renamingFileName = "";
+    renamingFileSiblingNames = [];
+    renamingFileAtProjectRoot = false;
+    if (returnFocus && path) focusFileTreePath(path);
+  }
+
+  async function confirmFileRename(): Promise<void> {
+    if (!folderPath || !renamingFilePath || !fileRenamePlan || renameFileBusy) return;
+    if (fileRenamePlan.kind === "unavailable") {
+      error = fileRenamePlan.reason;
+      renameFileInput?.focus();
+      return;
+    }
+
+    const rootAtStart = folderPath;
+    const sourcePath = renamingFilePath;
+    const sourceRelative = projectRelativePath(rootAtStart, sourcePath);
+    const targetName = fileRenamePlan.targetName;
+    if (sourceRelative === null) {
+      error = "That file is outside the open project and cannot be renamed.";
+      return;
+    }
+
+    renameFileBusy = true;
+    try {
+      await navigate(async () => {
+        try {
+          const sourceEntry = findTreeEntry(entries, sourcePath);
+          if (!sourceEntry || sourceEntry.isDirectory || sourceEntry.isSymlink) {
+            throw new Error("The source is no longer a regular file in the project tree.");
+          }
+          const parentPath = await dirname(sourcePath);
+          const siblings = parentPath === rootAtStart
+            ? entries
+            : (findTreeEntry(entries, parentPath)?.children ?? []);
+          const currentPlan = planFileRename({
+            currentName: sourceEntry.name,
+            requestedName: targetName,
+            siblingNames: siblings.map(({ name }) => name),
+            atProjectRoot: parentPath === rootAtStart,
+          });
+          if (currentPlan.kind === "unavailable") throw new Error(currentPlan.reason);
+
+          await invoke("rename_project_file_no_clobber", {
+            rootPath: rootAtStart,
+            sourceRelative,
+            targetName,
+          });
+          const targetPath = await join(parentPath, targetName);
+          const knownContent = persistedContentByPath.get(sourcePath);
+          persistedContentByPath.delete(sourcePath);
+          if (knownContent !== undefined) persistedContentByPath.set(targetPath, knownContent);
+          if (activeFilePath === sourcePath) {
+            activeFilePath = targetPath;
+            activeFile = targetName;
+          }
+          await refreshDirectory(parentPath);
+          scheduleNavigationState();
+          renamingFilePath = "";
+          renamingFileOriginalName = "";
+          renamingFileName = "";
+          renamingFileSiblingNames = [];
+          renamingFileAtProjectRoot = false;
+          error = "";
+          focusFileTreePath(targetPath);
+        } catch (cause) {
+          error = `Could not rename file: ${formatError(cause)}`;
+          void tick().then(() => renameFileInput?.focus());
+        }
+      });
+    } finally {
+      renameFileBusy = false;
+    }
+  }
+
+  function renameFileKeydown(event: KeyboardEvent): void {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      void confirmFileRename();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      cancelFileRename();
+    }
+  }
+
   function startNewFile() {
     if (worldProjectBusy) return;
     // Only meaningful once a folder is open.
@@ -4413,6 +4783,16 @@
 
   function handleKeydown(event: KeyboardEvent) {
     if (event.defaultPrevented) return;
+    if (fileContextMenu && event.key === "Escape") {
+      event.preventDefault();
+      closeFileContextMenu();
+      return;
+    }
+    if (renamingFilePath && event.key === "Escape") {
+      event.preventDefault();
+      cancelFileRename();
+      return;
+    }
     if (
       manuscriptCreationVisible ||
       manuscriptRepairKey ||
@@ -4492,18 +4872,41 @@
             {@render tree(entry.children, depth + 1)}
           {/if}
         {:else}
-          <button
-            class="file-item"
-            class:active={entry.path === activeFilePath}
-            style="padding-left: {0.5 + depth * 0.75}rem"
-            onclick={() => openFile(entry)}
-            aria-current={entry.path === activeFilePath ? "page" : undefined}
-          >
-            <span aria-hidden="true">📄</span> {entry.name}
-            {#if dirty && entry.path === activeFilePath}
-              <span class="dirty-dot" aria-hidden="true">●</span>
-            {/if}
-          </button>
+          {#if renamingFilePath === entry.path}
+            <input
+              class="file-rename-input"
+              style="margin-left: {0.5 + depth * 0.75}rem; width: calc(100% - {1 + depth * 0.75}rem)"
+              aria-label={`Rename ${renamingFileOriginalName}`}
+              aria-invalid={renamingFileName !== renamingFileOriginalName && fileRenamePlan?.kind === "unavailable"}
+              title={renamingFileName !== renamingFileOriginalName && fileRenamePlan?.kind === "unavailable" ? fileRenamePlan.reason : ""}
+              bind:value={renamingFileName}
+              bind:this={renameFileInput}
+              disabled={renameFileBusy}
+              onkeydown={renameFileKeydown}
+              onblur={() => cancelFileRename(false)}
+            />
+          {:else}
+            <button
+              class="file-item"
+              class:active={entry.path === activeFilePath}
+              style="padding-left: {0.5 + depth * 0.75}rem"
+              data-file-path={entry.path}
+              onclick={() => openFile(entry)}
+              oncontextmenu={(event) => openFileContextMenu(event, entry)}
+              onkeydown={(event) => {
+                if (event.key === "F2") {
+                  event.preventDefault();
+                  beginTreeFileRename(entry);
+                }
+              }}
+              aria-current={entry.path === activeFilePath ? "page" : undefined}
+            >
+              <span aria-hidden="true">📄</span> {entry.name}
+              {#if dirty && entry.path === activeFilePath}
+                <span class="dirty-dot" aria-hidden="true">●</span>
+              {/if}
+            </button>
+          {/if}
         {/if}
       </li>
     {/each}
@@ -5106,6 +5509,17 @@
         onConfirm={() => void confirmLoreRename()}
       />
     {/if}
+    {#if deletingFile}
+      <FileDeleteDialog
+        fileName={deletingFile.name}
+        isMarkdown={isProjectMarkdownFile(deletingFile)}
+        isActive={deletingFile.path === activeFilePath}
+        busy={deleteFileBusy}
+        executionError={deleteFileError}
+        onCancel={cancelFileDelete}
+        onConfirm={() => void confirmFileDelete()}
+      />
+    {/if}
     {#if manuscriptCreationVisible}
       <ManuscriptCreationDialog
         title={manuscriptCreationTitle}
@@ -5247,6 +5661,45 @@
     </div>
   </main>
 </div>
+
+{#if fileContextMenu}
+  <div
+    class="file-context-layer"
+    role="presentation"
+    onpointerdown={(event) => {
+      if (event.target === event.currentTarget) closeFileContextMenu();
+    }}
+    oncontextmenu={(event) => {
+      if (event.target === event.currentTarget) {
+        event.preventDefault();
+        closeFileContextMenu();
+      }
+    }}
+  >
+    <div
+      class="file-context-menu"
+      role="menu"
+      tabindex="-1"
+      aria-label={`Actions for ${fileContextMenu.entry.name}`}
+      style={`left: ${fileContextMenu.x}px; top: ${fileContextMenu.y}px`}
+      onkeydown={handleFileContextMenuKeydown}
+    >
+      <button
+        type="button"
+        role="menuitem"
+        bind:this={fileContextMenuButton}
+        onclick={beginContextFileRename}
+      >Rename… <span aria-hidden="true">F2</span></button>
+      <button
+        type="button"
+        class="danger"
+        role="menuitem"
+        bind:this={fileContextDeleteButton}
+        onclick={beginContextFileDelete}
+      >Delete…</button>
+    </div>
+  </div>
+{/if}
 
 {#if quickOpenVisible}
   <LoreQuickOpen
@@ -5734,6 +6187,86 @@
   .file-item.selected:not(.active) {
     background-color: #2f3336;
     color: #ffffff;
+  }
+
+  .file-rename-input {
+    box-sizing: border-box;
+    min-width: 0;
+    padding: 0.28rem 0.4rem;
+    border: 1px solid #007acc;
+    border-radius: 3px;
+    outline: none;
+    background: #1e1e1e;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 0.85rem;
+  }
+
+  .file-rename-input[aria-invalid="true"] {
+    border-color: #b7844b;
+  }
+
+  .file-rename-input:focus-visible {
+    outline: 2px solid #75beff;
+    outline-offset: 1px;
+  }
+
+  .file-context-layer {
+    position: fixed;
+    z-index: 30;
+    inset: 0;
+  }
+
+  .file-context-menu {
+    position: fixed;
+    min-width: 140px;
+    padding: 0.25rem;
+    border: 1px solid #4a4a4a;
+    border-radius: 5px;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+    background: #252526;
+  }
+
+  .file-context-menu button {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.4rem 0.55rem;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: #d4d4d4;
+    font-family: inherit;
+    font-size: 0.82rem;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .file-context-menu button:hover,
+  .file-context-menu button:focus-visible {
+    outline: none;
+    background: #094771;
+    color: #ffffff;
+  }
+
+  .file-context-menu button.danger {
+    margin-top: 0.2rem;
+    border-top: 1px solid #454545;
+    border-radius: 0 0 3px 3px;
+    color: #f48771;
+  }
+
+  .file-context-menu button.danger:hover,
+  .file-context-menu button.danger:focus-visible {
+    background: #6e2f2a;
+    color: #ffffff;
+  }
+
+  .file-context-menu button span {
+    color: #a8a8a8;
+    font-size: 0.72rem;
   }
 
   .root-item {
