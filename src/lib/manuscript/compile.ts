@@ -22,6 +22,7 @@ export interface ManuscriptCompileBlocker {
   itemId: string;
   title: string;
   sourcePath: string;
+  hasStableId: boolean;
   sourceKind: ManuscriptSourceState["kind"] | "changed" | "not-loaded";
   message: string;
 }
@@ -208,6 +209,7 @@ function verifiedSourceBody(
       itemId: scene.item.id,
       title: scene.item.title,
       sourcePath: path,
+      hasStableId: Boolean(scene.item.source.noteId),
       sourceKind: state.kind,
       message: sourceMessage(state),
     });
@@ -219,6 +221,7 @@ function verifiedSourceBody(
       itemId: scene.item.id,
       title: scene.item.title,
       sourcePath: state.resolvedPath,
+      hasStableId: Boolean(scene.item.source.noteId),
       sourceKind: "not-loaded",
       message: "The source was not freshly loaded for this compile preview.",
     });
@@ -229,6 +232,7 @@ function verifiedSourceBody(
       itemId: scene.item.id,
       title: scene.item.title,
       sourcePath: state.resolvedPath,
+      hasStableId: Boolean(scene.item.source.noteId),
       sourceKind: "changed",
       message: "The source changed after manuscript verification. Refresh before compiling.",
     });

@@ -86,7 +86,8 @@ Goal: support a long manuscript as scenes and chapters while retaining ordinary 
 - [x] Support safe scene splitting and reordering within and across containers.
 - [x] Support safe adjacent scene merging with an explicit retired-source disposition.
 - [x] Keep the persistent left navigation focused on the project file tree and move optional writing context into a closed-by-default right dock.
-- [ ] Compile/export to Markdown and plain text, then add DOCX and PDF after format review.
+- [x] Compile/export to Markdown and plain text with deliberate resolution for unavailable sources.
+- [ ] Add DOCX and PDF after a separate format and presentation review.
 
 Specification: [`docs/milestones/0.6-novel-structure.md`](docs/milestones/0.6-novel-structure.md)
 

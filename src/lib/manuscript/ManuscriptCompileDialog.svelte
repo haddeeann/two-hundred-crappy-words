@@ -14,6 +14,10 @@
     onRefresh: () => void;
     onRepair: (itemId: string) => void;
     onEdit: (itemId: string) => void;
+    onLocate: (itemId: string) => void;
+    onCreate: (itemId: string) => void;
+    onExclude: (itemId: string) => void;
+    onRemove: (itemId: string) => void;
     onCancel: () => void;
     onExport: () => void;
   }
@@ -28,6 +32,10 @@
     onRefresh,
     onRepair,
     onEdit,
+    onLocate,
+    onCreate,
+    onExclude,
+    onRemove,
     onCancel,
     onExport,
   }: Props = $props();
@@ -129,6 +137,7 @@
             <p>No partial manuscript will be written.</p>
             <ul>
               {#each plan.blockers as blocker (`${blocker.itemId}:${blocker.sourceKind}`)}
+                {@const entry = plan.entries.find((candidate) => candidate.itemId === blocker.itemId)}
                 <li>
                   <strong>{blocker.title}</strong>
                   <small>{blocker.sourcePath}</small>
@@ -137,7 +146,17 @@
                     {#if blocker.sourceKind === "moved"}
                       <button type="button" disabled={busy} onclick={() => onRepair(blocker.itemId)}>Review path repair…</button>
                     {/if}
-                    <button type="button" disabled={busy} onclick={() => onEdit(blocker.itemId)}>Edit details…</button>
+                    {#if blocker.sourceKind === "missing" && !blocker.hasStableId}
+                      <button type="button" disabled={busy} onclick={() => onLocate(blocker.itemId)}>Locate source…</button>
+                    {/if}
+                    {#if blocker.sourceKind === "missing"}
+                      <button type="button" disabled={busy} onclick={() => onCreate(blocker.itemId)}>Create source…</button>
+                    {/if}
+                    <button type="button" disabled={busy} onclick={() => onExclude(blocker.itemId)}>Exclude from compile…</button>
+                    {#if entry?.kind === "scene"}
+                      <button type="button" disabled={busy} onclick={() => onRemove(blocker.itemId)}>Remove scene…</button>
+                    {/if}
+                    <button type="button" disabled={busy} onclick={() => onEdit(blocker.itemId)}>Edit all details…</button>
                   </div>
                 </li>
               {/each}

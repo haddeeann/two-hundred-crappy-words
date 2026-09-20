@@ -201,6 +201,7 @@
   import ManuscriptSceneMoveDialog from "$lib/manuscript/ManuscriptSceneMoveDialog.svelte";
   import ManuscriptSceneMergeDialog from "$lib/manuscript/ManuscriptSceneMergeDialog.svelte";
   import ManuscriptSceneSplitDialog from "$lib/manuscript/ManuscriptSceneSplitDialog.svelte";
+  import ManuscriptSourceResolutionDialog from "$lib/manuscript/ManuscriptSourceResolutionDialog.svelte";
   import {
     planManuscriptCreation,
     retitleManuscriptCreationPlan,
@@ -237,6 +238,16 @@
     type ManuscriptMetadataTarget,
   } from "$lib/manuscript/metadata";
   import { executeManuscriptMetadataEdit } from "$lib/manuscript/metadata-execution";
+  import {
+    planCreateMissingManuscriptSource,
+    planLocateMissingManuscriptSource,
+    planRemoveMissingManuscriptScene,
+    type ManuscriptSourceResolutionPlan,
+  } from "$lib/manuscript/source-resolution";
+  import {
+    executeManuscriptSourceResolution,
+    type ManuscriptSourceResolutionIo,
+  } from "$lib/manuscript/source-resolution-execution";
   import {
     planManuscriptReorder,
     type ManuscriptReorderDirection,
@@ -431,6 +442,11 @@
   let manuscriptCompileCompletedPath = $state("");
   let manuscriptCompileStructureFingerprint = "";
   let manuscriptCompileRevision = 0;
+  let manuscriptSourceResolutionPlan = $state<ManuscriptSourceResolutionPlan | null>(null);
+  let manuscriptSourceResolutionBusy = $state(false);
+  let manuscriptSourceResolutionError = $state("");
+  let manuscriptSourceResolutionReturnId = "";
+  let manuscriptSourceResolutionReturnFormat: ManuscriptCompileFormat = "markdown";
   let manuscriptCreationVisible = $state(false);
   let manuscriptCreationMode = $state<ManuscriptCreationMode>("import");
   let manuscriptCreationTitle = $state("");
@@ -513,6 +529,8 @@
       loreRenameBusy ||
       manuscriptCompileBusy ||
       Boolean(manuscriptCompileId) ||
+      manuscriptSourceResolutionBusy ||
+      Boolean(manuscriptSourceResolutionPlan) ||
       manuscriptCreationVisible ||
       manuscriptRepairBusy ||
       Boolean(manuscriptRepairKey) ||
@@ -971,6 +989,8 @@
     manuscriptProject = { kind: "absent" };
     manuscriptLoading = false;
     resetManuscriptCompile(true);
+    resetManuscriptSourceResolution(true);
+    manuscriptSourceResolutionReturnId = "";
     resetManuscriptCreation(true);
     resetManuscriptRepair(true);
     resetManuscriptMetadata(true);
@@ -1402,6 +1422,208 @@
     if (manuscriptCompileBusy) return;
     resetManuscriptCompile();
     beginManuscriptMetadataEdit(itemId);
+  }
+
+  function rememberCompileResolutionReturn(): void {
+    manuscriptSourceResolutionReturnId = manuscriptCompileId;
+    manuscriptSourceResolutionReturnFormat = manuscriptCompileFormat;
+  }
+
+  function resetManuscriptSourceResolution(force = false): void {
+    if (manuscriptSourceResolutionBusy && !force) return;
+    manuscriptSourceResolutionPlan = null;
+    manuscriptSourceResolutionBusy = false;
+    manuscriptSourceResolutionError = "";
+  }
+
+  function resumeCompileAfterResolution(): void {
+    const manuscriptId = manuscriptSourceResolutionReturnId;
+    const format = manuscriptSourceResolutionReturnFormat;
+    manuscriptSourceResolutionReturnId = "";
+    if (!folderPath || !manuscriptId) return;
+    manuscriptCompileId = manuscriptId;
+    manuscriptCompileFormat = format;
+    manuscriptCompilePlan = null;
+    manuscriptCompileError = "";
+    manuscriptCompileCompletedPath = "";
+    void refreshManuscriptCompile();
+  }
+
+  function closeManuscriptSourceResolution(): void {
+    if (manuscriptSourceResolutionBusy) return;
+    resetManuscriptSourceResolution();
+    resumeCompileAfterResolution();
+  }
+
+  async function freshVerifiedManuscriptSource(
+    rootPath: string,
+    relativePath: string,
+  ): Promise<{ text: string; project: ManuscriptProjectLoadResult }> {
+    const scan = await scanProjectLore(rootPath, tauriLoreScanBackend);
+    const source = scan.sources.find((candidate) => candidate.path === relativePath);
+    if (!source) {
+      throw new Error("The selected Markdown file is not a verified, indexable source inside this project.");
+    }
+    const currentIndex = await buildLoreProjectIndexCooperatively(scan.sources);
+    const project = await loadManuscriptProject(rootPath, tauriLoreScanBackend, {
+      loreIndex: currentIndex,
+    });
+    return { text: source.text, project };
+  }
+
+  async function resolveCompileLocate(itemId: string): Promise<void> {
+    if (!folderPath || manuscriptCompileBusy || !manuscriptCompileId) return;
+    const rootPath = folderPath;
+    rememberCompileResolutionReturn();
+    resetManuscriptCompile();
+    manuscriptSourceResolutionBusy = true;
+    manuscriptSourceResolutionError = "";
+    try {
+      const selected = await open({
+        title: "Locate manuscript scene source",
+        multiple: false,
+        directory: false,
+        defaultPath: rootPath,
+        filters: [{ name: "Markdown", extensions: ["md", "markdown"] }],
+      });
+      if (!selected || Array.isArray(selected)) {
+        manuscriptSourceResolutionBusy = false;
+        resumeCompileAfterResolution();
+        return;
+      }
+      const relativePath = projectRelativePath(rootPath, selected);
+      if (!relativePath || !isMarkdownPath(relativePath)) {
+        throw new Error("Choose a Markdown file contained by the open project.");
+      }
+      const fresh = await freshVerifiedManuscriptSource(rootPath, relativePath);
+      if (rootPath !== folderPath) throw new Error("The open project changed during Locate.");
+      manuscriptProject = fresh.project;
+      const plan = planLocateMissingManuscriptSource(
+        fresh.project,
+        itemId,
+        relativePath,
+        fresh.text,
+      );
+      if (plan.kind === "unavailable") throw new Error(plan.reason);
+      manuscriptSourceResolutionPlan = plan;
+    } catch (cause) {
+      manuscriptSourceResolutionError = formatError(cause);
+      manuscriptRepairNotice = `Could not prepare Locate: ${formatError(cause)}`;
+      resumeCompileAfterResolution();
+    } finally {
+      manuscriptSourceResolutionBusy = false;
+    }
+  }
+
+  function resolveCompileCreate(itemId: string): void {
+    if (manuscriptCompileBusy) return;
+    const plan = planCreateMissingManuscriptSource(manuscriptProject, itemId);
+    if (plan.kind === "unavailable") {
+      manuscriptCompileError = plan.reason;
+      return;
+    }
+    rememberCompileResolutionReturn();
+    resetManuscriptCompile();
+    manuscriptSourceResolutionPlan = plan;
+    manuscriptSourceResolutionError = "";
+  }
+
+  function resolveCompileExclude(itemId: string): void {
+    if (manuscriptCompileBusy) return;
+    resetManuscriptCompile();
+    beginManuscriptMetadataEdit(itemId);
+    if (manuscriptMetadataItemId === itemId) {
+      manuscriptMetadataDraft = {
+        ...manuscriptMetadataDraft,
+        includeInCompile: false,
+      };
+    }
+  }
+
+  function resolveCompileRemove(itemId: string): void {
+    if (manuscriptCompileBusy) return;
+    const plan = planRemoveMissingManuscriptScene(manuscriptProject, itemId);
+    if (plan.kind === "unavailable") {
+      manuscriptCompileError = plan.reason;
+      return;
+    }
+    rememberCompileResolutionReturn();
+    resetManuscriptCompile();
+    manuscriptSourceResolutionPlan = plan;
+    manuscriptSourceResolutionError = "";
+  }
+
+  function manuscriptSourceResolutionIo(
+    rootPath: string,
+  ): ManuscriptSourceResolutionIo {
+    const repairIo = manuscriptRepairIo(rootPath);
+    return {
+      ...repairIo,
+      readVerifiedSource: async (relativePath) =>
+        (await freshVerifiedManuscriptSource(rootPath, relativePath)).text,
+      createSource: async (relativePath, text) => {
+        const segments = relativePath.split("/");
+        const filename = segments.pop();
+        if (!filename) throw new Error("The source filename is missing.");
+        let parentPath = rootPath;
+        for (const segment of segments) {
+          const children = await readDir(parentPath);
+          const child = children.find((candidate) => candidate.name === segment);
+          if (!child?.isDirectory || child.isSymlink) {
+            throw new Error("The source parent folder is missing, not a directory, or symbolic.");
+          }
+          parentPath = await join(parentPath, segment);
+        }
+        await writeTextFile(await join(parentPath, filename), text, { createNew: true });
+      },
+    };
+  }
+
+  async function confirmManuscriptSourceResolution(): Promise<void> {
+    const plan = manuscriptSourceResolutionPlan;
+    if (
+      !folderPath ||
+      !plan ||
+      plan.kind === "unavailable" ||
+      manuscriptSourceResolutionBusy
+    ) {
+      return;
+    }
+    const rootPath = folderPath;
+    const session = loreIndexSession;
+    manuscriptSourceResolutionBusy = true;
+    manuscriptSourceResolutionError = "";
+    const result = await executeManuscriptSourceResolution(
+      plan,
+      manuscriptSourceResolutionIo(rootPath),
+    );
+    if (rootPath !== folderPath || session !== loreIndexSession) {
+      manuscriptSourceResolutionBusy = false;
+      resetManuscriptSourceResolution(true);
+      manuscriptSourceResolutionReturnId = "";
+      error = "The project changed while the source resolution was running. Refresh before continuing.";
+      return;
+    }
+    if (result.kind === "failed") {
+      manuscriptSourceResolutionBusy = false;
+      manuscriptSourceResolutionError = result.message;
+      void refreshManuscriptStructure(rootPath, session, loreIndex);
+      return;
+    }
+    manuscriptProject = result.project;
+    if (result.undo) {
+      manuscriptRepairUndo = result.undo;
+      manuscriptSceneSplitUndo = null;
+      manuscriptSceneMergeUndo = null;
+    }
+    manuscriptRepairNotice = plan.kind === "locate"
+      ? `Updated the prose source path for ${plan.target.itemTitle}. No Markdown file was changed.`
+      : plan.kind === "create"
+        ? `Created ${plan.target.declaredPath} without overwriting. No words were added to Today.`
+        : `Removed ${plan.target.itemTitle} from the manuscript structure. No Markdown file was deleted.`;
+    manuscriptSourceResolutionBusy = false;
+    resetManuscriptSourceResolution();
+    resumeCompileAfterResolution();
   }
 
   async function exportCompiledManuscript(): Promise<void> {
@@ -5548,7 +5770,7 @@
         <ManuscriptOutline
           result={manuscriptProject}
           loading={manuscriptLoading}
-          repairBusy={manuscriptRepairBusy || manuscriptSceneSplitBusy || manuscriptSceneMergeBusy}
+          repairBusy={manuscriptRepairBusy || manuscriptSourceResolutionBusy || manuscriptSceneSplitBusy || manuscriptSceneMergeBusy}
           repairNotice={manuscriptRepairNotice}
           repairUndoLabel={manuscriptSceneMergeUndo?.label ?? manuscriptSceneSplitUndo?.label ?? manuscriptRepairUndo?.label ?? ""}
           focusItemId={manuscriptOutlineFocusItemId}
@@ -5808,8 +6030,21 @@
         onRefresh={() => void refreshManuscriptCompile()}
         onRepair={resolveCompileRepair}
         onEdit={resolveCompileMetadata}
+        onLocate={(itemId) => void resolveCompileLocate(itemId)}
+        onCreate={resolveCompileCreate}
+        onExclude={resolveCompileExclude}
+        onRemove={resolveCompileRemove}
         onCancel={closeManuscriptCompile}
         onExport={() => void exportCompiledManuscript()}
+      />
+    {/if}
+    {#if manuscriptSourceResolutionPlan && manuscriptSourceResolutionPlan.kind !== "unavailable"}
+      <ManuscriptSourceResolutionDialog
+        plan={manuscriptSourceResolutionPlan}
+        busy={manuscriptSourceResolutionBusy}
+        error={manuscriptSourceResolutionError}
+        onCancel={closeManuscriptSourceResolution}
+        onConfirm={() => void confirmManuscriptSourceResolution()}
       />
     {/if}
     {#if manuscriptRepairKey && manuscriptRepairPlan}

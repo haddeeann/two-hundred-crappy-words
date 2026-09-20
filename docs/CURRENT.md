@@ -10,28 +10,29 @@ Connected lore is complete. The active milestone makes a long manuscript underst
 
 ## Active slice
 
-**0.6.13c — No-clobber export and resolution UI**
+**0.6.14 — DOCX/PDF presentation review**
 
 ### Intended outcome
 
-Connect the verified compile planner to a compact preview/report, native Save As destination, create-new export write, and explicit ways to resolve unavailable scene sources.
+Decide what a useful, predictable DOCX and PDF reading copy should look like before adding either output adapter.
 
 ### Acceptance criteria
 
-- [x] Open compile from one named manuscript and choose Markdown or plain text.
-- [x] Freshly stable-read included sources, then show compact order, word, exclusion, and blocker information without rendering a second full novel reader.
-- [x] Write only through a native Save As path with create-new/no-clobber protection and refuse source or structure changes after preview.
-- [ ] Offer stable-ID repair, path-only Locate, create-new source, durable exclusion, and previewed structure-only removal for unavailable scene prose.
-- [ ] Show an exact completion report and preserve source files, structure, daily credit, and active editor state.
+- [ ] Review whether DOCX, PDF, or both belong in the next implementation slice.
+- [ ] Approve page size, margins, typography, chapter openings, scene breaks, headers/footers, page numbers, and optional title-page behavior.
+- [ ] Decide whether PDF should be generated directly or from the same intermediate document model as DOCX.
+- [ ] Define a compact preview/report that remains truthful without becoming a second layout editor.
 
 ## Next slices
 
-1. Complete packaged QA and milestone documentation for Markdown/plain-text export.
-2. Review DOCX/PDF presentation before those later adapters.
+1. Hold the DOCX/PDF presentation review with the writer.
+2. Implement only the approved adapter boundary, then complete milestone 0.6 regression QA.
 
 ## Completed checkpoint
 
-- Slice 0.6.13c has a complete export transport checkpoint. Each manuscript now opens a keyboard-contained reading-copy plan with Markdown/plain-text selection, deterministic structure order, verified word/source/chapter counts, durable exclusions, named blockers, a safe filename, and no second full-novel preview. Native Save As is followed by a fresh full structure/source replan; any source or structure change refuses output, existing destinations are never overwritten, the final write uses create-new semantics, and an exact reread verifies completion. Packaged macOS QA produced exact Markdown and plain-text fixtures, retained scene planning titles and frontmatter only in their sources, omitted excluded prose, showed the output in the project tree, kept Today at `0 / 200`, and refused a deliberately stale preview without creating its destination. The automated gate remains 372 passing frontend tests across fifty-seven files, fifteen native tests, strict Rust linting, zero Svelte/TypeScript diagnostics, and a successful production `.app` build. The remaining work in this active slice is the explicit missing-source resolution surface.
+- Slice 0.6.13c is complete. A blocked compile now offers every approved deliberate way forward in context: the existing stable-ID repair for a unique move; **Locate source…** only for path-bound items; **Create source…** at the exact expected path with create-new protection and matching stable-ID frontmatter when required; **Exclude from compile…** through the existing metadata preview; and **Remove scene…** through a structure-only preview that never deletes Markdown. Locate and remove preserve the complete structure object, freshly revalidate the structure and selected source, atomically replace only the structure, and feed the shared exact guarded Undo. Create requires a contained real parent, refuses every existing destination, writes either zero bytes or only matching identity frontmatter, and verifies the resulting binding. The keyboard-contained preview names the scene, stable ID, exact JSON path, affected filesystem paths, and safety boundary. Packaged macOS QA exercised Locate plus Undo, zero-byte Create, structure-only Remove plus Undo, durable Exclude plus Undo, automatic return to a freshly ready compile, and exact source/structure preservation with Today at `0 / 200`; QA caught and corrected an imprecise removal-preview JSON path before the final package. The disposable fixture was restored to its exact original structure and source SHA-256 hashes. The final automated gate has 379 passing frontend tests across fifty-nine files, fifteen native tests, strict Rust linting, zero Svelte/TypeScript diagnostics, a zero-vulnerability production dependency audit, and a successful production `.app` build.
+
+- Slice 0.6.13c's export transport is complete. Each manuscript opens a keyboard-contained reading-copy plan with Markdown/plain-text selection, deterministic structure order, verified word/source/chapter counts, durable exclusions, named blockers, a safe filename, and no second full-novel preview. Native Save As is followed by a fresh full structure/source replan; any source or structure change refuses output, existing destinations are never overwritten, the final write uses create-new semantics, and an exact reread verifies completion. Packaged macOS QA produced exact Markdown and plain-text fixtures, retained scene planning titles and frontmatter only in their sources, omitted excluded prose, showed the output in the project tree, kept Today at `0 / 200`, and refused a deliberately stale preview without creating its destination.
 
 - Slice 0.6.13b is complete. A dependency-free pure planner now selects exactly one manuscript, follows only its portable pre-order, emits the manuscript and exact chapter titles without planning-only scene titles, strips only valid leading structured frontmatter, preserves Markdown bodies, and inserts deterministic `* * *` scene boundaries. Its conservative plain-text renderer removes familiar headings, emphasis, links, wiki links, code fences, blockquotes, and image notation while retaining visible labels, code contents, lists, paragraphs, unknown constructs, and the same structural boundaries. Included sources must be present in the fresh source map and match their reconciled fingerprints; every non-ready source kind and post-reconciliation change becomes a named blocker, while parent or item exclusions are reported without reading their sources. Five focused tests cover exact output, metadata omission, both adapters, missing and changed refusal, durable parent exclusion, and unfamiliar-syntax preservation. The full frontend suite has 372 passing tests across fifty-seven files and Svelte/TypeScript reports zero diagnostics.
 
@@ -100,7 +101,7 @@ Connect the verified compile planner to a compact preview/report, native Save As
 
 ## Blockers and decision gates
 
-There is no open product decision gate. The writer-facing compile behavior is approved in D-033. The next executable work is path-only Locate, create-source, durable exclusion, and previewed structure-only scene removal for blocked compiles, followed by final packaged regression QA.
+The next work is a product decision gate: review the presentation contract for DOCX and PDF before implementing either adapter. Markdown/plain-text compile and all approved missing-source resolution paths are complete.
 
 ## Handoff protocol
 
