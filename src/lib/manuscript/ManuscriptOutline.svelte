@@ -35,6 +35,7 @@
     canMergeScene: (itemId: string) => boolean;
     onMergeScene: (itemId: string) => void;
     onOpenCorkboard: (manuscriptId: string) => void;
+    onCompile: (manuscriptId: string) => void;
     onUndoRepair: () => void;
   }
 
@@ -58,6 +59,7 @@
     canMergeScene,
     onMergeScene,
     onOpenCorkboard,
+    onCompile,
     onUndoRepair,
   }: Props = $props();
 
@@ -324,6 +326,13 @@
               disabled={repairBusy}
               onclick={() => onOpenCorkboard(entry.manuscript.id)}
             >Open corkboard</button>
+            <button
+              type="button"
+              class="corkboard-open"
+              id={`compile-manuscript-${entry.manuscript.id}`}
+              disabled={repairBusy}
+              onclick={() => onCompile(entry.manuscript.id)}
+            >Compile…</button>
           </div>
           {#if entry.items.length === 0}
             <p>No chapters or loose scenes yet.</p>

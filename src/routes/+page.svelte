@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from "svelte";
-  import { message, open } from "@tauri-apps/plugin-dialog";
+  import { message, open, save } from "@tauri-apps/plugin-dialog";
   import {
     exists,
     mkdir,
@@ -174,6 +174,7 @@
   import { isMarkdownPath } from "$lib/lore/normalize";
   import {
     DEFAULT_MAX_LORE_FILE_BYTES,
+    readStableLoreFile,
     scanProjectLore,
     type LoreScanIssue,
     type LoreScanResult,
@@ -191,6 +192,7 @@
   import { tauriLoreScanBackend } from "$lib/lore/tauri-scan";
   import type { LoreProjectIndex, SourceRange } from "$lib/lore/types";
   import ManuscriptCorkboard from "$lib/manuscript/ManuscriptCorkboard.svelte";
+  import ManuscriptCompileDialog from "$lib/manuscript/ManuscriptCompileDialog.svelte";
   import ManuscriptCreationDialog from "$lib/manuscript/ManuscriptCreationDialog.svelte";
   import ManuscriptMetadataDialog from "$lib/manuscript/ManuscriptMetadataDialog.svelte";
   import ManuscriptOutline from "$lib/manuscript/ManuscriptOutline.svelte";
@@ -208,6 +210,13 @@
     type ReadyManuscriptCreationPlan,
   } from "$lib/manuscript/creation";
   import {
+    planManuscriptCompile,
+    type ManuscriptCompileFormat,
+    type ManuscriptCompilePlan,
+  } from "$lib/manuscript/compile";
+  import {
+    DEFAULT_MAX_MANUSCRIPT_SOURCE_BYTES,
+    DEFAULT_MAX_MANUSCRIPT_TOTAL_SOURCE_BYTES,
     loadManuscriptProject,
     type ManuscriptProjectLoadResult,
   } from "$lib/manuscript/source-reconciliation";
@@ -414,6 +423,14 @@
   let manuscriptProject = $state<ManuscriptProjectLoadResult>({ kind: "absent" });
   let manuscriptLoading = $state(false);
   let manuscriptLoadRevision = 0;
+  let manuscriptCompileId = $state("");
+  let manuscriptCompileFormat = $state<ManuscriptCompileFormat>("markdown");
+  let manuscriptCompilePlan = $state<ManuscriptCompilePlan | null>(null);
+  let manuscriptCompileBusy = $state(false);
+  let manuscriptCompileError = $state("");
+  let manuscriptCompileCompletedPath = $state("");
+  let manuscriptCompileStructureFingerprint = "";
+  let manuscriptCompileRevision = 0;
   let manuscriptCreationVisible = $state(false);
   let manuscriptCreationMode = $state<ManuscriptCreationMode>("import");
   let manuscriptCreationTitle = $state("");
@@ -494,6 +511,8 @@
       deleteFileBusy ||
       Boolean(deletingFile) ||
       loreRenameBusy ||
+      manuscriptCompileBusy ||
+      Boolean(manuscriptCompileId) ||
       manuscriptCreationVisible ||
       manuscriptRepairBusy ||
       Boolean(manuscriptRepairKey) ||
@@ -951,6 +970,7 @@
     manuscriptLoadRevision += 1;
     manuscriptProject = { kind: "absent" };
     manuscriptLoading = false;
+    resetManuscriptCompile(true);
     resetManuscriptCreation(true);
     resetManuscriptRepair(true);
     resetManuscriptMetadata(true);
@@ -1219,6 +1239,243 @@
       if (open) writingToolsCloseButton?.focus({ preventScroll: true });
       else writingToolsButton?.focus({ preventScroll: true });
     });
+  }
+
+  function resetManuscriptCompile(force = false): void {
+    if (manuscriptCompileBusy && !force) return;
+    manuscriptCompileRevision += 1;
+    manuscriptCompileId = "";
+    manuscriptCompileFormat = "markdown";
+    manuscriptCompilePlan = null;
+    manuscriptCompileBusy = false;
+    manuscriptCompileError = "";
+    manuscriptCompileCompletedPath = "";
+    manuscriptCompileStructureFingerprint = "";
+  }
+
+  function closeManuscriptCompile(): void {
+    if (manuscriptCompileBusy) return;
+    const manuscriptId = manuscriptCompileId;
+    resetManuscriptCompile();
+    void tick().then(() =>
+      document
+        .getElementById(`compile-manuscript-${manuscriptId}`)
+        ?.focus({ preventScroll: true }),
+    );
+  }
+
+  function includedCompileSourcePaths(
+    project: Extract<ManuscriptProjectLoadResult, { kind: "ready" }>,
+    manuscriptId: string,
+  ): string[] {
+    const manuscript = project.reconciled.manuscripts.find(
+      (candidate) => candidate.manuscript.id === manuscriptId,
+    );
+    if (!manuscript) return [];
+    const paths = new Set<string>();
+    for (const item of manuscript.items) {
+      if (!item.item.includeInCompile) continue;
+      if (!("children" in item)) {
+        if (item.source.kind === "ready") paths.add(item.source.resolvedPath);
+        continue;
+      }
+      if (item.source?.kind === "ready") paths.add(item.source.resolvedPath);
+      if (item.source) continue;
+      for (const child of item.children) {
+        if (child.item.includeInCompile && child.source.kind === "ready") {
+          paths.add(child.source.resolvedPath);
+        }
+      }
+    }
+    return [...paths];
+  }
+
+  async function createManuscriptCompilePreview(
+    rootPath: string,
+    manuscriptId: string,
+    format: ManuscriptCompileFormat,
+  ): Promise<{
+    project: ManuscriptProjectLoadResult;
+    plan: ManuscriptCompilePlan;
+  }> {
+    const scan = await scanProjectLore(rootPath, tauriLoreScanBackend);
+    const currentIndex = await buildLoreProjectIndexCooperatively(scan.sources);
+    const project = await loadManuscriptProject(rootPath, tauriLoreScanBackend, {
+      loreIndex: currentIndex,
+    });
+    const sourceTexts = new Map<string, string>();
+    if (project.kind === "ready") {
+      let totalBytes = 0;
+      for (const relativePath of includedCompileSourcePaths(project, manuscriptId)) {
+        if (totalBytes >= DEFAULT_MAX_MANUSCRIPT_TOTAL_SOURCE_BYTES) break;
+        try {
+          const absolutePath = await join(rootPath, ...relativePath.split("/"));
+          const loaded = await readStableLoreFile(
+            absolutePath,
+            relativePath,
+            tauriLoreScanBackend,
+            DEFAULT_MAX_MANUSCRIPT_SOURCE_BYTES,
+            () => undefined,
+          );
+          if (
+            loaded &&
+            totalBytes + loaded.bytes <= DEFAULT_MAX_MANUSCRIPT_TOTAL_SOURCE_BYTES
+          ) {
+            sourceTexts.set(relativePath, loaded.text);
+            totalBytes += loaded.bytes;
+          }
+        } catch {
+          // The pure planner turns an absent fresh read into a visible blocker.
+        }
+      }
+    }
+    return {
+      project,
+      plan: planManuscriptCompile({
+        project,
+        manuscriptId,
+        format,
+        sourceTexts,
+      }),
+    };
+  }
+
+  async function refreshManuscriptCompile(): Promise<void> {
+    if (!folderPath || !manuscriptCompileId || manuscriptCompileBusy) return;
+    const rootPath = folderPath;
+    const manuscriptId = manuscriptCompileId;
+    const format = manuscriptCompileFormat;
+    const revision = ++manuscriptCompileRevision;
+    manuscriptCompileBusy = true;
+    manuscriptCompileError = "";
+    manuscriptCompileCompletedPath = "";
+    try {
+      const result = await createManuscriptCompilePreview(rootPath, manuscriptId, format);
+      if (
+        revision !== manuscriptCompileRevision ||
+        rootPath !== folderPath ||
+        manuscriptId !== manuscriptCompileId ||
+        format !== manuscriptCompileFormat
+      ) {
+        return;
+      }
+      manuscriptProject = result.project;
+      manuscriptCompilePlan = result.plan;
+      manuscriptCompileStructureFingerprint =
+        result.project.kind === "ready" ? result.project.fingerprint : "";
+    } catch (cause) {
+      if (revision === manuscriptCompileRevision) {
+        manuscriptCompileError = `Could not prepare the compile preview: ${formatError(cause)}`;
+      }
+    } finally {
+      if (revision === manuscriptCompileRevision) manuscriptCompileBusy = false;
+    }
+  }
+
+  async function beginManuscriptCompile(manuscriptId: string): Promise<void> {
+    if (!folderPath || worldProjectBusy || !manuscriptId) return;
+    await navigate(async () => {
+      manuscriptCompileId = manuscriptId;
+      manuscriptCompileFormat = "markdown";
+      manuscriptCompilePlan = null;
+      manuscriptCompileError = "";
+      manuscriptCompileCompletedPath = "";
+      await refreshManuscriptCompile();
+    });
+  }
+
+  function setManuscriptCompileFormat(format: ManuscriptCompileFormat): void {
+    if (manuscriptCompileBusy || format === manuscriptCompileFormat) return;
+    manuscriptCompileFormat = format;
+    manuscriptCompilePlan = null;
+    manuscriptCompileError = "";
+    void refreshManuscriptCompile();
+  }
+
+  function resolveCompileRepair(itemId: string): void {
+    if (manuscriptCompileBusy) return;
+    resetManuscriptCompile();
+    beginManuscriptRepair(`${itemId}:source`);
+  }
+
+  function resolveCompileMetadata(itemId: string): void {
+    if (manuscriptCompileBusy) return;
+    resetManuscriptCompile();
+    beginManuscriptMetadataEdit(itemId);
+  }
+
+  async function exportCompiledManuscript(): Promise<void> {
+    const approved = manuscriptCompilePlan;
+    if (
+      !folderPath ||
+      !manuscriptCompileId ||
+      manuscriptCompileBusy ||
+      approved?.kind !== "ready"
+    ) {
+      return;
+    }
+    const rootPath = folderPath;
+    const manuscriptId = manuscriptCompileId;
+    const format = manuscriptCompileFormat;
+    manuscriptCompileBusy = true;
+    manuscriptCompileError = "";
+    try {
+      const destination = await save({
+        title: `Export ${approved.manuscriptTitle}`,
+        defaultPath: approved.suggestedFilename,
+        filters: [
+          format === "markdown"
+            ? { name: "Markdown", extensions: ["md"] }
+            : { name: "Plain text", extensions: ["txt"] },
+        ],
+      });
+      if (!destination) return;
+      if (await exists(destination)) {
+        manuscriptCompileError = "That export path already exists. Choose a new filename; the app never overwrites an export.";
+        return;
+      }
+      const refreshed = await createManuscriptCompilePreview(rootPath, manuscriptId, format);
+      if (rootPath !== folderPath || manuscriptId !== manuscriptCompileId) {
+        manuscriptCompileError = "The open project changed after Save As. Nothing was written.";
+        return;
+      }
+      if (
+        refreshed.project.kind !== "ready" ||
+        refreshed.project.fingerprint !== manuscriptCompileStructureFingerprint ||
+        refreshed.plan.kind !== "ready" ||
+        refreshed.plan.outputFingerprint !== approved.outputFingerprint ||
+        refreshed.plan.output !== approved.output
+      ) {
+        manuscriptCompilePlan = refreshed.plan;
+        manuscriptCompileStructureFingerprint =
+          refreshed.project.kind === "ready" ? refreshed.project.fingerprint : "";
+        manuscriptCompileError = "The manuscript structure or an included source changed after preview. Nothing was written; review the refreshed plan.";
+        return;
+      }
+      await writeTextFile(destination, refreshed.plan.output, { createNew: true });
+      manuscriptCompilePlan = refreshed.plan;
+      manuscriptCompileCompletedPath = destination;
+      try {
+        const written = await readTextFile(destination);
+        if (written !== refreshed.plan.output) {
+          manuscriptCompileError = "The export was created, but its contents did not verify exactly. Review the destination before using it.";
+        }
+      } catch (cause) {
+        manuscriptCompileError = `The export was created, but it could not be reread for verification: ${formatError(cause)}`;
+      }
+      const relativeDestination = projectRelativePath(rootPath, destination);
+      if (relativeDestination !== null) {
+        try {
+          await refreshDirectory(await dirname(destination));
+        } catch {
+          // The export is complete; the filesystem watcher or next expansion can refresh the tree.
+        }
+      }
+    } catch (cause) {
+      manuscriptCompileError = `Could not create the export: ${formatError(cause)}`;
+    } finally {
+      manuscriptCompileBusy = false;
+    }
   }
 
   function beginManuscriptRepair(key: string): void {
@@ -5308,6 +5565,7 @@
           canMergeScene={canMergeManuscriptScene}
           onMergeScene={beginManuscriptSceneMerge}
           onOpenCorkboard={openManuscriptCorkboard}
+          onCompile={(manuscriptId) => void beginManuscriptCompile(manuscriptId)}
           onUndoRepair={() => void undoLastManuscriptChange()}
         />
       {/if}
@@ -5537,6 +5795,21 @@
         onRefresh={() => void refreshManuscriptCreationPreview()}
         onCancel={() => resetManuscriptCreation()}
         onConfirm={() => void confirmManuscriptCreation()}
+      />
+    {/if}
+    {#if manuscriptCompileId}
+      <ManuscriptCompileDialog
+        plan={manuscriptCompilePlan}
+        format={manuscriptCompileFormat}
+        busy={manuscriptCompileBusy}
+        error={manuscriptCompileError}
+        completedPath={manuscriptCompileCompletedPath}
+        onFormat={setManuscriptCompileFormat}
+        onRefresh={() => void refreshManuscriptCompile()}
+        onRepair={resolveCompileRepair}
+        onEdit={resolveCompileMetadata}
+        onCancel={closeManuscriptCompile}
+        onExport={() => void exportCompiledManuscript()}
       />
     {/if}
     {#if manuscriptRepairKey && manuscriptRepairPlan}

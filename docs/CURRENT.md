@@ -18,9 +18,9 @@ Connect the verified compile planner to a compact preview/report, native Save As
 
 ### Acceptance criteria
 
-- [ ] Open compile from one named manuscript and choose Markdown or plain text.
-- [ ] Freshly stable-read included sources, then show compact order, word, exclusion, and blocker information without rendering a second full novel reader.
-- [ ] Write only through a native Save As path with create-new/no-clobber protection and refuse source or structure changes after preview.
+- [x] Open compile from one named manuscript and choose Markdown or plain text.
+- [x] Freshly stable-read included sources, then show compact order, word, exclusion, and blocker information without rendering a second full novel reader.
+- [x] Write only through a native Save As path with create-new/no-clobber protection and refuse source or structure changes after preview.
 - [ ] Offer stable-ID repair, path-only Locate, create-new source, durable exclusion, and previewed structure-only removal for unavailable scene prose.
 - [ ] Show an exact completion report and preserve source files, structure, daily credit, and active editor state.
 
@@ -30,6 +30,8 @@ Connect the verified compile planner to a compact preview/report, native Save As
 2. Review DOCX/PDF presentation before those later adapters.
 
 ## Completed checkpoint
+
+- Slice 0.6.13c has a complete export transport checkpoint. Each manuscript now opens a keyboard-contained reading-copy plan with Markdown/plain-text selection, deterministic structure order, verified word/source/chapter counts, durable exclusions, named blockers, a safe filename, and no second full-novel preview. Native Save As is followed by a fresh full structure/source replan; any source or structure change refuses output, existing destinations are never overwritten, the final write uses create-new semantics, and an exact reread verifies completion. Packaged macOS QA produced exact Markdown and plain-text fixtures, retained scene planning titles and frontmatter only in their sources, omitted excluded prose, showed the output in the project tree, kept Today at `0 / 200`, and refused a deliberately stale preview without creating its destination. The automated gate remains 372 passing frontend tests across fifty-seven files, fifteen native tests, strict Rust linting, zero Svelte/TypeScript diagnostics, and a successful production `.app` build. The remaining work in this active slice is the explicit missing-source resolution surface.
 
 - Slice 0.6.13b is complete. A dependency-free pure planner now selects exactly one manuscript, follows only its portable pre-order, emits the manuscript and exact chapter titles without planning-only scene titles, strips only valid leading structured frontmatter, preserves Markdown bodies, and inserts deterministic `* * *` scene boundaries. Its conservative plain-text renderer removes familiar headings, emphasis, links, wiki links, code fences, blockquotes, and image notation while retaining visible labels, code contents, lists, paragraphs, unknown constructs, and the same structural boundaries. Included sources must be present in the fresh source map and match their reconciled fingerprints; every non-ready source kind and post-reconciliation change becomes a named blocker, while parent or item exclusions are reported without reading their sources. Five focused tests cover exact output, metadata omission, both adapters, missing and changed refusal, durable parent exclusion, and unfamiliar-syntax preservation. The full frontend suite has 372 passing tests across fifty-seven files and Svelte/TypeScript reports zero diagnostics.
 
@@ -98,7 +100,7 @@ Connect the verified compile planner to a compact preview/report, native Save As
 
 ## Blockers and decision gates
 
-The next implementation is intentionally paused at a product gate: Markdown/plain-text compile headings, separators, metadata, destination, and incomplete-source behavior need a brief writer-facing review. D-030 and slice 0.6.12c are complete. D-031 records the approved tree-only-left, native-File-menu, and optional-writing-tools-right navigation.
+There is no open product decision gate. The writer-facing compile behavior is approved in D-033. The next executable work is path-only Locate, create-source, durable exclusion, and previewed structure-only scene removal for blocked compiles, followed by final packaged regression QA.
 
 ## Handoff protocol
 

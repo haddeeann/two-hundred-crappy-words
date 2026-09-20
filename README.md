@@ -86,6 +86,8 @@ The app now counts words and stores progress toward its default 200-word target 
 - Move a complete scene between the manuscript top level and chapter containers from outline or corkboard through an exact destination/position preview without moving its Markdown source
 - Split one verified saved scene at an exact caret boundary through a rollback-safe three-file transaction and guarded one-step Undo
 - Merge two eligible adjacent verified scenes through a rollback-safe four-path transaction that preserves the left identity and metadata, visibly retires the unchanged right source, and offers guarded one-step Undo
+- Compile one selected manuscript in exact structure order to a Markdown or readable plain-text copy, with planning-only scene titles, chapter notes, excluded material, and structured frontmatter kept out of the reading copy
+- Review compact counts, exclusions, source blockers, order, format, and suggested filename before native Save As; every export is freshly reverified and created without overwriting
 
 ## Current limitations
 
@@ -93,7 +95,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Ordinary folders still use their absolute path as local progress identity until explicitly adopted
 - Cursor position and editor scroll position are not restored yet
 - Folders cannot yet be renamed, moved, or deleted in the app; files can be renamed within their current folder or moved to the system Trash, while root project metadata remains protected
-- Manuscript structure can be inspected, initially created/imported, repaired after a uniquely identified source move, edited and reordered within or across containers from either outline or corkboard, counted from verified prose, used in split/focus writing layouts, safely split at an exact saved-scene caret, and safely merged for eligible adjacent scenes; path-only replacement and compile/export are still in progress
+- Manuscript structure can be inspected, initially created/imported, repaired after a uniquely identified source move, edited and reordered within or across containers from either outline or corkboard, counted from verified prose, used in split/focus writing layouts, safely split at an exact saved-scene caret, safely merged for eligible adjacent scenes, and compiled to Markdown or plain text; path-only source location, create-source, and structure-only removal are still in progress
 - The first importer intentionally maps only immediate Markdown and one level of chapter folders; deeper folders remain visible as skipped and require later manual structure tools
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
 - The frameless window does not yet provide maximize/full-screen controls

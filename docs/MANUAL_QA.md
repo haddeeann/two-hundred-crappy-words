@@ -4,7 +4,13 @@ This checklist uses disposable files and is the human checkpoint for milestone 0
 
 ## Latest result
 
-Completed successfully on macOS on 2026-08-31. The latest run finished rollback-safe adjacent-scene merge QA—including exact Undo and post-preview retirement collision refusal—and verified the tree-only-left, native-File-menu, writing-tools-right navigation in the packaged app. The disposable manuscript returned to its recorded baseline hashes and Today remained `0 / 200`. Detailed current and historical checkpoints follow.
+Completed successfully on macOS on 2026-09-20. The latest run verified the first complete Markdown/plain-text export transport in a freshly packaged app, including exact output, stale-preview refusal, keyboard containment, completion reporting, unchanged sources/structure, and unchanged daily credit. Detailed current and historical checkpoints follow.
+
+## Milestone 0.6.13 compile/export transport checkpoint
+
+Completed successfully on macOS on 2026-09-20 using Computer Use against a freshly packaged build and a disposable three-scene manuscript. The compact plan showed one exact chapter, two included prose sources, one excluded scene, nine included words, explicit structure order, and a safe suggested filename. Switching formats changed the suggestion from `.md` to `.txt`. Native Save As created both files; Markdown retained prose emphasis and deterministic `* * *` scene boundaries, while plain text removed familiar notation but retained the same visible prose and structure. Neither reading copy contained scene planning titles, frontmatter, or excluded prose.
+
+The completion state named the exact destination and repeated the counts while stating that sources, structure, and daily progress were unchanged. Both outputs appeared immediately in the project tree, Today remained `0 / 200`, the existing collision fixture remained byte-stable, and all source/structure hashes remained unchanged. Changing an included source after preview but before Save caused a fresh 15-word plan and an explicit refusal; no destination was created, and the fixture source was restored to its baseline hash. Final keyboard QA confirmed initial Cancel focus, forward/reverse Tab containment, Escape cancellation, exact focus return to **Compile…**, and preservation of the open Writing tools surface.
 
 ## Milestone 0.3 combined checkpoint
 
