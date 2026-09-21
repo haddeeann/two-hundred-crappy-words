@@ -87,7 +87,7 @@ Goal: support a long manuscript as scenes and chapters while retaining ordinary 
 - [x] Support safe adjacent scene merging with an explicit retired-source disposition.
 - [x] Keep the persistent left navigation focused on the project file tree and move optional writing context into a closed-by-default right dock.
 - [x] Compile/export to Markdown and plain text with deliberate resolution for unavailable sources.
-- [ ] Export a retailer-neutral, EPUBCheck-valid reflowable EPUB for ebook publishing.
+- [x] Export a retailer-neutral, EPUBCheck-valid reflowable EPUB for ebook publishing.
 - [ ] Add a mechanically verified print-interior PDF preset based on current print-on-demand requirements.
 - [ ] Consider DOCX later as an editable editorial handoff rather than a canonical publishing artifact.
 

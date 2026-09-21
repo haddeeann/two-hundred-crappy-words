@@ -336,3 +336,12 @@ EPUB bytes are built locally from the already verified compile-token stream with
 On macOS the Save dialog does not require an EPUB file-type filter because machines without a registered EPUB UTI disable that filtered panel. The app instead supplies the `.epub` default name, rejects a returned destination without that extension, and keeps binary filesystem commands constrained to the path granted by the native picker.
 
 Why: deterministic local generation makes the post-preview stale check meaningful and keeps private prose off external conversion services. A compact maintained ZIP dependency is safer than a bespoke archive writer, while explicit binary commands and the native picker preserve the app's existing least-authority filesystem boundary.
+
+## D-036 — One EPUB navigation document serves logical and visible contents
+
+- Date: 2026-09-21
+- Status: accepted
+
+The EPUB navigation document remains the machine-readable logical table of contents and also appears in the reading order immediately after the title page. It declares a hidden `landmarks` entry identifying itself as the table of contents. Chapter links remain chronological and omit page numbers; the document does not introduce a parallel source of order or a second generated chapter list.
+
+Why: Amazon requires a working logical TOC and strongly recommends a linked HTML contents page near the front for reader expectations and older devices. Its current guidance explicitly allows the navigation document to serve both purposes when it is included in the spine and identified with a TOC landmark. Reusing the same generated list prevents divergence, preserves retailer-neutral EPUB structure, and resolves Kindle Previewer's previously unspecified HTML-TOC status without choosing a style by personal preference.

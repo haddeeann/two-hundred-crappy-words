@@ -1,6 +1,6 @@
 # Current work
 
-Last updated: 2026-09-20
+Last updated: 2026-09-21
 
 ## Active milestone
 
@@ -10,29 +10,29 @@ Connected lore is complete. The active milestone makes a long manuscript underst
 
 ## Active slice
 
-**0.6.14 — Standards-based EPUB export**
+**0.6.15 — Mechanically verified print-interior PDF**
 
 ### Intended outcome
 
-Generate a retailer-neutral reflowable ebook from the same verified manuscript plan, using current publishing standards rather than subjective layout preferences.
+Generate a stable physical book interior from the same verified manuscript plan, using the already researched print-on-demand requirements rather than treating PDF as a fixed ebook.
 
 ### Acceptance criteria
 
-- [x] Research current official Amazon KDP, Apple Books, Google Play Books, W3C EPUB, and IngramSpark requirements.
-- [x] Separate reflowable ebook, print-interior, and editable handoff artifacts in the product roadmap.
-- [x] Add explicit author and language inputs without making them proprietary prose metadata.
-- [x] Generate a semantic reflowable EPUB 3 package with navigation, title page, ordered chapters, and deterministic scene boundaries.
-- [x] Validate the generated and packaged-app artifacts with EPUBCheck and complete packaged filesystem/no-mutation QA.
-- [ ] Inspect the packaged-app artifact in Kindle Previewer on macOS.
+- [ ] Confirm the local PDF renderer and an embeddable, commercially usable serif font boundary.
+- [ ] Generate a deterministic 6 × 9 inch, no-bleed novel interior with mirrored margins and page-count-dependent gutter.
+- [ ] Apply conventional chapter openings, body paragraphs, pagination, and optional running matter without leaking planning metadata.
+- [ ] Reuse the exact fresh-plan, create-new, exact-reread, no-source-mutation, and no-daily-credit export contract.
+- [ ] Inspect page boxes, page count, and embedded fonts mechanically; render representative pages for visual QA.
+- [ ] Complete packaged macOS QA and preserve an explicit KDP Print Previewer and physical-proof handoff.
 
 ## Next slices
 
-1. Install Kindle Previewer with the user's approval and inspect the already EPUBCheck-clean packaged-app artifact.
-2. Review the research-derived print-interior contract before implementing its PDF renderer.
+1. Read and apply the PDF artifact workflow, then inventory the local rendering and font options against the approved publishing contract.
+2. Implement the smallest exact renderer and tests before connecting native Save As.
 
 ## Completed checkpoint
 
-- Slice 0.6.14 implementation and local/package validation are complete. The compile surface now offers **EPUB 3 ebook** beside Markdown and plain text, requires an export-only author display name and valid BCP 47 language, and reuses the freshly verified exact manuscript traversal. A small typed `fflate` dependency creates a deterministic offline package with an uncompressed first `mimetype`, semantic XHTML, title page, navigation, exact chapter order, visible accessible scene breaks, escaped metadata, reader-controlled typography, and no planning-only titles or excluded prose. Save As retains create-new/no-clobber semantics; on macOS it deliberately avoids requiring the optional EPUB UTI registration that otherwise disables the native Save button, then enforces `.epub` before writing. Explicit binary read/write capabilities remain constrained by the native picker scope. Unit tests cover metadata, canonical language tags, deterministic bytes, the ZIP preamble, package contents, escaping, traversal, and presentation. Official EPUBCheck 5.4.0 reported zero fatals, errors, warnings, or infos for both the generated fixture and the exact packaged-app export under EPUB 3.4 rules. Packaged QA exported a 2.5 KiB EPUB, reread it exactly, preserved the structure and all three Markdown SHA-256 hashes, omitted planning/excluded material, and left Today at `0 / 200`. The full gate has 382 passing frontend tests across sixty files, fifteen passing native tests, strict Rust linting, zero Svelte/TypeScript diagnostics, a zero-vulnerability production dependency audit, and a successful production `.app` build. Kindle Previewer is not installed on this Mac, so that final external-conversion inspection remains the only open acceptance item.
+- Slice 0.6.14 is complete. The compile surface offers **EPUB 3 ebook** beside Markdown and plain text, requires an export-only author display name and valid BCP 47 language, and reuses the freshly verified exact manuscript traversal. A small typed `fflate` dependency creates a deterministic offline package with an uncompressed first `mimetype`, semantic XHTML, title page, visible linked contents, a Kindle TOC landmark, exact chapter order, accessible scene breaks, escaped metadata, reader-controlled typography, and no planning-only titles or excluded prose. Save As retains create-new/no-clobber semantics; on macOS it avoids depending on optional EPUB UTI registration and enforces `.epub` before writing. Official EPUBCheck 5.4.0 reported `0 fatals / 0 errors / 0 warnings / 0 infos` on the final exact 2,595-byte packaged-app artifact. Kindle Previewer rendered the title page and chapter cleanly, exposed the correct logical navigation, preserved emphasis and the visible scene break, and reported Enhanced Typesetting support. Current Amazon guidance then prompted the visible contents/landmark refinement; Amazon's bundled converter parsed the final three-document spine, resolved hyperlinks, guide items, navigation, and start location, and successfully built both legacy and enhanced Kindle output. Its sole warning was the intentionally separate cover. Structure and all three source hashes remained unchanged, excluded/planning text stayed out, and Today remained `0 / 200`. The full gate retains 382 passing frontend tests across sixty files, fifteen passing native tests, strict Rust linting, zero Svelte/TypeScript diagnostics, and a zero-vulnerability production dependency audit; the production `.app` rebuilt and ran. The optional DMG helper again stalled in Finder automation after producing the valid app bundle, so app-only packaging remains the reliable development command.
 
 - Slice 0.6.14 now has a research-backed publishing contract in `docs/PUBLISHING_EXPORTS.md`. Amazon accepts EPUB, DOCX, and KPF for reflowable ebooks, while Apple requires EPUB uploads that pass EPUBCheck and Google prefers EPUB 3.3; the first direct-publishing adapter is therefore retailer-neutral reflowable EPUB rather than a styled DOCX. Print PDF is a separate physical-interior artifact with trim, gutter, pagination, and font-embedding requirements; its conservative first preset will follow current print-on-demand guidance. DOCX remains a possible later editorial handoff. The user explicitly directed the product to prefer established publishing requirements and common practice over personal style on 2026-09-20.
 
@@ -107,7 +107,7 @@ Generate a retailer-neutral reflowable ebook from the same verified manuscript p
 
 ## Blockers and decision gates
 
-There is no open preference-only decision gate. EPUB implementation, official EPUBCheck, and packaged filesystem QA are complete. The remaining acceptance step needs Kindle Previewer, which is not installed on this Mac; installing software outside the repository requires user approval. After that inspection, the roadmap can mark EPUB complete and begin the separately researched print-interior PDF slice.
+There is no open preference-only decision gate. The EPUB slice, including standards validation and Amazon conversion QA, is complete. Print-interior PDF work can proceed from the researched contract; retailer acceptance must still remain a later KDP Print Previewer and physical-proof responsibility rather than an app promise.
 
 ## Handoff protocol
 

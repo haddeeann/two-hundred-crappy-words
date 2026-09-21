@@ -1,6 +1,6 @@
 # Publishing export targets
 
-Last reviewed: 2026-09-20
+Last reviewed: 2026-09-21
 
 This document separates publishing requirements from visual taste. Export defaults should follow current retailer and production guidance first; writer preferences belong only where those standards intentionally allow choice.
 
@@ -18,7 +18,7 @@ The app should not treat DOCX and PDF as two generic richer reading copies.
 The first publishing adapter should generate a reflowable EPUB 3 publication from the same freshly verified manuscript traversal as Markdown and plain text.
 
 - Use semantic XHTML and one ordered content document per chapter or contiguous loose-scene section.
-- Include a navigation document and machine-readable table of contents.
+- Include a navigation document and machine-readable table of contents, and place its linked contents page near the front with a TOC landmark for broad Kindle navigation compatibility.
 - Include a simple title page with the exact book title and writer-supplied author name.
 - Carry a stable publication identifier derived from the manuscript UUID, an explicit language, and the export modification time.
 - Keep planning-only scene titles, synopses, notes, targets, frontmatter, and excluded prose out of the book.
@@ -35,7 +35,7 @@ The export UI needs only publication metadata that cannot be inferred safely: au
 
 The offline EPUB adapter is implemented as of 2026-09-20. It uses the existing freshly verified compile tokens and the small typed `fflate` ZIP library; it does not upload prose or invoke a conversion service. Author and BCP 47 language are export-only inputs. The output is deterministic for the same approved plan, metadata, and frozen export time, is written with create-new protection, and is reread byte-for-byte before success is reported.
 
-Official EPUBCheck 5.4.0 validated both a generated fixture and the exact packaged macOS export under EPUB 3.4 rules with zero findings. The packaged run also proved that structure, included sources, excluded source, and daily credit remained unchanged. The final Kindle-specific inspection is still pending because Kindle Previewer is not currently installed on the QA Mac; retailer conversion is intentionally not claimed until that separate tool has inspected the file.
+Official EPUBCheck 5.4.0 validated both a generated fixture and the final exact packaged macOS export under EPUB 3.4 rules with zero findings. The packaged run also proved that structure, included sources, excluded source, and daily credit remained unchanged. Kindle Previewer rendered the title and chapter content cleanly, exposed the expected logical navigation, and reported Enhanced Typesetting support. Amazon's current guidance identifies the logical TOC as required and a linked HTML contents page near the front as strongly recommended, so the same navigation document now appears in the spine and declares a TOC landmark. The bundled Amazon converter parsed that final artifact, resolved its hyperlinks, guide items, navigation, and start location, and successfully built both legacy and enhanced Kindle output. Cover packaging remains an explicit later capability because KDP also supports a separately supplied cover.
 
 ## Print-interior contract
 
@@ -65,6 +65,8 @@ Every publishing export retains the existing compile safety contract: one select
 - Amazon KDP, [supported ebook manuscript formats](https://kdp.amazon.com/en_US/help/topic/G200634390)
 - Amazon KDP, [ebook manuscript formatting guide](https://kdp.amazon.com/en_US/help/topic/G200645680)
 - Amazon KDP, [paths to getting content on Kindle](https://kdp.amazon.com/en_US/help/topic/G79CTKR8BX79E96L)
+- Amazon KDP, [creating logical and HTML tables of contents](https://kdp.amazon.com/en_US/help/topic/G201605710)
+- Amazon KDP, [Kindle navigation guidelines](https://kdp.amazon.com/en_US/help/topic/GY3AD8C6C6GAG42N)
 - Amazon KDP, [paperback and hardcover manuscript templates](https://kdp.amazon.com/en_US/help/topic/G201834230)
 - Amazon KDP, [trim size, bleed, and margins](https://kdp.amazon.com/en_US/help/topic/GVBQ3CMEQW3W2VL6)
 - Amazon KDP, [saving a print manuscript](https://kdp.amazon.com/en_US/help/topic/G202145060)

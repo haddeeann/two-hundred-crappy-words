@@ -139,6 +139,7 @@ ${manifest}
   </manifest>
   <spine>
     <itemref idref="title-page"/>
+    <itemref idref="nav"/>
 ${spine}
   </spine>
 </package>
@@ -161,6 +162,11 @@ function navigationPage(
       <h1>Contents</h1>
       <ol>
         <li><a href="title.xhtml">${escapeXml(title)}</a></li>${chapters ? `\n${chapters}` : ""}
+      </ol>
+    </nav>
+    <nav epub:type="landmarks" hidden="hidden">
+      <ol>
+        <li><a epub:type="toc" href="nav.xhtml">Contents</a></li>
       </ol>
     </nav>`,
     includeEpubNamespace: true,

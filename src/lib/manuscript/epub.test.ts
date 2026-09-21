@@ -63,10 +63,13 @@ describe("standards-based EPUB packaging", () => {
     expect(packageXml).toContain("<dc:creator>Pat &lt;Example&gt;</dc:creator>");
     expect(packageXml).toContain("<dc:language>en-US</dc:language>");
     expect(packageXml).toContain(`<meta property="dcterms:modified">${MODIFIED}</meta>`);
+    expect(packageXml).toContain(`<itemref idref="title-page"/>\n    <itemref idref="nav"/>`);
 
     const nav = strFromU8(files["EPUB/nav.xhtml"]!);
     expect(nav).toContain("Signals &amp; Dust");
     expect(nav).not.toContain("loose opening");
+    expect(nav).toContain(`<nav epub:type="landmarks" hidden="hidden">`);
+    expect(nav).toContain(`<a epub:type="toc" href="nav.xhtml">Contents</a>`);
     const chapter = strFromU8(files["EPUB/section-002.xhtml"]!);
     expect(chapter).toContain("<h1>Signals &amp; Dust</h1>");
     expect(chapter).toContain("First <em>signal</em>.");
