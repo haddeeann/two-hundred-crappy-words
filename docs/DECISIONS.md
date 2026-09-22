@@ -387,3 +387,12 @@ Why: writers need to understand and trust structured claims before the app offer
 Before any authoring UI or filesystem execution, continuity changes are pure immutable plans over the current Markdown source. The first primitives set or remove note canon, append one fully validated fact, and remove one uniquely identified fact. They require the expected stable note UUID and valid unambiguous frontmatter, preserve LF or CRLF, alter only exact parser-owned ranges, retain unknown metadata and the body byte-for-byte, and reparse the complete result before returning a ready plan. Each plan freezes original and updated fingerprints for later fresh semantic comparison and guarded Undo.
 
 Why: generic YAML serialization would reorder or normalize writer-owned metadata and could erase extensions the app does not understand. Range-based mutation makes the preservation claim mechanically testable and lets malformed or stale sources fail before a write path exists. Separating planning from execution also keeps the eventual preview meaningful: confirmation can regenerate the same semantic plan against fresh bytes rather than trusting an old rendered diff.
+
+## D-041 — Fact editing changes only recognized source ranges
+
+- Date: 2026-09-22
+- Status: accepted
+
+An existing continuity fact keeps its UUID while the writer may change its property, typed value, canon override, certainty, validity bounds, and short note. Editing applies descending exact-range replacements to recognized fields instead of serializing the complete fact. Changing value kind removes only recognized fields that no longer apply and adds the new kind's required fields; unfamiliar fact-level and value-level extension lines stay byte-identical. The complete proposed note must then pass the same parser and match the requested known-field semantics before a preview can exist.
+
+Why: stable fact identity is the durable handle for later findings and exceptions, while unknown extensions belong to the writer or a future app version. Field-range editing makes both promises testable and permits the vocabulary to evolve without turning today's editor into a lossy migration tool.

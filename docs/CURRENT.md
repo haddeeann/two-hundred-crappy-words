@@ -28,11 +28,12 @@ Let a writer deliberately create and maintain portable continuity metadata witho
 
 ## Next slices
 
-1. Extend the proven range planner to known-field editing while preserving unknown fact/value extensions.
-2. Add a contained form and exact preview to the continuity disclosure for eligible structured notes.
-3. Execute only a freshly equivalent plan through the existing guarded-write boundary, then package and exercise add/edit/remove/Undo and stale-source refusal.
+1. Add a contained form and exact preview to the continuity disclosure for eligible structured notes.
+2. Execute only a freshly equivalent plan through the existing guarded-write boundary, then package and exercise add/edit/remove/Undo and stale-source refusal.
 
 ## Completed checkpoint
+
+- Slice 0.7.3b completes the pure mutation vocabulary before any UI or filesystem connection. A uniquely identified existing fact can now change its property, value kind and fields, canon override, certainty, validity bounds, and writer note while its UUID remains immutable. The range planner removes or inserts only recognized fields, retains unknown fact/value extensions exactly even across a value-kind change, preserves CRLF/LF and every Markdown-body byte, reparses the complete result, and refuses missing identities, invalid drafts, malformed metadata, and no-op edits. Seven focused mutation tests pass and Svelte/TypeScript reports zero diagnostics.
 
 - Slice 0.7.3a establishes the non-writing mutation foundation. `ParsedFrontmatter` now records exact canon, facts-block, and closing-delimiter ranges. Pure plans can set/change/remove note canon, append a fully typed fact, or remove one uniquely identified fact only for the expected valid stable note ID and unambiguous current metadata. They preserve detected LF/CRLF style, unknown root/fact/value lines, neighboring facts, and every Markdown-body byte; serialize strings through JSON quoting; validate generated drafts with the same bounded parser; reparse the complete proposed result; and freeze original/updated fingerprints. Identity mismatch, malformed metadata, duplicate fact ID, invalid date/value, missing fact, or semantic reparse mismatch returns an unavailable result before any UI or filesystem path exists. Five focused preservation/refusal tests pass, and the full gate has 404 passing frontend tests across sixty-four files, zero Svelte/TypeScript diagnostics, a successful production web build, and a zero-vulnerability production dependency audit.
 

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { parseFrontmatter } from "./frontmatter";
 import {
   planAddContinuityFact,
+  planEditContinuityFact,
   planRemoveContinuityFact,
   planSetContinuityCanon,
   type ContinuityFactDraft,
@@ -149,6 +150,88 @@ Body`;
       FACT_TWO,
     ]);
     expect(removed.updatedText.endsWith("---\nBody")).toBe(true);
+  });
+
+  it("edits known fields while preserving unknown fact and value extensions exactly", () => {
+    const original = `---\r
+id: "${NOTE_ID}"\r
+customRoot: "root bytes"\r
+facts:\r
+  - id: "${FACT_ONE}"\r
+    property: "located-at"\r
+    value:\r
+      kind: "note"\r
+      id: "f8c20f24-4368-4c21-a1f7-a2ba31bd73a4"\r
+      customValue: "value bytes"\r
+    canon: "draft"\r
+    customFact: "fact bytes"\r
+    note: "Old note"\r
+---\r
+# Body\r
+Exact writer prose.\r
+`;
+    const plan = planEditContinuityFact(original, NOTE_ID, FACT_ONE, {
+      id: FACT_ONE,
+      property: "born",
+      value: { kind: "time", calendar: "gregorian", expression: "2134-04" },
+      canon: "canon",
+      certainty: "approximate",
+      validFrom: { kind: "time", calendar: "gregorian", expression: "2160" },
+      note: null,
+    });
+
+    expect(plan.kind).toBe("ready");
+    if (plan.kind !== "ready") return;
+    expect(plan.operation).toBe("edit-fact");
+    expect(plan.updatedText).toContain('      customValue: "value bytes"\r\n');
+    expect(plan.updatedText).toContain('    customFact: "fact bytes"\r\n');
+    expect(plan.updatedText).toContain('customRoot: "root bytes"\r\n');
+    expect(plan.updatedText).not.toContain('      id: "f8c20f24');
+    expect(plan.updatedText).not.toContain('    note: "Old note"');
+    expect(plan.updatedText.slice(plan.updatedText.indexOf("---\r\n# Body"))).toBe(
+      original.slice(original.indexOf("---\r\n# Body")),
+    );
+    const parsed = parseFrontmatter(plan.updatedText).facts[0]!;
+    expect(parsed).toMatchObject({
+      id: FACT_ONE,
+      property: "born",
+      canon: "canon",
+      certainty: "approximate",
+      value: { kind: "time", calendar: "gregorian", expression: "2134-04" },
+      validFrom: { kind: "time", calendar: "gregorian", expression: "2160" },
+      validTo: null,
+      note: null,
+      unknownKeys: ["customFact"],
+    });
+    expect(parsed.value.unknownKeys).toEqual(["customValue"]);
+  });
+
+  it("refuses fact identity changes, missing facts, invalid edits, and no-op edits", () => {
+    const valid = `---\nid: "${NOTE_ID}"\nfacts:\n  - id: "${FACT_ONE}"\n    property: "species"\n    value:\n      kind: "text"\n      text: "Human"\n---\n`;
+    const draft: ContinuityFactDraft = {
+      id: FACT_ONE,
+      property: "species",
+      value: { kind: "text", text: "Human" },
+    };
+    expect(planEditContinuityFact(valid, NOTE_ID, FACT_ONE, draft)).toMatchObject({
+      kind: "unavailable",
+      reason: expect.stringContaining("already has"),
+    });
+    expect(planEditContinuityFact(valid, NOTE_ID, FACT_TWO, { ...draft, id: FACT_TWO })).toMatchObject({
+      kind: "unavailable",
+      reason: expect.stringContaining("uniquely available"),
+    });
+    expect(planEditContinuityFact(valid, NOTE_ID, FACT_ONE, { ...draft, id: FACT_TWO })).toMatchObject({
+      kind: "unavailable",
+      reason: expect.stringContaining("identity"),
+    });
+    expect(planEditContinuityFact(valid, NOTE_ID, FACT_ONE, {
+      ...draft,
+      value: { kind: "time", calendar: "gregorian", expression: "2100-02-29" },
+    })).toMatchObject({
+      kind: "unavailable",
+      reason: expect.stringContaining("Gregorian"),
+    });
   });
 
   it("refuses identity mismatches, malformed metadata, duplicate fact IDs, and invalid drafts", () => {

@@ -231,9 +231,9 @@ This surface is derived locally, contributes no daily credit, and never writes p
 
 ## Guarded authoring foundation
 
-The first non-writing authoring layer produces immutable plans for setting or removing note canon, appending a complete new fact, and removing one uniquely identified fact. A plan requires the expected stable note ID, valid current structured metadata, and exact source ranges. It edits only those ranges, preserves the detected line ending, retains unknown top-level/fact/value fields, and leaves the complete Markdown body byte-for-byte unchanged. Every proposed result is parsed again and must contain the intended semantic result before it can become ready. The plan freezes both original and updated fingerprints for a later compare-before-write executor.
+The non-writing authoring layer produces immutable plans for setting or removing note canon, appending a complete new fact, editing the known fields of one uniquely identified fact, and removing one uniquely identified fact. A plan requires the expected stable note ID, valid current structured metadata, and exact source ranges. It edits only those ranges, preserves the detected line ending, retains unknown top-level/fact/value fields, and leaves the complete Markdown body byte-for-byte unchanged. A fact's UUID is not editable. A value-kind change removes only obsolete recognized value fields, adds the required recognized fields, and retains unfamiliar nested extensions exactly. Every proposed result is parsed again and must contain the intended semantic result before it can become ready. The plan freezes both original and updated fingerprints for a later compare-before-write executor.
 
-This layer has no UI or filesystem connection yet. Existing-fact editing, reviewed previews, fresh semantic replanning, guarded execution, and Undo remain required before the app may write continuity metadata.
+This layer has no UI or filesystem connection yet. Reviewed previews, fresh semantic replanning, guarded execution, and Undo remain required before the app may write continuity metadata.
 
 ## Proposed example
 

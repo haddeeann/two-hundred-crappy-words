@@ -5,6 +5,7 @@ import type {
   CanonStatus,
   ContinuityCertainty,
   ContinuityValue,
+  ParsedContinuityFact,
   ParsedFrontmatter,
 } from "./types";
 
@@ -41,7 +42,7 @@ export interface ContinuityFactDraft {
 
 export interface ContinuityMutationPlan {
   kind: "ready";
-  operation: "set-note-canon" | "add-fact" | "remove-fact";
+  operation: "set-note-canon" | "add-fact" | "edit-fact" | "remove-fact";
   noteId: string;
   factId: string | null;
   originalText: string;
@@ -168,6 +169,55 @@ export function planRemoveContinuityFact(
   );
 }
 
+export function planEditContinuityFact(
+  sourceText: string,
+  expectedNoteId: string,
+  factId: string,
+  draft: ContinuityFactDraft,
+): ContinuityMutationResult {
+  const eligible = eligibleFrontmatter(sourceText, expectedNoteId);
+  if (eligible.kind === "unavailable") return eligible;
+  if (draft.id !== factId) {
+    return unavailable("A fact's stable identity cannot be changed during editing.");
+  }
+  const fact = eligible.frontmatter.facts.find(({ id }) => id === factId);
+  if (!fact) return unavailable("That fact is not uniquely available in the current note.");
+
+  const eol = lineEnding(sourceText);
+  const replacements: SourceReplacement[] = [];
+  replaceScalar(replacements, fact.fieldRanges.property!, `    property: ${quote(draft.property)}`);
+  replaceValueFields(replacements, sourceText, fact.value, draft.value, eol);
+  replaceOptionalScalar(replacements, sourceText, fact, "canon", draft.canon, eol);
+  replaceOptionalScalar(
+    replacements,
+    sourceText,
+    fact,
+    "certainty",
+    draft.certainty,
+    eol,
+  );
+  replaceOptionalTime(replacements, sourceText, fact, "validFrom", draft.validFrom, eol);
+  replaceOptionalTime(replacements, sourceText, fact, "validTo", draft.validTo, eol);
+  replaceOptionalScalar(replacements, sourceText, fact, "note", draft.note, eol);
+
+  const updatedText = applyReplacements(sourceText, replacements);
+  if (updatedText === sourceText) return unavailable("The fact already has those values.");
+  const verified = verifyMutation(updatedText, expectedNoteId);
+  if (verified.kind === "unavailable") return verified;
+  const updatedFact = verified.frontmatter.facts.find(({ id }) => id === factId);
+  if (!updatedFact || !factMatchesDraft(updatedFact, draft)) {
+    return unavailable("The planned fact edit did not reparse exactly; nothing is ready to write.");
+  }
+  return readyPlan(
+    "edit-fact",
+    expectedNoteId,
+    factId,
+    sourceText,
+    updatedText,
+    `Edit ${fact.property}.`,
+  );
+}
+
 function eligibleFrontmatter(
   sourceText: string,
   expectedNoteId: string,
@@ -240,6 +290,187 @@ function serializeValue(value: ContinuityValueDraft, indent: string): string[] {
     );
   } else lines.push(`${indent}reason: ${quote(value.reason)}`);
   return lines;
+}
+
+interface SourceReplacement {
+  start: number;
+  end: number;
+  text: string;
+}
+
+const VALUE_FIELD_KEYS = [
+  "kind",
+  "id",
+  "text",
+  "amount",
+  "unitSystem",
+  "unit",
+  "minimum",
+  "maximum",
+  "calendar",
+  "expression",
+  "reason",
+] as const;
+
+function replaceValueFields(
+  replacements: SourceReplacement[],
+  sourceText: string,
+  current: ContinuityValue,
+  draft: ContinuityValueDraft,
+  eol: string,
+): void {
+  const desired = valueFields(draft);
+  const missing: string[] = [];
+  for (const key of VALUE_FIELD_KEYS) {
+    const range = current.fieldRanges[key];
+    const value = desired.get(key);
+    if (range && value !== undefined) replaceScalar(replacements, range, `      ${key}: ${quote(value)}`);
+    else if (range) removeLine(replacements, sourceText, range);
+    else if (value !== undefined) missing.push(`      ${key}: ${quote(value)}`);
+  }
+  if (missing.length > 0) {
+    const insertion = lineEndIncludingBreak(sourceText, current.range.end);
+    replacements.push({ start: insertion, end: insertion, text: `${missing.join(eol)}${eol}` });
+  }
+}
+
+function valueFields(value: ContinuityValueDraft): ReadonlyMap<string, string> {
+  const result = new Map<string, string>([["kind", value.kind]]);
+  if (value.kind === "note") result.set("id", value.id);
+  else if (value.kind === "text") result.set("text", value.text);
+  else if (value.kind === "quantity") {
+    result.set("amount", value.amount);
+    result.set("unitSystem", value.unitSystem);
+    result.set("unit", value.unit);
+  } else if (value.kind === "range") {
+    result.set("minimum", value.minimum);
+    result.set("maximum", value.maximum);
+    result.set("unitSystem", value.unitSystem);
+    result.set("unit", value.unit);
+  } else if (value.kind === "time") {
+    result.set("calendar", value.calendar);
+    result.set("expression", value.expression);
+  } else result.set("reason", value.reason);
+  return result;
+}
+
+function replaceOptionalScalar(
+  replacements: SourceReplacement[],
+  sourceText: string,
+  fact: ParsedContinuityFact,
+  key: "canon" | "certainty" | "note",
+  value: string | null | undefined,
+  eol: string,
+): void {
+  const range = fact.fieldRanges[key];
+  if (range && value) replaceScalar(replacements, range, `    ${key}: ${quote(value)}`);
+  else if (range) removeLine(replacements, sourceText, range);
+  else if (value) insertFactField(replacements, sourceText, fact, `    ${key}: ${quote(value)}${eol}`);
+}
+
+function replaceOptionalTime(
+  replacements: SourceReplacement[],
+  sourceText: string,
+  fact: ParsedContinuityFact,
+  key: "validFrom" | "validTo",
+  value: ContinuityTimeDraft | null | undefined,
+  eol: string,
+): void {
+  const current = fact[key];
+  const range = fact.fieldRanges[key];
+  if (current && range && value) {
+    replaceScalar(replacements, current.fieldRanges.kind!, `      kind: ${quote("time")}`);
+    replaceScalar(replacements, current.fieldRanges.calendar!, `      calendar: ${quote(value.calendar)}`);
+    replaceScalar(replacements, current.fieldRanges.expression!, `      expression: ${quote(value.expression)}`);
+  } else if (range && !value) {
+    removeLine(replacements, sourceText, range);
+  } else if (!range && value) {
+    insertFactField(
+      replacements,
+      sourceText,
+      fact,
+      `    ${key}:${eol}${serializeValue(value, "      ").join(eol)}${eol}`,
+    );
+  }
+}
+
+function insertFactField(
+  replacements: SourceReplacement[],
+  sourceText: string,
+  fact: ParsedContinuityFact,
+  text: string,
+): void {
+  const insertion = lineEndIncludingBreak(sourceText, fact.range.end);
+  const existing = replacements.find(
+    (replacement) => replacement.start === insertion && replacement.end === insertion,
+  );
+  if (existing) existing.text += text;
+  else replacements.push({ start: insertion, end: insertion, text });
+}
+
+function replaceScalar(
+  replacements: SourceReplacement[],
+  range: { start: number; end: number },
+  text: string,
+): void {
+  replacements.push({ start: range.start, end: range.end, text });
+}
+
+function removeLine(
+  replacements: SourceReplacement[],
+  sourceText: string,
+  range: { start: number; end: number },
+): void {
+  replacements.push({
+    start: range.start,
+    end: lineEndIncludingBreak(sourceText, range.end),
+    text: "",
+  });
+}
+
+function applyReplacements(text: string, replacements: readonly SourceReplacement[]): string {
+  return [...replacements]
+    .sort((left, right) => right.start - left.start || right.end - left.end)
+    .reduce(
+      (result, replacement) =>
+        replaceRange(result, replacement.start, replacement.end, replacement.text),
+      text,
+    );
+}
+
+function factMatchesDraft(fact: ParsedContinuityFact, draft: ContinuityFactDraft): boolean {
+  return fact.id === draft.id &&
+    fact.property === draft.property &&
+    valuesMatch(fact.value, draft.value) &&
+    fact.canon === (draft.canon ?? null) &&
+    fact.certainty === (draft.certainty ?? null) &&
+    timesMatch(fact.validFrom, draft.validFrom ?? null) &&
+    timesMatch(fact.validTo, draft.validTo ?? null) &&
+    fact.note === (draft.note ?? null);
+}
+
+function valuesMatch(value: ContinuityValue, draft: ContinuityValueDraft): boolean {
+  if (value.kind !== draft.kind) return false;
+  if (value.kind === "note" && draft.kind === "note") return value.id === draft.id;
+  if (value.kind === "text" && draft.kind === "text") return value.text === draft.text;
+  if (value.kind === "quantity" && draft.kind === "quantity") {
+    return value.amount === draft.amount && value.unitSystem === draft.unitSystem && value.unit === draft.unit;
+  }
+  if (value.kind === "range" && draft.kind === "range") {
+    return value.minimum === draft.minimum && value.maximum === draft.maximum &&
+      value.unitSystem === draft.unitSystem && value.unit === draft.unit;
+  }
+  if (value.kind === "time" && draft.kind === "time") return timesMatch(value, draft);
+  return value.kind === "unknown" && draft.kind === "unknown" && value.reason === draft.reason;
+}
+
+function timesMatch(
+  value: { kind: "time"; calendar: string; expression: string } | null,
+  draft: ContinuityTimeDraft | null,
+): boolean {
+  return value === null
+    ? draft === null
+    : draft !== null && value.calendar === draft.calendar && value.expression === draft.expression;
 }
 
 function readyPlan(
