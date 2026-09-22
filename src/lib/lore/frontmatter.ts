@@ -1,4 +1,9 @@
 import { validateProjectId, validateProjectName } from "$lib/project/manifest";
+import {
+  MAX_CONTINUITY_FRONTMATTER_BYTES,
+  isCanonStatus,
+  parseContinuityFacts,
+} from "./continuity";
 import { normalizeLoreName } from "./normalize";
 import { lineStartsFor, sourceRange } from "./source";
 import type { LoreIssue, ParsedFrontmatter } from "./types";
@@ -23,6 +28,8 @@ export function parseFrontmatter(text: string): ParsedFrontmatter {
     type: null,
     title: null,
     aliases: [],
+    canon: null,
+    facts: [],
     issues: [],
   };
   if (!isDelimiterLine(readLine(text, 0).text)) return empty;
@@ -66,6 +73,13 @@ export function parseFrontmatter(text: string): ParsedFrontmatter {
   const aliasValues: { value: string; line: FrontmatterLine }[] = [];
   let aliasBlock: FrontmatterLine | null = null;
   let aliasesDuplicated = false;
+  let factBlock: FrontmatterLine | null = null;
+  let factLines: FrontmatterLine[] = [];
+  let factsDuplicated = false;
+  const continuityWithinLimit =
+    new TextEncoder().encode(text.slice(0, closing.next)).byteLength <=
+    MAX_CONTINUITY_FRONTMATTER_BYTES;
+  let continuityLimitReported = false;
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]!;
@@ -85,6 +99,56 @@ export function parseFrontmatter(text: string): ParsedFrontmatter {
     }
     const key = field[1]!;
     const raw = field[2] ?? "";
+    if (key === "facts") {
+      const duplicateBlock = factBlock !== null;
+      if (duplicateBlock) {
+        factsDuplicated = true;
+        result.issues.push(
+          issue(
+            "duplicate-metadata",
+            "Duplicate facts metadata was ignored.",
+            line.start,
+            line.end,
+            lineStarts,
+          ),
+        );
+      } else {
+        factBlock = line;
+      }
+      if (!continuityWithinLimit && !continuityLimitReported) {
+        continuityLimitReported = true;
+        result.issues.push(
+          issue(
+            "frontmatter-field",
+            `Continuity metadata was ignored because frontmatter exceeds ${MAX_CONTINUITY_FRONTMATTER_BYTES} bytes.`,
+            line.start,
+            line.end,
+            lineStarts,
+          ),
+        );
+      }
+      if (raw.trim()) {
+        result.issues.push(
+          issue(
+            "frontmatter-field",
+            "facts must be a block sequence of fact mappings.",
+            line.start,
+            line.end,
+            lineStarts,
+          ),
+        );
+        continue;
+      }
+      const collected: FrontmatterLine[] = [];
+      while (index + 1 < lines.length) {
+        const candidate = lines[index + 1]!;
+        if (candidate.text.trim() && !/^\s+/u.test(candidate.text)) break;
+        index += 1;
+        collected.push(candidate);
+      }
+      if (!duplicateBlock && continuityWithinLimit) factLines = collected;
+      continue;
+    }
     if (key === "aliases") {
       const duplicateBlock = aliasBlock !== null;
       if (duplicateBlock) {
@@ -148,7 +212,24 @@ export function parseFrontmatter(text: string): ParsedFrontmatter {
       }
       continue;
     }
-    if (key !== "id" && key !== "type" && key !== "title") continue;
+    if (key !== "id" && key !== "type" && key !== "title" && key !== "canon") {
+      continue;
+    }
+    if (key === "canon" && !continuityWithinLimit) {
+      if (!continuityLimitReported) {
+        continuityLimitReported = true;
+        result.issues.push(
+          issue(
+            "frontmatter-field",
+            `Continuity metadata was ignored because frontmatter exceeds ${MAX_CONTINUITY_FRONTMATTER_BYTES} bytes.`,
+            line.start,
+            line.end,
+            lineStarts,
+          ),
+        );
+      }
+      continue;
+    }
     const decoded = parseQuotedString(raw);
     if (decoded === null) {
       result.issues.push(
@@ -167,7 +248,7 @@ export function parseFrontmatter(text: string): ParsedFrontmatter {
     scalarValues.set(key, values);
   }
 
-  for (const key of ["id", "type", "title"] as const) {
+  for (const key of ["id", "type", "title", "canon"] as const) {
     const values = scalarValues.get(key) ?? [];
     if (values.length > 1) {
       result.issues.push(
@@ -195,8 +276,15 @@ export function parseFrontmatter(text: string): ParsedFrontmatter {
         ),
       );
     } else {
-      result[key] = value.trim();
+      if (key === "canon") result.canon = value.trim() as typeof result.canon;
+      else result[key] = value.trim();
     }
+  }
+
+  if (factBlock && !factsDuplicated && continuityWithinLimit) {
+    const parsed = parseContinuityFacts(factLines, lineStarts);
+    result.facts = parsed.facts;
+    result.issues.push(...parsed.issues);
   }
 
   const normalizedAliases = new Set<string>();
@@ -243,10 +331,18 @@ export function parseFrontmatter(text: string): ParsedFrontmatter {
   return result;
 }
 
-function validateScalar(key: "id" | "type" | "title", value: string): string | null {
+function validateScalar(
+  key: "id" | "type" | "title" | "canon",
+  value: string,
+): string | null {
   if (key === "id") return validateProjectId(value)?.replace("projectId", "id") ?? null;
   if (key === "title") {
     return validateProjectName(value)?.replace("name", "title") ?? null;
+  }
+  if (key === "canon") {
+    return isCanonStatus(value)
+      ? null
+      : "canon must be idea, draft, canon, or retired.";
   }
   return TYPE_PATTERN.test(value)
     ? null

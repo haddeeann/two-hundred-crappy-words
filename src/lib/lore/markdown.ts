@@ -43,6 +43,8 @@ export function parseMarkdownNote(path: string, text: string): ParsedMarkdownNot
     type: frontmatter.type,
     title: frontmatter.title ?? firstH1 ?? markdownFileStem(path),
     aliases: frontmatter.aliases,
+    canon: frontmatter.canon,
+    facts: frontmatter.facts,
     headings,
     links,
     issues,

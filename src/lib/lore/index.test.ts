@@ -11,6 +11,33 @@ import {
 const DUPLICATE_ID = "2cd59970-6ab4-46f9-b54b-a0e35af5b9e1";
 
 describe("memory-only connected-lore index", () => {
+  it("carries parsed canon and facts through full and incremental indexing", () => {
+    const source = `---
+canon: "draft"
+facts:
+  - id: "2e3120e7-0e74-4e3c-99a1-f2f76469559d"
+    property: "species"
+    value:
+      kind: "text"
+      text: "Human"
+---
+# Mara`;
+    const built = buildLoreProjectIndex([{ path: "mara.md", text: source }]);
+
+    expect(built.documents.get("mara.md")).toMatchObject({
+      canon: "draft",
+      facts: [{ property: "species", value: { kind: "text", text: "Human" } }],
+    });
+
+    const updated = updateLoreProjectIndex(
+      built,
+      "mara.md",
+      source.replace('canon: "draft"', 'canon: "canon"'),
+    );
+    expect(updated.documents.get("mara.md")?.canon).toBe("canon");
+    expect(updated.documents.get("mara.md")?.facts).toHaveLength(1);
+  });
+
   it("builds versioned records, resolutions, backlinks, and bounded context", () => {
     const index = buildLoreProjectIndex(
       [
@@ -54,6 +81,30 @@ describe("memory-only connected-lore index", () => {
     ]);
     expect(index.documents.get("one.md")?.id).toBe(DUPLICATE_ID);
     expect(index.documents.get("two.md")?.id).toBe(DUPLICATE_ID);
+  });
+
+  it("reports fact IDs copied across notes without choosing a winner", () => {
+    const fact = `facts:
+  - id: "2e3120e7-0e74-4e3c-99a1-f2f76469559d"
+    property: "species"
+    value:
+      kind: "text"
+      text: "Human"`;
+    const index = buildLoreProjectIndex([
+      { path: "one.md", text: `---\n${fact}\n---\n# One` },
+      { path: "two.md", text: `---\n${fact}\n---\n# Two` },
+    ]);
+
+    expect(index.issues).toEqual([
+      {
+        kind: "duplicate-continuity-fact-id",
+        message:
+          "Continuity fact ID 2e3120e7-0e74-4e3c-99a1-f2f76469559d appears in more than one note and is unavailable for checks.",
+        paths: ["one.md", "two.md"],
+      },
+    ]);
+    expect(index.documents.get("one.md")?.facts).toHaveLength(1);
+    expect(index.documents.get("two.md")?.facts).toHaveLength(1);
   });
 
   it("rejects duplicate source paths instead of overwriting a record", () => {

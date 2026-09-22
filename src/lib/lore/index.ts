@@ -32,6 +32,8 @@ export interface CooperativeIndexOptions {
 interface IndexableLoreDocument extends LoreResolvableDocument {
   id: string | null;
   type: string | null;
+  canon: ParsedMarkdownNote["canon"];
+  facts: ParsedMarkdownNote["facts"];
   links: readonly ParsedWikiLink[];
   issues: readonly LoreIssue[];
 }
@@ -129,7 +131,7 @@ function assembleLoreIndex(
   generation: number,
 ): LoreProjectIndex {
   const catalog = createResolutionCatalog(parsed);
-  const issues = duplicateIdIssues(parsed);
+  const issues = [...duplicateIdIssues(parsed), ...duplicateFactIdIssues(parsed)];
   const records = new Map<string, LoreDocumentRecord>();
   const backlinks = new Map<string, LoreBacklink[]>();
 
@@ -166,6 +168,8 @@ function assembleLoreIndex(
       type: document.type,
       title: document.title,
       aliases: [...document.aliases],
+      canon: document.canon,
+      facts: [...document.facts],
       headings: [...document.headings],
       outgoing,
       parseIssues: [...document.issues],
@@ -213,6 +217,27 @@ function duplicateIdIssues(documents: readonly IndexableLoreDocument[]): LoreInd
     .sort((first, second) => first.paths[0]!.localeCompare(second.paths[0]!));
 }
 
+function duplicateFactIdIssues(
+  documents: readonly IndexableLoreDocument[],
+): LoreIndexIssue[] {
+  const byId = new Map<string, string[]>();
+  for (const document of documents) {
+    for (const fact of document.facts) {
+      const paths = byId.get(fact.id) ?? [];
+      paths.push(document.path);
+      byId.set(fact.id, paths);
+    }
+  }
+  return [...byId.entries()]
+    .filter(([, paths]) => paths.length > 1)
+    .map(([id, paths]) => ({
+      kind: "duplicate-continuity-fact-id" as const,
+      message: `Continuity fact ID ${id} appears in more than one note and is unavailable for checks.`,
+      paths: paths.sort((first, second) => first.localeCompare(second)),
+    }))
+    .sort((first, second) => first.paths[0]!.localeCompare(second.paths[0]!));
+}
+
 function recordToIndexable(record: LoreDocumentRecord): IndexableLoreDocument {
   return {
     path: record.path,
@@ -220,6 +245,8 @@ function recordToIndexable(record: LoreDocumentRecord): IndexableLoreDocument {
     type: record.type,
     title: record.title,
     aliases: record.aliases,
+    canon: record.canon,
+    facts: record.facts,
     headings: record.headings,
     links: record.outgoing.map(({ link }) => link),
     issues: record.parseIssues,
@@ -238,6 +265,8 @@ function preparedRecord(
     type: document.type,
     title: document.title,
     aliases: document.aliases,
+    canon: document.canon,
+    facts: document.facts,
     headings: document.headings,
     outgoing: document.links.map((link) => ({
       link,

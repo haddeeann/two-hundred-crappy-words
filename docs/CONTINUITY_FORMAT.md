@@ -1,12 +1,12 @@
-# Proposed continuity fact format
+# Continuity fact format
 
-Status: **draft for user review; not yet an implemented project format**
+Status: **approved; version-one read-only parsing and indexing are implemented, while authoring UI and continuity checks remain pending**
 
-Last researched: 2026-09-21
+Last updated: 2026-09-22
 
 This proposal defines the smallest portable fact boundary that could support timelines, ages, travel, relationships, and deterministic continuity review. It deliberately does not define a universal science-fiction ontology. Writers keep prose in Markdown, opt into structured facts only where useful, and remain able to represent uncertainty, disagreement, and deliberate unknowns.
 
-No existing project or note would be migrated merely by opening it. Until this proposal is approved and implemented, the app continues to recognize only the existing `id`, `type`, `title`, and `aliases` frontmatter fields.
+No existing project or note is migrated merely by opening it. The app now recognizes optional `canon` and `facts` metadata in addition to `id`, `type`, `title`, and `aliases`, but it does not yet provide an interface that writes those fields. Opening, indexing, compiling, or searching a note never inserts, normalizes, sorts, or rewrites continuity metadata.
 
 ## Research conclusions
 
@@ -167,7 +167,7 @@ The first registry should be selected only to unlock the next concrete tools. A 
 - relationships: `member-of`, `parent-of`, `partner-of`;
 - spacecraft/faction context: `operated-by`, `home-port`.
 
-This list is intentionally a review point. Naming, inverse behavior, and cardinality affect every later project and should not be finalized by implementation convenience.
+These names are the approved version-one seed vocabulary. The parser also accepts lowercase kebab-case custom properties and records them without assigning semantics. Each deterministic checker must document the subject types, value kind, simultaneous-value behavior, validity bounds, direction or inverse behavior, and rule version it actually consumes before that checker ships.
 
 ### 5. Findings are derived evidence, not new canon
 
@@ -186,7 +186,7 @@ Persisting intentional exceptions is a later decision gate. The recommended dire
 
 ## Parsing and compatibility boundary
 
-An implementation should:
+The version-one implementation:
 
 1. leave ordinary Markdown and existing structured notes valid;
 2. parse the existing four fields exactly as today;
@@ -199,7 +199,9 @@ An implementation should:
 9. treat one malformed fact as unavailable without discarding other valid facts or the Markdown body;
 10. never insert, normalize, sort, or migrate facts on open or index refresh.
 
-The first release should publish a machine-readable schema alongside the prose contract, but the prose rules and tested parser remain authoritative where YAML source-location and preservation behavior go beyond JSON Schema.
+The accepted frontmatter is capped at 256 KiB, 256 facts, one nested value-mapping level, 80 Unicode characters for keys, calendars, unit systems, and units, 120 characters for decimal and time expressions, and 1,000 Unicode characters for literal text, notes, and intentional-unknown reasons. Amounts are canonical decimal strings; Gregorian values receive calendar-aware date validation. Duplicate fact IDs inside one note make every local copy unavailable. IDs copied across different notes remain visible but produce a project-index issue and are unavailable to checks.
+
+The matching [JSON Schema 2020-12 document](schemas/continuity-frontmatter-v1.schema.json) describes the portable data shape. The prose rules and tested parser remain authoritative where indentation, duplicate keys, calendar arithmetic, source locations, and unknown-source preservation go beyond JSON Schema.
 
 ## Proposed example
 
@@ -241,9 +243,9 @@ facts:
 Writer-authored prose remains here.
 ```
 
-## Approval gates
+## Approved decisions
 
-Implementation should not begin until the user has reviewed these choices:
+The user approved these choices on 2026-09-22:
 
 1. **Storage:** nested safe-subset YAML facts inside each structured Markdown note, rather than a central lore database or one sidecar per note.
 2. **Identity:** stable locally generated UUIDs for individual facts, despite their visual cost in raw Markdown.

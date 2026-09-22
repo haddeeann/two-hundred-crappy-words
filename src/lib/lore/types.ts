@@ -18,6 +18,61 @@ export interface LoreIssue {
   range: SourceRange;
 }
 
+export const CANON_STATUSES = ["idea", "draft", "canon", "retired"] as const;
+export type CanonStatus = (typeof CANON_STATUSES)[number];
+
+export const CONTINUITY_CERTAINTIES = [
+  "exact",
+  "approximate",
+  "uncertain",
+] as const;
+export type ContinuityCertainty = (typeof CONTINUITY_CERTAINTIES)[number];
+
+export interface ContinuityValueSource {
+  range: SourceRange;
+  fieldRanges: Readonly<Record<string, SourceRange>>;
+  unknownKeys: readonly string[];
+}
+
+export type ContinuityValue =
+  | (ContinuityValueSource & { kind: "note"; id: string })
+  | (ContinuityValueSource & { kind: "text"; text: string })
+  | (ContinuityValueSource & {
+      kind: "quantity";
+      amount: string;
+      unitSystem: string;
+      unit: string;
+    })
+  | (ContinuityValueSource & {
+      kind: "range";
+      minimum: string;
+      maximum: string;
+      unitSystem: string;
+      unit: string;
+    })
+  | ContinuityTimeValue
+  | (ContinuityValueSource & { kind: "unknown"; reason: string });
+
+export interface ContinuityTimeValue extends ContinuityValueSource {
+  kind: "time";
+  calendar: string;
+  expression: string;
+}
+
+export interface ParsedContinuityFact {
+  id: string;
+  property: string;
+  value: ContinuityValue;
+  canon: CanonStatus | null;
+  certainty: ContinuityCertainty | null;
+  validFrom: ContinuityTimeValue | null;
+  validTo: ContinuityTimeValue | null;
+  note: string | null;
+  range: SourceRange;
+  fieldRanges: Readonly<Record<string, SourceRange>>;
+  unknownKeys: readonly string[];
+}
+
 export interface ParsedFrontmatter {
   range: SourceRange | null;
   bodyStart: number;
@@ -25,6 +80,8 @@ export interface ParsedFrontmatter {
   type: string | null;
   title: string | null;
   aliases: string[];
+  canon: CanonStatus | null;
+  facts: ParsedContinuityFact[];
   issues: LoreIssue[];
 }
 
@@ -54,6 +111,8 @@ export interface ParsedMarkdownNote {
   type: string | null;
   title: string;
   aliases: string[];
+  canon: CanonStatus | null;
+  facts: ParsedContinuityFact[];
   headings: ParsedHeading[];
   links: ParsedWikiLink[];
   issues: LoreIssue[];
@@ -85,7 +144,7 @@ export interface IndexedWikiLink {
 }
 
 export interface LoreIndexIssue {
-  kind: "duplicate-note-id";
+  kind: "duplicate-note-id" | "duplicate-continuity-fact-id";
   message: string;
   paths: string[];
 }
@@ -98,6 +157,8 @@ export interface LoreDocumentRecord {
   type: string | null;
   title: string;
   aliases: string[];
+  canon: CanonStatus | null;
+  facts: ParsedContinuityFact[];
   headings: ParsedHeading[];
   outgoing: IndexedWikiLink[];
   parseIssues: LoreIssue[];

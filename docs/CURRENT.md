@@ -1,6 +1,6 @@
 # Current work
 
-Last updated: 2026-09-21
+Last updated: 2026-09-22
 
 ## Active milestone
 
@@ -10,28 +10,31 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.1 — Canon vocabulary and typed-property contract**
+**0.7.2 — Read-only continuity inspector and property registry**
 
 ### Intended outcome
 
-Define the smallest portable, human-readable canon vocabulary that can support later deterministic continuity checks without turning Markdown notes into proprietary records or pretending every fictional universe shares one ontology.
+Make approved canon and typed facts understandable inside the app before adding any metadata-writing surface or continuity inference. A writer should be able to see exactly what the active note claims, which values are custom or unavailable, and where each claim came from.
 
 ### Acceptance criteria
 
-- [x] Inventory the existing note types, frontmatter parser, link semantics, and portability limits before proposing fields.
-- [x] Separate factual canon claims from derived checks, uncertain possibilities, planning notes, and deliberately unknown values.
-- [x] Define opt-in typed properties that remain readable and editable as Markdown frontmatter.
-- [x] Define stable identity, source citation, date/era, units, and relationship boundaries without assuming Earth calendars or universal physics.
-- [x] Specify migration, unknown-field preservation, validation, and refusal behavior before implementation.
-- [x] Bring consequential vocabulary and product choices back for user review before writing the first continuity checker.
+- [ ] Publish explicit built-in property definitions for subject types, value kinds, simultaneous-value behavior, time bounds, and relationship direction.
+- [ ] Add a read-only active-note continuity surface in the existing right-side Writing tools dock without crowding the editor or left file tree.
+- [ ] Show note canon, fact canon/certainty, typed values, custom-property status, and intentional unknowns without implying unsupported calculations.
+- [ ] Resolve note-reference values through the existing index while keeping missing, duplicate, and moved targets explicit.
+- [ ] Link each displayed fact or diagnostic back to its exact verified source range.
+- [ ] Keep the surface keyboard accessible, memory-only, offline, and free of source writes or daily credit.
+- [ ] Verify focused parsing/index behavior, full regressions, production packaging, and the packaged interaction before enabling metadata authoring.
 
 ## Next slices
 
-1. Review and approve or revise the proposed storage, fact identity, canon states, typed values, open property registry, initial vocabulary, and deferred exception-file design in `docs/CONTINUITY_FORMAT.md`.
-2. After approval, publish the matching machine-readable schema and extend the safe frontmatter parser without migrating or rewriting existing notes.
-3. Add a guarded metadata editor only after parser, preservation, source-range, and refusal behavior pass focused tests.
+1. Implement and test the explicit built-in property registry plus note-reference resolution.
+2. Present parsed facts and diagnostics read-only in the active note's right-side writing context.
+3. After packaged QA, design the separately guarded metadata editor around exact unknown-field and Markdown-body preservation.
 
 ## Completed checkpoint
+
+- Slice 0.7.1 is complete. The user approved the per-note safe-YAML storage, stable fact UUIDs, optional note and fact canon states, six typed value mappings, open property registry, initial seed names, and deferred portable-exception design on 2026-09-22. A dependency-free bounded parser now recognizes the optional format without writing or migrating files: it caps frontmatter at 256 KiB and facts at 256, accepts only JSON-compatible quoted scalars and one value-mapping level, records exact fact and field ranges, validates UUIDs, canon/certainty enums, decimal strings and ordering, Gregorian precision and real dates, custom calendars, and scalar limits, and refuses YAML tags, anchors, aliases, merge keys, duplicate keys, implicit dates, deeper nesting, and unsafe values. One malformed fact cannot discard valid neighbors or Markdown prose. The memory-only index retains canon and facts through full and incremental refresh and reports copied fact IDs across notes without choosing a winner. `docs/schemas/continuity-frontmatter-v1.schema.json` publishes the matching JSON Schema data shape, and the approved semantics and limits are documented in `docs/CONTINUITY_FORMAT.md`. Twenty focused tests pass across frontmatter, schema, and index behavior; the full gate has 395 passing frontend tests across sixty-two files, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app` builds, and a zero-vulnerability production dependency audit.
 
 - Slice 0.7.1 research and contract drafting are complete. The app's current structured-note parser, note types, link identity, unknown-field behavior, and portability boundary were inventoried before proposing changes. `docs/CONTINUITY_FORMAT.md` now defines an optional note-level canon state, UUID-identified fact statements, discriminated note/text/quantity/range/time/unknown values, explicit certainty and validity bounds, an open versioned property registry, memory-only source-linked findings, and conservative safe-YAML parsing/refusal rules. The proposal draws narrowly from YAML 1.2.2, the Wikibase statement shape, W3C PROV and OWL-Time, EDTF, RFC 3339, UCUM, and JSON Schema while declining their network, ontology, and serialization complexity. No parser, UI, project file, or writer note has changed; implementation is paused at the documented approval gates.
 
@@ -114,7 +117,7 @@ Define the smallest portable, human-readable canon vocabulary that can support l
 
 ## Blockers and decision gates
 
-There is no technical blocker. Milestone 0.6 is complete; EPUB and print-interior PDF both retain explicit external preview/proof boundaries rather than promising retailer acceptance. Slice 0.7.1 has reached its required product gate: the proposal in `docs/CONTINUITY_FORMAT.md` needs user approval or revision before the parser, metadata editor, or first continuity checker changes project data.
+There is no current blocker. The permanent continuity format is approved and read-only parsing/indexing are complete. Slice 0.7.2 can add a derived inspector without changing writer files; any later authoring surface must first prove exact unknown-field and Markdown-body preservation through a previewed, compare-before-write design.
 
 ## Handoff protocol
 
