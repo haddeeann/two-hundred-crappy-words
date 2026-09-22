@@ -23,13 +23,16 @@ export function parseFrontmatter(text: string): ParsedFrontmatter {
   const lineStarts = lineStartsFor(text);
   const empty: ParsedFrontmatter = {
     range: null,
+    closingRange: null,
     bodyStart: 0,
     id: null,
     type: null,
     title: null,
     aliases: [],
     canon: null,
+    canonRange: null,
     facts: [],
+    factsRange: null,
     issues: [],
   };
   if (!isDelimiterLine(readLine(text, 0).text)) return empty;
@@ -67,6 +70,7 @@ export function parseFrontmatter(text: string): ParsedFrontmatter {
   const result: ParsedFrontmatter = {
     ...empty,
     range: sourceRange(0, closing.next, lineStarts),
+    closingRange: sourceRange(cursor, closing.next, lineStarts),
     bodyStart: closing.next,
   };
   const scalarValues = new Map<string, { value: string; line: FrontmatterLine }[]>();
@@ -147,6 +151,14 @@ export function parseFrontmatter(text: string): ParsedFrontmatter {
         collected.push(candidate);
       }
       if (!duplicateBlock && continuityWithinLimit) factLines = collected;
+      if (!duplicateBlock) {
+        const last = collected.at(-1);
+        result.factsRange = sourceRange(
+          line.start,
+          last?.end ?? line.end,
+          lineStarts,
+        );
+      }
       continue;
     }
     if (key === "aliases") {
@@ -276,7 +288,14 @@ export function parseFrontmatter(text: string): ParsedFrontmatter {
         ),
       );
     } else {
-      if (key === "canon") result.canon = value.trim() as typeof result.canon;
+      if (key === "canon") {
+        result.canon = value.trim() as typeof result.canon;
+        result.canonRange = sourceRange(
+          values[0]!.line.start,
+          values[0]!.line.end,
+          lineStarts,
+        );
+      }
       else result[key] = value.trim();
     }
   }

@@ -378,3 +378,12 @@ The first writer-facing continuity surface is a closed-by-default disclosure in 
 The built-in registry documents subject note types, allowed value kinds, simultaneous-value review behavior, validity-bound applicability, and relationship direction for all thirteen seed properties. It provides diagnostics, not enforcement: a mismatched or custom fact stays visible and unchanged. Malformed metadata is shown alongside every valid neighboring fact. The inspector is memory-only, performs no project write, earns no daily credit, and makes no network request.
 
 Why: writers need to understand and trust structured claims before the app offers to write or reason from them. Reusing the quiet right dock and verified reference/source navigation keeps continuity close to prose without crowding the filesystem tree or building a second reader. Diagnostic language preserves writer authority and lets the property vocabulary evolve without treating current rules as universal truth.
+
+## D-040 — Continuity writes begin as exact range-based plans
+
+- Date: 2026-09-22
+- Status: accepted
+
+Before any authoring UI or filesystem execution, continuity changes are pure immutable plans over the current Markdown source. The first primitives set or remove note canon, append one fully validated fact, and remove one uniquely identified fact. They require the expected stable note UUID and valid unambiguous frontmatter, preserve LF or CRLF, alter only exact parser-owned ranges, retain unknown metadata and the body byte-for-byte, and reparse the complete result before returning a ready plan. Each plan freezes original and updated fingerprints for later fresh semantic comparison and guarded Undo.
+
+Why: generic YAML serialization would reorder or normalize writer-owned metadata and could erase extensions the app does not understand. Range-based mutation makes the preservation claim mechanically testable and lets malformed or stale sources fail before a write path exists. Separating planning from execution also keeps the eventual preview meaningful: confirmation can regenerate the same semantic plan against fresh bytes rather than trusting an old rendered diff.

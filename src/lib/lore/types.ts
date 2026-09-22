@@ -75,13 +75,16 @@ export interface ParsedContinuityFact {
 
 export interface ParsedFrontmatter {
   range: SourceRange | null;
+  closingRange: SourceRange | null;
   bodyStart: number;
   id: string | null;
   type: string | null;
   title: string | null;
   aliases: string[];
   canon: CanonStatus | null;
+  canonRange: SourceRange | null;
   facts: ParsedContinuityFact[];
+  factsRange: SourceRange | null;
   issues: LoreIssue[];
 }
 
