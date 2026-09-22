@@ -56,6 +56,79 @@ export type ContinuityMutationResult =
   | ContinuityMutationPlan
   | { kind: "unavailable"; reason: string };
 
+export type ContinuityMutationRequest =
+  | { operation: "set-note-canon"; noteId: string; canon: CanonStatus | null }
+  | { operation: "add-fact"; noteId: string; draft: ContinuityFactDraft }
+  | {
+      operation: "edit-fact";
+      noteId: string;
+      factId: string;
+      draft: ContinuityFactDraft;
+    }
+  | { operation: "remove-fact"; noteId: string; factId: string };
+
+export interface ContinuityMutationPreview {
+  before: string;
+  after: string;
+  firstLine: number;
+  unchangedBeforeCharacters: number;
+  unchangedAfterCharacters: number;
+}
+
+export function planContinuityMutation(
+  sourceText: string,
+  request: ContinuityMutationRequest,
+): ContinuityMutationResult {
+  if (request.operation === "set-note-canon") {
+    return planSetContinuityCanon(sourceText, request.noteId, request.canon);
+  }
+  if (request.operation === "add-fact") {
+    return planAddContinuityFact(sourceText, request.noteId, request.draft);
+  }
+  if (request.operation === "edit-fact") {
+    return planEditContinuityFact(
+      sourceText,
+      request.noteId,
+      request.factId,
+      request.draft,
+    );
+  }
+  return planRemoveContinuityFact(sourceText, request.noteId, request.factId);
+}
+
+export function previewContinuityMutation(
+  plan: ContinuityMutationPlan,
+): ContinuityMutationPreview {
+  const { originalText, updatedText } = plan;
+  let prefix = 0;
+  const sharedLength = Math.min(originalText.length, updatedText.length);
+  while (prefix < sharedLength && originalText[prefix] === updatedText[prefix]) prefix += 1;
+
+  let suffix = 0;
+  while (
+    suffix < originalText.length - prefix &&
+    suffix < updatedText.length - prefix &&
+    originalText[originalText.length - suffix - 1] ===
+      updatedText[updatedText.length - suffix - 1]
+  ) suffix += 1;
+
+  const start = originalText.lastIndexOf("\n", Math.max(0, prefix - 1)) + 1;
+  const originalChangeEnd = originalText.length - suffix;
+  const updatedChangeEnd = updatedText.length - suffix;
+  const originalEnd = lineEndAfter(originalText, originalChangeEnd);
+  const updatedEnd = lineEndAfter(updatedText, updatedChangeEnd);
+  return {
+    before: originalText.slice(start, originalEnd),
+    after: updatedText.slice(start, updatedEnd),
+    firstLine: originalText.slice(0, start).split("\n").length,
+    unchangedBeforeCharacters: start,
+    unchangedAfterCharacters: Math.min(
+      originalText.length - originalEnd,
+      updatedText.length - updatedEnd,
+    ),
+  };
+}
+
 export function planSetContinuityCanon(
   sourceText: string,
   expectedNoteId: string,
@@ -502,6 +575,11 @@ function lineEndIncludingBreak(text: string, contentEnd: number): number {
   if (text.startsWith("\r\n", contentEnd)) return contentEnd + 2;
   if (text[contentEnd] === "\n") return contentEnd + 1;
   return contentEnd;
+}
+
+function lineEndAfter(text: string, offset: number): number {
+  const newline = text.indexOf("\n", offset);
+  return newline < 0 ? text.length : newline + 1;
 }
 
 function replaceRange(

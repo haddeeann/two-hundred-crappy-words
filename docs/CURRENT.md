@@ -10,28 +10,29 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.3 — Guarded canon and fact authoring**
+**0.7.4 — Timeline and project-calendar contract**
 
 ### Intended outcome
 
-Let a writer deliberately create and maintain portable continuity metadata without hand-editing YAML, while preserving every unknown field and Markdown byte outside the exact approved change.
+Define the smallest portable time model that can support world and story timelines, parallel tracks, eras, and later age calculations without forcing every fictional world into Gregorian dates.
 
 ### Acceptance criteria
 
-- [ ] Define pure add/edit/remove and note-canon mutation plans over exact source ranges before connecting filesystem writes.
-- [ ] Preserve unknown top-level, fact-level, and value-level fields plus the complete Markdown body byte-for-byte.
-- [ ] Require a unique stable note ID, valid current metadata, fresh editor/index fingerprint, and a writer-reviewed exact preview.
-- [ ] Generate fact UUIDs locally, resolve note-valued choices by unique stable identity, and never guess through missing or duplicate targets.
-- [ ] Recheck the active source and semantic plan before one compare-before-write replacement with guarded in-session Undo.
-- [ ] Keep mechanical metadata edits out of daily credit and retain normal recovery/conflict behavior.
-- [ ] Make every form, preview, refusal, confirmation, and focus return keyboard accessible and verify the packaged workflow.
+- [ ] Inventory the approved time value, event/scene facts, manuscript story-date metadata, and existing portability boundaries before proposing a new file or field.
+- [ ] Research established interval, uncertainty, calendar, era, and parallel-track semantics using primary standards and relevant writing-tool conventions.
+- [ ] Propose a bounded human-readable project calendar/timeline contract with explicit Gregorian and fictional-calendar behavior, stable identity, unknown-field preservation, and no silent migration.
+- [ ] Define deterministic ordering and overlap behavior for exact, partial, approximate, uncertain, interval, and non-computable values.
+- [ ] Define the source-linked timeline presentation and the decision gates that must be approved before changing the permanent project format.
 
 ## Next slices
 
-1. Add a contained form and exact preview to the continuity disclosure for eligible structured notes.
-2. Execute only a freshly equivalent plan through the existing guarded-write boundary, then package and exercise add/edit/remove/Undo and stale-source refusal.
+1. Inventory current time-bearing sources and collision points without changing a project file.
+2. Research primary time/calendar standards and comparable local-first writing tools.
+3. Draft the portable timeline/calendar proposal and stop at the permanent-format approval gate.
 
 ## Completed checkpoint
+
+- Slice 0.7.3 is complete. Saved, uniquely identified structured notes now expose guarded note-canon and typed-fact authoring inside the existing Continuity disclosure. New fact UUIDs are generated locally; note-valued choices resolve only unique stable identities; add, known-field edit, remove, and note-canon requests reuse preservation-tested exact-range plans. Each action shows the exact changed Markdown lines and unchanged-character boundaries. Confirmation rereads the source, regenerates the same semantic plan, requires exact equality with the reviewed preview, and writes through the existing compare-before-write boundary. A successful mechanical edit refreshes the editor/index without daily credit and offers one exact in-session Undo that refuses later changes. Packaged macOS QA exercised canon, add, edit, remove, Undo, invalidated stale preview, exact fixture restoration, visual layout, initial form/preview focus, corrected Undo focus return, and Escape return to Writing tools; all three fixture hashes returned exactly and Today stayed `0 / 200`. The final gate has 411 passing frontend tests across sixty-six files, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app` builds, and a zero-vulnerability production dependency audit.
 
 - Slice 0.7.3b completes the pure mutation vocabulary before any UI or filesystem connection. A uniquely identified existing fact can now change its property, value kind and fields, canon override, certainty, validity bounds, and writer note while its UUID remains immutable. The range planner removes or inserts only recognized fields, retains unknown fact/value extensions exactly even across a value-kind change, preserves CRLF/LF and every Markdown-body byte, reparses the complete result, and refuses missing identities, invalid drafts, malformed metadata, and no-op edits. Seven focused mutation tests pass and Svelte/TypeScript reports zero diagnostics.
 
@@ -122,7 +123,7 @@ Let a writer deliberately create and maintain portable continuity metadata witho
 
 ## Blockers and decision gates
 
-There is no current blocker. The permanent continuity format, parser/index foundation, property registry, and read-only inspector are complete. Slice 0.7.3 may proceed only from pure preservation-tested mutations into a previewed, compare-before-write authoring path; no metadata write is permitted merely because a note was opened or inspected.
+There is no current implementation blocker. Portable typed facts and guarded authoring are complete. Slice 0.7.4 may research and draft the timeline/calendar contract, but any new permanent project file or metadata field must stop at the documented format approval gate before implementation.
 
 ## Handoff protocol
 

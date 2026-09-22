@@ -396,3 +396,12 @@ Why: generic YAML serialization would reorder or normalize writer-owned metadata
 An existing continuity fact keeps its UUID while the writer may change its property, typed value, canon override, certainty, validity bounds, and short note. Editing applies descending exact-range replacements to recognized fields instead of serializing the complete fact. Changing value kind removes only recognized fields that no longer apply and adds the new kind's required fields; unfamiliar fact-level and value-level extension lines stay byte-identical. The complete proposed note must then pass the same parser and match the requested known-field semantics before a preview can exist.
 
 Why: stable fact identity is the durable handle for later findings and exceptions, while unknown extensions belong to the writer or a future app version. Field-range editing makes both promises testable and permits the vocabulary to evolve without turning today's editor into a lossy migration tool.
+
+## D-042 — Continuity authoring requires exact review and fresh equivalence
+
+- Date: 2026-09-22
+- Status: accepted
+
+The Continuity disclosure offers note-canon changes and add/edit/remove fact actions only for a saved active note whose index fingerprint and unique stable note ID are current. Note-reference choices come only from unique indexed identities, and new fact UUIDs are generated locally. Every action opens an exact before/after Markdown excerpt with unshown-character boundaries. Confirmation rereads the source, regenerates the request through the same pure planner, requires exact equivalence with the frozen preview, and writes once through the existing compare-before-write boundary. A successful edit updates the editor and memory index mechanically, earns no daily credit, and retains one exact in-session Undo that refuses later source changes.
+
+Why: metadata forms are useful only if they do not weaken the application's writer-safety contract. A visible source preview keeps the portable representation understandable, fresh semantic equivalence prevents an old form from becoming new consent, unique identity prevents guessed relationships, and guarded Undo provides recovery without overwriting subsequent prose or external edits.

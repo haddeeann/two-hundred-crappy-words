@@ -198,6 +198,16 @@
     presentContinuityInspector,
     type ContinuityFactPresentation,
   } from "$lib/lore/continuity-presentation";
+  import { continuityAuthoringContext } from "$lib/lore/continuity-authoring";
+  import {
+    executeContinuityMutation,
+    undoContinuityMutation,
+    type ContinuityMutationUndo,
+  } from "$lib/lore/continuity-execution";
+  import type {
+    ContinuityMutationPlan,
+    ContinuityMutationRequest,
+  } from "$lib/lore/continuity-mutation";
   import ManuscriptCorkboard from "$lib/manuscript/ManuscriptCorkboard.svelte";
   import ManuscriptCompileDialog from "$lib/manuscript/ManuscriptCompileDialog.svelte";
   import ManuscriptCreationDialog from "$lib/manuscript/ManuscriptCreationDialog.svelte";
@@ -447,6 +457,10 @@
   let loreHistoryRevision = $state(0);
   let restoringLoreHistory = $state(false);
   let loreHistoryNotice = $state("");
+  let continuityAuthoringBusy = $state(false);
+  let continuityAuthoringNotice = $state("");
+  let continuityAuthoringNoticePath = $state("");
+  let continuityAuthoringUndo = $state<ContinuityMutationUndo | null>(null);
   let manuscriptProject = $state<ManuscriptProjectLoadResult>({ kind: "absent" });
   let manuscriptLoading = $state(false);
   let manuscriptLoadRevision = 0;
@@ -561,7 +575,8 @@
       manuscriptSceneSplitBusy ||
       Boolean(manuscriptSceneSplitRequest) ||
       manuscriptSceneMergeBusy ||
-      Boolean(manuscriptSceneMergeRequest),
+      Boolean(manuscriptSceneMergeRequest) ||
+      continuityAuthoringBusy,
   );
   const fileRenamePlan = $derived(
     renamingFilePath
@@ -709,6 +724,23 @@
       path ? fingerprintContent(content) : null,
     );
   });
+  const continuityAuthoring = $derived.by(() =>
+    continuityAuthoringContext(
+      loreIndex,
+      activeLorePath(),
+      content,
+      !dirty &&
+        content === persistedContent &&
+        saveState.phase !== "saving" &&
+        saveState.phase !== "error",
+    ),
+  );
+  const visibleContinuityNotice = $derived(
+    continuityAuthoringNoticePath === activeFilePath ? continuityAuthoringNotice : "",
+  );
+  const visibleContinuityUndoLabel = $derived(
+    continuityAuthoringUndo?.path === activeFilePath ? continuityAuthoringUndo.label : "",
+  );
   const loreRenamePlan = $derived(
     loreIndex && loreRenameSourcePath
       ? planLoreRename(loreIndex, loreRenameSourcePath, loreRenameRequestedPath)
@@ -2988,6 +3020,156 @@
   async function openContinuityReference(path: string): Promise<void> {
     writingToolsOpen = false;
     await openLoreReference(path);
+  }
+
+  async function confirmContinuityAuthoring(
+    plan: ContinuityMutationPlan,
+    request: ContinuityMutationRequest,
+  ): Promise<boolean> {
+    const context = continuityAuthoring;
+    if (
+      context.kind !== "ready" ||
+      continuityAuthoringBusy ||
+      !activeFilePath ||
+      context.sourceText !== content ||
+      plan.originalText !== content ||
+      plan.noteId !== context.noteId
+    ) {
+      continuityAuthoringNotice = "The note changed before confirmation. Review a fresh exact preview.";
+      continuityAuthoringNoticePath = activeFilePath;
+      return false;
+    }
+
+    const pathAtStart = activeFilePath;
+    const rootAtStart = folderPath;
+    const sessionAtStart = loreIndexSession;
+    const selectionStart = editorSelectionStart;
+    const selectionEnd = editorSelectionEnd;
+    continuityAuthoringBusy = true;
+    continuityAuthoringNotice = "";
+    continuityAuthoringNoticePath = pathAtStart;
+    const result = await executeContinuityMutation(pathAtStart, plan, request, {
+      read: readTextFile,
+      write: (path, text) => writeTextFile(path, text),
+    });
+    continuityAuthoringBusy = false;
+
+    if (
+      rootAtStart !== folderPath ||
+      sessionAtStart !== loreIndexSession ||
+      pathAtStart !== activeFilePath
+    ) {
+      error = result.kind === "applied"
+        ? "The continuity change was written, but the project view changed before it could refresh. Reopen the note to continue."
+        : result.message;
+      return false;
+    }
+    if (result.kind === "failed") {
+      continuityAuthoringNotice = result.message;
+      return false;
+    }
+
+    const nextText = result.plan.updatedText;
+    const nextSelectionStart = mapOffsetAcrossTexts(
+      selectionStart,
+      result.plan.originalText,
+      nextText,
+    );
+    const nextSelectionEnd = mapOffsetAcrossTexts(
+      selectionEnd,
+      result.plan.originalText,
+      nextText,
+    );
+    content = nextText;
+    persistedContent = nextText;
+    persistedContentByPath.set(pathAtStart, nextText);
+    saveState = createSaveState();
+    lastSaveFailure = null;
+    forcedSave = null;
+    practiceState = beginDailyPractice(nextText, practiceState.dailyWords);
+    updateLoreSourceAfterSave(pathAtStart, nextText);
+    continuityAuthoringUndo = result.undo;
+    continuityAuthoringNotice = `${result.plan.summary} Undo remains available until this note changes.`;
+    await tick();
+    editorInput?.setSelectionRange(nextSelectionStart, nextSelectionEnd);
+    editorSelectionStart = nextSelectionStart;
+    editorSelectionEnd = nextSelectionEnd;
+    return true;
+  }
+
+  async function undoLastContinuityAuthoring(): Promise<void> {
+    const undo = continuityAuthoringUndo;
+    if (!undo || continuityAuthoringBusy) return;
+    if (
+      undo.path !== activeFilePath ||
+      dirty ||
+      content !== persistedContent ||
+      content !== undo.updatedText
+    ) {
+      continuityAuthoringNotice = "This note changed after the continuity edit, so Undo will not overwrite it.";
+      continuityAuthoringNoticePath = activeFilePath;
+      return;
+    }
+
+    const selectionStart = editorSelectionStart;
+    const selectionEnd = editorSelectionEnd;
+    continuityAuthoringBusy = true;
+    continuityAuthoringNotice = "";
+    continuityAuthoringNoticePath = activeFilePath;
+    const result = await undoContinuityMutation(undo, {
+      read: readTextFile,
+      write: (path, text) => writeTextFile(path, text),
+    });
+    continuityAuthoringBusy = false;
+    if (result.kind === "failed") {
+      continuityAuthoringNotice = result.message;
+      return;
+    }
+
+    const nextSelectionStart = mapOffsetAcrossTexts(
+      selectionStart,
+      undo.updatedText,
+      undo.originalText,
+    );
+    const nextSelectionEnd = mapOffsetAcrossTexts(
+      selectionEnd,
+      undo.updatedText,
+      undo.originalText,
+    );
+    content = undo.originalText;
+    persistedContent = undo.originalText;
+    persistedContentByPath.set(undo.path, undo.originalText);
+    saveState = createSaveState();
+    lastSaveFailure = null;
+    forcedSave = null;
+    practiceState = beginDailyPractice(undo.originalText, practiceState.dailyWords);
+    updateLoreSourceAfterSave(undo.path, undo.originalText);
+    continuityAuthoringUndo = null;
+    continuityAuthoringNotice = "The continuity change was undone exactly.";
+    await tick();
+    editorInput?.setSelectionRange(nextSelectionStart, nextSelectionEnd);
+    editorSelectionStart = nextSelectionStart;
+    editorSelectionEnd = nextSelectionEnd;
+  }
+
+  function mapOffsetAcrossTexts(
+    offset: number,
+    before: string,
+    after: string,
+  ): number {
+    let prefix = 0;
+    const sharedLength = Math.min(before.length, after.length);
+    while (prefix < sharedLength && before[prefix] === after[prefix]) prefix += 1;
+    let suffix = 0;
+    while (
+      suffix < before.length - prefix &&
+      suffix < after.length - prefix &&
+      before[before.length - suffix - 1] === after[after.length - suffix - 1]
+    ) suffix += 1;
+    const beforeSuffix = before.length - suffix;
+    if (offset <= prefix) return offset;
+    if (offset >= beforeSuffix) return after.length - suffix + (offset - beforeSuffix);
+    return prefix;
   }
 
   function captureLoreNavigationLocation(): LoreNavigationLocation {
@@ -5942,8 +6124,14 @@
       />
       <ContinuityInspector
         presentation={continuityInspector}
+        authoring={continuityAuthoring}
+        authoringBusy={continuityAuthoringBusy}
+        authoringNotice={visibleContinuityNotice}
+        authoringUndoLabel={visibleContinuityUndoLabel}
         onSelectFact={(fact) => void selectContinuityFact(fact)}
         onOpenReference={(path) => void openContinuityReference(path)}
+        onConfirmAuthoring={confirmContinuityAuthoring}
+        onUndoAuthoring={undoLastContinuityAuthoring}
       />
       {#if manuscriptProject.kind === "absent" && loreIndexPhase === "ready"}
         <button

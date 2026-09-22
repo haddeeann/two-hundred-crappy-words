@@ -51,6 +51,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Keep the last known index available with an explicit refresh fallback when a filesystem change cannot be reconciled safely
 - Inspect the active note's optional canon and typed continuity facts from a closed-by-default right-dock disclosure, with explicit custom properties, uncertainty, intentional unknowns, validation diagnostics, and exact source links
 - Resolve stable note-reference facts into the existing read-only side pane while keeping missing or duplicated identities visible and never rewriting metadata
+- Set note canon and add, edit, or remove typed continuity facts through an exact Markdown preview, fresh compare-before-write validation, and guarded one-step Undo without earning daily credit
 - Complete note names and uniquely resolved headings from the keyboard while typing an open wiki link
 - Insert collision-safe rooted paths when a title or alias would resolve ambiguously
 - Inspect resolved, broken, and ambiguous outgoing links plus source-context backlinks for the active Markdown note
@@ -102,7 +103,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Folders cannot yet be renamed, moved, or deleted in the app; files can be renamed within their current folder or moved to the system Trash, while root project metadata remains protected
 - Manuscript structure can be inspected, initially created/imported, repaired or explicitly resolved when a source is unavailable, edited and reordered within or across containers from either outline or corkboard, counted from verified prose, used in split/focus writing layouts, safely split or merged, and compiled to Markdown, plain text, an EPUBCheck-clean Kindle-inspected EPUB, or a mechanically verified 6 × 9 inch print interior
 - The first print preset is intentionally text-first: it does not yet support illustrations, bleed, custom trim sizes, covers, hardcover-specific layout, or decorative typesetting, and every export still requires retailer preview plus a physical proof
-- Approved portable continuity facts can be parsed and indexed without rewriting notes, but writer-facing fact editing and continuity checks are not implemented yet; see [`docs/CONTINUITY_FORMAT.md`](docs/CONTINUITY_FORMAT.md)
+- Approved portable continuity facts can be inspected and deliberately authored with source-preserving guards, but timelines and deterministic continuity checks are not implemented yet; see [`docs/CONTINUITY_FORMAT.md`](docs/CONTINUITY_FORMAT.md)
 - The first importer intentionally maps only immediate Markdown and one level of chapter folders; deeper folders remain visible as skipped and require later manual structure tools
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
 - The frameless window does not yet provide maximize/full-screen controls

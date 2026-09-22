@@ -1,12 +1,12 @@
 # Continuity fact format
 
-Status: **approved; version-one read-only parsing and indexing are implemented, while authoring UI and continuity checks remain pending**
+Status: **approved; version-one parsing, indexing, inspection, and guarded authoring are implemented; timelines and continuity checks remain pending**
 
 Last updated: 2026-09-22
 
 This proposal defines the smallest portable fact boundary that could support timelines, ages, travel, relationships, and deterministic continuity review. It deliberately does not define a universal science-fiction ontology. Writers keep prose in Markdown, opt into structured facts only where useful, and remain able to represent uncertainty, disagreement, and deliberate unknowns.
 
-No existing project or note is migrated merely by opening it. The app now recognizes optional `canon` and `facts` metadata in addition to `id`, `type`, `title`, and `aliases`, but it does not yet provide an interface that writes those fields. Opening, indexing, compiling, or searching a note never inserts, normalizes, sorts, or rewrites continuity metadata.
+No existing project or note is migrated merely by opening it. The app recognizes optional `canon` and `facts` metadata in addition to `id`, `type`, `title`, and `aliases`. Only an explicit writer-reviewed authoring action writes those fields; opening, indexing, compiling, searching, or inspecting a note never inserts, normalizes, sorts, or rewrites continuity metadata.
 
 ## Research conclusions
 
@@ -223,17 +223,17 @@ The accepted frontmatter is capped at 256 KiB, 256 facts, one nested value-mappi
 
 The matching [JSON Schema 2020-12 document](schemas/continuity-frontmatter-v1.schema.json) describes the portable data shape. The prose rules and tested parser remain authoritative where indentation, duplicate keys, calendar arithmetic, source locations, and unknown-source preservation go beyond JSON Schema.
 
-## Read-only inspection
+## Source-linked inspection
 
 Writing tools contains a closed-by-default **Continuity** disclosure for the active Markdown note. It shows the note-level canon state, valid facts, inherited or overridden canon, certainty, validity ranges, intentional unknowns, custom-property status, registry mismatches, and safe-parser diagnostics. Stable note-reference values resolve through the existing memory index; missing and duplicated identities remain explicit. A resolved target opens in the existing read-only reference pane. Each fact links to its exact frontmatter range only while the active buffer fingerprint matches the index, so a stale overlay cannot select stale coordinates.
 
-This surface is derived locally, contributes no daily credit, and never writes project files. Guarded authoring is a separate slice.
+This surface is derived locally and contributes no daily credit. Inspection never writes project files.
 
-## Guarded authoring foundation
+## Guarded authoring
 
-The non-writing authoring layer produces immutable plans for setting or removing note canon, appending a complete new fact, editing the known fields of one uniquely identified fact, and removing one uniquely identified fact. A plan requires the expected stable note ID, valid current structured metadata, and exact source ranges. It edits only those ranges, preserves the detected line ending, retains unknown top-level/fact/value fields, and leaves the complete Markdown body byte-for-byte unchanged. A fact's UUID is not editable. A value-kind change removes only obsolete recognized value fields, adds the required recognized fields, and retains unfamiliar nested extensions exactly. Every proposed result is parsed again and must contain the intended semantic result before it can become ready. The plan freezes both original and updated fingerprints for a later compare-before-write executor.
+The authoring layer produces immutable plans for setting or removing note canon, appending a complete new fact, editing the known fields of one uniquely identified fact, and removing one uniquely identified fact. A plan requires the expected stable note ID, valid current structured metadata, and exact source ranges. It edits only those ranges, preserves the detected line ending, retains unknown top-level/fact/value fields, and leaves the complete Markdown body byte-for-byte unchanged. A fact's UUID is not editable. A value-kind change removes only obsolete recognized value fields, adds the required recognized fields, and retains unfamiliar nested extensions exactly. Every proposed result is parsed again and must contain the intended semantic result before it can become ready.
 
-This layer has no UI or filesystem connection yet. Reviewed previews, fresh semantic replanning, guarded execution, and Undo remain required before the app may write continuity metadata.
+Authoring is available only for a saved active note whose indexed fingerprint and unique stable note ID are current. Note-valued choices contain only uniquely identified indexed notes; a local UUID v4 is generated for each new fact. The contained form shows the exact changed Markdown lines plus unchanged-character boundaries before confirmation. Confirmation rereads the file, rebuilds the same semantic plan, requires it to match the frozen reviewed result exactly, and then uses the ordinary compare-before-write boundary. A successful mechanical edit refreshes the editor and index without daily credit and retains one exact in-session Undo, which refuses any changed or unavailable source. External changes invalidate the authoring surface and its stale source actions before a write can occur.
 
 ## Proposed example
 

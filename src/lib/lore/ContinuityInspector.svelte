@@ -1,4 +1,10 @@
 <script lang="ts">
+  import ContinuityAuthoring from "./ContinuityAuthoring.svelte";
+  import type { ContinuityAuthoringContext } from "./continuity-authoring";
+  import type {
+    ContinuityMutationPlan,
+    ContinuityMutationRequest,
+  } from "./continuity-mutation";
   import type {
     ContinuityFactPresentation,
     ContinuityInspectorPresentation,
@@ -6,11 +12,30 @@
 
   interface Props {
     presentation: ContinuityInspectorPresentation;
+    authoring: ContinuityAuthoringContext;
+    authoringBusy: boolean;
+    authoringNotice: string;
+    authoringUndoLabel: string;
     onSelectFact: (fact: ContinuityFactPresentation) => void;
     onOpenReference: (path: string) => void;
+    onConfirmAuthoring: (
+      plan: ContinuityMutationPlan,
+      request: ContinuityMutationRequest,
+    ) => Promise<boolean>;
+    onUndoAuthoring: () => Promise<void>;
   }
 
-  let { presentation, onSelectFact, onOpenReference }: Props = $props();
+  let {
+    presentation,
+    authoring,
+    authoringBusy,
+    authoringNotice,
+    authoringUndoLabel,
+    onSelectFact,
+    onOpenReference,
+    onConfirmAuthoring,
+    onUndoAuthoring,
+  }: Props = $props();
 
   function openFactReference(fact: ContinuityFactPresentation): void {
     if (fact.reference.kind === "resolved") onOpenReference(fact.reference.path);
@@ -32,7 +57,7 @@
         <strong>{presentation.title}</strong>
         <small>{presentation.path}{presentation.noteType ? ` · ${presentation.noteType}` : ""}</small>
       </div>
-      <span class="read-only">Read only</span>
+      <span class="source-linked">Source linked</span>
     </header>
     <p class="note-canon">
       Note canon: <strong>{presentation.canon ?? "unspecified"}</strong>
@@ -107,8 +132,16 @@
         {/each}
       </ol>
     {/if}
+    <ContinuityAuthoring
+      context={authoring}
+      busy={authoringBusy}
+      notice={authoringNotice}
+      undoLabel={authoringUndoLabel}
+      onConfirm={onConfirmAuthoring}
+      onUndo={onUndoAuthoring}
+    />
     <p class="privacy">
-      Derived in memory from this project. Nothing is rewritten or sent anywhere.
+      Derived and edited locally in this project. Nothing is sent anywhere.
     </p>
   {/if}
 </details>
@@ -166,7 +199,7 @@
     color: #929292;
   }
 
-  .read-only,
+  .source-linked,
   .fact-heading span {
     flex: 0 0 auto;
     padding: 0.1rem 0.3rem;
