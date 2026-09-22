@@ -3,6 +3,7 @@
     ManuscriptCompileFormat,
     ManuscriptCompilePlan,
   } from "./compile";
+  import { KDP_MINIMUM_PAPERBACK_PAGES } from "./print-pdf-metadata";
 
   interface Props {
     plan: ManuscriptCompilePlan | null;
@@ -10,11 +11,12 @@
     busy: boolean;
     error: string;
     completedPath: string;
-    epubAuthor: string;
+    pdfPageCount: number;
+    publicationAuthor: string;
     epubLanguage: string;
-    epubMetadataError: string;
+    publicationMetadataError: string;
     onFormat: (format: ManuscriptCompileFormat) => void;
-    onEpubAuthor: (author: string) => void;
+    onPublicationAuthor: (author: string) => void;
     onEpubLanguage: (language: string) => void;
     onRefresh: () => void;
     onRepair: (itemId: string) => void;
@@ -33,11 +35,12 @@
     busy,
     error,
     completedPath,
-    epubAuthor,
+    pdfPageCount,
+    publicationAuthor,
     epubLanguage,
-    epubMetadataError,
+    publicationMetadataError,
     onFormat,
-    onEpubAuthor,
+    onPublicationAuthor,
     onEpubLanguage,
     onRefresh,
     onRepair,
@@ -105,6 +108,13 @@
         {/if}
         <p>Source files, manuscript structure, and daily progress were not changed.</p>
         {#if format === "epub"}<p>Validate the EPUB in Kindle Previewer before retailer upload.</p>{/if}
+        {#if format === "pdf"}
+          <p>{pdfPageCount} interior pages.</p>
+          {#if pdfPageCount < KDP_MINIMUM_PAPERBACK_PAGES}
+            <p class="problem">This is below KDP's current {KDP_MINIMUM_PAPERBACK_PAGES}-page paperback minimum. Add enough manuscript content before upload.</p>
+          {/if}
+          <p>Inspect the PDF in KDP Print Previewer and order a physical proof before publishing.</p>
+        {/if}
       </div>
     {:else}
       <fieldset disabled={busy}>
@@ -136,9 +146,18 @@
           />
           EPUB 3 ebook
         </label>
+        <label>
+          <input
+            type="radio"
+            name="compile-format"
+            checked={format === "pdf"}
+            onchange={() => onFormat("pdf")}
+          />
+          Print interior PDF
+        </label>
       </fieldset>
 
-      {#if format === "epub"}
+      {#if format === "epub" || format === "pdf"}
         <section class="publication" aria-labelledby="publication-metadata-heading">
           <h3 id="publication-metadata-heading">Publication metadata</h3>
           <label>
@@ -147,25 +166,29 @@
               type="text"
               disabled={busy}
               maxlength="200"
-              value={epubAuthor}
+              value={publicationAuthor}
               placeholder="Name used at the retailer"
-              oninput={(event) => onEpubAuthor(event.currentTarget.value)}
+              oninput={(event) => onPublicationAuthor(event.currentTarget.value)}
             />
           </label>
-          <label>
-            <span>Language</span>
-            <input
-              type="text"
-              disabled={busy}
-              value={epubLanguage}
-              placeholder="en or en-US"
-              autocapitalize="none"
-              spellcheck="false"
-              oninput={(event) => onEpubLanguage(event.currentTarget.value)}
-            />
-          </label>
-          <p>These values go only into the exported EPUB. Typography remains reflowable and reader-controlled.</p>
-          {#if epubMetadataError}<p class="problem">{epubMetadataError}</p>{/if}
+          {#if format === "epub"}
+            <label>
+              <span>Language</span>
+              <input
+                type="text"
+                disabled={busy}
+                value={epubLanguage}
+                placeholder="en or en-US"
+                autocapitalize="none"
+                spellcheck="false"
+                oninput={(event) => onEpubLanguage(event.currentTarget.value)}
+              />
+            </label>
+            <p>These values go only into the exported EPUB. Typography remains reflowable and reader-controlled.</p>
+          {:else}
+            <p>The PDF uses a conservative 6 × 9 inch, no-bleed novel layout with embedded Source Serif fonts, mirrored margins, running heads, and page numbers.</p>
+          {/if}
+          {#if publicationMetadataError}<p class="problem">{publicationMetadataError}</p>{/if}
         </section>
       {/if}
 
@@ -226,7 +249,7 @@
             {/each}
           </ol>
         </section>
-        <p class="boundary">Scene titles and planning metadata stay out of the {format === "epub" ? "ebook" : "reading copy"}. Sources and structure are rechecked after Save As and before the create-new write.</p>
+        <p class="boundary">Scene titles and planning metadata stay out of the {format === "epub" ? "ebook" : format === "pdf" ? "print interior" : "reading copy"}. Sources and structure are rechecked after Save As and before the create-new write.</p>
       {/if}
     {/if}
 
@@ -241,7 +264,7 @@
         <button
           type="button"
           class="primary"
-          disabled={busy || plan?.kind !== "ready" || (format === "epub" && Boolean(epubMetadataError))}
+          disabled={busy || plan?.kind !== "ready" || ((format === "epub" || format === "pdf") && Boolean(publicationMetadataError))}
           onclick={onExport}
         >{busy ? "Checking…" : "Save As…"}</button>
       {/if}

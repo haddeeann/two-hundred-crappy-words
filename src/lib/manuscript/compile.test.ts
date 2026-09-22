@@ -171,11 +171,14 @@ describe("verified manuscript compile planning", () => {
     expect(result.output).not.toContain("**");
   });
 
-  it("retains exact verified section tokens for a later EPUB package", () => {
+  it.each([
+    ["epub", "The Patient Comet.epub"],
+    ["pdf", "The Patient Comet.pdf"],
+  ] as const)("retains exact verified section tokens for a %s package", (format, suggestedFilename) => {
     const result = planManuscriptCompile({
       project: project({ firstText, secondText, excludedText }),
       manuscriptId: MANUSCRIPT_ID,
-      format: "epub",
+      format,
       sourceTexts: new Map([
         ["Manuscript/one.md", firstText],
         ["Manuscript/two.md", secondText],
@@ -183,7 +186,7 @@ describe("verified manuscript compile planning", () => {
     });
     expect(result).toMatchObject({
       kind: "ready",
-      suggestedFilename: "The Patient Comet.epub",
+      suggestedFilename,
       tokens: [
         { kind: "chapter", title: "Signals in the Dust" },
         { kind: "scene", chapterTitle: "Signals in the Dust" },

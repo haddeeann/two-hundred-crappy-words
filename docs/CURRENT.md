@@ -4,33 +4,37 @@ Last updated: 2026-09-21
 
 ## Active milestone
 
-**0.6 — Novel structure**
+**0.7 — Continuity tools**
 
-Connected lore is complete. The active milestone makes a long manuscript understandable and safely reorderable as scenes and chapters while keeping prose in ordinary Markdown files.
+Novel structure is complete. The active milestone will help writers reason about canon, time, travel, appearances, and relationships while keeping every finding explainable from ordinary project sources.
 
 ## Active slice
 
-**0.6.15 — Mechanically verified print-interior PDF**
+**0.7.1 — Canon vocabulary and typed-property contract**
 
 ### Intended outcome
 
-Generate a stable physical book interior from the same verified manuscript plan, using the already researched print-on-demand requirements rather than treating PDF as a fixed ebook.
+Define the smallest portable, human-readable canon vocabulary that can support later deterministic continuity checks without turning Markdown notes into proprietary records or pretending every fictional universe shares one ontology.
 
 ### Acceptance criteria
 
-- [ ] Confirm the local PDF renderer and an embeddable, commercially usable serif font boundary.
-- [ ] Generate a deterministic 6 × 9 inch, no-bleed novel interior with mirrored margins and page-count-dependent gutter.
-- [ ] Apply conventional chapter openings, body paragraphs, pagination, and optional running matter without leaking planning metadata.
-- [ ] Reuse the exact fresh-plan, create-new, exact-reread, no-source-mutation, and no-daily-credit export contract.
-- [ ] Inspect page boxes, page count, and embedded fonts mechanically; render representative pages for visual QA.
-- [ ] Complete packaged macOS QA and preserve an explicit KDP Print Previewer and physical-proof handoff.
+- [ ] Inventory the existing note types, frontmatter parser, link semantics, and portability limits before proposing fields.
+- [ ] Separate factual canon claims from derived checks, uncertain possibilities, planning notes, and deliberately unknown values.
+- [ ] Define opt-in typed properties that remain readable and editable as Markdown frontmatter.
+- [ ] Define stable identity, source citation, date/era, units, and relationship boundaries without assuming Earth calendars or universal physics.
+- [ ] Specify migration, unknown-field preservation, validation, and refusal behavior before implementation.
+- [ ] Bring consequential vocabulary and product choices back for user review before writing the first continuity checker.
 
 ## Next slices
 
-1. Read and apply the PDF artifact workflow, then inventory the local rendering and font options against the approved publishing contract.
-2. Implement the smallest exact renderer and tests before connecting native Save As.
+1. Research the smallest interoperable continuity vocabulary and compare it with the app's existing portable note format.
+2. Draft the contract and decision gates before changing project files or UI.
 
 ## Completed checkpoint
+
+- Slice 0.6.15 is complete, closing milestone 0.6. The compile surface now offers **Print interior PDF** beside Markdown, plain text, and EPUB. It uses the same fresh verified token traversal, export-only author, frozen export time, native Save As, create-new refusal, exact binary regeneration/reread, and no-source/no-daily-credit contract. The lazy-loaded local renderer produces deterministic PDF 1.7 pages at exactly 432 × 648 points (6 × 9 inches) with matching Media/Crop/Trim boxes, no bleed, conservative mirrored 0.75-inch inside and 0.625-inch outside margins, page-count-aware KDP gutter minimums, 11-point justified Source Serif body text, 0.2-inch subsequent-paragraph indents, flush first paragraphs after chapter headings and scene breaks, centered chapter openings, hidden folios/running heads on opening pages, alternating title/author heads on continuation pages, and sequential page numbers. All four bundled Source Serif faces are embedded under the SIL Open Font License; image markup is refused rather than silently flattened. The PDF engine is dynamically loaded only when selected, and the Content Security Policy permits only self-hosted packaged font fetches in addition to Tauri IPC.
+
+  Packaged macOS QA created the exact 438,103-byte `/private/tmp/two-hundred-compile-qa/Patient-Comet-Print-Interior-QA.pdf`. Mechanical inspection found two unencrypted PDF 1.7 pages, exact Media/Crop/Trim boxes, title/author/subject/creator metadata, all four embedded font programs, searchable text in exact chapter/prose order, and no planning titles or excluded prose. Poppler rendered the title and chapter pages cleanly; the chapter page showed flush first paragraphs around the centered scene break. The app reported the two-page count, truthfully warned that the tiny fixture is below KDP's current 24-page paperback minimum, and directed the writer to KDP Print Previewer plus a physical proof. A deliberate native replacement request was refused by the app, leaving the artifact SHA-256 `36eb81e65b2a4ac488f4c85661fa77a0d4798aa540b5ff653bf6d482a9b16983` unchanged. Structure and all three source hashes remained at their baselines and Today remained `0 / 200`. The final automated gate has 386 passing frontend tests across sixty-one files, fifteen passing native tests, strict Rust linting, zero Svelte/TypeScript diagnostics, a zero-vulnerability production dependency audit, and a successful production `.app` build.
 
 - Slice 0.6.14 is complete. The compile surface offers **EPUB 3 ebook** beside Markdown and plain text, requires an export-only author display name and valid BCP 47 language, and reuses the freshly verified exact manuscript traversal. A small typed `fflate` dependency creates a deterministic offline package with an uncompressed first `mimetype`, semantic XHTML, title page, visible linked contents, a Kindle TOC landmark, exact chapter order, accessible scene breaks, escaped metadata, reader-controlled typography, and no planning-only titles or excluded prose. Save As retains create-new/no-clobber semantics; on macOS it avoids depending on optional EPUB UTI registration and enforces `.epub` before writing. Official EPUBCheck 5.4.0 reported `0 fatals / 0 errors / 0 warnings / 0 infos` on the final exact 2,595-byte packaged-app artifact. Kindle Previewer rendered the title page and chapter cleanly, exposed the correct logical navigation, preserved emphasis and the visible scene break, and reported Enhanced Typesetting support. Current Amazon guidance then prompted the visible contents/landmark refinement; Amazon's bundled converter parsed the final three-document spine, resolved hyperlinks, guide items, navigation, and start location, and successfully built both legacy and enhanced Kindle output. Its sole warning was the intentionally separate cover. Structure and all three source hashes remained unchanged, excluded/planning text stayed out, and Today remained `0 / 200`. The full gate retains 382 passing frontend tests across sixty files, fifteen passing native tests, strict Rust linting, zero Svelte/TypeScript diagnostics, and a zero-vulnerability production dependency audit; the production `.app` rebuilt and ran. The optional DMG helper again stalled in Finder automation after producing the valid app bundle, so app-only packaging remains the reliable development command.
 
@@ -107,7 +111,7 @@ Generate a stable physical book interior from the same verified manuscript plan,
 
 ## Blockers and decision gates
 
-There is no open preference-only decision gate. The EPUB slice, including standards validation and Amazon conversion QA, is complete. Print-interior PDF work can proceed from the researched contract; retailer acceptance must still remain a later KDP Print Previewer and physical-proof responsibility rather than an app promise.
+There is no current implementation blocker. Milestone 0.6 is complete; EPUB and print-interior PDF both retain explicit external preview/proof boundaries rather than promising retailer acceptance. Slice 0.7.1 can research and draft the portable canon vocabulary autonomously, but consequential schema choices must return for user review before the first continuity checker writes project metadata.
 
 ## Handoff protocol
 

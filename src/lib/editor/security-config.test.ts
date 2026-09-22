@@ -28,7 +28,7 @@ describe("desktop security configuration", () => {
     );
   });
 
-  it("keeps production webview connections local to Tauri IPC", () => {
+  it("keeps production webview connections local to packaged assets and Tauri IPC", () => {
     const config = readJson("src-tauri/tauri.conf.json");
     const app = config.app as Record<string, unknown>;
     const security = app.security as Record<string, unknown>;
@@ -36,7 +36,7 @@ describe("desktop security configuration", () => {
     const devCsp = security.devCsp as Record<string, string>;
 
     expect(csp["default-src"]).toBe("'self'");
-    expect(csp["connect-src"]).toBe("ipc: http://ipc.localhost");
+    expect(csp["connect-src"]).toBe("'self' ipc: http://ipc.localhost");
     expect(csp["object-src"]).toBe("'none'");
     expect(csp["frame-src"]).toBe("'none'");
     expect(devCsp["connect-src"]).toContain("ws://localhost:1420");

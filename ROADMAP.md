@@ -12,8 +12,8 @@ Status legend: `PLANNED`, `ACTIVE`, `BLOCKED`, `COMPLETE`, `DEFERRED`.
 | 0.3 Daily practice | The 200-words-a-day promise is real and encouraging | COMPLETE |
 | 0.4 World projects | A folder becomes a portable, structured science-fiction world | COMPLETE |
 | 0.5 Connected lore | Manuscript and world bible can reference each other fluidly | COMPLETE |
-| 0.6 Novel structure | Scenes and chapters can be planned, reordered, and exported | ACTIVE |
-| 0.7 Continuity tools | Time, travel, relationships, and canon can be reasoned about | PLANNED |
+| 0.6 Novel structure | Scenes and chapters can be planned, reordered, and exported | COMPLETE |
+| 0.7 Continuity tools | Time, travel, relationships, and canon can be reasoned about | ACTIVE |
 | 0.8 Release readiness | The app is accessible, documented, packaged, and recoverable | PLANNED |
 
 ## 0.2 — Trustworthy editor
@@ -88,8 +88,8 @@ Goal: support a long manuscript as scenes and chapters while retaining ordinary 
 - [x] Keep the persistent left navigation focused on the project file tree and move optional writing context into a closed-by-default right dock.
 - [x] Compile/export to Markdown and plain text with deliberate resolution for unavailable sources.
 - [x] Export a retailer-neutral, EPUBCheck-valid reflowable EPUB for ebook publishing.
-- [ ] Add a mechanically verified print-interior PDF preset based on current print-on-demand requirements.
-- [ ] Consider DOCX later as an editable editorial handoff rather than a canonical publishing artifact.
+- [x] Add a mechanically verified print-interior PDF preset based on current print-on-demand requirements.
+- [x] Defer DOCX as a possible editable editorial handoff rather than a canonical publishing artifact.
 
 Specification: [`docs/milestones/0.6-novel-structure.md`](docs/milestones/0.6-novel-structure.md)
 

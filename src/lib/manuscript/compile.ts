@@ -8,7 +8,7 @@ import type {
   ReconciledManuscriptScene,
 } from "./source-reconciliation";
 
-export type ManuscriptCompileFormat = "markdown" | "text" | "epub";
+export type ManuscriptCompileFormat = "markdown" | "text" | "epub" | "pdf";
 
 export interface ManuscriptCompileEntry {
   itemId: string;
@@ -361,7 +361,13 @@ function suggestedCompileFilename(title: string, format: ManuscriptCompileFormat
     .replace(/\s+/gu, " ")
     .replace(/[ .]+$/gu, "")
     .trim() || "Manuscript";
-  const extension = format === "markdown" ? "md" : format === "text" ? "txt" : "epub";
+  const extension = format === "markdown"
+    ? "md"
+    : format === "text"
+      ? "txt"
+      : format === "epub"
+        ? "epub"
+        : "pdf";
   return `${base}.${extension}`;
 }
 

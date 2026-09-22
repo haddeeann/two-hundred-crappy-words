@@ -223,6 +223,10 @@
     validateManuscriptEpubMetadata,
   } from "$lib/manuscript/epub";
   import {
+    validateManuscriptPrintPdfMetadata,
+    type ManuscriptPrintPdfFonts,
+  } from "$lib/manuscript/print-pdf-metadata";
+  import {
     DEFAULT_MAX_MANUSCRIPT_SOURCE_BYTES,
     DEFAULT_MAX_MANUSCRIPT_TOTAL_SOURCE_BYTES,
     loadManuscriptProject,
@@ -447,11 +451,13 @@
   let manuscriptCompileBusy = $state(false);
   let manuscriptCompileError = $state("");
   let manuscriptCompileCompletedPath = $state("");
+  let manuscriptCompilePdfPageCount = $state(0);
   let manuscriptCompileStructureFingerprint = "";
   let manuscriptCompileRevision = 0;
-  let manuscriptCompileEpubAuthor = $state("");
+  let manuscriptCompilePublicationAuthor = $state("");
   let manuscriptCompileEpubLanguage = $state("en");
-  let manuscriptCompileEpubModifiedAt = "";
+  let manuscriptCompilePublicationModifiedAt = "";
+  let manuscriptPrintPdfFontsPromise: Promise<ManuscriptPrintPdfFonts> | null = null;
   let manuscriptSourceResolutionPlan = $state<ManuscriptSourceResolutionPlan | null>(null);
   let manuscriptSourceResolutionBusy = $state(false);
   let manuscriptSourceResolutionError = $state("");
@@ -1280,6 +1286,7 @@
     manuscriptCompileBusy = false;
     manuscriptCompileError = "";
     manuscriptCompileCompletedPath = "";
+    manuscriptCompilePdfPageCount = 0;
     manuscriptCompileStructureFingerprint = "";
   }
 
@@ -1379,6 +1386,7 @@
     manuscriptCompileBusy = true;
     manuscriptCompileError = "";
     manuscriptCompileCompletedPath = "";
+    manuscriptCompilePdfPageCount = 0;
     try {
       const result = await createManuscriptCompilePreview(rootPath, manuscriptId, format);
       if (
@@ -1410,7 +1418,8 @@
       manuscriptCompilePlan = null;
       manuscriptCompileError = "";
       manuscriptCompileCompletedPath = "";
-      manuscriptCompileEpubModifiedAt = new Date().toISOString();
+      manuscriptCompilePdfPageCount = 0;
+      manuscriptCompilePublicationModifiedAt = new Date().toISOString();
       await refreshManuscriptCompile();
     });
   }
@@ -1423,14 +1432,47 @@
     void refreshManuscriptCompile();
   }
 
-  function manuscriptCompileEpubMetadataError(): string {
-    if (manuscriptCompileFormat !== "epub") return "";
-    const result = validateManuscriptEpubMetadata({
-      author: manuscriptCompileEpubAuthor,
-      language: manuscriptCompileEpubLanguage,
-      modifiedAt: manuscriptCompileEpubModifiedAt,
-    });
+  function manuscriptCompilePublicationMetadataError(): string {
+    const result = manuscriptCompileFormat === "epub"
+      ? validateManuscriptEpubMetadata({
+          author: manuscriptCompilePublicationAuthor,
+          language: manuscriptCompileEpubLanguage,
+          modifiedAt: manuscriptCompilePublicationModifiedAt,
+        })
+      : manuscriptCompileFormat === "pdf"
+        ? validateManuscriptPrintPdfMetadata({
+            author: manuscriptCompilePublicationAuthor,
+            modifiedAt: manuscriptCompilePublicationModifiedAt,
+          })
+        : null;
+    if (!result) return "";
     return result.kind === "invalid" ? result.message : "";
+  }
+
+  async function loadManuscriptPrintPdfFonts(): Promise<ManuscriptPrintPdfFonts> {
+    if (!manuscriptPrintPdfFontsPromise) {
+      const root = new URL("./fonts/source-serif-4/", document.baseURI);
+      const load = async (filename: string): Promise<Uint8Array> => {
+        const response = await fetch(new URL(filename, root));
+        if (!response.ok) throw new Error(`Could not load the bundled print font ${filename}.`);
+        return new Uint8Array(await response.arrayBuffer());
+      };
+      manuscriptPrintPdfFontsPromise = Promise.all([
+        load("SourceSerif4-Regular.ttf"),
+        load("SourceSerif4-It.ttf"),
+        load("SourceSerif4-Semibold.ttf"),
+        load("SourceSerif4-SemiboldIt.ttf"),
+      ]).then(([regular, italic, semibold, semiboldItalic]) => ({
+        regular,
+        italic,
+        semibold,
+        semiboldItalic,
+      })).catch((cause) => {
+        manuscriptPrintPdfFontsPromise = null;
+        throw cause;
+      });
+    }
+    return manuscriptPrintPdfFontsPromise;
   }
 
   function resolveCompileRepair(itemId: string): void {
@@ -1467,6 +1509,7 @@
     manuscriptCompilePlan = null;
     manuscriptCompileError = "";
     manuscriptCompileCompletedPath = "";
+    manuscriptCompilePdfPageCount = 0;
     void refreshManuscriptCompile();
   }
 
@@ -1661,28 +1704,43 @@
     const manuscriptId = manuscriptCompileId;
     const format = manuscriptCompileFormat;
     const epubMetadata = {
-      author: manuscriptCompileEpubAuthor,
+      author: manuscriptCompilePublicationAuthor,
       language: manuscriptCompileEpubLanguage,
-      modifiedAt: manuscriptCompileEpubModifiedAt,
+      modifiedAt: manuscriptCompilePublicationModifiedAt,
+    };
+    const pdfMetadata = {
+      author: manuscriptCompilePublicationAuthor,
+      modifiedAt: manuscriptCompilePublicationModifiedAt,
     };
     const metadataCheck = format === "epub"
       ? validateManuscriptEpubMetadata(epubMetadata)
-      : null;
+      : format === "pdf"
+        ? validateManuscriptPrintPdfMetadata(pdfMetadata)
+        : null;
     if (metadataCheck?.kind === "invalid") {
       manuscriptCompileError = metadataCheck.message;
       return;
     }
-    const approvedEpub = format === "epub"
-      ? buildManuscriptEpub({
-          manuscriptId: approved.manuscriptId,
-          title: approved.manuscriptTitle,
-          tokens: approved.tokens,
-          metadata: epubMetadata,
-        })
-      : null;
     manuscriptCompileBusy = true;
     manuscriptCompileError = "";
     try {
+      const printPdf = format === "pdf" ? await import("$lib/manuscript/print-pdf") : null;
+      const pdfFonts = format === "pdf" ? await loadManuscriptPrintPdfFonts() : null;
+      const approvedBinary = format === "epub"
+        ? buildManuscriptEpub({
+            manuscriptId: approved.manuscriptId,
+            title: approved.manuscriptTitle,
+            tokens: approved.tokens,
+            metadata: epubMetadata,
+          })
+        : format === "pdf" && pdfFonts
+          ? await printPdf!.buildManuscriptPrintPdf({
+              title: approved.manuscriptTitle,
+              tokens: approved.tokens,
+              metadata: pdfMetadata,
+              fonts: pdfFonts,
+            })
+          : null;
       const destination = await save({
         title: `Export ${approved.manuscriptTitle}`,
         defaultPath: approved.suggestedFilename,
@@ -1694,12 +1752,18 @@
           : [
               format === "markdown"
                 ? { name: "Markdown", extensions: ["md"] }
-                : { name: "Plain text", extensions: ["txt"] },
+                : format === "text"
+                  ? { name: "Plain text", extensions: ["txt"] }
+                  : { name: "PDF", extensions: ["pdf"] },
             ],
       });
       if (!destination) return;
       if (format === "epub" && !destination.toLowerCase().endsWith(".epub")) {
         manuscriptCompileError = "EPUB exports must use the .epub filename extension. Nothing was written.";
+        return;
+      }
+      if (format === "pdf" && !destination.toLowerCase().endsWith(".pdf")) {
+        manuscriptCompileError = "Print interior exports must use the .pdf filename extension. Nothing was written.";
         return;
       }
       if (await exists(destination)) {
@@ -1711,21 +1775,31 @@
         manuscriptCompileError = "The open project changed after Save As. Nothing was written.";
         return;
       }
-      const refreshedEpub = format === "epub" && refreshed.plan.kind === "ready"
-        ? buildManuscriptEpub({
-            manuscriptId: refreshed.plan.manuscriptId,
-            title: refreshed.plan.manuscriptTitle,
-            tokens: refreshed.plan.tokens,
-            metadata: epubMetadata,
-          })
-        : null;
+      const refreshedBinary = refreshed.plan.kind !== "ready"
+        ? null
+        : format === "epub"
+          ? buildManuscriptEpub({
+              manuscriptId: refreshed.plan.manuscriptId,
+              title: refreshed.plan.manuscriptTitle,
+              tokens: refreshed.plan.tokens,
+              metadata: epubMetadata,
+            })
+          : format === "pdf" && pdfFonts
+            ? await printPdf!.buildManuscriptPrintPdf({
+                title: refreshed.plan.manuscriptTitle,
+                tokens: refreshed.plan.tokens,
+                metadata: pdfMetadata,
+                fonts: pdfFonts,
+              })
+            : null;
       if (
         refreshed.project.kind !== "ready" ||
         refreshed.project.fingerprint !== manuscriptCompileStructureFingerprint ||
         refreshed.plan.kind !== "ready" ||
         refreshed.plan.outputFingerprint !== approved.outputFingerprint ||
         refreshed.plan.output !== approved.output ||
-        (format === "epub" && (!approvedEpub || !refreshedEpub || !equalBytes(refreshedEpub, approvedEpub)))
+        ((format === "epub" || format === "pdf") &&
+          (!approvedBinary || !refreshedBinary || !equalBytes(refreshedBinary, approvedBinary)))
       ) {
         manuscriptCompilePlan = refreshed.plan;
         manuscriptCompileStructureFingerprint =
@@ -1733,16 +1807,19 @@
         manuscriptCompileError = "The manuscript structure or an included source changed after preview. Nothing was written; review the refreshed plan.";
         return;
       }
-      if (format === "epub" && refreshedEpub) {
-        await writeFile(destination, refreshedEpub, { createNew: true });
+      if ((format === "epub" || format === "pdf") && refreshedBinary) {
+        await writeFile(destination, refreshedBinary, { createNew: true });
       } else {
         await writeTextFile(destination, refreshed.plan.output, { createNew: true });
       }
       manuscriptCompilePlan = refreshed.plan;
+      manuscriptCompilePdfPageCount = format === "pdf" && refreshedBinary
+        ? await printPdf!.manuscriptPrintPdfPageCount(refreshedBinary)
+        : 0;
       manuscriptCompileCompletedPath = destination;
       try {
-        const verified = format === "epub" && refreshedEpub
-          ? equalBytes(await readFile(destination), refreshedEpub)
+        const verified = (format === "epub" || format === "pdf") && refreshedBinary
+          ? equalBytes(await readFile(destination), refreshedBinary)
           : await readTextFile(destination) === refreshed.plan.output;
         if (!verified) {
           manuscriptCompileError = "The export was created, but its contents did not verify exactly. Review the destination before using it.";
@@ -6091,11 +6168,12 @@
         busy={manuscriptCompileBusy}
         error={manuscriptCompileError}
         completedPath={manuscriptCompileCompletedPath}
-        epubAuthor={manuscriptCompileEpubAuthor}
+        pdfPageCount={manuscriptCompilePdfPageCount}
+        publicationAuthor={manuscriptCompilePublicationAuthor}
         epubLanguage={manuscriptCompileEpubLanguage}
-        epubMetadataError={manuscriptCompileEpubMetadataError()}
+        publicationMetadataError={manuscriptCompilePublicationMetadataError()}
         onFormat={setManuscriptCompileFormat}
-        onEpubAuthor={(author) => manuscriptCompileEpubAuthor = author}
+        onPublicationAuthor={(author) => manuscriptCompilePublicationAuthor = author}
         onEpubLanguage={(language) => manuscriptCompileEpubLanguage = language}
         onRefresh={() => void refreshManuscriptCompile()}
         onRepair={resolveCompileRepair}

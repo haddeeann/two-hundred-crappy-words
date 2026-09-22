@@ -39,7 +39,7 @@ Official EPUBCheck 5.4.0 validated both a generated fixture and the final exact 
 
 ## Print-interior contract
 
-The later print adapter should generate a PDF specifically labeled **Print interior**, not a generic PDF ebook.
+The print adapter generates a PDF specifically labeled **Print interior**, not a generic PDF ebook.
 
 The first preset should target a text-heavy US novel with no bleed:
 
@@ -53,6 +53,12 @@ The first preset should target a text-heavy US novel with no bleed:
 - all fonts embedded and the resulting page dimensions, page count, and font embedding verified after generation.
 
 Bleed, illustrations, custom trim sizes, covers, hardcover-specific layout, and decorative typesetting are separate capabilities. The first print preset should refuse unsupported content rather than produce a file that only looks plausible.
+
+### Implementation status
+
+The offline print adapter is implemented as of 2026-09-21. It lazily loads `pdf-lib` plus `fontkit` only when the format is selected and uses the same fresh verified compile tokens as every other export. Four official Source Serif 4 TTF faces are bundled under the SIL Open Font License and embedded in every PDF. The deterministic renderer freezes publication metadata; uses exact 432 × 648 point Media, Crop, and Trim boxes; applies conservative mirrored margins and the current KDP page-count gutter bands; sets 11-point justified body prose with 0.2-inch subsequent-paragraph indents; leaves first paragraphs after chapter headings and scene breaks flush; begins each chapter on a new page; and reserves running heads and sequential folios for continuation pages. Markdown image syntax and HTML images are rejected because illustrations and bleed are outside this preset.
+
+The completion report includes the actual PDF page count. It warns below KDP's current 24-page paperback minimum and always directs the writer to KDP Print Previewer and a physical proof. Packaged macOS QA produced a 438,103-byte two-page fixture, mechanically confirmed exact page boxes and all four embedded font programs, extracted the complete expected reading text without planning or excluded prose, and visually inspected both rendered pages. A native replacement attempt reached the app's existing-path check and was refused without changing the artifact. Source files, structure, and daily credit remained unchanged.
 
 ## Validation and wording
 
@@ -71,6 +77,8 @@ Every publishing export retains the existing compile safety contract: one select
 - Amazon KDP, [trim size, bleed, and margins](https://kdp.amazon.com/en_US/help/topic/GVBQ3CMEQW3W2VL6)
 - Amazon KDP, [saving a print manuscript](https://kdp.amazon.com/en_US/help/topic/G202145060)
 - Amazon KDP, [paperback fonts](https://kdp.amazon.com/en_US/help/topic/G202145450)
+- Amazon KDP, [paperback submission guidelines and page-count ranges](https://kdp.amazon.com/en_US/help/topic/G201857950)
+- Adobe Fonts, [Source Serif repository and OFL license](https://github.com/adobe-fonts/source-serif)
 - W3C, [EPUB 3.3 Recommendation](https://www.w3.org/TR/epub-33/)
 - Apple Books for Authors, [publishing from the web](https://authors.apple.com/support/4574-publish-book-from-web)
 - Google Play Books, [EPUB file guidance](https://support.google.com/books/partner/answer/3316879)
