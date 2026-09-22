@@ -18,19 +18,22 @@ Define the smallest portable, human-readable canon vocabulary that can support l
 
 ### Acceptance criteria
 
-- [ ] Inventory the existing note types, frontmatter parser, link semantics, and portability limits before proposing fields.
-- [ ] Separate factual canon claims from derived checks, uncertain possibilities, planning notes, and deliberately unknown values.
-- [ ] Define opt-in typed properties that remain readable and editable as Markdown frontmatter.
-- [ ] Define stable identity, source citation, date/era, units, and relationship boundaries without assuming Earth calendars or universal physics.
-- [ ] Specify migration, unknown-field preservation, validation, and refusal behavior before implementation.
-- [ ] Bring consequential vocabulary and product choices back for user review before writing the first continuity checker.
+- [x] Inventory the existing note types, frontmatter parser, link semantics, and portability limits before proposing fields.
+- [x] Separate factual canon claims from derived checks, uncertain possibilities, planning notes, and deliberately unknown values.
+- [x] Define opt-in typed properties that remain readable and editable as Markdown frontmatter.
+- [x] Define stable identity, source citation, date/era, units, and relationship boundaries without assuming Earth calendars or universal physics.
+- [x] Specify migration, unknown-field preservation, validation, and refusal behavior before implementation.
+- [x] Bring consequential vocabulary and product choices back for user review before writing the first continuity checker.
 
 ## Next slices
 
-1. Research the smallest interoperable continuity vocabulary and compare it with the app's existing portable note format.
-2. Draft the contract and decision gates before changing project files or UI.
+1. Review and approve or revise the proposed storage, fact identity, canon states, typed values, open property registry, initial vocabulary, and deferred exception-file design in `docs/CONTINUITY_FORMAT.md`.
+2. After approval, publish the matching machine-readable schema and extend the safe frontmatter parser without migrating or rewriting existing notes.
+3. Add a guarded metadata editor only after parser, preservation, source-range, and refusal behavior pass focused tests.
 
 ## Completed checkpoint
+
+- Slice 0.7.1 research and contract drafting are complete. The app's current structured-note parser, note types, link identity, unknown-field behavior, and portability boundary were inventoried before proposing changes. `docs/CONTINUITY_FORMAT.md` now defines an optional note-level canon state, UUID-identified fact statements, discriminated note/text/quantity/range/time/unknown values, explicit certainty and validity bounds, an open versioned property registry, memory-only source-linked findings, and conservative safe-YAML parsing/refusal rules. The proposal draws narrowly from YAML 1.2.2, the Wikibase statement shape, W3C PROV and OWL-Time, EDTF, RFC 3339, UCUM, and JSON Schema while declining their network, ontology, and serialization complexity. No parser, UI, project file, or writer note has changed; implementation is paused at the documented approval gates.
 
 - Slice 0.6.15 is complete, closing milestone 0.6. The compile surface now offers **Print interior PDF** beside Markdown, plain text, and EPUB. It uses the same fresh verified token traversal, export-only author, frozen export time, native Save As, create-new refusal, exact binary regeneration/reread, and no-source/no-daily-credit contract. The lazy-loaded local renderer produces deterministic PDF 1.7 pages at exactly 432 × 648 points (6 × 9 inches) with matching Media/Crop/Trim boxes, no bleed, conservative mirrored 0.75-inch inside and 0.625-inch outside margins, page-count-aware KDP gutter minimums, 11-point justified Source Serif body text, 0.2-inch subsequent-paragraph indents, flush first paragraphs after chapter headings and scene breaks, centered chapter openings, hidden folios/running heads on opening pages, alternating title/author heads on continuation pages, and sequential page numbers. All four bundled Source Serif faces are embedded under the SIL Open Font License; image markup is refused rather than silently flattened. The PDF engine is dynamically loaded only when selected, and the Content Security Policy permits only self-hosted packaged font fetches in addition to Tauri IPC.
 
@@ -111,7 +114,7 @@ Define the smallest portable, human-readable canon vocabulary that can support l
 
 ## Blockers and decision gates
 
-There is no current implementation blocker. Milestone 0.6 is complete; EPUB and print-interior PDF both retain explicit external preview/proof boundaries rather than promising retailer acceptance. Slice 0.7.1 can research and draft the portable canon vocabulary autonomously, but consequential schema choices must return for user review before the first continuity checker writes project metadata.
+There is no technical blocker. Milestone 0.6 is complete; EPUB and print-interior PDF both retain explicit external preview/proof boundaries rather than promising retailer acceptance. Slice 0.7.1 has reached its required product gate: the proposal in `docs/CONTINUITY_FORMAT.md` needs user approval or revision before the parser, metadata editor, or first continuity checker changes project data.
 
 ## Handoff protocol
 

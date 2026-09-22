@@ -201,7 +201,7 @@ No field is required for ordinary Markdown. Missing, invalid, duplicated, or uns
 
 The supported subset forbids executable/custom YAML tags, YAML anchors, and YAML alias nodes. The app-defined `aliases` key above is only a sequence of quoted strings and does not enable YAML alias syntax. Later structured editors must preserve unknown keys and the Markdown body, use the same guarded-write protections as prose, and never rewrite frontmatter merely because a file was viewed.
 
-Canon status, dates, relationships, scene metadata, and other typed properties are intentionally deferred until the milestone that uses them can define their semantics. Template prompts belong in the Markdown body and remain easy to delete.
+Canon status, dates, relationships, and other typed properties remain unimplemented. Milestone 0.7 has a researched, opt-in proposal in [`CONTINUITY_FORMAT.md`](CONTINUITY_FORMAT.md); its consequential storage, identity, vocabulary, and exception choices require approval before they become part of this format. Template prompts belong in the Markdown body and remain easy to delete.
 
 ## Security and privacy review
 
