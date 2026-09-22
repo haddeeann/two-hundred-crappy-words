@@ -145,6 +145,7 @@ export interface IndexedWikiLink {
 
 export interface LoreIndexIssue {
   kind: "duplicate-note-id" | "duplicate-continuity-fact-id";
+  id: string;
   message: string;
   paths: string[];
 }

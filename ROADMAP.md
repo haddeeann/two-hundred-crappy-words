@@ -97,7 +97,7 @@ Specification: [`docs/milestones/0.6-novel-structure.md`](docs/milestones/0.6-no
 
 Goal: provide science-fiction-specific tools that help a complex world remain internally coherent.
 
-- [ ] Add structured canon status and typed worldbuilding properties. The approved format, schema, and read-only parser/index foundation are complete; inspection and guarded authoring remain.
+- [ ] Add structured canon status and typed worldbuilding properties. The approved format, schema, parser/index foundation, property registry, and read-only inspector are complete; guarded authoring remains.
 - [ ] Build story and world timelines with eras and parallel tracks.
 - [ ] Calculate character ages and flag impossible appearances.
 - [ ] Model locations, travel durations, and arrival windows without pretending fictional physics is universal.

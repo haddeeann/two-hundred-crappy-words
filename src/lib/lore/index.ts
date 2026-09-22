@@ -211,6 +211,7 @@ function duplicateIdIssues(documents: readonly IndexableLoreDocument[]): LoreInd
     .filter(([, paths]) => paths.length > 1)
     .map(([id, paths]) => ({
       kind: "duplicate-note-id" as const,
+      id,
       message: `Note ID ${id} appears in more than one file and was not repaired.`,
       paths: paths.sort((first, second) => first.localeCompare(second)),
     }))
@@ -232,6 +233,7 @@ function duplicateFactIdIssues(
     .filter(([, paths]) => paths.length > 1)
     .map(([id, paths]) => ({
       kind: "duplicate-continuity-fact-id" as const,
+      id,
       message: `Continuity fact ID ${id} appears in more than one note and is unavailable for checks.`,
       paths: paths.sort((first, second) => first.localeCompare(second)),
     }))

@@ -138,6 +138,7 @@
     type RecentProject,
   } from "$lib/project/workspace";
   import LoreIndexStatus from "$lib/lore/LoreIndexStatus.svelte";
+  import ContinuityInspector from "$lib/lore/ContinuityInspector.svelte";
   import LoreCompletion from "$lib/lore/LoreCompletion.svelte";
   import LoreConnections from "$lib/lore/LoreConnections.svelte";
   import LoreQuickOpen from "$lib/lore/LoreQuickOpen.svelte";
@@ -193,6 +194,10 @@
   } from "$lib/lore/reconcile";
   import { tauriLoreScanBackend } from "$lib/lore/tauri-scan";
   import type { LoreProjectIndex, SourceRange } from "$lib/lore/types";
+  import {
+    presentContinuityInspector,
+    type ContinuityFactPresentation,
+  } from "$lib/lore/continuity-presentation";
   import ManuscriptCorkboard from "$lib/manuscript/ManuscriptCorkboard.svelte";
   import ManuscriptCompileDialog from "$lib/manuscript/ManuscriptCompileDialog.svelte";
   import ManuscriptCreationDialog from "$lib/manuscript/ManuscriptCreationDialog.svelte";
@@ -696,6 +701,14 @@
   const currentLoreConnections = $derived(
     activeLoreConnections(loreIndex, activeLorePath()),
   );
+  const continuityInspector = $derived.by(() => {
+    const path = activeLorePath();
+    return presentContinuityInspector(
+      loreIndex,
+      path,
+      path ? fingerprintContent(content) : null,
+    );
+  });
   const loreRenamePlan = $derived(
     loreIndex && loreRenameSourcePath
       ? planLoreRename(loreIndex, loreRenameSourcePath, loreRenameRequestedPath)
@@ -2950,6 +2963,31 @@
     if (!folderPath || !path) return null;
     const relativePath = projectRelativePath(folderPath, path);
     return relativePath && isMarkdownPath(relativePath) ? relativePath : null;
+  }
+
+  async function selectContinuityFact(
+    fact: ContinuityFactPresentation,
+  ): Promise<void> {
+    const activePath = activeLorePath();
+    const record = activePath ? loreIndex?.documents.get(activePath) : null;
+    if (
+      !activePath ||
+      activePath !== fact.sourcePath ||
+      !record ||
+      record.fingerprint !== fingerprintContent(content)
+    ) {
+      error = "The active note changed before its continuity source could be selected. Wait for the lore index to refresh and try again.";
+      return;
+    }
+    writingToolsOpen = false;
+    await tick();
+    editorInput?.focus({ preventScroll: true });
+    editorInput?.setSelectionRange(fact.sourceRange.start, fact.sourceRange.end);
+  }
+
+  async function openContinuityReference(path: string): Promise<void> {
+    writingToolsOpen = false;
+    await openLoreReference(path);
   }
 
   function captureLoreNavigationLocation(): LoreNavigationLocation {
@@ -5582,7 +5620,7 @@
       <header class="writing-tools-header">
         <div>
           <h2>Writing tools</h2>
-          <p>Lore, manuscript planning, and project settings</p>
+          <p>Lore, continuity, manuscript planning, and project settings</p>
         </div>
         <button
           type="button"
@@ -5902,6 +5940,11 @@
         errorMessage={loreIndexError}
         onRefresh={() => void refreshLoreIndex()}
       />
+      <ContinuityInspector
+        presentation={continuityInspector}
+        onSelectFact={(fact) => void selectContinuityFact(fact)}
+        onOpenReference={(path) => void openContinuityReference(path)}
+      />
       {#if manuscriptProject.kind === "absent" && loreIndexPhase === "ready"}
         <button
           class="open-btn manuscript-create"
@@ -6004,7 +6047,7 @@
             class="focus-mode-button writing-tools-button"
             aria-expanded={writingToolsOpen}
             aria-controls="writing-tools-panel"
-            title={writingToolsOpen ? "Close writing tools" : "Open lore, manuscript, and project tools"}
+            title={writingToolsOpen ? "Close writing tools" : "Open lore, continuity, manuscript, and project tools"}
             onclick={() => setWritingTools(!writingToolsOpen)}
             bind:this={writingToolsButton}
           >{writingToolsOpen ? "Close tools" : "Writing tools"}</button>

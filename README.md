@@ -49,6 +49,8 @@ The app now counts words and stores progress toward its default 200-word target 
 - Reflect the active unsaved Markdown buffer in the derived index without changing save or daily-credit behavior
 - Refresh affected lore records automatically after contained external creates, edits, moves, and removals
 - Keep the last known index available with an explicit refresh fallback when a filesystem change cannot be reconciled safely
+- Inspect the active note's optional canon and typed continuity facts from a closed-by-default right-dock disclosure, with explicit custom properties, uncertainty, intentional unknowns, validation diagnostics, and exact source links
+- Resolve stable note-reference facts into the existing read-only side pane while keeping missing or duplicated identities visible and never rewriting metadata
 - Complete note names and uniquely resolved headings from the keyboard while typing an open wiki link
 - Insert collision-safe rooted paths when a title or alias would resolve ambiguously
 - Inspect resolved, broken, and ambiguous outgoing links plus source-context backlinks for the active Markdown note

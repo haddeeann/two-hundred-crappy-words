@@ -75,6 +75,7 @@ facts:
     expect(index.issues).toEqual([
       {
         kind: "duplicate-note-id",
+        id: DUPLICATE_ID,
         message: `Note ID ${DUPLICATE_ID} appears in more than one file and was not repaired.`,
         paths: ["one.md", "two.md"],
       },
@@ -98,6 +99,7 @@ facts:
     expect(index.issues).toEqual([
       {
         kind: "duplicate-continuity-fact-id",
+        id: "2e3120e7-0e74-4e3c-99a1-f2f76469559d",
         message:
           "Continuity fact ID 2e3120e7-0e74-4e3c-99a1-f2f76469559d appears in more than one note and is unavailable for checks.",
         paths: ["one.md", "two.md"],

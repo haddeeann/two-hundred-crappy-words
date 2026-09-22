@@ -169,6 +169,26 @@ The first registry should be selected only to unlock the next concrete tools. A 
 
 These names are the approved version-one seed vocabulary. The parser also accepts lowercase kebab-case custom properties and records them without assigning semantics. Each deterministic checker must document the subject types, value kind, simultaneous-value behavior, validity bounds, direction or inverse behavior, and rule version it actually consumes before that checker ships.
 
+The shipped registry currently defines:
+
+| Property | Subject note types | Value | Simultaneous values | Validity bounds | Direction |
+| --- | --- | --- | --- | --- | --- |
+| `born` | character | time | one to review | no | attribute |
+| `died` | character | time | one to review | no | attribute |
+| `occurs-at` | event, scene, chapter | time | one to review | no | attribute |
+| `ends-at` | event, scene, chapter | time | one to review | no | attribute |
+| `located-at` | character, spacecraft, event, scene | note | one to review | yes | outgoing |
+| `participant` | event, scene, chapter | note | many | yes | outgoing |
+| `instance-of` | every built-in note type | note | many | yes | outgoing |
+| `species` | character | note | one to review | yes | outgoing |
+| `member-of` | character, faction, spacecraft | note | many | yes | outgoing |
+| `parent-of` | character | note | many | yes | outgoing parent to child |
+| `partner-of` | character | note | many | yes | symmetric; self-inverse |
+| `operated-by` | spacecraft, technology | note | one to review | yes | outgoing |
+| `home-port` | spacecraft | note | one to review | yes | outgoing |
+
+“One to review” does not make a second fact invalid. It tells a later deterministic rule that overlapping values deserve explanation; both writer claims remain intact.
+
 ### 5. Findings are derived evidence, not new canon
 
 A continuity finding stays memory-only and contains:
@@ -202,6 +222,12 @@ The version-one implementation:
 The accepted frontmatter is capped at 256 KiB, 256 facts, one nested value-mapping level, 80 Unicode characters for keys, calendars, unit systems, and units, 120 characters for decimal and time expressions, and 1,000 Unicode characters for literal text, notes, and intentional-unknown reasons. Amounts are canonical decimal strings; Gregorian values receive calendar-aware date validation. Duplicate fact IDs inside one note make every local copy unavailable. IDs copied across different notes remain visible but produce a project-index issue and are unavailable to checks.
 
 The matching [JSON Schema 2020-12 document](schemas/continuity-frontmatter-v1.schema.json) describes the portable data shape. The prose rules and tested parser remain authoritative where indentation, duplicate keys, calendar arithmetic, source locations, and unknown-source preservation go beyond JSON Schema.
+
+## Read-only inspection
+
+Writing tools contains a closed-by-default **Continuity** disclosure for the active Markdown note. It shows the note-level canon state, valid facts, inherited or overridden canon, certainty, validity ranges, intentional unknowns, custom-property status, registry mismatches, and safe-parser diagnostics. Stable note-reference values resolve through the existing memory index; missing and duplicated identities remain explicit. A resolved target opens in the existing read-only reference pane. Each fact links to its exact frontmatter range only while the active buffer fingerprint matches the index, so a stale overlay cannot select stale coordinates.
+
+This surface is derived locally, contributes no daily credit, and never writes project files. Guarded authoring is a separate slice.
 
 ## Proposed example
 

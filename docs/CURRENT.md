@@ -10,29 +10,31 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.2 — Read-only continuity inspector and property registry**
+**0.7.3 — Guarded canon and fact authoring**
 
 ### Intended outcome
 
-Make approved canon and typed facts understandable inside the app before adding any metadata-writing surface or continuity inference. A writer should be able to see exactly what the active note claims, which values are custom or unavailable, and where each claim came from.
+Let a writer deliberately create and maintain portable continuity metadata without hand-editing YAML, while preserving every unknown field and Markdown byte outside the exact approved change.
 
 ### Acceptance criteria
 
-- [ ] Publish explicit built-in property definitions for subject types, value kinds, simultaneous-value behavior, time bounds, and relationship direction.
-- [ ] Add a read-only active-note continuity surface in the existing right-side Writing tools dock without crowding the editor or left file tree.
-- [ ] Show note canon, fact canon/certainty, typed values, custom-property status, and intentional unknowns without implying unsupported calculations.
-- [ ] Resolve note-reference values through the existing index while keeping missing, duplicate, and moved targets explicit.
-- [ ] Link each displayed fact or diagnostic back to its exact verified source range.
-- [ ] Keep the surface keyboard accessible, memory-only, offline, and free of source writes or daily credit.
-- [ ] Verify focused parsing/index behavior, full regressions, production packaging, and the packaged interaction before enabling metadata authoring.
+- [ ] Define pure add/edit/remove and note-canon mutation plans over exact source ranges before connecting filesystem writes.
+- [ ] Preserve unknown top-level, fact-level, and value-level fields plus the complete Markdown body byte-for-byte.
+- [ ] Require a unique stable note ID, valid current metadata, fresh editor/index fingerprint, and a writer-reviewed exact preview.
+- [ ] Generate fact UUIDs locally, resolve note-valued choices by unique stable identity, and never guess through missing or duplicate targets.
+- [ ] Recheck the active source and semantic plan before one compare-before-write replacement with guarded in-session Undo.
+- [ ] Keep mechanical metadata edits out of daily credit and retain normal recovery/conflict behavior.
+- [ ] Make every form, preview, refusal, confirmation, and focus return keyboard accessible and verify the packaged workflow.
 
 ## Next slices
 
-1. Implement and test the explicit built-in property registry plus note-reference resolution.
-2. Present parsed facts and diagnostics read-only in the active note's right-side writing context.
-3. After packaged QA, design the separately guarded metadata editor around exact unknown-field and Markdown-body preservation.
+1. Build pure range-based mutation plans and preservation tests before any UI or write path.
+2. Add a contained form and exact preview to the continuity disclosure for eligible structured notes.
+3. Execute only a freshly equivalent plan through the existing guarded-write boundary, then package and exercise add/edit/remove/Undo and stale-source refusal.
 
 ## Completed checkpoint
+
+- Slice 0.7.2 is complete. All thirteen built-in properties now have explicit subject note types, value kinds, simultaneous-value review behavior, validity-bound applicability, relationship direction, and descriptions; custom properties remain visible without invented semantics. A pure presentation layer resolves note UUID values through the memory index, explains missing and ambiguous targets, inherits note canon without hiding per-fact overrides, labels intentional unknowns, surfaces custom/unknown fields and registry mismatches as review notes, and suppresses exact source actions while an active overlay is stale. The closed-by-default **Continuity** disclosure in Writing tools presents that model read-only, opens resolved targets in the existing verified reference pane, and selects a fact's complete exact frontmatter range after a fresh fingerprint check. Packaged macOS QA covered the visual and accessibility tree, exact source selection, reference opening, malformed-fact isolation, missing-target and subject-type diagnostics, Escape focus return, unchanged `0 / 200`, and exact before/after SHA-256 hashes for all three disposable sources. The full gate has 399 passing frontend tests across sixty-three files, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app` builds, and a zero-vulnerability production dependency audit.
 
 - Slice 0.7.1 is complete. The user approved the per-note safe-YAML storage, stable fact UUIDs, optional note and fact canon states, six typed value mappings, open property registry, initial seed names, and deferred portable-exception design on 2026-09-22. A dependency-free bounded parser now recognizes the optional format without writing or migrating files: it caps frontmatter at 256 KiB and facts at 256, accepts only JSON-compatible quoted scalars and one value-mapping level, records exact fact and field ranges, validates UUIDs, canon/certainty enums, decimal strings and ordering, Gregorian precision and real dates, custom calendars, and scalar limits, and refuses YAML tags, anchors, aliases, merge keys, duplicate keys, implicit dates, deeper nesting, and unsafe values. One malformed fact cannot discard valid neighbors or Markdown prose. The memory-only index retains canon and facts through full and incremental refresh and reports copied fact IDs across notes without choosing a winner. `docs/schemas/continuity-frontmatter-v1.schema.json` publishes the matching JSON Schema data shape, and the approved semantics and limits are documented in `docs/CONTINUITY_FORMAT.md`. Twenty focused tests pass across frontmatter, schema, and index behavior; the full gate has 395 passing frontend tests across sixty-two files, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app` builds, and a zero-vulnerability production dependency audit.
 
@@ -117,7 +119,7 @@ Make approved canon and typed facts understandable inside the app before adding 
 
 ## Blockers and decision gates
 
-There is no current blocker. The permanent continuity format is approved and read-only parsing/indexing are complete. Slice 0.7.2 can add a derived inspector without changing writer files; any later authoring surface must first prove exact unknown-field and Markdown-body preservation through a previewed, compare-before-write design.
+There is no current blocker. The permanent continuity format, parser/index foundation, property registry, and read-only inspector are complete. Slice 0.7.3 may proceed only from pure preservation-tested mutations into a previewed, compare-before-write authoring path; no metadata write is permitted merely because a note was opened or inspected.
 
 ## Handoff protocol
 

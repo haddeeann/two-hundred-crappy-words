@@ -251,6 +251,14 @@ Completed successfully on macOS on 2026-09-20 using Computer Use against a fresh
 
 The full frontend suite has 367 passing tests across fifty-six files. Svelte/TypeScript reports zero errors and warnings; the frontend and unsigned production macOS `.app` builds pass. Fifteen Rust tests, formatting, and Clippy with warnings denied pass, and the production dependency audit reports zero vulnerabilities.
 
+## Milestone 0.7.2 read-only continuity-inspector checkpoint
+
+Completed successfully on macOS on 2026-09-22 using Computer Use against a freshly packaged production `.app` and a disposable three-note project. Writing tools began closed. After opening the structured Mara note, its closed **Continuity · 2 facts** disclosure expanded into a visually calm read-only view showing the character note and canon default, one resolved `member-of` note value with approximate certainty, Gregorian validity start and writer explanation, plus one custom intentional-unknown fact with its per-fact draft override and explicit no-rule diagnostic. The inspector occupied the established overlay dock at laptop width without changing the left project tree.
+
+**Open The Fleet as reference** closed Writing tools and reused the existing verified side pane while leaving Mara active. The fact's `mara.md:7:1` source action closed the dock, focused the editor, and selected the complete exact fact block. A deliberately malformed second fact in `invalid.md` produced a one-based safe-YAML diagnostic while its valid first fact remained visible; that valid note reference was explicitly missing, and the built-in subject-type mismatch remained a review note rather than enforcement. The Markdown body stayed open and usable. Escape closed Writing tools and returned focus to its toggle.
+
+SHA-256 checks before and after every UI interaction remained exact: Fleet `f6bed95c7d652f8c1a87991a04541fd7971451801fc26bdb13371afd21cce33c`, invalid note `c729ddef4b819fc7718259f6787f8e7aaa024a72b24d95efffe887f5194e86ce`, and Mara `551bbb65833b0f13f5ee4f7a74ba71b2b4fd5c50e0a88d958555bcd473b4750f`. Today remained `0 / 200`. The full frontend suite has 399 passing tests across sixty-three files, Svelte/TypeScript reports zero errors and warnings, web and packaged macOS app builds pass, and the production dependency audit reports zero vulnerabilities.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:
