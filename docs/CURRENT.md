@@ -18,19 +18,21 @@ Define the smallest portable time model that can support world and story timelin
 
 ### Acceptance criteria
 
-- [ ] Inventory the approved time value, event/scene facts, manuscript story-date metadata, and existing portability boundaries before proposing a new file or field.
-- [ ] Research established interval, uncertainty, calendar, era, and parallel-track semantics using primary standards and relevant writing-tool conventions.
-- [ ] Propose a bounded human-readable project calendar/timeline contract with explicit Gregorian and fictional-calendar behavior, stable identity, unknown-field preservation, and no silent migration.
-- [ ] Define deterministic ordering and overlap behavior for exact, partial, approximate, uncertain, interval, and non-computable values.
-- [ ] Define the source-linked timeline presentation and the decision gates that must be approved before changing the permanent project format.
+- [x] Inventory the approved time value, event/scene facts, manuscript story-date metadata, and existing portability boundaries before proposing a new file or field.
+- [x] Research established interval, uncertainty, calendar, era, and parallel-track semantics using primary standards and relevant writing-tool conventions.
+- [x] Propose a bounded human-readable project calendar/timeline contract with explicit Gregorian and fictional-calendar behavior, stable identity, unknown-field preservation, and no silent migration.
+- [x] Define deterministic ordering and overlap behavior for exact, partial, approximate, uncertain, interval, and non-computable values.
+- [x] Define the source-linked timeline presentation and the decision gates that must be approved before changing the permanent project format.
 
 ## Next slices
 
-1. Inventory current time-bearing sources and collision points without changing a project file.
-2. Research primary time/calendar standards and comparable local-first writing tools.
-3. Draft the portable timeline/calendar proposal and stop at the permanent-format approval gate.
+1. Obtain explicit approval or requested revisions for the seven permanent choices in `docs/TIMELINE_FORMAT.md`.
+2. After approval, publish the matching JSON Schema and pure bounded parser with preservation/refusal tests.
+3. Implement calendar expression normalization and deterministic range comparison independently of UI.
 
 ## Completed checkpoint
+
+- Slice 0.7.4 research and contract drafting are complete. The existing typed `time` values, `occurs-at`/`ends-at`, `born`/`died`, fact validity bounds, free-form manuscript `storyDate`, manifest compatibility, and unknown-field behavior were inventoried before proposing a new file. Primary research covered EDTF reduced precision and intervals, OWL-Time reference systems and interval relations, Unicode calendar/era identity, Wikibase time precision, and Aeon Timeline's separation of chronology, narrative order, flexible undated order, custom calendars, and parallel story arcs. `docs/TIMELINE_FORMAT.md` now proposes one optional human-readable root file for bounded fixed/ordinal calendar definitions and stable note-ID track membership while keeping time facts in Markdown. It defines no-file Gregorian behavior, fixed/ordinal custom expressions, named eras and anchors, conservative source shapes, inclusive range normalization, deterministic ordering/overlap, an explicit non-computable lane, source-linked UX, unknown preservation, safety limits, and seven approval gates. No parser, schema, UI, capability, project file, or writer note changed.
 
 - Slice 0.7.3 is complete. Saved, uniquely identified structured notes now expose guarded note-canon and typed-fact authoring inside the existing Continuity disclosure. New fact UUIDs are generated locally; note-valued choices resolve only unique stable identities; add, known-field edit, remove, and note-canon requests reuse preservation-tested exact-range plans. Each action shows the exact changed Markdown lines and unchanged-character boundaries. Confirmation rereads the source, regenerates the same semantic plan, requires exact equality with the reviewed preview, and writes through the existing compare-before-write boundary. A successful mechanical edit refreshes the editor/index without daily credit and offers one exact in-session Undo that refuses later changes. Packaged macOS QA exercised canon, add, edit, remove, Undo, invalidated stale preview, exact fixture restoration, visual layout, initial form/preview focus, corrected Undo focus return, and Escape return to Writing tools; all three fixture hashes returned exactly and Today stayed `0 / 200`. The final gate has 411 passing frontend tests across sixty-six files, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app` builds, and a zero-vulnerability production dependency audit.
 
@@ -123,7 +125,7 @@ Define the smallest portable time model that can support world and story timelin
 
 ## Blockers and decision gates
 
-There is no current implementation blocker. Portable typed facts and guarded authoring are complete. Slice 0.7.4 may research and draft the timeline/calendar contract, but any new permanent project file or metadata field must stop at the documented format approval gate before implementation.
+Slice 0.7.4 has reached its required permanent-format decision gate. No parser or UI implementation may begin until the seven choices in `docs/TIMELINE_FORMAT.md` are explicitly approved or revised.
 
 ## Handoff protocol
 

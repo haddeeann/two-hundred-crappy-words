@@ -1,12 +1,14 @@
 # Continuity fact format
 
-Status: **approved; version-one parsing, indexing, inspection, and guarded authoring are implemented; timelines and continuity checks remain pending**
+Status: **approved; version-one parsing, indexing, inspection, and guarded authoring are implemented; the timeline contract is proposed and continuity checks remain pending**
 
 Last updated: 2026-09-22
 
 This proposal defines the smallest portable fact boundary that could support timelines, ages, travel, relationships, and deterministic continuity review. It deliberately does not define a universal science-fiction ontology. Writers keep prose in Markdown, opt into structured facts only where useful, and remain able to represent uncertainty, disagreement, and deliberate unknowns.
 
 No existing project or note is migrated merely by opening it. The app recognizes optional `canon` and `facts` metadata in addition to `id`, `type`, `title`, and `aliases`. Only an explicit writer-reviewed authoring action writes those fields; opening, indexing, compiling, searching, or inspecting a note never inserts, normalizes, sorts, or rewrites continuity metadata.
+
+The researched next-layer proposal for chronology, custom calendars, eras, parallel tracks, and ordering semantics lives in [`TIMELINE_FORMAT.md`](TIMELINE_FORMAT.md). It is not approved or implemented yet.
 
 ## Research conclusions
 
