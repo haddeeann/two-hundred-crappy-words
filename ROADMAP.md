@@ -98,7 +98,7 @@ Specification: [`docs/milestones/0.6-novel-structure.md`](docs/milestones/0.6-no
 Goal: provide science-fiction-specific tools that help a complex world remain internally coherent.
 
 - [x] Add structured canon status and typed worldbuilding properties with source-linked inspection and guarded, source-preserving authoring.
-- [ ] Build story and world timelines with eras and parallel tracks; the portable contract, schema, bounded parser, and deterministic calendar arithmetic are complete.
+- [ ] Build story and world timelines with eras and parallel tracks; the portable contract, schema, bounded parser, deterministic calendar arithmetic, and source-linked in-memory model are complete.
 - [ ] Calculate character ages and flag impossible appearances.
 - [ ] Model locations, travel durations, and arrival windows without pretending fictional physics is universal.
 - [ ] Visualize character and faction relationships.

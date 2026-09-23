@@ -10,27 +10,29 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.4c — Source-linked timeline derivation**
+**0.7.4d — Read-only project loading and workspace**
 
 ### Intended outcome
 
-Derive one explainable in-memory timeline subject per stable event, scene, or chapter note while keeping ambiguity, missing time, track membership, canon, certainty, and manuscript context visible.
+Load the optional approved timeline file without writing or weakening ordinary editing, then expose the derived chronological and Needs time model as a source-linked workspace.
 
 ### Acceptance criteria
 
-- [ ] Collect event, scene, and chapter records by unique stable note ID without treating copied IDs or invalid property shapes as usable subjects.
-- [ ] Apply the approved `occurs-at`/`ends-at` source-shape rules and retain every rejected fact ID, range, and plain-language reason.
-- [ ] Resolve track memberships by stable note ID, preserve writer-defined track order, and expose missing, duplicated, and unassigned membership without guessing.
-- [ ] Attach manuscript narrative positions and free-form `storyDate` only as context, never as chronological evidence.
-- [ ] Produce stable computable-calendar groups plus a deterministic Needs time collection ready for a later read-only view.
+- [ ] Read an optional contained, non-symbolic `200-crappy-words.timeline.json` through the selected project scope with the existing stable-read and size boundaries.
+- [ ] Require the timeline project ID to match the valid world manifest; keep absent, malformed, invalid, mismatched, and newer files explicit without blocking ordinary editing or Gregorian derivation.
+- [ ] Refresh the memory-only timeline model after relevant lore, manuscript, project, or timeline-file changes without persisting derived data.
+- [ ] Open Timeline as a main workspace while leaving the left sidebar as the file tree and preserving the active draft/save state.
+- [ ] Present chronological calendar groups, ordered tracks, narrative context, unresolved membership, excluded sources, and Needs time with exact guarded source actions.
 
 ## Next slices
 
-1. Build the pure subject/source-shape derivation over the existing lore index and optional validated timeline value.
-2. Add track-resolution and stable grouping without filesystem access.
-3. Join optional manuscript narrative context without parsing `storyDate`.
+1. Add the safe optional-file load/result boundary and connect it to project refresh.
+2. Build the read-only Timeline workspace over the already pure model.
+3. Verify source navigation, focus, external refresh, ordinary-folder fallback, and zero daily credit in a packaged app.
 
 ## Completed checkpoint
+
+- Slice 0.7.4c completes the pure source-linked timeline model. It collects only event, scene, and chapter records with unique stable note IDs; blocks copied fact IDs and invalid `occurs-at`/`ends-at` shapes; implements the approved single-start/optional-end rules; and retains every parsed fact ID, exact source range, effective canon, certainty, refusal, and relevant malformed-metadata diagnostic. Track order is writer-owned, one subject may join several tracks, missing/duplicated/ineligible memberships stay explicit, and unassigned subjects remain visible. Existing manuscript bindings add stable narrative positions and the exact free-form `storyDate` only as display context. Computable subjects group and sort by shared calendar axis and range, while other eligible notes enter a deterministic Needs time list; missing or copied subject identities remain separately visible. Ten focused fixtures cover successful derivation, split start/end spans, every ambiguous source shape, local and cross-note duplicate facts, missing/copied note IDs, multi-track resolution, narrative context, anchored and unanchored groups, stable order, and exact diagnostics. The full suite has 451 passing tests across seventy files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities. No filesystem or UI behavior changed.
 
 - Slice 0.7.4b completes deterministic calendar normalization independently of files and UI. Gregorian year, year-month, full-date, and closed-interval expressions normalize into inclusive `bigint` day ranges with real leap-century behavior and no JavaScript `Date` ceiling. Fixed calendars support signed internal years, forward/backward named eras, reduced precision, leap-sensitive month lengths, closed intervals, negative-cycle Euclidean arithmetic, and optional exact Gregorian anchors; ordinal calendars support canonical signed day points and intervals with optional anchors. Anchored values share the Gregorian axis while unanchored calendars remain honestly separate. Stable comparison orders a shared axis by earliest then latest coordinate; relationship evidence yields same-range, adjacent, before, after, or overlap only for two explicitly exact facts, otherwise an explained indeterminate result. Eighteen focused fixtures cover precision, century rules, enormous years, malformed/open/reversed intervals, fictional leap and era boundaries, anchors, ordinal values, unknown calendars, ordering, every relation, uncertainty, and cross-axis refusal. The full suite has 441 passing tests across sixty-nine files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities.
 
@@ -129,7 +131,7 @@ Derive one explainable in-memory timeline subject per stable event, scene, or ch
 
 ## Blockers and decision gates
 
-There is no current implementation blocker. The format parser and calendar math are pure, verified, and still disconnected from files and UI. Source-linked in-memory subject derivation may proceed; project-file loading, creation, mutation, and the visible timeline remain later guarded slices.
+There is no current implementation blocker. The pure format, math, and derivation layers are verified. Read-only optional-file loading and the source-linked workspace may proceed; file creation and mutation remain later guarded slices.
 
 ## Handoff protocol
 
