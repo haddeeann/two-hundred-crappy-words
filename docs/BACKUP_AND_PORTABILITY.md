@@ -7,8 +7,9 @@
 Back up the entire project folder, not only the manuscript subfolder. For a world project this includes:
 
 - `200-crappy-words.project.json`, which carries the world's stable ID, name, format version, and preferred folder roles;
+- optional `200-crappy-words.manuscripts.json` and `200-crappy-words.timeline.json` files, which carry portable manuscript structure plus shared calendar and track definitions;
 - Markdown and plain-text manuscript and lore files;
-- the three-field frontmatter on app-created structured notes; and
+- structured-note frontmatter containing stable identity, canon, and typed continuity facts; and
 - images, maps, research files, and other assets the writer placed in the project.
 
 The manifest contains no prose, account credential, absolute path, daily history, or recovery text. It is still part of the project and should travel with it.

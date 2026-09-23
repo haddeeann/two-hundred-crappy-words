@@ -314,6 +314,12 @@
     type ManuscriptSceneSplitUndo,
   } from "$lib/manuscript/split-execution";
   import { MANUSCRIPT_STRUCTURE_FILE } from "$lib/manuscript/structure";
+  import TimelineWorkspace from "$lib/timeline/TimelineWorkspace.svelte";
+  import {
+    loadTimelineProject,
+    type TimelineProjectLoadResult,
+  } from "$lib/timeline/load";
+  import { deriveTimelineModel } from "$lib/timeline/model";
 
   interface SaveFailure {
     path: string;
@@ -464,6 +470,11 @@
   let manuscriptProject = $state<ManuscriptProjectLoadResult>({ kind: "absent" });
   let manuscriptLoading = $state(false);
   let manuscriptLoadRevision = 0;
+  let timelineProject = $state<TimelineProjectLoadResult>({ kind: "absent" });
+  let timelineLoading = $state(false);
+  let timelineLoadRevision = 0;
+  let timelineOpen = $state(false);
+  let timelineEditorSelection = { start: 0, end: 0 };
   let manuscriptCompileId = $state("");
   let manuscriptCompileFormat = $state<ManuscriptCompileFormat>("markdown");
   let manuscriptCompilePlan = $state<ManuscriptCompilePlan | null>(null);
@@ -659,6 +670,17 @@
       (entry) => entry.manuscript.id === manuscriptCorkboardId,
     ) ?? null;
   });
+  const timelineModel = $derived.by(() =>
+    loreIndex
+      ? deriveTimelineModel(
+          loreIndex,
+          timelineProject.kind === "ready" ? timelineProject.timeline : null,
+          manuscriptProject.kind === "ready"
+            ? manuscriptProject.reconciled.structure
+            : null,
+        )
+      : null,
+  );
   const saveStatus = $derived.by(() => {
     if (!activeFilePath) return "";
     if (saveState.phase === "saving") return "Saving…";
@@ -1049,6 +1071,11 @@
     manuscriptLoadRevision += 1;
     manuscriptProject = { kind: "absent" };
     manuscriptLoading = false;
+    timelineLoadRevision += 1;
+    timelineProject = { kind: "absent" };
+    timelineLoading = false;
+    timelineOpen = false;
+    timelineEditorSelection = { start: 0, end: 0 };
     resetManuscriptCompile(true);
     resetManuscriptSourceResolution(true);
     manuscriptSourceResolutionReturnId = "";
@@ -1096,6 +1123,7 @@
       void startLoreMonitoring(path, session);
       if (loreReference) void openLoreReference(loreReference.path, false);
       void refreshManuscriptStructure(path, session, loreIndex);
+      void refreshTimelineProject(path, session);
     } catch (cause) {
       if (session !== loreIndexSession || path !== folderPath) return;
       loreIndexPhase = "error";
@@ -1163,6 +1191,7 @@
             void openLoreReference(loreReference.path, false);
           }
           void refreshManuscriptStructure(path, session, loreIndex);
+          void refreshTimelineProject(path, session);
         } catch (cause) {
           if (session !== loreIndexSession || path !== folderPath) return;
           loreIndexNeedsRefresh = true;
@@ -1241,6 +1270,47 @@
       };
     } finally {
       if (revision === manuscriptLoadRevision) manuscriptLoading = false;
+    }
+  }
+
+  async function refreshTimelineProject(
+    path = folderPath,
+    session = loreIndexSession,
+  ): Promise<void> {
+    if (!path) return;
+    const revision = ++timelineLoadRevision;
+    timelineLoading = true;
+    const expectedProjectId = projectInspection.kind === "world-project"
+      ? projectInspection.manifest.projectId
+      : null;
+    try {
+      const result = await loadTimelineProject(
+        path,
+        tauriLoreScanBackend,
+        expectedProjectId,
+      );
+      if (
+        revision !== timelineLoadRevision ||
+        session !== loreIndexSession ||
+        path !== folderPath
+      ) {
+        return;
+      }
+      timelineProject = result;
+    } catch (cause) {
+      if (
+        revision !== timelineLoadRevision ||
+        session !== loreIndexSession ||
+        path !== folderPath
+      ) {
+        return;
+      }
+      timelineProject = {
+        kind: "unreadable",
+        message: `The timeline file could not be refreshed safely: ${formatError(cause)}`,
+      };
+    } finally {
+      if (revision === timelineLoadRevision) timelineLoading = false;
     }
   }
 
@@ -2787,6 +2857,7 @@
     };
     manuscriptCorkboardFocusItemId = "";
     writingToolsOpen = false;
+    timelineOpen = false;
     manuscriptCorkboardId = manuscriptId;
   }
 
@@ -2805,6 +2876,38 @@
     manuscriptCorkboardId = "";
     await tick();
     await openManuscriptSource(path, fingerprint);
+  }
+
+  function openTimelineWorkspace(): void {
+    if (!folderPath || !timelineModel) return;
+    dismissLoreCompletion();
+    timelineEditorSelection = {
+      start: editorInput?.selectionStart ?? editorSelectionStart,
+      end: editorInput?.selectionEnd ?? editorSelectionEnd,
+    };
+    manuscriptCorkboardId = "";
+    writingToolsOpen = false;
+    timelineOpen = true;
+  }
+
+  function closeTimelineWorkspace(): void {
+    timelineOpen = false;
+    void tick().then(() => {
+      if (!editorInput) return;
+      const start = Math.min(timelineEditorSelection.start, editorInput.value.length);
+      const end = Math.min(timelineEditorSelection.end, editorInput.value.length);
+      editorInput.setSelectionRange(start, Math.max(start, end));
+      editorInput.focus();
+    });
+  }
+
+  async function openTimelineSource(
+    path: string,
+    range: SourceRange | null,
+  ): Promise<void> {
+    timelineOpen = false;
+    await tick();
+    await openIndexedLorePath(path, range);
   }
 
   async function preferredManuscriptImportDirectory(): Promise<string> {
@@ -5820,6 +5923,14 @@
         disabled={worldProjectBusy}
       >New World Project</button>
 
+      {#if folderPath}
+        <button
+          class="open-btn"
+          onclick={openTimelineWorkspace}
+          disabled={!timelineModel || timelineLoading}
+        >{timelineLoading ? "Refreshing Timeline…" : "Open Timeline"}</button>
+      {/if}
+
     {#if recentProjects.length > 0}
       <details class="recent-projects">
         <summary>Recent projects</summary>
@@ -6219,7 +6330,9 @@
           >→</button>
         </nav>{/if}
         <span>
-          {manuscriptCorkboard
+          {timelineOpen
+            ? "Timeline"
+            : manuscriptCorkboard
             ? `Corkboard · ${manuscriptCorkboard.manuscript.title}`
             : activeFile || "No file open"}
           {#if dirty}<span class="dirty-dot" aria-hidden="true">●</span>{/if}
@@ -6230,6 +6343,17 @@
           <span class="history-notice" role="status" aria-live="polite">{loreHistoryNotice}</span>
         {/if}
         {#if !focusMode}
+          {#if folderPath}
+            <button
+              id="open-timeline-workspace"
+              type="button"
+              class="focus-mode-button"
+              aria-pressed={timelineOpen}
+              disabled={!timelineModel || timelineLoading}
+              title="Open the source-linked timeline workspace"
+              onclick={openTimelineWorkspace}
+            >{timelineLoading ? "Timeline…" : "Timeline"}</button>
+          {/if}
           <button
             type="button"
             class="focus-mode-button writing-tools-button"
@@ -6246,7 +6370,7 @@
             class:save-error={saveState.phase === "error"}
             aria-live="polite"
           >{saveStatus}</span>
-          {#if !manuscriptCorkboard && activeSceneSplitAvailability.kind === "available"}
+          {#if !timelineOpen && !manuscriptCorkboard && activeSceneSplitAvailability.kind === "available"}
             <button
               type="button"
               class="focus-mode-button"
@@ -6255,13 +6379,15 @@
               onclick={() => void beginManuscriptSceneSplit()}
             >Split scene…</button>
           {/if}
-          <button
-            type="button"
-            class="focus-mode-button"
-            aria-pressed={focusMode}
-            title={focusMode ? "Return project navigation" : "Hide navigation and focus on this draft"}
-            onclick={() => setWritingFocus(!focusMode)}
-          >{focusMode ? "Exit focus" : "Focus"}</button>
+          {#if !timelineOpen}
+            <button
+              type="button"
+              class="focus-mode-button"
+              aria-pressed={focusMode}
+              title={focusMode ? "Return project navigation" : "Hide navigation and focus on this draft"}
+              onclick={() => setWritingFocus(!focusMode)}
+            >{focusMode ? "Exit focus" : "Focus"}</button>
+          {/if}
         {/if}
       </div>
     </div>
@@ -6275,10 +6401,19 @@
       class="writing-split"
       class:corkboard-mode={Boolean(manuscriptCorkboard)}
       class:focus-mode={focusMode}
-      class:has-reference={Boolean(loreReference)}
+      class:has-reference={Boolean(loreReference) && !timelineOpen}
     >
       <div class="editor-workspace">
-        {#if manuscriptCorkboard}
+        {#if timelineOpen && timelineModel}
+          <TimelineWorkspace
+            result={timelineProject}
+            model={timelineModel}
+            loading={timelineLoading}
+            onClose={closeTimelineWorkspace}
+            onRefresh={() => void refreshTimelineProject()}
+            onOpenSource={(path, range) => void openTimelineSource(path, range)}
+          />
+        {:else if manuscriptCorkboard}
           <ManuscriptCorkboard
             manuscript={manuscriptCorkboard}
             busy={manuscriptRepairBusy}
@@ -6329,7 +6464,7 @@
           {/if}
         {/if}
       </div>
-      {#if loreReference && !manuscriptCorkboard}
+      {#if loreReference && !timelineOpen && !manuscriptCorkboard}
         <LoreReferencePane
           reference={loreReference}
           onClose={() => closeLoreReference()}

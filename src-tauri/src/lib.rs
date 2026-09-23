@@ -11,6 +11,7 @@ mod manuscript_merge;
 mod manuscript_split;
 
 const MANUSCRIPT_STRUCTURE_FILE: &str = "200-crappy-words.manuscripts.json";
+const TIMELINE_PROJECT_FILE: &str = "200-crappy-words.timeline.json";
 const WORLD_PROJECT_MANIFEST_FILE: &str = "200-crappy-words.project.json";
 const MAX_MANUSCRIPT_STRUCTURE_BYTES: usize = 10 * 1024 * 1024;
 const MENU_NEW_FILE_ID: &str = "file-new";
@@ -475,6 +476,7 @@ fn reject_protected_project_file(path: &Path) -> Result<(), String> {
             .unwrap_or_default();
         if name.eq_ignore_ascii_case(WORLD_PROJECT_MANIFEST_FILE)
             || name.eq_ignore_ascii_case(MANUSCRIPT_STRUCTURE_FILE)
+            || name.eq_ignore_ascii_case(TIMELINE_PROJECT_FILE)
         {
             return Err(
                 "The app's project metadata files cannot be changed from the file tree.".into(),
@@ -707,6 +709,7 @@ mod tests {
         assert!(
             reject_protected_project_file(Path::new(super::MANUSCRIPT_STRUCTURE_FILE)).is_err()
         );
+        assert!(reject_protected_project_file(Path::new(super::TIMELINE_PROJECT_FILE)).is_err());
         assert!(
             reject_protected_project_file(Path::new("200-CRAPPY-WORDS.MANUSCRIPTS.JSON")).is_err()
         );

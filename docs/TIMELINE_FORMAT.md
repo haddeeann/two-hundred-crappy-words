@@ -1,12 +1,12 @@
 # Timeline and project-calendar format
 
-Status: **APPROVED on 2026-09-22; version-one schema, parser, calendar normalization, and source-linked derivation implemented**
+Status: **APPROVED on 2026-09-22; version-one read-only timeline implemented and packaged-QA verified**
 
 Last updated: 2026-09-22
 
 This contract defines the smallest portable timeline boundary for 200 Crappy Words. It is deliberately narrower than a general calendar engine: writer-authored facts remain beside their explanatory Markdown, one optional project file supplies shared calendar mathematics and track membership, and every derived position remains traceable to exact source facts.
 
-The seven permanent choices at the end of this document were approved on 2026-09-22. The version-one JSON Schema, pure bounded parser, dependency-free calendar normalization, and source-linked in-memory derivation are implemented; no project-file loading, creation, mutation, or interface behavior is connected yet.
+The seven permanent choices at the end of this document were approved on 2026-09-22. The version-one JSON Schema, bounded stable loader, dependency-free calendar normalization, source-linked in-memory derivation, and read-only Timeline workspace are implemented. Project-file creation and mutation remain deliberately deferred.
 
 ## Goals
 
@@ -309,6 +309,8 @@ Calendar and track editing must use the same safety model as manuscript and cont
 Timeline layout, filters, selected mode, scroll, zoom, and collapsed tracks are app-local convenience state. Calendar definitions, stable track identity/order/membership, and writer-authored facts travel with the project.
 
 The implemented derivation creates at most one subject for each unique stable event, scene, or chapter note. It refuses missing or copied note IDs, copied fact IDs, wrong value kinds, validity bounds on timeline properties, competing starts or ends, end-only claims, a full occurrence interval combined with `ends-at`, mixed calendars, invalid expressions, and reversed spans. Every parsed claim retains its fact ID and exact source range; malformed or locally duplicated metadata remains available as a source diagnostic. Track order and membership follow the validated project value, unresolved memberships remain explicit, and unassigned subjects are never hidden. Optional manuscript bindings contribute only their stable narrative position and untouched `storyDate` label. Computable subjects form stably sorted calendar-axis groups, while every other eligible subject enters a deterministic **Needs time** collection.
+
+The project loader inspects only the selected root, refuses symbolic or non-regular timeline entries, enforces the 1 MiB limit before and after a two-inspection stable read, and fingerprints the exact accepted text. Absent, unreadable, unstable, malformed, invalid, newer-version, missing-manifest, and project-ID-mismatch states remain distinct. Only a supported file whose UUID matches a valid world manifest contributes shared calendars and tracks; all other states leave ordinary editing and supported Gregorian derivation available. The read-only main workspace refreshes with project watching, leaves the file tree and active draft/save state intact, awards no daily credit, and reuses the existing fingerprint-guarded editor navigation to select exact fact ranges.
 
 ## Failure and portability behavior
 

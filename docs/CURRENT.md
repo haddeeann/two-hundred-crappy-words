@@ -10,27 +10,29 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.4d — Read-only project loading and workspace**
+**0.7.5a — Source-linked character age calculation**
 
 ### Intended outcome
 
-Load the optional approved timeline file without writing or weakening ordinary editing, then expose the derived chronological and Needs time model as a source-linked workspace.
+Calculate a character's age or honest age range at a timeline subject only when unique source facts, shared calendar coordinates, and written precision justify it.
 
 ### Acceptance criteria
 
-- [ ] Read an optional contained, non-symbolic `200-crappy-words.timeline.json` through the selected project scope with the existing stable-read and size boundaries.
-- [ ] Require the timeline project ID to match the valid world manifest; keep absent, malformed, invalid, mismatched, and newer files explicit without blocking ordinary editing or Gregorian derivation.
-- [ ] Refresh the memory-only timeline model after relevant lore, manuscript, project, or timeline-file changes without persisting derived data.
-- [ ] Open Timeline as a main workspace while leaving the left sidebar as the file tree and preserving the active draft/save state.
-- [ ] Present chronological calendar groups, ordered tracks, narrative context, unresolved membership, excluded sources, and Needs time with exact guarded source actions.
+- [ ] Resolve only unique character `born`/optional `died` facts and unique event, scene, or chapter `participant` links without guessing copied IDs or competing claims.
+- [ ] Reuse the approved calendar normalizer and preserve reduced precision as an inclusive minimum/maximum age range rather than inventing a birthday.
+- [ ] Distinguish exact, bounded, uncertain, non-computable, pre-birth, and post-death outcomes with every contributing fact ID and exact source range.
+- [ ] Keep canon and certainty visible in the evidence model without silently suppressing draft, retired, approximate, or uncertain claims.
+- [ ] Add the read-only result to Timeline without writing source files, app data, or daily credit.
 
 ## Next slices
 
-1. Add the safe optional-file load/result boundary and connect it to project refresh.
-2. Build the read-only Timeline workspace over the already pure model.
-3. Verify source navigation, focus, external refresh, ordinary-folder fallback, and zero daily credit in a packaged app.
+1. Build and fixture the pure character-lifespan source model over the lore index.
+2. Calculate completed-calendar-year bounds on shared axes and explain every refusal.
+3. Present participant ages and impossible-appearance evidence in Timeline, then complete packaged QA.
 
 ## Completed checkpoint
+
+- Slice 0.7.4d completes the approved read-only Timeline feature. The optional root file is inspected through the selected picker scope, must be a regular non-symbolic entry, and is bounded before and after a two-inspection stable read. Absent, unsafe, unreadable, unstable, oversized, malformed, invalid, newer, manifest-unavailable, mismatched, and ready states stay distinct; shared calendars and tracks activate only for an exact valid-manifest UUID match, while every other state preserves ordinary editing and Gregorian derivation. The main Timeline workspace leaves the file tree on the left, preserves and restores the active draft/save state, and presents chronological calendar-axis groups, written dates, canon/certainty, ordered multi-membership tracks, unresolved membership, unassigned subjects, narrative positions and untouched `storyDate`, excluded identities, source diagnostics, and Needs time. Every fact action reuses fingerprint-guarded navigation and selects its exact Markdown range. Project watching refreshes lore, manuscript context, and the optional file without persisting derived state; the timeline filename is protected from generic rename and Trash operations. Packaged macOS QA verified visual and accessibility layout, anchored custom/Gregorian chronology, narrative context, unresolved states, exact source selection, draft/focus restoration, `0 / 200`, live mismatch fallback, and automatic recovery after the UUID was restored. The final gate has 459 passing frontend tests across seventy-one files, fifteen passing native tests, clean Rust formatting/checks, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app` builds, and zero production dependency vulnerabilities.
 
 - Slice 0.7.4c completes the pure source-linked timeline model. It collects only event, scene, and chapter records with unique stable note IDs; blocks copied fact IDs and invalid `occurs-at`/`ends-at` shapes; implements the approved single-start/optional-end rules; and retains every parsed fact ID, exact source range, effective canon, certainty, refusal, and relevant malformed-metadata diagnostic. Track order is writer-owned, one subject may join several tracks, missing/duplicated/ineligible memberships stay explicit, and unassigned subjects remain visible. Existing manuscript bindings add stable narrative positions and the exact free-form `storyDate` only as display context. Computable subjects group and sort by shared calendar axis and range, while other eligible notes enter a deterministic Needs time list; missing or copied subject identities remain separately visible. Ten focused fixtures cover successful derivation, split start/end spans, every ambiguous source shape, local and cross-note duplicate facts, missing/copied note IDs, multi-track resolution, narrative context, anchored and unanchored groups, stable order, and exact diagnostics. The full suite has 451 passing tests across seventy files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities. No filesystem or UI behavior changed.
 
@@ -131,7 +133,7 @@ Load the optional approved timeline file without writing or weakening ordinary e
 
 ## Blockers and decision gates
 
-There is no current implementation blocker. The pure format, math, and derivation layers are verified. Read-only optional-file loading and the source-linked workspace may proceed; file creation and mutation remain later guarded slices.
+There is no current implementation blocker. The timeline format, math, loading, derivation, workspace, refresh, and source navigation are verified. Character-age work can reuse those pure ranges; timeline-file creation and mutation remain separate later guarded slices.
 
 ## Handoff protocol
 

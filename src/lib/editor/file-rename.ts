@@ -3,6 +3,7 @@ import { validateFileName } from "./file-tree";
 export const PROTECTED_PROJECT_FILENAMES = [
   "200-crappy-words.project.json",
   "200-crappy-words.manuscripts.json",
+  "200-crappy-words.timeline.json",
 ] as const;
 
 export type FileRenamePlan =
