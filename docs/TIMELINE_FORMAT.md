@@ -1,12 +1,12 @@
 # Timeline and project-calendar format
 
-Status: **PROPOSED — permanent-format approval required before implementation**
+Status: **APPROVED on 2026-09-22; version-one schema and bounded parser implemented**
 
 Last updated: 2026-09-22
 
-This proposal defines the smallest portable timeline boundary for 200 Crappy Words. It is deliberately narrower than a general calendar engine: writer-authored facts remain beside their explanatory Markdown, one optional project file supplies shared calendar mathematics and track membership, and every derived position remains traceable to exact source facts.
+This contract defines the smallest portable timeline boundary for 200 Crappy Words. It is deliberately narrower than a general calendar engine: writer-authored facts remain beside their explanatory Markdown, one optional project file supplies shared calendar mathematics and track membership, and every derived position remains traceable to exact source facts.
 
-No parser, project file, note, or interface should change until the decisions at the end of this document are approved.
+The seven permanent choices at the end of this document were approved on 2026-09-22. The version-one JSON Schema and pure bounded parser are implemented; no project-file loading, creation, mutation, calendar normalization, or interface behavior is connected yet.
 
 ## Goals
 
@@ -110,6 +110,10 @@ The `projectId` must match the world-project manifest. A mismatch disables calen
 
 Version-one parsing should cap the file at 1 MiB, 32 custom calendars, 128 tracks, 10,000 total track memberships, 64 months, 64 weekdays, 128 eras per calendar, and bounded strings consistent with the existing project formats. IDs are unique within their scope. Unknown fields in a supported version are retained by guarded edits; an unsupported version is explained and never rewritten.
 
+The matching [JSON Schema 2020-12 document](schemas/timeline-v1.schema.json) describes the portable data shape. The prose rules and tested parser remain authoritative for uniqueness, real Gregorian dates, custom-calendar anchor arithmetic, aggregate limits, and unknown-source preservation.
+
+The implemented dependency-free parser separates malformed, invalid, and unsupported-version results; requires the exact discriminator and a canonical project UUID; validates fixed and ordinal definitions, scoped identities, bounds, leap remainders, era mappings, real anchor dates, colors, track UUIDs, and unique membership inside each track; and retains a deep clone of the complete supported-version JSON source. Project loading will separately require that UUID to match the world-project manifest. Its deterministic serializer is only for a newly constructed known-field value. Later edits to an existing file must mutate the preserved source so unknown fields survive.
+
 ### Calendars
 
 The identifier `gregorian` is reserved for the built-in proleptic Gregorian subset already accepted in continuity facts. It is never redefined in the project file.
@@ -181,6 +185,20 @@ The leap cycle uses the internal astronomical year modulo `years`, with a non-ne
 The optional full-date `anchor` equates one custom date with one Gregorian date and supplies the weekday at that custom date. With an anchor, the app can compare that calendar with Gregorian and other anchored calendars. Without one, the calendar remains fully orderable internally but cross-calendar relationships are non-computable. Changing month lengths, leap behavior, era mapping, or an anchor after facts use the calendar requires a full affected-expression preview; labels alone do not reinterpret dates.
 
 An ordinal definition provides an identity, display label, singular/plural day labels, and optional Gregorian anchor for coordinate zero. One increment is exactly one calendar day; version one does not pretend an arbitrary orbit, watch, or fictional duration is interchangeable with a day. It has no month, weekday, or leap semantics.
+
+```json
+{
+  "id": "mission-day",
+  "title": "Mission Day",
+  "kind": "ordinal",
+  "unitSingular": "Day",
+  "unitPlural": "Days",
+  "anchor": {
+    "expression": "0",
+    "gregorian": "2160-01-01"
+  }
+}
+```
 
 ### Custom expressions
 
@@ -302,9 +320,9 @@ Timeline layout, filters, selected mode, scroll, zoom, and collapsed tracks are 
 
 The file contains no prose copy, absolute path, account identifier, machine name, usage history, recovery text, cache, or network reference. All calculation remains local.
 
-## Approval gates
+## Approved permanent choices
 
-Implementation must wait for explicit approval of these permanent choices:
+The user approved these permanent choices on 2026-09-22:
 
 1. Use one optional root `200-crappy-words.timeline.json` file for project-owned calendar definitions and parallel-track membership, while facts remain in Markdown.
 2. Keep manuscript `storyDate` as unparsed planning text and derive narrative order only from the existing manuscript structure.
@@ -314,7 +332,7 @@ Implementation must wait for explicit approval of these permanent choices:
 6. Use inclusive range normalization, stable range-based ordering, and conservative `indeterminate` results whenever certainty or calendar conversion cannot justify a stronger conclusion.
 7. Keep the file tree unchanged and open Timeline as a source-linked workspace view whose view state remains app-local.
 
-After approval, the smallest implementation sequence is:
+The approved implementation sequence is:
 
 1. publish a matching JSON Schema and pure bounded parser with preservation/refusal tests;
 2. implement calendar expression normalization and deterministic range comparisons independently of UI;

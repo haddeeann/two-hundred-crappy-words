@@ -10,27 +10,29 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.4 — Timeline and project-calendar contract**
+**0.7.4b — Deterministic calendar normalization**
 
 ### Intended outcome
 
-Define the smallest portable time model that can support world and story timelines, parallel tracks, eras, and later age calculations without forcing every fictional world into Gregorian dates.
+Turn approved Gregorian, fixed-calendar, and ordinal expressions into exact inclusive coordinate ranges without losing written precision or inventing certainty.
 
 ### Acceptance criteria
 
-- [x] Inventory the approved time value, event/scene facts, manuscript story-date metadata, and existing portability boundaries before proposing a new file or field.
-- [x] Research established interval, uncertainty, calendar, era, and parallel-track semantics using primary standards and relevant writing-tool conventions.
-- [x] Propose a bounded human-readable project calendar/timeline contract with explicit Gregorian and fictional-calendar behavior, stable identity, unknown-field preservation, and no silent migration.
-- [x] Define deterministic ordering and overlap behavior for exact, partial, approximate, uncertain, interval, and non-computable values.
-- [x] Define the source-linked timeline presentation and the decision gates that must be approved before changing the permanent project format.
+- [ ] Parse approved Gregorian year, year-month, full-date, and closed-interval expressions into inclusive day ranges without JavaScript `Date` limits.
+- [ ] Parse fixed-calendar internal and era-qualified expressions, including reduced precision and intervals, against validated month and leap definitions.
+- [ ] Parse ordinal points and closed intervals as signed integer coordinates.
+- [ ] Convert anchored custom coordinates to the shared Gregorian day axis without rounding or unsafe-number loss; retain unanchored calendars as internally comparable only.
+- [ ] Define stable ordering plus before, after, adjacent, overlap, same-range, and indeterminate outcomes with focused boundary fixtures.
 
 ## Next slices
 
-1. Obtain explicit approval or requested revisions for the seven permanent choices in `docs/TIMELINE_FORMAT.md`.
-2. After approval, publish the matching JSON Schema and pure bounded parser with preservation/refusal tests.
-3. Implement calendar expression normalization and deterministic range comparison independently of UI.
+1. Implement dependency-free arbitrary-year Gregorian ordinal conversion and reduced-precision ranges.
+2. Add fixed/ordinal custom-calendar parsing and optional Gregorian-anchor conversion.
+3. Add deterministic range ordering and relationship conclusions before any UI connection.
 
 ## Completed checkpoint
+
+- Slice 0.7.4a completes the first implementation of the user-approved timeline/calendar format. `src/lib/timeline/format.ts` defines the exact visible filename and discriminator, 1 MiB/collection/scalar limits, typed fixed and ordinal calendars, eras, repeating leap cycles, optional real-date anchors, parallel tracks, and stable membership. Its dependency-free parser separates malformed, invalid, and newer files; bounds issue output; validates UUIDs, reserved and scoped identities, text/control characters, month lengths, leap remainders, canonical integer strings, era direction, leap-sensitive anchor dates, real Gregorian anchors, colors, duplicate membership, and aggregate membership; preserves a deep clone of every supported-version unknown field; and performs no filesystem work. The deterministic known-field serializer validates its complete output and is reserved for new values. `docs/schemas/timeline-v1.schema.json` publishes the matching JSON Schema, while semantic uniqueness and arithmetic remain parser-authoritative. Twelve focused tests pass; the full suite has 423 passing tests across sixty-eight files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities. No project loading, project file, note, capability, or interface changed.
 
 - Slice 0.7.4 research and contract drafting are complete. The existing typed `time` values, `occurs-at`/`ends-at`, `born`/`died`, fact validity bounds, free-form manuscript `storyDate`, manifest compatibility, and unknown-field behavior were inventoried before proposing a new file. Primary research covered EDTF reduced precision and intervals, OWL-Time reference systems and interval relations, Unicode calendar/era identity, Wikibase time precision, and Aeon Timeline's separation of chronology, narrative order, flexible undated order, custom calendars, and parallel story arcs. `docs/TIMELINE_FORMAT.md` now proposes one optional human-readable root file for bounded fixed/ordinal calendar definitions and stable note-ID track membership while keeping time facts in Markdown. It defines no-file Gregorian behavior, fixed/ordinal custom expressions, named eras and anchors, conservative source shapes, inclusive range normalization, deterministic ordering/overlap, an explicit non-computable lane, source-linked UX, unknown preservation, safety limits, and seven approval gates. No parser, schema, UI, capability, project file, or writer note changed.
 
@@ -125,7 +127,7 @@ Define the smallest portable time model that can support world and story timelin
 
 ## Blockers and decision gates
 
-Slice 0.7.4 has reached its required permanent-format decision gate. No parser or UI implementation may begin until the seven choices in `docs/TIMELINE_FORMAT.md` are explicitly approved or revised.
+There is no current implementation blocker. The timeline format is approved and its non-writing parser/schema slice is complete. Calendar normalization may proceed independently; project loading, creation, mutation, and UI remain later guarded slices.
 
 ## Handoff protocol
 

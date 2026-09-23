@@ -1,6 +1,6 @@
 # Continuity fact format
 
-Status: **approved; version-one parsing, indexing, inspection, and guarded authoring are implemented; the timeline contract is proposed and continuity checks remain pending**
+Status: **approved; version-one parsing, indexing, inspection, and guarded authoring are implemented; the timeline contract and file parser are approved while calculations and continuity checks remain pending**
 
 Last updated: 2026-09-22
 
@@ -8,7 +8,7 @@ This proposal defines the smallest portable fact boundary that could support tim
 
 No existing project or note is migrated merely by opening it. The app recognizes optional `canon` and `facts` metadata in addition to `id`, `type`, `title`, and `aliases`. Only an explicit writer-reviewed authoring action writes those fields; opening, indexing, compiling, searching, or inspecting a note never inserts, normalizes, sorts, or rewrites continuity metadata.
 
-The researched next-layer proposal for chronology, custom calendars, eras, parallel tracks, and ordering semantics lives in [`TIMELINE_FORMAT.md`](TIMELINE_FORMAT.md). It is not approved or implemented yet.
+The approved next-layer contract for chronology, custom calendars, eras, parallel tracks, and ordering semantics lives in [`TIMELINE_FORMAT.md`](TIMELINE_FORMAT.md). Its pure file parser and schema are implemented, but it is not connected to project loading or a timeline interface yet.
 
 ## Research conclusions
 

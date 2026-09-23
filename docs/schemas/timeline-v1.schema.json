@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:200-crappy-words:schema:timeline:1",
+  "title": "200 Crappy Words portable timeline version 1",
+  "description": "The project-owned calendar and parallel-track format. The tested parser remains authoritative for uniqueness, calendar arithmetic, aggregate limits, and unknown-field preservation.",
+  "type": "object",
+  "required": ["format", "formatVersion", "projectId", "calendars", "tracks"],
+  "properties": {
+    "format": { "const": "200-crappy-words/timeline" },
+    "formatVersion": { "const": 1 },
+    "projectId": { "$ref": "#/$defs/uuidV4" },
+    "calendars": {
+      "type": "array",
+      "maxItems": 32,
+      "items": { "$ref": "#/$defs/calendar" }
+    },
+    "tracks": {
+      "type": "array",
+      "maxItems": 128,
+      "items": { "$ref": "#/$defs/track" }
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "uuidV4": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "kebab": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "canonicalInteger": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "pattern": "^(?:0|-?[1-9][0-9]*)$"
+    },
+    "gregorianFullDate": {
+      "type": "string",
+      "maxLength": 120,
+      "pattern": "^[0-9]{4,}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$"
+    },
+    "month": {
+      "type": "object",
+      "required": ["id", "name", "shortName", "commonDays"],
+      "properties": {
+        "id": { "$ref": "#/$defs/kebab" },
+        "name": { "$ref": "#/$defs/title" },
+        "shortName": { "$ref": "#/$defs/title" },
+        "commonDays": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000
+        },
+        "leapDays": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000
+        }
+      },
+      "additionalProperties": true
+    },
+    "weekday": {
+      "type": "object",
+      "required": ["id", "name", "shortName"],
+      "properties": {
+        "id": { "$ref": "#/$defs/kebab" },
+        "name": { "$ref": "#/$defs/title" },
+        "shortName": { "$ref": "#/$defs/title" }
+      },
+      "additionalProperties": true
+    },
+    "leapCycle": {
+      "type": "object",
+      "required": ["years", "leapYears"],
+      "properties": {
+        "years": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "leapYears": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10000,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9999
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "era": {
+      "type": "object",
+      "required": ["id", "name", "abbreviation", "yearOne", "direction"],
+      "properties": {
+        "id": { "$ref": "#/$defs/kebab" },
+        "name": { "$ref": "#/$defs/title" },
+        "abbreviation": { "$ref": "#/$defs/title" },
+        "yearOne": { "$ref": "#/$defs/canonicalInteger" },
+        "direction": { "enum": ["forward", "backward"] }
+      },
+      "additionalProperties": true
+    },
+    "fixedAnchor": {
+      "type": "object",
+      "required": ["expression", "gregorian"],
+      "properties": {
+        "expression": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "pattern": "^(?:[a-z0-9]+(?:-[a-z0-9]+)*:)?-?(?:0|[1-9][0-9]*)-0*[1-9][0-9]*-0*[1-9][0-9]*$"
+        },
+        "gregorian": { "$ref": "#/$defs/gregorianFullDate" },
+        "weekday": { "$ref": "#/$defs/kebab" }
+      },
+      "additionalProperties": true
+    },
+    "ordinalAnchor": {
+      "type": "object",
+      "required": ["expression", "gregorian"],
+      "properties": {
+        "expression": { "$ref": "#/$defs/canonicalInteger" },
+        "gregorian": { "$ref": "#/$defs/gregorianFullDate" }
+      },
+      "additionalProperties": true
+    },
+    "fixedCalendar": {
+      "type": "object",
+      "required": ["id", "title", "kind", "months"],
+      "properties": {
+        "id": {
+          "allOf": [
+            { "$ref": "#/$defs/kebab" },
+            { "not": { "const": "gregorian" } }
+          ]
+        },
+        "title": { "$ref": "#/$defs/title" },
+        "kind": { "const": "fixed" },
+        "months": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/month" }
+        },
+        "weekdays": {
+          "type": "array",
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/weekday" }
+        },
+        "leapCycle": { "$ref": "#/$defs/leapCycle" },
+        "eras": {
+          "type": "array",
+          "maxItems": 128,
+          "items": { "$ref": "#/$defs/era" }
+        },
+        "anchor": { "$ref": "#/$defs/fixedAnchor" }
+      },
+      "additionalProperties": true
+    },
+    "ordinalCalendar": {
+      "type": "object",
+      "required": ["id", "title", "kind", "unitSingular", "unitPlural"],
+      "properties": {
+        "id": {
+          "allOf": [
+            { "$ref": "#/$defs/kebab" },
+            { "not": { "const": "gregorian" } }
+          ]
+        },
+        "title": { "$ref": "#/$defs/title" },
+        "kind": { "const": "ordinal" },
+        "unitSingular": { "$ref": "#/$defs/title" },
+        "unitPlural": { "$ref": "#/$defs/title" },
+        "anchor": { "$ref": "#/$defs/ordinalAnchor" }
+      },
+      "additionalProperties": true
+    },
+    "calendar": {
+      "oneOf": [
+        { "$ref": "#/$defs/fixedCalendar" },
+        { "$ref": "#/$defs/ordinalCalendar" }
+      ]
+    },
+    "track": {
+      "type": "object",
+      "required": ["id", "title", "noteIds"],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuidV4" },
+        "title": { "$ref": "#/$defs/title" },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "noteIds": {
+          "type": "array",
+          "maxItems": 10000,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/uuidV4" }
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}
