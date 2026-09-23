@@ -1,12 +1,12 @@
 # Timeline and project-calendar format
 
-Status: **APPROVED on 2026-09-22; version-one schema and bounded parser implemented**
+Status: **APPROVED on 2026-09-22; version-one schema, bounded parser, and deterministic calendar normalization implemented**
 
 Last updated: 2026-09-22
 
 This contract defines the smallest portable timeline boundary for 200 Crappy Words. It is deliberately narrower than a general calendar engine: writer-authored facts remain beside their explanatory Markdown, one optional project file supplies shared calendar mathematics and track membership, and every derived position remains traceable to exact source facts.
 
-The seven permanent choices at the end of this document were approved on 2026-09-22. The version-one JSON Schema and pure bounded parser are implemented; no project-file loading, creation, mutation, calendar normalization, or interface behavior is connected yet.
+The seven permanent choices at the end of this document were approved on 2026-09-22. The version-one JSON Schema, pure bounded parser, and dependency-free calendar normalization are implemented; no project-file loading, creation, mutation, timeline derivation, or interface behavior is connected yet.
 
 ## Goals
 
@@ -266,6 +266,8 @@ Approximate and uncertain claims may use their stated range for a stable visual 
 
 Cards that cannot share a coordinate system do not receive a false global order. They appear in separately labelled calendar groups or in **Needs time**, with a stable lexical order by calendar, expression, path, note ID, and fact ID. Undated narrative items retain manuscript order only in narrative mode.
 
+The implemented normalizer uses `bigint` calendar coordinates rather than JavaScript `Date` or floating-point numbers. It accepts the documented Gregorian, fixed-calendar, era-qualified, ordinal, reduced-precision, and closed-interval expressions; validates real days against month and leap rules; maps anchored custom calendars onto the shared Gregorian day axis; and keeps unanchored calendars on distinct internal axes. Far-future years therefore remain exact rather than overflowing or rounding.
+
 ### Relationship conclusions
 
 For two exact normalized closed ranges in one coordinate system:
@@ -277,6 +279,8 @@ For two exact normalized closed ranges in one coordinate system:
 - **same range**: both boundaries are equal.
 
 Reduced precision may therefore produce an overlap rather than an invented sequence. Approximate, uncertain, unanchored cross-calendar, ambiguous, or intentionally unknown inputs yield **indeterminate**, with the limiting assumption explained. Version one does not need the full Allen interval algebra in the interface.
+
+The implemented comparison layer orders ranges on one shared axis by earliest coordinate and then latest coordinate. It derives same-range, adjacent, before, after, and overlap only when both source facts are explicitly `exact`; approximate, uncertain, unspecified-certainty, and cross-axis inputs return an explained indeterminate result. Presentation can still sort a qualified value by its written range without promoting that position into a continuity contradiction.
 
 ### Age boundary for the next slice
 

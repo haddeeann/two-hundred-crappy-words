@@ -10,27 +10,29 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.4b — Deterministic calendar normalization**
+**0.7.4c — Source-linked timeline derivation**
 
 ### Intended outcome
 
-Turn approved Gregorian, fixed-calendar, and ordinal expressions into exact inclusive coordinate ranges without losing written precision or inventing certainty.
+Derive one explainable in-memory timeline subject per stable event, scene, or chapter note while keeping ambiguity, missing time, track membership, canon, certainty, and manuscript context visible.
 
 ### Acceptance criteria
 
-- [ ] Parse approved Gregorian year, year-month, full-date, and closed-interval expressions into inclusive day ranges without JavaScript `Date` limits.
-- [ ] Parse fixed-calendar internal and era-qualified expressions, including reduced precision and intervals, against validated month and leap definitions.
-- [ ] Parse ordinal points and closed intervals as signed integer coordinates.
-- [ ] Convert anchored custom coordinates to the shared Gregorian day axis without rounding or unsafe-number loss; retain unanchored calendars as internally comparable only.
-- [ ] Define stable ordering plus before, after, adjacent, overlap, same-range, and indeterminate outcomes with focused boundary fixtures.
+- [ ] Collect event, scene, and chapter records by unique stable note ID without treating copied IDs or invalid property shapes as usable subjects.
+- [ ] Apply the approved `occurs-at`/`ends-at` source-shape rules and retain every rejected fact ID, range, and plain-language reason.
+- [ ] Resolve track memberships by stable note ID, preserve writer-defined track order, and expose missing, duplicated, and unassigned membership without guessing.
+- [ ] Attach manuscript narrative positions and free-form `storyDate` only as context, never as chronological evidence.
+- [ ] Produce stable computable-calendar groups plus a deterministic Needs time collection ready for a later read-only view.
 
 ## Next slices
 
-1. Implement dependency-free arbitrary-year Gregorian ordinal conversion and reduced-precision ranges.
-2. Add fixed/ordinal custom-calendar parsing and optional Gregorian-anchor conversion.
-3. Add deterministic range ordering and relationship conclusions before any UI connection.
+1. Build the pure subject/source-shape derivation over the existing lore index and optional validated timeline value.
+2. Add track-resolution and stable grouping without filesystem access.
+3. Join optional manuscript narrative context without parsing `storyDate`.
 
 ## Completed checkpoint
+
+- Slice 0.7.4b completes deterministic calendar normalization independently of files and UI. Gregorian year, year-month, full-date, and closed-interval expressions normalize into inclusive `bigint` day ranges with real leap-century behavior and no JavaScript `Date` ceiling. Fixed calendars support signed internal years, forward/backward named eras, reduced precision, leap-sensitive month lengths, closed intervals, negative-cycle Euclidean arithmetic, and optional exact Gregorian anchors; ordinal calendars support canonical signed day points and intervals with optional anchors. Anchored values share the Gregorian axis while unanchored calendars remain honestly separate. Stable comparison orders a shared axis by earliest then latest coordinate; relationship evidence yields same-range, adjacent, before, after, or overlap only for two explicitly exact facts, otherwise an explained indeterminate result. Eighteen focused fixtures cover precision, century rules, enormous years, malformed/open/reversed intervals, fictional leap and era boundaries, anchors, ordinal values, unknown calendars, ordering, every relation, uncertainty, and cross-axis refusal. The full suite has 441 passing tests across sixty-nine files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities.
 
 - Slice 0.7.4a completes the first implementation of the user-approved timeline/calendar format. `src/lib/timeline/format.ts` defines the exact visible filename and discriminator, 1 MiB/collection/scalar limits, typed fixed and ordinal calendars, eras, repeating leap cycles, optional real-date anchors, parallel tracks, and stable membership. Its dependency-free parser separates malformed, invalid, and newer files; bounds issue output; validates UUIDs, reserved and scoped identities, text/control characters, month lengths, leap remainders, canonical integer strings, era direction, leap-sensitive anchor dates, real Gregorian anchors, colors, duplicate membership, and aggregate membership; preserves a deep clone of every supported-version unknown field; and performs no filesystem work. The deterministic known-field serializer validates its complete output and is reserved for new values. `docs/schemas/timeline-v1.schema.json` publishes the matching JSON Schema, while semantic uniqueness and arithmetic remain parser-authoritative. Twelve focused tests pass; the full suite has 423 passing tests across sixty-eight files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities. No project loading, project file, note, capability, or interface changed.
 
@@ -127,7 +129,7 @@ Turn approved Gregorian, fixed-calendar, and ordinal expressions into exact incl
 
 ## Blockers and decision gates
 
-There is no current implementation blocker. The timeline format is approved and its non-writing parser/schema slice is complete. Calendar normalization may proceed independently; project loading, creation, mutation, and UI remain later guarded slices.
+There is no current implementation blocker. The format parser and calendar math are pure, verified, and still disconnected from files and UI. Source-linked in-memory subject derivation may proceed; project-file loading, creation, mutation, and the visible timeline remain later guarded slices.
 
 ## Handoff protocol
 
