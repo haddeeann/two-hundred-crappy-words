@@ -64,6 +64,61 @@ function textTimeProperty(property: "occurs-at" | "ends-at", text: string): stri
   ].join("\n");
 }
 
+function characterTimeFact(
+  property: "born" | "died",
+  expression: string,
+  options: {
+    id?: string;
+    calendar?: string;
+    certainty?: "exact" | "approximate" | "uncertain";
+  } = {},
+): string {
+  return [
+    `  - id: ${JSON.stringify(options.id ?? factId())}`,
+    `    property: ${JSON.stringify(property)}`,
+    "    value:",
+    '      kind: "time"',
+    `      calendar: ${JSON.stringify(options.calendar ?? "gregorian")}`,
+    `      expression: ${JSON.stringify(expression)}`,
+    ...(options.certainty ? [`    certainty: ${JSON.stringify(options.certainty)}`] : []),
+  ].join("\n");
+}
+
+function participantFact(
+  targetId: string,
+  options: {
+    id?: string;
+    certainty?: "exact" | "approximate" | "uncertain";
+    validFrom?: string;
+    validTo?: string;
+  } = {},
+): string {
+  return [
+    `  - id: ${JSON.stringify(options.id ?? factId())}`,
+    '    property: "participant"',
+    "    value:",
+    '      kind: "note"',
+    `      id: ${JSON.stringify(targetId)}`,
+    ...(options.certainty ? [`    certainty: ${JSON.stringify(options.certainty)}`] : []),
+    ...(options.validFrom
+      ? [
+          "    validFrom:",
+          '      kind: "time"',
+          '      calendar: "gregorian"',
+          `      expression: ${JSON.stringify(options.validFrom)}`,
+        ]
+      : []),
+    ...(options.validTo
+      ? [
+          "    validTo:",
+          '      kind: "time"',
+          '      calendar: "gregorian"',
+          `      expression: ${JSON.stringify(options.validTo)}`,
+        ]
+      : []),
+  ].join("\n");
+}
+
 function note({
   id,
   type,
@@ -494,5 +549,268 @@ describe("source-linked timeline derivation", () => {
       { axis: "gregorian", subjectIds: [EVENT_ID, SCENE_ID] },
       { axis: "calendar:private-count", subjectIds: [CHAPTER_ID] },
     ]);
+  });
+
+  it("derives an exact source-linked age with the clamped leap-day anniversary", () => {
+    factSequence = 80;
+    const participantId = factId();
+    const birthId = factId();
+    const occurrenceId = factId();
+    const index = buildLoreProjectIndex([
+      {
+        path: "Timeline/reunion.md",
+        text: note({
+          id: EVENT_ID,
+          type: "event",
+          title: "Reunion",
+          facts: [
+            timeFact("occurs-at", "2101-02-28", { id: occurrenceId, certainty: "exact" }),
+            participantFact(OTHER_ID, { id: participantId, certainty: "exact" }),
+          ],
+        }),
+      },
+      {
+        path: "Characters/mara.md",
+        text: note({
+          id: OTHER_ID,
+          type: "character",
+          title: "Mara",
+          facts: [characterTimeFact("born", "2096-02-29", { id: birthId, certainty: "exact" })],
+        }),
+      },
+    ]);
+
+    const appearance = deriveTimelineModel(index, null, null).subjects[0]!.appearances[0]!;
+
+    expect(appearance).toMatchObject({
+      participantFactId: participantId,
+      targetNoteId: OTHER_ID,
+      characterPath: "Characters/mara.md",
+      characterTitle: "Mara",
+      participation: "confirmed",
+      age: {
+        kind: "exact",
+        minimumYears: "5",
+        maximumYears: "5",
+        qualified: false,
+      },
+      presence: { kind: "possible", hardContradiction: false },
+    });
+    expect(appearance.evidence.map(({ role, factId }) => [role, factId])).toEqual([
+      ["participant", participantId],
+      ["occurrence", occurrenceId],
+      ["birth", birthId],
+    ]);
+    expect(appearance.evidence.every(({ range }) => range.end > range.start)).toBe(true);
+  });
+
+  it("preserves reduced precision as an inclusive age range", () => {
+    factSequence = 90;
+    const index = buildLoreProjectIndex([
+      {
+        path: "Timeline/year.md",
+        text: note({
+          id: EVENT_ID,
+          type: "event",
+          title: "A long year",
+          facts: [
+            timeFact("occurs-at", "2160", { certainty: "exact" }),
+            participantFact(OTHER_ID, { certainty: "exact" }),
+          ],
+        }),
+      },
+      {
+        path: "Characters/mara.md",
+        text: note({
+          id: OTHER_ID,
+          type: "character",
+          title: "Mara",
+          facts: [characterTimeFact("born", "2130-06", { certainty: "exact" })],
+        }),
+      },
+    ]);
+
+    expect(deriveTimelineModel(index, null, null).subjects[0]!.appearances[0]!.age)
+      .toMatchObject({
+        kind: "range",
+        minimumYears: "29",
+        maximumYears: "30",
+        qualified: false,
+      });
+  });
+
+  it("shows an outside validity window as potential and never as a hard contradiction", () => {
+    factSequence = 100;
+    const participantId = factId();
+    const index = buildLoreProjectIndex([
+      {
+        path: "Timeline/early.md",
+        text: note({
+          id: EVENT_ID,
+          type: "event",
+          title: "Early plan",
+          facts: [
+            timeFact("occurs-at", "2150-01-01", { certainty: "exact" }),
+            participantFact(OTHER_ID, {
+              id: participantId,
+              certainty: "exact",
+              validFrom: "2160-01-01",
+            }),
+          ],
+        }),
+      },
+      {
+        path: "Characters/mara.md",
+        text: note({
+          id: OTHER_ID,
+          type: "character",
+          title: "Mara",
+          facts: [characterTimeFact("born", "2155-01-01", { certainty: "exact" })],
+        }),
+      },
+    ]);
+
+    const appearance = deriveTimelineModel(index, null, null).subjects[0]!.appearances[0]!;
+    expect(appearance).toMatchObject({
+      participation: "potential",
+      participationReason: expect.stringContaining("potential planning"),
+      presence: {
+        kind: "uncertain",
+        hardContradiction: false,
+        reason: expect.stringContaining("cannot create"),
+      },
+    });
+    expect(appearance.evidence).toEqual(expect.arrayContaining([
+      expect.objectContaining({ role: "valid-from", factId: participantId }),
+    ]));
+  });
+
+  it("flags only exact confirmed pre-birth and post-death appearances as hard contradictions", () => {
+    factSequence = 110;
+    const exactCharacter = OTHER_ID;
+    const approximateCharacter = MISSING_ID;
+    const index = buildLoreProjectIndex([
+      {
+        path: "Timeline/before.md",
+        text: note({
+          id: EVENT_ID,
+          type: "event",
+          title: "Before",
+          facts: [
+            timeFact("occurs-at", "2140-01-01", { certainty: "exact" }),
+            participantFact(exactCharacter, { certainty: "exact" }),
+          ],
+        }),
+      },
+      {
+        path: "Timeline/after.md",
+        text: note({
+          id: SCENE_ID,
+          type: "scene",
+          title: "After",
+          facts: [
+            timeFact("occurs-at", "2170-01-01", { certainty: "exact" }),
+            participantFact(approximateCharacter, { certainty: "approximate" }),
+          ],
+        }),
+      },
+      {
+        path: "Characters/exact.md",
+        text: note({
+          id: exactCharacter,
+          type: "character",
+          title: "Exact",
+          facts: [characterTimeFact("born", "2150-01-01", { certainty: "exact" })],
+        }),
+      },
+      {
+        path: "Characters/approximate.md",
+        text: note({
+          id: approximateCharacter,
+          type: "character",
+          title: "Approximate",
+          facts: [
+            characterTimeFact("born", "2100-01-01", { certainty: "exact" }),
+            characterTimeFact("died", "2160-01-01", { certainty: "exact" }),
+          ],
+        }),
+      },
+    ]);
+    const model = deriveTimelineModel(index, null, null);
+    const before = model.subjects.find(({ noteId }) => noteId === EVENT_ID)!.appearances[0]!;
+    const after = model.subjects.find(({ noteId }) => noteId === SCENE_ID)!.appearances[0]!;
+
+    expect(before.presence).toMatchObject({
+      kind: "impossible-before-birth",
+      hardContradiction: true,
+    });
+    expect(after).toMatchObject({
+      age: { kind: "exact", minimumYears: "70", qualified: true },
+      presence: { kind: "impossible-after-death", hardContradiction: false },
+    });
+  });
+
+  it("keeps missing, duplicated, and competing lifespan evidence indeterminate", () => {
+    factSequence = 120;
+    const duplicateParticipantId = "99999999-9999-4999-8999-999999999998";
+    const index = buildLoreProjectIndex([
+      {
+        path: "Timeline/one.md",
+        text: note({
+          id: EVENT_ID,
+          type: "event",
+          title: "One",
+          facts: [
+            timeFact("occurs-at", "2160"),
+            participantFact(OTHER_ID),
+            participantFact("aaaaaaaa-1111-4111-8111-111111111111", { id: duplicateParticipantId }),
+          ],
+        }),
+      },
+      {
+        path: "Timeline/two.md",
+        text: note({
+          id: SCENE_ID,
+          type: "scene",
+          title: "Two",
+          facts: [
+            timeFact("occurs-at", "2161"),
+            participantFact("bbbbbbbb-1111-4111-8111-111111111111", { id: duplicateParticipantId }),
+          ],
+        }),
+      },
+      {
+        path: "Characters/mara.md",
+        text: note({
+          id: OTHER_ID,
+          type: "character",
+          title: "Mara",
+          facts: [
+            characterTimeFact("born", "2130"),
+            characterTimeFact("born", "2131"),
+          ],
+        }),
+      },
+    ]);
+    const model = deriveTimelineModel(index, null, null);
+    const first = model.subjects.find(({ noteId }) => noteId === EVENT_ID)!.appearances;
+
+    expect(first).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        characterTitle: "Mara",
+        age: expect.objectContaining({
+          kind: "indeterminate",
+          reason: expect.stringContaining("more than one"),
+        }),
+      }),
+      expect.objectContaining({
+        participantFactId: duplicateParticipantId,
+        participation: "indeterminate",
+        age: expect.objectContaining({
+          kind: "indeterminate",
+          reason: expect.stringContaining("fact ID"),
+        }),
+      }),
+    ]));
   });
 });

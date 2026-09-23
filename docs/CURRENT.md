@@ -1,6 +1,6 @@
 # Current work
 
-Last updated: 2026-09-22
+Last updated: 2026-09-23
 
 ## Active milestone
 
@@ -10,27 +10,28 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.5a — Source-linked character age calculation**
+**0.7.6 — Location and travel model research**
 
 ### Intended outcome
 
-Calculate a character's age or honest age range at a timeline subject only when unique source facts, shared calendar coordinates, and written precision justify it.
+Define the smallest portable, writer-owned model that can represent locations, movement, travel duration, and arrival windows without assuming one fictional physics system.
 
 ### Acceptance criteria
 
-- [ ] Resolve only unique character `born`/optional `died` facts and unique event, scene, or chapter `participant` links without guessing copied IDs or competing claims.
-- [ ] Reuse the approved calendar normalizer and preserve reduced precision as an inclusive minimum/maximum age range rather than inventing a birthday.
-- [ ] Distinguish exact, bounded, uncertain, non-computable, pre-birth, and post-death outcomes with every contributing fact ID and exact source range.
-- [ ] Keep canon and certainty visible in the evidence model without silently suppressing draft, retired, approximate, or uncertain claims.
-- [ ] Add the read-only result to Timeline without writing source files, app data, or daily credit.
+- [ ] Inventory the existing `located-at`, quantity/range, validity-bound, timeline, and stable-note identity semantics before proposing a new format.
+- [ ] Research primary standards and established writing-tool conventions for coordinates, containment, routes, duration, and uncertain arrival windows.
+- [ ] Separate generic arithmetic from project-defined propulsion, calendars, map coordinates, and narrative shorthand.
+- [ ] Draft source shapes, refusal rules, source-linked UX, safety limits, and explicit approval gates without changing a project file or interface.
 
 ## Next slices
 
-1. Build and fixture the pure character-lifespan source model over the lore index.
-2. Calculate completed-calendar-year bounds on shared axes and explain every refusal.
-3. Present participant ages and impossible-appearance evidence in Timeline, then complete packaged QA.
+1. Inventory current spatial and duration data boundaries.
+2. Research interoperable primitives and fiction-planning conventions.
+3. Draft the location/travel contract and pause at its permanent-format decisions.
 
 ## Completed checkpoint
+
+- Slice 0.7.5a completes source-linked character age and presence evidence. Timeline resolves only unique character participant targets and unique usable `born`/optional `died` facts; copied identities, competing claims, invalid shapes, unknown calendars, ordinal-year requests, and cross-axis inputs remain explicit refusals. Completed years are counted in the birth calendar, including the approved final-valid-day clamp for leap-only birthdays in Gregorian and fixed calendars. Reduced precision produces inclusive minimum/maximum ages. `participant.validFrom`/`validTo` requires whole-occurrence containment for confirmation; outside or overlapping applicability remains visible as potential, never a hard contradiction. Only confirmed, explicitly exact participant, occurrence, and lifespan evidence can mark an appearance impossible. Every result retains certainty, canon, fact IDs, exact source ranges, and clickable participant/bound/occurrence/birth/death evidence. The closed Timeline disclosures write nothing and earn no daily credit. Packaged macOS QA verified exact leap-day age 5, reduced age 29–30, potential participation, exact impossible pre-birth evidence, live refresh, source opening, readable laptop layout, unchanged `0 / 200`, and restoration of the writer's prior project. The final gate has 469 passing frontend tests across seventy-one files, fifteen passing native tests, clean Rust formatting/checks, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 
 - Slice 0.7.4d completes the approved read-only Timeline feature. The optional root file is inspected through the selected picker scope, must be a regular non-symbolic entry, and is bounded before and after a two-inspection stable read. Absent, unsafe, unreadable, unstable, oversized, malformed, invalid, newer, manifest-unavailable, mismatched, and ready states stay distinct; shared calendars and tracks activate only for an exact valid-manifest UUID match, while every other state preserves ordinary editing and Gregorian derivation. The main Timeline workspace leaves the file tree on the left, preserves and restores the active draft/save state, and presents chronological calendar-axis groups, written dates, canon/certainty, ordered multi-membership tracks, unresolved membership, unassigned subjects, narrative positions and untouched `storyDate`, excluded identities, source diagnostics, and Needs time. Every fact action reuses fingerprint-guarded navigation and selects its exact Markdown range. Project watching refreshes lore, manuscript context, and the optional file without persisting derived state; the timeline filename is protected from generic rename and Trash operations. Packaged macOS QA verified visual and accessibility layout, anchored custom/Gregorian chronology, narrative context, unresolved states, exact source selection, draft/focus restoration, `0 / 200`, live mismatch fallback, and automatic recovery after the UUID was restored. The final gate has 459 passing frontend tests across seventy-one files, fifteen passing native tests, clean Rust formatting/checks, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app` builds, and zero production dependency vulnerabilities.
 
@@ -133,7 +134,7 @@ Calculate a character's age or honest age range at a timeline subject only when 
 
 ## Blockers and decision gates
 
-There is no current implementation blocker. The timeline format, math, loading, derivation, workspace, refresh, and source navigation are verified. Character-age work can reuse those pure ranges; timeline-file creation and mutation remain separate later guarded slices.
+There is no current implementation blocker. Timeline and character-age evidence are verified. Location/travel work starts with research and a format decision gate; timeline-file creation and mutation remain separate later guarded slices.
 
 ## Handoff protocol
 

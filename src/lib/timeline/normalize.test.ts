@@ -5,6 +5,7 @@ import type {
   TimelineOrdinalCalendar,
 } from "./format";
 import {
+  calculateCalendarYearAge,
   compareTimelineRanges,
   normalizeTimelineExpression,
   relateTimelineRanges,
@@ -248,6 +249,74 @@ describe("timeline expression normalization", () => {
       code: "unknown-calendar",
       reason: 'Calendar "lost-calendar" is not defined by this project.',
     });
+  });
+});
+
+describe("completed calendar-year ages", () => {
+  it("clamps a Gregorian leap-day anniversary to the final valid February day", () => {
+    const before = normalizeTimelineExpression("gregorian", "2101-02-27", []);
+    const clamped = normalizeTimelineExpression("gregorian", "2101-02-28", []);
+    expect(before.kind).toBe("computable");
+    expect(clamped.kind).toBe("computable");
+    if (before.kind !== "computable" || clamped.kind !== "computable") return;
+
+    expect(calculateCalendarYearAge("gregorian", "2100-02-29", before.range, []))
+      .toMatchObject({ kind: "indeterminate" });
+    expect(calculateCalendarYearAge("gregorian", "2096-02-29", before.range, []))
+      .toMatchObject({ kind: "years", minimum: 4n, maximum: 4n });
+    expect(calculateCalendarYearAge("gregorian", "2096-02-29", clamped.range, []))
+      .toMatchObject({ kind: "years", minimum: 5n, maximum: 5n });
+  });
+
+  it("returns honest bounds for reduced-precision births and occurrences", () => {
+    const occurrence = normalizeTimelineExpression("gregorian", "2160", []);
+    expect(occurrence.kind).toBe("computable");
+    if (occurrence.kind !== "computable") return;
+
+    expect(calculateCalendarYearAge("gregorian", "2130-06", occurrence.range, []))
+      .toMatchObject({ kind: "years", minimum: 29n, maximum: 30n });
+  });
+
+  it("uses a fixed birth calendar across an anchored occurrence axis", () => {
+    const calendar = fixedCalendar({
+      anchor: { expression: "af:1-01-01", gregorian: "2160-01-01" },
+    });
+    const occurrence = normalizeTimelineExpression(calendar.id, "af:6-01-30", [calendar]);
+    const anniversary = normalizeTimelineExpression(calendar.id, "af:6-01-31", [calendar]);
+    expect(occurrence.kind).toBe("computable");
+    expect(anniversary.kind).toBe("non-computable");
+    if (occurrence.kind !== "computable") return;
+
+    expect(calculateCalendarYearAge(calendar.id, "af:1-01-31", occurrence.range, [calendar]))
+      .toMatchObject({ kind: "years", minimum: 5n, maximum: 5n });
+  });
+
+  it("refuses ordinal-year ages, cross-axis claims, and overlapping birth ranges", () => {
+    const ordinal = ordinalCalendar();
+    const ordinalOccurrence = normalizeTimelineExpression(ordinal.id, "400", [ordinal]);
+    const gregorianOccurrence = normalizeTimelineExpression("gregorian", "2160", []);
+    const overlapping = normalizeTimelineExpression("gregorian", "2160-06", []);
+    expect(ordinalOccurrence.kind).toBe("computable");
+    expect(gregorianOccurrence.kind).toBe("computable");
+    expect(overlapping.kind).toBe("computable");
+    if (ordinalOccurrence.kind !== "computable" ||
+        gregorianOccurrence.kind !== "computable" ||
+        overlapping.kind !== "computable") return;
+
+    expect(calculateCalendarYearAge(ordinal.id, "0", ordinalOccurrence.range, [ordinal]))
+      .toMatchObject({ kind: "indeterminate", reason: expect.stringContaining("does not define") });
+    expect(calculateCalendarYearAge("gregorian", "2150", ordinalOccurrence.range, [ordinal]))
+      .toMatchObject({ kind: "indeterminate", reason: expect.stringContaining("share") });
+    expect(calculateCalendarYearAge("gregorian", "2160", overlapping.range, []))
+      .toMatchObject({ kind: "indeterminate", reason: expect.stringContaining("overlap") });
+  });
+
+  it("identifies a complete occurrence before every possible birth date", () => {
+    const occurrence = normalizeTimelineExpression("gregorian", "2159-12-31", []);
+    expect(occurrence.kind).toBe("computable");
+    if (occurrence.kind !== "computable") return;
+    expect(calculateCalendarYearAge("gregorian", "2160", occurrence.range, []))
+      .toMatchObject({ kind: "pre-birth" });
   });
 });
 

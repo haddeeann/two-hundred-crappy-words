@@ -48,6 +48,24 @@ export interface TimelineRelationResult {
   reason: string;
 }
 
+export type TimelineCalendarYearAgeResult =
+  | {
+      kind: "years";
+      minimum: bigint;
+      maximum: bigint;
+      birthRange: TimelineRange;
+    }
+  | {
+      kind: "pre-birth";
+      reason: string;
+      birthRange: TimelineRange;
+    }
+  | {
+      kind: "indeterminate";
+      reason: string;
+      birthRange: TimelineRange | null;
+    };
+
 interface EndpointRange {
   earliest: bigint;
   latest: bigint;
@@ -59,6 +77,13 @@ interface ParsedFixedEndpoint {
   month: number | null;
   day: number | null;
   precision: Exclude<TimelinePrecision, "ordinal">;
+}
+
+interface ExactCalendarDate {
+  calendarId: string;
+  year: bigint;
+  month: number;
+  day: number;
 }
 
 const GREGORIAN_ENDPOINT_PATTERN = /^(?<year>[0-9]{4,})(?:-(?<month>[0-9]{2})(?:-(?<day>[0-9]{2}))?)?$/u;
@@ -143,6 +168,75 @@ export function relateTimelineRanges(
   return { relation: "overlaps", reason: "The inclusive ranges share at least one calendar day." };
 }
 
+/**
+ * Calculates completed years on the calendar in which the birth was written.
+ * Reduced-precision inputs use their inclusive boundary dates. An anniversary
+ * day that is absent from a shorter year clamps to the last day of that month.
+ */
+export function calculateCalendarYearAge(
+  birthCalendarId: string,
+  birthExpression: string,
+  occurrence: TimelineRange,
+  calendars: readonly TimelineCalendar[],
+): TimelineCalendarYearAgeResult {
+  const normalized = normalizeTimelineExpression(
+    birthCalendarId,
+    birthExpression,
+    calendars,
+  );
+  if (normalized.kind !== "computable") {
+    return { kind: "indeterminate", reason: normalized.reason, birthRange: null };
+  }
+  const birthRange = normalized.range;
+  if (birthRange.axis !== occurrence.axis) {
+    return {
+      kind: "indeterminate",
+      reason: "The birth and occurrence do not share a computable calendar axis.",
+      birthRange,
+    };
+  }
+  const boundaries = calendarDateBoundaries(
+    birthCalendarId,
+    birthExpression,
+    calendars,
+  );
+  if (!boundaries) {
+    return {
+      kind: "indeterminate",
+      reason: "This birth calendar does not define calendar years and anniversaries.",
+      birthRange,
+    };
+  }
+  if (occurrence.latest < birthRange.earliest) {
+    return {
+      kind: "pre-birth",
+      reason: "The complete occurrence is before every possible birth date.",
+      birthRange,
+    };
+  }
+  if (occurrence.earliest < birthRange.latest) {
+    return {
+      kind: "indeterminate",
+      reason: "The possible occurrence and birth ranges overlap, so a non-negative age is not guaranteed.",
+      birthRange,
+    };
+  }
+  return {
+    kind: "years",
+    minimum: completedCalendarYears(
+      boundaries.latest,
+      occurrence.earliest,
+      calendars,
+    ),
+    maximum: completedCalendarYears(
+      boundaries.earliest,
+      occurrence.latest,
+      calendars,
+    ),
+    birthRange,
+  };
+}
+
 function normalizeFixedExpression(
   calendar: TimelineFixedCalendar,
   expression: string,
@@ -203,6 +297,112 @@ function normalizeOrdinalExpression(
       latest: result.range.latest + anchorOffset,
     },
   };
+}
+
+function calendarDateBoundaries(
+  calendarId: string,
+  expression: string,
+  calendars: readonly TimelineCalendar[],
+): { earliest: ExactCalendarDate; latest: ExactCalendarDate } | null {
+  const parts = expression.split("/");
+  const first = parts[0]!;
+  const last = parts[parts.length - 1]!;
+  if (calendarId === "gregorian") {
+    return {
+      earliest: gregorianDateBoundary(first, "earliest"),
+      latest: gregorianDateBoundary(last, "latest"),
+    };
+  }
+  const calendar = calendars.find(({ id }) => id === calendarId);
+  if (!calendar || calendar.kind === "ordinal") return null;
+  return {
+    earliest: fixedDateBoundary(first, calendar, "earliest"),
+    latest: fixedDateBoundary(last, calendar, "latest"),
+  };
+}
+
+function gregorianDateBoundary(
+  value: string,
+  edge: "earliest" | "latest",
+): ExactCalendarDate {
+  const match = GREGORIAN_ENDPOINT_PATTERN.exec(value)!;
+  const year = BigInt(match.groups!.year!);
+  const month = match.groups!.month
+    ? Number(match.groups!.month)
+    : edge === "earliest" ? 1 : 12;
+  const day = match.groups!.day
+    ? Number(match.groups!.day)
+    : edge === "earliest" ? 1 : gregorianMonthDays(year, month);
+  return { calendarId: "gregorian", year, month, day };
+}
+
+function fixedDateBoundary(
+  value: string,
+  calendar: TimelineFixedCalendar,
+  edge: "earliest" | "latest",
+): ExactCalendarDate {
+  const parsed = parseFixedDate(value, calendar);
+  if (!parsed.ok) throw new RangeError("A normalized fixed date must remain parseable.");
+  const month = parsed.date.month ?? (edge === "earliest" ? 1 : calendar.months.length);
+  const day = parsed.date.day ?? (
+    edge === "earliest" ? 1 : fixedMonthDays(calendar, parsed.date.year, month)
+  );
+  return {
+    calendarId: calendar.id,
+    year: parsed.date.year,
+    month,
+    day,
+  };
+}
+
+function completedCalendarYears(
+  birth: ExactCalendarDate,
+  occurrenceCoordinate: bigint,
+  calendars: readonly TimelineCalendar[],
+): bigint {
+  let lower = 0n;
+  let upper = 1n;
+  while (anniversaryCoordinate(birth, upper, calendars) <= occurrenceCoordinate) {
+    lower = upper;
+    upper *= 2n;
+  }
+  while (lower + 1n < upper) {
+    const middle = lower + (upper - lower) / 2n;
+    if (anniversaryCoordinate(birth, middle, calendars) <= occurrenceCoordinate) {
+      lower = middle;
+    } else {
+      upper = middle;
+    }
+  }
+  return lower;
+}
+
+function anniversaryCoordinate(
+  birth: ExactCalendarDate,
+  years: bigint,
+  calendars: readonly TimelineCalendar[],
+): bigint {
+  const year = birth.year + years;
+  if (birth.calendarId === "gregorian") {
+    const day = Math.min(birth.day, gregorianMonthDays(year, birth.month));
+    return gregorianOrdinal(year, birth.month, day);
+  }
+  const calendar = calendars.find(
+    (candidate): candidate is TimelineFixedCalendar =>
+      candidate.id === birth.calendarId && candidate.kind === "fixed",
+  );
+  if (!calendar) throw new RangeError("The birth calendar is no longer available.");
+  const day = Math.min(birth.day, fixedMonthDays(calendar, year, birth.month));
+  let coordinate = fixedOrdinal(calendar, year, birth.month, day);
+  if (calendar.anchor) {
+    const customAnchor = parseFixedEndpoint(calendar.anchor.expression, calendar);
+    const gregorianAnchor = parseGregorianEndpoint(calendar.anchor.gregorian);
+    if (!customAnchor.ok || !gregorianAnchor.ok) {
+      throw new RangeError("A validated fixed-calendar anchor must remain computable.");
+    }
+    coordinate += gregorianAnchor.range.earliest - customAnchor.range.earliest;
+  }
+  return coordinate;
 }
 
 function normalizeExpression(

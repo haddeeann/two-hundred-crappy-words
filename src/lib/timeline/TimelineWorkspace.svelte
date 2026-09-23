@@ -2,6 +2,7 @@
   import type { SourceRange } from "$lib/lore/types";
   import type { TimelineProjectLoadResult } from "./load";
   import type {
+    TimelineCharacterAppearance,
     TimelineCalendarGroup,
     TimelineModel,
     TimelineSubject,
@@ -45,6 +46,23 @@
     return subject.evidence
       .map((fact) => `${fact.property === "occurs-at" ? "Starts" : "Ends"} ${fact.expression ?? "invalid value"}${fact.calendar && fact.calendar !== "gregorian" ? ` · ${fact.calendar}` : ""}`)
       .join(" · ");
+  }
+
+  function ageLabel(appearance: TimelineCharacterAppearance): string {
+    const { age } = appearance;
+    if (age.kind === "indeterminate") return "Age unavailable";
+    const prefix = age.qualified ? "About " : "Age ";
+    return age.minimumYears === age.maximumYears
+      ? `${prefix}${age.minimumYears}`
+      : `${prefix}${age.minimumYears}–${age.maximumYears}`;
+  }
+
+  function presenceLabel(appearance: TimelineCharacterAppearance): string {
+    if (appearance.presence.hardContradiction) return "Impossible appearance";
+    if (appearance.participation === "potential") return "Potential participant";
+    if (appearance.participation === "indeterminate") return "Participation uncertain";
+    if (appearance.presence.kind !== "possible") return "Presence uncertain";
+    return "Confirmed participant";
   }
 
   function resultMessage(value: TimelineProjectLoadResult): string | null {
@@ -133,6 +151,7 @@
                     {/each}
                   </ul>
                 {/if}
+                {@render CharacterAppearances({ values: subject.appearances, onOpenSource })}
                 <div class="evidence" aria-label={`Source evidence for ${subject.title}`}>
                   {#each subject.evidence as fact (fact.id)}
                     <button type="button" onclick={() => onOpenSource(subject.path, fact.range)}>
@@ -189,6 +208,7 @@
                   {/each}
                 </div>
               {/if}
+              {@render CharacterAppearances({ values: subject.appearances, onOpenSource })}
             </article>
           </li>
         {/each}
@@ -267,6 +287,39 @@
       </ul>
     {/if}
   </article>
+{/snippet}
+
+{#snippet CharacterAppearances({ values, onOpenSource }: { values: TimelineCharacterAppearance[]; onOpenSource: Props["onOpenSource"] })}
+  {#if values.length > 0}
+    <details class="appearances">
+      <summary>Character ages and presence · {values.length}</summary>
+      <ul class="appearance-list">
+        {#each values as appearance (appearance.participantFactId)}
+          <li class:contradiction={appearance.presence.hardContradiction}>
+            <div class="appearance-heading">
+              <div>
+                <strong>{appearance.characterTitle}</strong>
+                <span>{ageLabel(appearance)}</span>
+              </div>
+              <span class="presence-badge">{presenceLabel(appearance)}</span>
+            </div>
+            <p>{appearance.participationReason}</p>
+            <p>{appearance.age.reason}</p>
+            {#if appearance.presence.kind !== "possible"}
+              <p>{appearance.presence.reason}</p>
+            {/if}
+            <div class="evidence" aria-label={`Age and presence evidence for ${appearance.characterTitle}`}>
+              {#each appearance.evidence as item (`${item.role}:${item.factId}:${item.range.start}`)}
+                <button type="button" onclick={() => onOpenSource(item.path, item.range)}>
+                  {item.role} · {item.expression ?? item.property} · {item.certainty ?? "certainty unspecified"} · {item.effectiveCanon ?? "canon unspecified"} · line {item.range.line}
+                </button>
+              {/each}
+            </div>
+          </li>
+        {/each}
+      </ul>
+    </details>
+  {/if}
 {/snippet}
 
 <style>
@@ -492,6 +545,71 @@
     color: #b8b8b8;
     font-size: 0.75rem;
     line-height: 1.45;
+  }
+
+  .appearances {
+    margin-top: 0.7rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid #3d3d3d;
+  }
+
+  .appearance-list {
+    margin: 0.6rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .appearance-list > li {
+    padding: 0.65rem;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background: #252525;
+  }
+
+  .appearance-list > li + li {
+    margin-top: 0.5rem;
+  }
+
+  .appearance-list > li.contradiction {
+    border-color: #8a5447;
+    background: #302724;
+  }
+
+  .appearance-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.7rem;
+  }
+
+  .appearance-heading strong,
+  .appearance-heading div > span {
+    display: block;
+  }
+
+  .appearance-heading div > span,
+  .appearance-list p {
+    color: #aaa;
+    font-size: 0.73rem;
+  }
+
+  .appearance-list p {
+    margin: 0.35rem 0 0;
+    line-height: 1.4;
+  }
+
+  .presence-badge {
+    flex: 0 0 auto;
+    padding: 0.12rem 0.38rem;
+    border: 1px solid #59645b;
+    border-radius: 999px;
+    color: #b9d6bd;
+    font-size: 0.66rem;
+  }
+
+  .contradiction .presence-badge {
+    border-color: #8a5447;
+    color: #e2b4a8;
   }
 
   .evidence {

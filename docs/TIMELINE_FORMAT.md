@@ -282,11 +282,15 @@ Reduced precision may therefore produce an overlap rather than an invented seque
 
 The implemented comparison layer orders ranges on one shared axis by earliest coordinate and then latest coordinate. It derives same-range, adjacent, before, after, and overlap only when both source facts are explicitly `exact`; approximate, uncertain, unspecified-certainty, and cross-axis inputs return an explained indeterminate result. Presentation can still sort a qualified value by its written range without promoting that position into a continuity contradiction.
 
-### Age boundary for the next slice
+### Character ages and participation
 
-An age calculation may consume exactly one usable `born` fact and one usable event/scene/chapter occurrence in a shared coordinate system. Exact full dates can produce a completed-calendar-year age. Partial dates produce an honest minimum/maximum age range when both bounds are finite. Approximate or uncertain inputs produce a qualified estimate or remain indeterminate; they never produce a single authoritative number. A `died` fact can bound presence but does not silently remove the character from an event.
+An age calculation consumes exactly one usable `born` fact and one usable event, scene, or chapter occurrence in a shared coordinate system. Completed years are counted in the birth calendar. An anniversary retains the written birth month and day; when that day does not exist in the anniversary year, it falls on the final valid day of the same month. A Gregorian February 29 birth therefore reaches its anniversary on February 28 in a non-leap year. The same rule applies to a fixed calendar whose month becomes shorter outside its leap cycle.
 
-The detailed age rule and its fixtures remain a separate implementation slice, but this timeline contract supplies all required identity, precision, and coordinate semantics.
+Exact full dates can produce one completed-calendar-year age. Partial birth or occurrence dates use their finite inclusive boundaries to produce an honest minimum/maximum age range rather than inventing a birthday. Ordinal calendars have elapsed days but no defined calendar year, so they do not produce a year age. Approximate, uncertain, or unspecified certainty remains visible and qualifies the result; only explicitly exact evidence can support a hard contradiction. A unique usable `died` fact bounds presence but never silently removes the character from an event.
+
+A `participant` fact without validity bounds confirms involvement. With `validFrom` or `validTo`, the complete occurrence must be definitely contained by the inclusive applicability window to confirm involvement. A definitely outside or boundary-overlapping occurrence is shown as **potential**, preserving the writer's planning intent. A malformed, unknown-calendar, or cross-axis bound is **indeterminate**. Potential and indeterminate participation can display qualified age evidence but never produce a hard impossible-appearance finding.
+
+Every conclusion or refusal remains linked to the exact participant, validity-bound, occurrence, birth, and optional death source ranges that contributed to it.
 
 ## Source-linked experience
 

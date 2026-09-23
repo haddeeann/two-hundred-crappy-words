@@ -15,6 +15,7 @@ import type {
 } from "$lib/manuscript/structure";
 import type { TimelineProject, TimelineTrack } from "./format";
 import {
+  calculateCalendarYearAge,
   compareTimelineRanges,
   normalizeTimelineExpression,
   type TimelineRange,
@@ -65,6 +66,53 @@ export interface TimelineSourceDiagnostic {
   range: SourceRange;
 }
 
+export type TimelineAppearanceEvidenceRole =
+  | "participant"
+  | "valid-from"
+  | "valid-to"
+  | "occurrence"
+  | "birth"
+  | "death";
+
+export interface TimelineAppearanceEvidence {
+  role: TimelineAppearanceEvidenceRole;
+  factId: string;
+  path: string;
+  title: string;
+  property: string;
+  calendar: string | null;
+  expression: string | null;
+  certainty: ContinuityCertainty | null;
+  effectiveCanon: CanonStatus | null;
+  range: SourceRange;
+}
+
+export interface TimelineCharacterAge {
+  kind: "exact" | "range" | "indeterminate";
+  minimumYears: string | null;
+  maximumYears: string | null;
+  qualified: boolean;
+  reason: string;
+}
+
+export interface TimelineCharacterPresence {
+  kind: "possible" | "impossible-before-birth" | "impossible-after-death" | "uncertain";
+  hardContradiction: boolean;
+  reason: string;
+}
+
+export interface TimelineCharacterAppearance {
+  participantFactId: string;
+  targetNoteId: string | null;
+  characterPath: string | null;
+  characterTitle: string;
+  participation: "confirmed" | "potential" | "indeterminate";
+  participationReason: string;
+  age: TimelineCharacterAge;
+  presence: TimelineCharacterPresence;
+  evidence: TimelineAppearanceEvidence[];
+}
+
 export interface TimelineSubject {
   noteId: string;
   path: string;
@@ -78,6 +126,7 @@ export interface TimelineSubject {
   sourceDiagnostics: TimelineSourceDiagnostic[];
   trackIds: string[];
   narrative: TimelineNarrativePosition[];
+  appearances: TimelineCharacterAppearance[];
 }
 
 export interface TimelineExcludedSource {
@@ -137,6 +186,8 @@ export function deriveTimelineModel(
       .filter(({ kind }) => kind === "duplicate-continuity-fact-id")
       .map(({ id }) => id),
   );
+  const documentIds = countDocumentIds(index);
+  const uniqueDocuments = uniqueDocumentsById(index, documentIds);
   const narrative = narrativePositions(manuscript);
   const excludedSources: TimelineExcludedSource[] = [];
   const subjects: TimelineSubject[] = [];
@@ -173,8 +224,20 @@ export function deriveTimelineModel(
     );
   }
 
+  for (const subject of subjects) {
+    const document = index.documents.get(subject.path);
+    if (!document) continue;
+    subject.appearances = deriveCharacterAppearances(
+      document,
+      subject,
+      uniqueDocuments,
+      documentIds,
+      duplicateFactIds,
+      timeline?.calendars ?? [],
+    );
+  }
+
   const subjectById = new Map(subjects.map((subject) => [subject.noteId, subject]));
-  const documentIds = countDocumentIds(index);
   const tracks = (timeline?.tracks ?? []).map((track) =>
     resolveTrack(track, subjectById, documentIds, duplicateNoteIds),
   );
@@ -298,7 +361,373 @@ function deriveSubject(
       .map(({ message, range }) => ({ message, range })),
     trackIds: [],
     narrative: [...narrative],
+    appearances: [],
   };
+}
+
+function deriveCharacterAppearances(
+  document: LoreDocumentRecord,
+  subject: TimelineSubject,
+  uniqueDocuments: ReadonlyMap<string, LoreDocumentRecord>,
+  documentIds: ReadonlyMap<string, number>,
+  duplicateFactIds: ReadonlySet<string>,
+  calendars: TimelineProject["calendars"],
+): TimelineCharacterAppearance[] {
+  const appearances: TimelineCharacterAppearance[] = [];
+  for (const fact of document.facts.filter(({ property }) => property === "participant")) {
+    const participantEvidence = appearanceEvidence(
+      "participant",
+      fact,
+      document,
+      fact.value.kind === "time" ? fact.value : null,
+    );
+    const occurrenceEvidence = subject.evidence.map((evidence) => ({
+      role: "occurrence" as const,
+      factId: evidence.id,
+      path: subject.path,
+      title: subject.title,
+      property: evidence.property,
+      calendar: evidence.calendar,
+      expression: evidence.expression,
+      certainty: evidence.certainty,
+      effectiveCanon: evidence.effectiveCanon,
+      range: evidence.range,
+    }));
+    const baseEvidence = [participantEvidence, ...validityEvidence(fact, document), ...occurrenceEvidence];
+    if (duplicateFactIds.has(fact.id)) {
+      appearances.push(unresolvedAppearance(
+        fact,
+        "This participant fact ID appears in more than one note.",
+        baseEvidence,
+      ));
+      continue;
+    }
+    if (fact.value.kind !== "note") {
+      appearances.push(unresolvedAppearance(
+        fact,
+        "A participant must point to one stable note ID.",
+        baseEvidence,
+      ));
+      continue;
+    }
+    const targetCount = documentIds.get(fact.value.id) ?? 0;
+    if (targetCount !== 1) {
+      appearances.push(unresolvedAppearance(
+        fact,
+        targetCount === 0
+          ? "The participant note ID is not present in the current index."
+          : "The participant note ID appears in more than one source.",
+        baseEvidence,
+      ));
+      continue;
+    }
+    const character = uniqueDocuments.get(fact.value.id)!;
+    if (character.type !== "character") continue;
+    appearances.push(deriveCharacterAppearance(
+      fact,
+      character,
+      subject,
+      duplicateFactIds,
+      calendars,
+      baseEvidence,
+    ));
+  }
+  return appearances.sort((first, second) =>
+    first.characterTitle.localeCompare(second.characterTitle) ||
+    first.participantFactId.localeCompare(second.participantFactId)
+  );
+}
+
+function deriveCharacterAppearance(
+  participant: ParsedContinuityFact,
+  character: LoreDocumentRecord,
+  subject: TimelineSubject,
+  duplicateFactIds: ReadonlySet<string>,
+  calendars: TimelineProject["calendars"],
+  baseEvidence: TimelineAppearanceEvidence[],
+): TimelineCharacterAppearance {
+  const participation = classifyParticipation(participant, subject.range, calendars);
+  const birth = selectLifespanFact(character, "born", duplicateFactIds);
+  const death = selectLifespanFact(character, "died", duplicateFactIds);
+  const evidence = [...baseEvidence];
+  for (const fact of birth.facts) {
+    evidence.push(appearanceEvidence("birth", fact, character, fact.value.kind === "time" ? fact.value : null));
+  }
+  for (const fact of death.facts) {
+    evidence.push(appearanceEvidence("death", fact, character, fact.value.kind === "time" ? fact.value : null));
+  }
+
+  const common = {
+    participantFactId: participant.id,
+    targetNoteId: character.id,
+    characterPath: character.path,
+    characterTitle: character.title,
+    participation: participation.kind,
+    participationReason: participation.reason,
+    evidence,
+  } as const;
+  if (!subject.range) {
+    return {
+      ...common,
+      age: indeterminateAge("The timeline subject has no single computable occurrence."),
+      presence: uncertainPresence("Presence cannot be checked until the occurrence is computable."),
+    };
+  }
+  if (!birth.fact || birth.fact.value.kind !== "time") {
+    const reason = birth.reason ?? "The character has no born fact.";
+    return {
+      ...common,
+      age: indeterminateAge(reason),
+      presence: uncertainPresence(reason),
+    };
+  }
+
+  const calculation = calculateCalendarYearAge(
+    birth.fact.value.calendar,
+    birth.fact.value.expression,
+    subject.range,
+    calendars,
+  );
+  const exactEvidence = claimsAreExact(participant, subject, birth.fact);
+  const qualified = !exactEvidence;
+  let age: TimelineCharacterAge;
+  let presence: TimelineCharacterPresence;
+  if (calculation.kind === "pre-birth") {
+    age = indeterminateAge(calculation.reason, qualified);
+    const hard = participation.kind === "confirmed" && exactEvidence;
+    presence = {
+      kind: "impossible-before-birth",
+      hardContradiction: hard,
+      reason: hard
+        ? "Confirmed participation is wholly before the character's exact birth evidence."
+        : "The occurrence is before the written birth range, but non-exact or potential evidence prevents a hard contradiction.",
+    };
+  } else if (calculation.kind === "indeterminate") {
+    age = indeterminateAge(calculation.reason, qualified);
+    presence = uncertainPresence(calculation.reason);
+  } else {
+    const exactRange = calculation.birthRange.earliest === calculation.birthRange.latest &&
+      subject.range.earliest === subject.range.latest;
+    age = {
+      kind: exactRange && calculation.minimum === calculation.maximum ? "exact" : "range",
+      minimumYears: calculation.minimum.toString(),
+      maximumYears: calculation.maximum.toString(),
+      qualified,
+      reason: qualified
+        ? "The numeric bounds are computable, but one or more source claims are not explicitly exact."
+        : calculation.minimum === calculation.maximum
+          ? "The source ranges resolve to one completed-calendar-year age."
+          : "Reduced precision yields inclusive minimum and maximum completed-calendar-year ages.",
+    };
+    presence = possiblePresence();
+  }
+
+  if (presence.kind !== "impossible-before-birth" && death.fact?.value.kind === "time") {
+    presence = applyDeathBoundary(
+      death.fact,
+      participant,
+      subject,
+      participation.kind,
+      calendars,
+      presence,
+    );
+  } else if (presence.kind !== "impossible-before-birth" && death.reason) {
+    presence = uncertainPresence(death.reason);
+  }
+  if (participation.kind !== "confirmed") {
+    presence = uncertainPresence(
+      "Potential or indeterminate participation cannot create an impossible-appearance finding.",
+    );
+  }
+  return { ...common, age, presence };
+}
+
+function classifyParticipation(
+  fact: ParsedContinuityFact,
+  occurrence: TimelineRange | null,
+  calendars: TimelineProject["calendars"],
+): { kind: "confirmed" | "potential" | "indeterminate"; reason: string } {
+  if (!fact.validFrom && !fact.validTo) {
+    return { kind: "confirmed", reason: "The participant fact has no applicability bounds." };
+  }
+  if (!occurrence) {
+    return { kind: "indeterminate", reason: "Applicability cannot be compared until the occurrence is computable." };
+  }
+  const from = fact.validFrom
+    ? normalizeTimelineExpression(fact.validFrom.calendar, fact.validFrom.expression, calendars)
+    : null;
+  const to = fact.validTo
+    ? normalizeTimelineExpression(fact.validTo.calendar, fact.validTo.expression, calendars)
+    : null;
+  if (from?.kind === "non-computable") return { kind: "indeterminate", reason: from.reason };
+  if (to?.kind === "non-computable") return { kind: "indeterminate", reason: to.reason };
+  const lower = from?.range ?? null;
+  const upper = to?.range ?? null;
+  if ((lower && lower.axis !== occurrence.axis) || (upper && upper.axis !== occurrence.axis)) {
+    return { kind: "indeterminate", reason: "The participation bounds and occurrence do not share one calendar axis." };
+  }
+  if (lower && upper && (lower.axis !== upper.axis || lower.earliest > upper.latest)) {
+    return { kind: "indeterminate", reason: "The participation applicability bounds are reversed or incomparable." };
+  }
+  const definitelyInside = (!lower || occurrence.earliest >= lower.latest) &&
+    (!upper || occurrence.latest <= upper.earliest);
+  if (definitelyInside) {
+    return { kind: "confirmed", reason: "The complete occurrence is inside the participant applicability window." };
+  }
+  const definitelyOutside = (lower && occurrence.latest < lower.earliest) ||
+    (upper && occurrence.earliest > upper.latest);
+  return {
+    kind: "potential",
+    reason: definitelyOutside
+      ? "The occurrence is outside the participant applicability window, so this remains a potential planning participant."
+      : "The occurrence only possibly or partly falls inside the participant applicability window.",
+  };
+}
+
+function applyDeathBoundary(
+  death: ParsedContinuityFact,
+  participant: ParsedContinuityFact,
+  subject: TimelineSubject,
+  participation: TimelineCharacterAppearance["participation"],
+  calendars: TimelineProject["calendars"],
+  current: TimelineCharacterPresence,
+): TimelineCharacterPresence {
+  if (!subject.range || death.value.kind !== "time") return current;
+  const normalized = normalizeTimelineExpression(
+    death.value.calendar,
+    death.value.expression,
+    calendars,
+  );
+  if (normalized.kind !== "computable") return uncertainPresence(normalized.reason);
+  if (normalized.range.axis !== subject.range.axis) {
+    return uncertainPresence("The death and occurrence do not share one calendar axis.");
+  }
+  if (subject.range.earliest > normalized.range.latest) {
+    const hard = participation === "confirmed" &&
+      claimsAreExact(participant, subject, death);
+    return {
+      kind: "impossible-after-death",
+      hardContradiction: hard,
+      reason: hard
+        ? "Confirmed participation is wholly after the character's exact death evidence."
+        : "The occurrence is after the written death range, but non-exact or potential evidence prevents a hard contradiction.",
+    };
+  }
+  if (subject.range.latest > normalized.range.earliest) {
+    return uncertainPresence("The occurrence overlaps the possible death range.");
+  }
+  return current;
+}
+
+function selectLifespanFact(
+  character: LoreDocumentRecord,
+  property: "born" | "died",
+  duplicateFactIds: ReadonlySet<string>,
+): {
+  fact: ParsedContinuityFact | null;
+  facts: ParsedContinuityFact[];
+  reason: string | null;
+} {
+  const facts = character.facts.filter((fact) => fact.property === property);
+  if (facts.length === 0) {
+    return { fact: null, facts, reason: property === "born" ? "The character has no born fact." : null };
+  }
+  if (facts.length > 1) {
+    return { fact: null, facts, reason: `The character has more than one ${property} fact; the timeline will not choose one.` };
+  }
+  const fact = facts[0]!;
+  if (duplicateFactIds.has(fact.id)) {
+    return { fact: null, facts, reason: `The ${property} fact ID appears in more than one note.` };
+  }
+  if (fact.value.kind !== "time" || fact.validFrom || fact.validTo) {
+    return { fact: null, facts, reason: `The ${property} fact must contain one time value without validity bounds.` };
+  }
+  return { fact, facts, reason: null };
+}
+
+function claimsAreExact(
+  participant: ParsedContinuityFact,
+  subject: TimelineSubject,
+  lifespan: ParsedContinuityFact,
+): boolean {
+  return participant.certainty === "exact" &&
+    lifespan.certainty === "exact" &&
+    subject.evidence.length > 0 &&
+    subject.evidence.every(({ certainty }) => certainty === "exact");
+}
+
+function appearanceEvidence(
+  role: TimelineAppearanceEvidenceRole,
+  fact: ParsedContinuityFact,
+  document: LoreDocumentRecord,
+  time: ParsedContinuityFact["validFrom"],
+): TimelineAppearanceEvidence {
+  return {
+    role,
+    factId: fact.id,
+    path: document.path,
+    title: document.title,
+    property: fact.property,
+    calendar: time?.calendar ?? null,
+    expression: time?.expression ?? null,
+    certainty: fact.certainty,
+    effectiveCanon: fact.canon ?? document.canon,
+    range: role === "valid-from" && fact.validFrom
+      ? fact.validFrom.range
+      : role === "valid-to" && fact.validTo
+        ? fact.validTo.range
+        : fact.range,
+  };
+}
+
+function validityEvidence(
+  fact: ParsedContinuityFact,
+  document: LoreDocumentRecord,
+): TimelineAppearanceEvidence[] {
+  return [
+    ...(fact.validFrom ? [appearanceEvidence("valid-from", fact, document, fact.validFrom)] : []),
+    ...(fact.validTo ? [appearanceEvidence("valid-to", fact, document, fact.validTo)] : []),
+  ];
+}
+
+function unresolvedAppearance(
+  fact: ParsedContinuityFact,
+  reason: string,
+  evidence: TimelineAppearanceEvidence[],
+): TimelineCharacterAppearance {
+  return {
+    participantFactId: fact.id,
+    targetNoteId: fact.value.kind === "note" ? fact.value.id : null,
+    characterPath: null,
+    characterTitle: fact.value.kind === "note" ? fact.value.id : "Unresolved participant",
+    participation: "indeterminate",
+    participationReason: reason,
+    age: indeterminateAge(reason),
+    presence: uncertainPresence(reason),
+    evidence,
+  };
+}
+
+function indeterminateAge(reason: string, qualified = true): TimelineCharacterAge {
+  return {
+    kind: "indeterminate",
+    minimumYears: null,
+    maximumYears: null,
+    qualified,
+    reason,
+  };
+}
+
+function possiblePresence(): TimelineCharacterPresence {
+  return {
+    kind: "possible",
+    hardContradiction: false,
+    reason: "The available birth and death evidence does not rule out this appearance.",
+  };
+}
+
+function uncertainPresence(reason: string): TimelineCharacterPresence {
+  return { kind: "uncertain", hardContradiction: false, reason };
 }
 
 function computeSubjectRange(
@@ -570,6 +999,19 @@ function countDocumentIds(index: LoreProjectIndex): Map<string, number> {
     if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
   }
   return counts;
+}
+
+function uniqueDocumentsById(
+  index: LoreProjectIndex,
+  counts: ReadonlyMap<string, number>,
+): Map<string, LoreDocumentRecord> {
+  const documents = new Map<string, LoreDocumentRecord>();
+  for (const document of index.documents.values()) {
+    if (document.id && counts.get(document.id) === 1) {
+      documents.set(document.id, document);
+    }
+  }
+  return documents;
 }
 
 function compareDocuments(first: LoreDocumentRecord, second: LoreDocumentRecord): number {

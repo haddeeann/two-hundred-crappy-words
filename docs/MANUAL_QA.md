@@ -275,6 +275,14 @@ The evidence action for Landing closed Timeline, opened the current verified Mar
 
 Changing the disposable timeline file's project UUID externally caused the open workspace to refresh automatically. It explained the mismatch, removed only custom-calendar and track semantics, kept the Gregorian event available, and moved the now-unknown custom expression into Needs time with its exact source action. Restoring the approved UUID recovered both subjects and the track without restart. The app was returned to the writer's previously open Arcadia folder afterward. The final automated gate has 459 passing frontend tests across seventy-one files, fifteen passing native tests, clean Rust formatting/checks, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app` builds, and zero production dependency vulnerabilities.
 
+## Milestone 0.7.5a source-linked character-age checkpoint
+
+Completed successfully on macOS on 2026-09-23 using Computer Use against a freshly packaged production `.app` and a temporary extension of the disposable Timeline project. Timeline kept the project file tree unchanged and exposed each subject's character ages and presence in a closed disclosure. A February 29, 2096 birth at a February 28, 2101 event displayed exact **Age 5**, proving the approved final-valid-day anniversary rule. A June 2130 birth at a year-precision 2160 scene displayed the honest inclusive **Age 29–30** range rather than inventing dates.
+
+An exact confirmed event wholly before an exact birth displayed **Impossible appearance** with participant, occurrence, and birth evidence. A separate event before the character's birth but outside the participant fact's `validFrom` window displayed **Potential participant**, retained the potential age/presence evidence, and explicitly refused to create a hard contradiction. The validity-bound, occurrence, and birth buttons each named their certainty, effective canon, source line, and opened through the existing verified source path; the birth action opened the correct character note. Visual inspection at laptop size showed readable nested cards, compact status pills, wrapped explanations, and source links without crowding the chronology.
+
+Changing the temporary character IDs externally refreshed the open packaged Timeline automatically from unresolved duplicate identities to the four intended age results. Today remained `0 / 200`, no project or app-data age cache was created, and the app was returned to the writer's previously open Arcadia folder. The QA-only additions were moved back out of the shared Timeline fixture. The final automated gate has 469 passing frontend tests across seventy-one files, fifteen passing native tests, clean Rust formatting/checks, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:
