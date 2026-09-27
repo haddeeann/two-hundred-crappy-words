@@ -1,6 +1,6 @@
 # Current work
 
-Last updated: 2026-09-23
+Last updated: 2026-09-27
 
 ## Active milestone
 
@@ -30,6 +30,8 @@ Define the smallest portable, writer-owned model that can represent locations, m
 3. Draft the location/travel contract and pause at its permanent-format decisions.
 
 ## Completed checkpoint
+
+- A focused window-quality checkpoint replaces the app-drawn frameless controls with the standard decorated macOS title bar. Native red, yellow, and green traffic lights now own close, minimize, zoom/full-screen, hover symbols, and system half-screen tiling choices. The webview retains its safe-close interception, but no longer needs command permissions to imitate title-bar dragging, minimizing, or close requests. The writing workspace uses the complete native content viewport, and the active continuity roadmap resumes at 0.7.6 without changing any project or writing format. Packaged macOS QA verified the native controls, full-screen entry and **Exit Full Screen**, Fill/Center, halves, quarters, arranged layouts, full-screen left/right tiling, working left-half placement, **Return to Previous Size**, and clean restart with the saved draft restored. The gate has 470 passing frontend tests across seventy-one files, fifteen passing native tests, clean Rust formatting/checks, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 
 - Slice 0.7.5a completes source-linked character age and presence evidence. Timeline resolves only unique character participant targets and unique usable `born`/optional `died` facts; copied identities, competing claims, invalid shapes, unknown calendars, ordinal-year requests, and cross-axis inputs remain explicit refusals. Completed years are counted in the birth calendar, including the approved final-valid-day clamp for leap-only birthdays in Gregorian and fixed calendars. Reduced precision produces inclusive minimum/maximum ages. `participant.validFrom`/`validTo` requires whole-occurrence containment for confirmation; outside or overlapping applicability remains visible as potential, never a hard contradiction. Only confirmed, explicitly exact participant, occurrence, and lifespan evidence can mark an appearance impossible. Every result retains certainty, canon, fact IDs, exact source ranges, and clickable participant/bound/occurrence/birth/death evidence. The closed Timeline disclosures write nothing and earn no daily credit. Packaged macOS QA verified exact leap-day age 5, reduced age 29–30, potential participation, exact impossible pre-birth evidence, live refresh, source opening, readable laptop layout, unchanged `0 / 200`, and restoration of the writer's prior project. The final gate has 469 passing frontend tests across seventy-one files, fifteen passing native tests, clean Rust formatting/checks, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 

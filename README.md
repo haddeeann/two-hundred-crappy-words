@@ -21,7 +21,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Detect external edits, moves, deletion, and unreadable sources before writing
 - Require an explicit choice before overwriting or recreating a conflicted path
 - Keep private app-local recovery drafts and offer them after an interruption
-- Provide accessible macOS-style close and minimize controls
+- Use the native macOS title bar for standard close, minimize, zoom/full-screen, hover symbols, and half-screen tiling controls
 - Limit filesystem access to folders explicitly chosen in the native picker
 - Block remote scripts and network origins in the packaged webview
 - Display filesystem errors in the interface
@@ -107,7 +107,6 @@ The app now counts words and stores progress toward its default 200-word target 
 - Approved portable continuity facts can be inspected and deliberately authored with source-preserving guards; the optional timeline/calendar file is safely loaded read-only, Gregorian/fixed/ordinal expressions normalize into precision-preserving ranges, and the source-linked Timeline workspace presents chronology, tracks, narrative context, unresolved evidence, character ages, potential participation, and exact impossible-appearance findings; timeline-file editing and broader deterministic continuity checks are not implemented yet; see [`docs/TIMELINE_FORMAT.md`](docs/TIMELINE_FORMAT.md)
 - The first importer intentionally maps only immediate Markdown and one level of chapter folders; deeper folders remain visible as skipped and require later manual structure tools
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
-- The frameless window does not yet provide maximize/full-screen controls
 - Distribution signing, notarization, and a finished installer are deferred to release readiness
 
 ## Tech stack

@@ -45,4 +45,29 @@ describe("desktop security configuration", () => {
       .filter((source) => /^(https?|wss?):/.test(source));
     expect(productionNetworkSources).toEqual(["http://ipc.localhost"]);
   });
+
+  it("delegates standard window controls and tiling to native macOS chrome", () => {
+    const config = readJson("src-tauri/tauri.conf.json");
+    const app = config.app as Record<string, unknown>;
+    const [window] = app.windows as Array<Record<string, unknown>>;
+
+    expect(window).toMatchObject({
+      title: "200 Crappy Words",
+      decorations: true,
+      titleBarStyle: "Visible",
+      resizable: true,
+      minimizable: true,
+      maximizable: true,
+      closable: true,
+    });
+
+    const capability = readJson("src-tauri/capabilities/default.json");
+    expect(capability.permissions).not.toEqual(
+      expect.arrayContaining([
+        "core:window:allow-start-dragging",
+        "core:window:allow-minimize",
+        "core:window:allow-close",
+      ]),
+    );
+  });
 });

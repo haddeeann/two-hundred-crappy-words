@@ -283,6 +283,12 @@ An exact confirmed event wholly before an exact birth displayed **Impossible app
 
 Changing the temporary character IDs externally refreshed the open packaged Timeline automatically from unresolved duplicate identities to the four intended age results. Today remained `0 / 200`, no project or app-data age cache was created, and the app was returned to the writer's previously open Arcadia folder. The QA-only additions were moved back out of the shared Timeline fixture. The final automated gate has 469 passing frontend tests across seventy-one files, fifteen passing native tests, clean Rust formatting/checks, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 
+## Native macOS window-controls checkpoint
+
+Completed successfully on macOS on 2026-09-27 using Computer Use against a freshly packaged production `.app`. The window exposed actual native close, full-screen/zoom, and minimize accessibility controls beneath a normal decorated title bar, while the web workspace filled the complete native content viewport. Entering full screen hid the window controls as expected, and the macOS Window menu exposed **Exit Full Screen**. Returning to a window restored all three traffic lights and left the draft saved and intact.
+
+The native layout menu exposed Fill, Center, left/right/top/bottom halves, four quarters, arranged multi-window layouts, and full-screen left/right tiling. **Left** resized the app to half-screen width without crowding or clipping the fixed footer; **Return to Previous Size** restored its prior dimensions. A final quit and relaunch reopened the saved draft cleanly. The automated gate has 470 passing frontend tests across seventy-one files, fifteen passing native tests, clean Rust formatting/checks, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:
@@ -311,8 +317,9 @@ Use **File → Open Folder…** to choose the printed temporary path. No real wr
 - Right-click an ordinary disposable file and choose **Delete…**. Confirm Cancel receives initial focus, Tab and Shift+Tab remain contained, Escape returns focus to the same tree row, and cancellation leaves the file untouched. Reopen the dialog, confirm **Move to Trash**, and verify the file leaves the tree without permanently deleting it. For an active file, confirm pending edits save or reach the normal conflict choice before Trash and the editor closes only after success. For a Markdown file, confirm the dialog warns that links and manuscript bindings may become unavailable and are not rewritten. Confirm folders, symbolic links, and the two root project-metadata files cannot enter this flow.
 - Open a file, type rapidly, and confirm the status progresses through Unsaved/Saving/Saved without interrupting typing.
 - Press `Command+S`, switch files immediately, and confirm text lands in the correct file.
-- Tab through the project tree, window controls, and editor. Confirm focus is visible and labels make sense with VoiceOver if available. Open the native **File** menu and confirm **New File…** and **Open Folder…** have Command/Ctrl+N and Command/Ctrl+O shortcuts.
-- Confirm the red close control closes safely and the yellow control minimizes. Confirm the blank title-bar area still drags the window.
+- Tab through the project tree and editor. Confirm focus is visible and labels make sense with VoiceOver if available. Open the native **File** menu and confirm **New File…** and **Open Folder…** have Command/Ctrl+N and Command/Ctrl+O shortcuts.
+- Confirm the native red, yellow, and green traffic-light controls appear. Hover them and confirm macOS shows the standard symbols. Confirm red still enters the safe-close flow, yellow minimizes, and the title bar drags the window.
+- Hover or hold the green control and confirm macOS offers its native full-screen and half-screen tiling choices. Enter full screen, then confirm the same system control offers **Exit Full Screen** and the applicable window-layout choices.
 
 ## External-change protection
 

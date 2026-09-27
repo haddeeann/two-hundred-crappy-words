@@ -38,7 +38,7 @@ The print renderer fetches only its own bundled Source Serif files from the pack
 
 ## Native capabilities
 
-The main window has only the native window permissions needed for its current interface: dragging the frameless title bar, minimizing, requesting a close, and completing a close after the safe-save handler approves it. The unused template greeting command and opener plugin have been removed.
+The main window uses the operating system's standard decorated title bar for dragging, minimizing, zooming, full-screen transitions, and tiling. Those interactions need no webview command permissions. The app retains only the native destroy permission needed to finish a close after its safe-save handler approves it. The unused template greeting command and opener plugin have been removed.
 
 Any future network access, external URL opening, shell execution, or broader filesystem operation requires an explicit capability review rather than inheriting permission from this milestone.
 

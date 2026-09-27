@@ -427,3 +427,12 @@ A character's completed-calendar-year age is counted in the character's birth ca
 An event, scene, or chapter `participant` fact with no validity bounds confirms participation. With `validFrom` or `validTo`, participation is confirmed only when the complete subject occurrence is definitely inside the inclusive applicability window. A subject definitely outside or only partly/possibly inside that window remains visible as a **potential** participant; non-computable or cross-axis bounds remain **indeterminate**. Potential or indeterminate participation never creates a hard impossible-appearance finding. Every age, refusal, and presence conclusion retains the contributing participant, occurrence, birth, optional death, and validity-bound source ranges.
 
 Why: writers need birthdays to behave consistently across leap cycles without silently moving them into another month, and planning facts should show who may participate without falsely asserting that they already do. Conservative whole-range containment preserves reduced precision and makes an uncertainty visible instead of manufacturing a contradiction. The user approved the final-valid-day anniversary rule and the `validFrom`/`validTo` potential-participant behavior on 2026-09-23.
+
+## D-045 — Standard window behavior belongs to the operating system
+
+- Date: 2026-09-27
+- Status: accepted
+
+The macOS app uses a normal decorated title bar instead of drawing traffic-light controls in the webview. The operating system owns the red, yellow, and green controls, their hover symbols, title-bar dragging, zoom and full-screen transitions, exit-full-screen affordance, and the window-layout choices available on that version of macOS. The webview still intercepts a close request long enough to complete the existing save/conflict/recovery decision flow, then uses its narrowly granted destroy permission to finish an approved close.
+
+Why: these controls are established platform behavior, accessibility semantics, and evolving window-management policy rather than application styling. Delegating them to macOS gives writers the expected maximize/full-screen and half-screen choices, avoids a visually similar but incomplete imitation, and removes three command permissions that existed only for the custom title bar. The user requested the standard hover and window-layout behavior on 2026-09-27.
