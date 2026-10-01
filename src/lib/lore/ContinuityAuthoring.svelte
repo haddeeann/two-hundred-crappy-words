@@ -14,6 +14,7 @@
     ContinuityAuthoringContext,
     ContinuityNoteChoice,
   } from "./continuity-authoring";
+  import { continuityNoteChoicesForProperty } from "./continuity-authoring";
   import type {
     CanonStatus,
     ContinuityCertainty,
@@ -71,6 +72,9 @@
   let authoringHeading = $state<HTMLElement>();
 
   const ready = $derived(context.kind === "ready" ? context : null);
+  const compatibleNoteChoices = $derived.by(() =>
+    noteChoicesForProperty(property, noteTargetId),
+  );
 
   $effect(() => {
     canonChoice = context.kind === "ready" ? (context.noteCanon ?? "") : "";
@@ -85,7 +89,7 @@
     const definition = CONTINUITY_PROPERTY_DEFINITIONS.find(({ key }) => key === property);
     valueKind = definition?.valueKinds[0] ?? "text";
     clearValueFields();
-    noteTargetId = ready.noteChoices[0]?.id ?? "";
+    noteTargetId = noteChoicesForProperty(property)[0]?.id ?? "";
     factCanon = "";
     certainty = "";
     validFromExpression = "";
@@ -168,6 +172,24 @@
     if (definition && !(definition.valueKinds as readonly ValueKind[]).includes(valueKind)) {
       valueKind = definition.valueKinds[0];
     }
+    if (valueKind === "note") {
+      const choices = noteChoicesForProperty(property, noteTargetId);
+      noteTargetId = choices.some(({ id }) => id === noteTargetId)
+        ? noteTargetId
+        : (choices[0]?.id ?? "");
+    }
+  }
+
+  function noteChoicesForProperty(
+    propertyKey: string,
+    retainId = "",
+  ): ContinuityNoteChoice[] {
+    if (!ready) return [];
+    return continuityNoteChoicesForProperty(
+      ready.noteChoices,
+      propertyKey,
+      retainId,
+    );
   }
 
   function draft(): ContinuityFactDraft {
@@ -274,7 +296,7 @@
   }
 
   function noteChoiceLabel(choice: ContinuityNoteChoice): string {
-    return `${choice.title} — ${choice.path}`;
+    return `${choice.title}${choice.noteType ? ` · ${choice.noteType}` : ""} — ${choice.path}`;
   }
 </script>
 
@@ -343,9 +365,9 @@
         {#if valueKind === "note"}
           <label>
             Referenced note
-            <select bind:value={noteTargetId} disabled={busy || context.noteChoices.length === 0}>
-              {#if context.noteChoices.length === 0}<option value="">No unique note IDs available</option>{/if}
-              {#each context.noteChoices as choice}
+            <select bind:value={noteTargetId} disabled={busy || compatibleNoteChoices.length === 0}>
+              {#if compatibleNoteChoices.length === 0}<option value="">No compatible unique note IDs available</option>{/if}
+              {#each compatibleNoteChoices as choice}
                 <option value={choice.id}>{noteChoiceLabel(choice)}</option>
               {/each}
             </select>

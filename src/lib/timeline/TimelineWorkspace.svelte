@@ -1,5 +1,8 @@
 <script lang="ts">
   import type { SourceRange } from "$lib/lore/types";
+  import type { TimelineCalendar } from "./format";
+  import { formatTimelineDayRange } from "./normalize";
+  import type { TravelJourneyAnalysis } from "$lib/travel/journey";
   import type { TimelineProjectLoadResult } from "./load";
   import type {
     TimelineCharacterAppearance,
@@ -12,18 +15,32 @@
   interface Props {
     result: TimelineProjectLoadResult;
     model: TimelineModel;
+    journeyAnalyses: readonly TravelJourneyAnalysis[];
+    calendars: readonly TimelineCalendar[];
     loading: boolean;
     onClose: () => void;
     onRefresh: () => void;
     onOpenSource: (path: string, range: SourceRange | null) => void;
   }
 
-  let { result, model, loading, onClose, onRefresh, onOpenSource }: Props = $props();
+  let {
+    result,
+    model,
+    journeyAnalyses,
+    calendars,
+    loading,
+    onClose,
+    onRefresh,
+    onOpenSource,
+  }: Props = $props();
 
   const subjectById = $derived(
     new Map(model.subjects.map((subject) => [subject.noteId, subject])),
   );
   const loadMessage = $derived(resultMessage(result));
+  const journeyById = $derived(
+    new Map(journeyAnalyses.map((analysis) => [analysis.journey.noteId, analysis])),
+  );
 
   function subjects(ids: readonly string[]): TimelineSubject[] {
     return ids.flatMap((id) => {
@@ -63,6 +80,26 @@
     if (appearance.participation === "indeterminate") return "Participation uncertain";
     if (appearance.presence.kind !== "possible") return "Presence uncertain";
     return "Confirmed participant";
+  }
+
+  function arrivalLabel(analysis: TravelJourneyAnalysis): string {
+    if (analysis.kind === "unavailable") return "Arrival unavailable";
+    const formatted = formatTimelineDayRange(analysis.arrival.range, calendars);
+    return formatted.kind === "formatted"
+      ? `Arrives ${formatted.expression}`
+      : "Arrival date unavailable";
+  }
+
+  function durationLabel(analysis: TravelJourneyAnalysis): string {
+    if (analysis.kind === "unavailable") return "";
+    const value = analysis.duration.candidate.claim.value;
+    if (value.kind === "quantity") {
+      return `${value.amount} ${value.unit}`;
+    }
+    if (value.kind === "range") {
+      return `${value.minimum}–${value.maximum} ${value.unit}`;
+    }
+    return "Unsupported duration";
   }
 
   function resultMessage(value: TimelineProjectLoadResult): string | null {
@@ -151,6 +188,9 @@
                     {/each}
                   </ul>
                 {/if}
+                {#if journeyById.get(subject.noteId)}
+                  {@render JourneyTravel({ analysis: journeyById.get(subject.noteId)!, onOpenSource })}
+                {/if}
                 {@render CharacterAppearances({ values: subject.appearances, onOpenSource })}
                 <div class="evidence" aria-label={`Source evidence for ${subject.title}`}>
                   {#each subject.evidence as fact (fact.id)}
@@ -207,6 +247,9 @@
                     </button>
                   {/each}
                 </div>
+              {/if}
+              {#if journeyById.get(subject.noteId)}
+                {@render JourneyTravel({ analysis: journeyById.get(subject.noteId)!, onOpenSource })}
               {/if}
               {@render CharacterAppearances({ values: subject.appearances, onOpenSource })}
             </article>
@@ -287,6 +330,34 @@
       </ul>
     {/if}
   </article>
+{/snippet}
+
+{#snippet JourneyTravel({ analysis, onOpenSource }: { analysis: TravelJourneyAnalysis; onOpenSource: Props["onOpenSource"] })}
+  <details class="journey" class:contradiction={analysis.kind === "computed" && analysis.comparison.hardContradiction}>
+    <summary>Travel · {arrivalLabel(analysis)}</summary>
+    {#if analysis.kind === "unavailable"}
+      <p>{analysis.reason}</p>
+    {:else}
+      <div class="journey-heading">
+        <div>
+          <strong>{analysis.route.title}</strong>
+          <span>{durationLabel(analysis)}</span>
+        </div>
+        <span>{analysis.comparison.kind === "compatible" ? "Compatible" : analysis.comparison.kind === "review" ? "Review arrival" : analysis.comparison.kind === "not-authored" ? "No authored arrival" : "Indeterminate"}</span>
+      </div>
+      <p>{analysis.comparison.reason}</p>
+      {#if analysis.arrival.widenedByDayPrecision}
+        <p>The arrival window widens outward because departure time of day is unspecified.</p>
+      {/if}
+    {/if}
+    <div class="evidence" aria-label={`Travel evidence for ${analysis.journey.title}`}>
+      {#each analysis.evidence as item (`${item.role}:${item.factId}:${item.range.start}`)}
+        <button type="button" onclick={() => onOpenSource(item.path, item.range)}>
+          {item.role} · {item.property} · {item.certainty ?? "certainty unspecified"} · line {item.range.line}
+        </button>
+      {/each}
+    </div>
+  </details>
 {/snippet}
 
 {#snippet CharacterAppearances({ values, onOpenSource }: { values: TimelineCharacterAppearance[]; onOpenSource: Props["onOpenSource"] })}
@@ -551,6 +622,57 @@
     margin-top: 0.7rem;
     padding-top: 0.6rem;
     border-top: 1px solid #3d3d3d;
+  }
+
+  .journey {
+    margin-top: 0.7rem;
+    padding: 0.6rem;
+    border: 1px solid #405746;
+    border-radius: 4px;
+    background: #252b26;
+  }
+
+  .journey.contradiction {
+    border-color: #8a5447;
+    background: #302724;
+  }
+
+  .journey-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.7rem;
+    margin-top: 0.6rem;
+  }
+
+  .journey-heading strong,
+  .journey-heading div > span {
+    display: block;
+  }
+
+  .journey-heading div > span,
+  .journey p {
+    color: #aaa;
+    font-size: 0.73rem;
+  }
+
+  .journey-heading > span {
+    flex: 0 0 auto;
+    padding: 0.12rem 0.38rem;
+    border: 1px solid #59645b;
+    border-radius: 999px;
+    color: #b9d6bd;
+    font-size: 0.66rem;
+  }
+
+  .journey.contradiction .journey-heading > span {
+    border-color: #8a5447;
+    color: #e2b4a8;
+  }
+
+  .journey p {
+    margin: 0.35rem 0 0;
+    line-height: 1.4;
   }
 
   .appearance-list {

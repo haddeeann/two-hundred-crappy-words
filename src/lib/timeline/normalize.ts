@@ -48,6 +48,13 @@ export interface TimelineRelationResult {
   reason: string;
 }
 
+export type TimelineDayRangeFormattingResult =
+  | { kind: "formatted"; expression: string }
+  | {
+      kind: "unavailable";
+      reason: string;
+    };
+
 export type TimelineCalendarYearAgeResult =
   | {
       kind: "years";
@@ -166,6 +173,50 @@ export function relateTimelineRanges(
     return { relation: "after", reason: "The first range begins after the second range ends." };
   }
   return { relation: "overlaps", reason: "The inclusive ranges share at least one calendar day." };
+}
+
+export function formatTimelineDayRange(
+  range: TimelineRange,
+  calendars: readonly TimelineCalendar[],
+): TimelineDayRangeFormattingResult {
+  if (range.calendarId === "gregorian") {
+    if (range.axis !== "gregorian") {
+      return {
+        kind: "unavailable",
+        reason: "A Gregorian range must use the Gregorian day axis.",
+      };
+    }
+    return formattedDayRange(
+      gregorianDateFromOrdinal(range.earliest),
+      gregorianDateFromOrdinal(range.latest),
+    );
+  }
+  const calendar = calendars.find(({ id }) => id === range.calendarId);
+  if (!calendar) {
+    return {
+      kind: "unavailable",
+      reason: `Calendar ${JSON.stringify(range.calendarId)} is not defined by this project.`,
+    };
+  }
+  const expectedAxis = calendar.anchor
+    ? "gregorian"
+    : `calendar:${calendar.id}`;
+  if (range.axis !== expectedAxis) {
+    return {
+      kind: "unavailable",
+      reason: "The range axis does not match this calendar's anchor definition.",
+    };
+  }
+  const offset = calendarAnchorOffset(calendar);
+  const earliest = range.earliest - offset;
+  const latest = range.latest - offset;
+  if (calendar.kind === "ordinal") {
+    return formattedDayRange(earliest.toString(), latest.toString());
+  }
+  return formattedDayRange(
+    fixedDateFromOrdinal(calendar, earliest),
+    fixedDateFromOrdinal(calendar, latest),
+  );
 }
 
 /**
@@ -607,6 +658,26 @@ function gregorianOrdinal(year: bigint, month: number, day: number): bigint {
   return result + BigInt(day - 1);
 }
 
+function gregorianDateFromOrdinal(coordinate: bigint): string {
+  const cycle = floorDiv(coordinate, 146_097n);
+  let remainder = coordinate - cycle * 146_097n;
+  let year = cycle * 400n;
+  for (let offset = 0; offset < 400; offset += 1) {
+    const yearDays = BigInt(isGregorianLeapYear(year) ? 366 : 365);
+    if (remainder < yearDays) break;
+    remainder -= yearDays;
+    year += 1n;
+  }
+  let month = 1;
+  while (month < 12) {
+    const monthDays = BigInt(gregorianMonthDays(year, month));
+    if (remainder < monthDays) break;
+    remainder -= monthDays;
+    month += 1;
+  }
+  return `${formatGregorianYear(year)}-${String(month).padStart(2, "0")}-${String(Number(remainder) + 1).padStart(2, "0")}`;
+}
+
 function daysBeforeGregorianYear(year: bigint): bigint {
   const cycle = floorDiv(year, 400n);
   const remainder = Number(year - cycle * 400n);
@@ -636,6 +707,52 @@ function fixedOrdinal(
     result += BigInt(fixedMonthDays(calendar, year, current));
   }
   return result + BigInt(day - 1);
+}
+
+function fixedDateFromOrdinal(
+  calendar: TimelineFixedCalendar,
+  coordinate: bigint,
+): string {
+  let year: bigint;
+  let remainder: bigint;
+  if (calendar.leapCycle) {
+    const cycleDays = fixedCycleDays(calendar);
+    const cycle = floorDiv(coordinate, cycleDays);
+    year = cycle * BigInt(calendar.leapCycle.years);
+    remainder = coordinate - cycle * cycleDays;
+    for (let offset = 0; offset < calendar.leapCycle.years; offset += 1) {
+      const yearDays = BigInt(fixedYearDays(calendar, year));
+      if (remainder < yearDays) break;
+      remainder -= yearDays;
+      year += 1n;
+    }
+  } else {
+    const yearDays = BigInt(commonFixedYearDays(calendar));
+    year = floorDiv(coordinate, yearDays);
+    remainder = coordinate - year * yearDays;
+  }
+  let month = 1;
+  while (month < calendar.months.length) {
+    const monthDays = BigInt(fixedMonthDays(calendar, year, month));
+    if (remainder < monthDays) break;
+    remainder -= monthDays;
+    month += 1;
+  }
+  return `${year}-${month}-${Number(remainder) + 1}`;
+}
+
+function calendarAnchorOffset(calendar: TimelineCalendar): bigint {
+  if (!calendar.anchor) return 0n;
+  if (calendar.kind === "ordinal") {
+    return gregorianDayOrdinal(calendar.anchor.gregorian) -
+      BigInt(calendar.anchor.expression);
+  }
+  const customAnchor = parseFixedEndpoint(calendar.anchor.expression, calendar);
+  const gregorianAnchor = parseGregorianEndpoint(calendar.anchor.gregorian);
+  if (!customAnchor.ok || !gregorianAnchor.ok) {
+    throw new RangeError("A validated fixed-calendar anchor must remain computable.");
+  }
+  return gregorianAnchor.range.earliest - customAnchor.range.earliest;
 }
 
 function daysBeforeFixedYear(calendar: TimelineFixedCalendar, year: bigint): bigint {
@@ -702,6 +819,21 @@ function floorMod(value: bigint, divisor: bigint): bigint {
 
 function compareBigInts(first: bigint, second: bigint): -1 | 0 | 1 {
   return first < second ? -1 : first > second ? 1 : 0;
+}
+
+function formattedDayRange(
+  earliest: string,
+  latest: string,
+): TimelineDayRangeFormattingResult {
+  return {
+    kind: "formatted",
+    expression: earliest === latest ? earliest : `${earliest}/${latest}`,
+  };
+}
+
+function formatGregorianYear(year: bigint): string {
+  const absolute = (year < 0n ? -year : year).toString().padStart(4, "0");
+  return year < 0n ? `-${absolute}` : absolute;
 }
 
 function invalidExpression(expression: string): TimelineNormalizationResult {

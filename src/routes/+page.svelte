@@ -320,6 +320,10 @@
     type TimelineProjectLoadResult,
   } from "$lib/timeline/load";
   import { deriveTimelineModel } from "$lib/timeline/model";
+  import TravelInspector from "$lib/travel/TravelInspector.svelte";
+  import { deriveJourneyAnalyses } from "$lib/travel/journey";
+  import { deriveTravelModel } from "$lib/travel/model";
+  import { presentTravelInspector } from "$lib/travel/presentation";
 
   interface SaveFailure {
     path: string;
@@ -681,6 +685,26 @@
         )
       : null,
   );
+  const travelModel = $derived.by(() =>
+    loreIndex ? deriveTravelModel(loreIndex) : null,
+  );
+  const travelCalendars = $derived(
+    timelineProject.kind === "ready" ? timelineProject.timeline.calendars : [],
+  );
+  const travelJourneyAnalyses = $derived(
+    travelModel ? deriveJourneyAnalyses(travelModel, travelCalendars) : [],
+  );
+  const travelInspector = $derived.by(() => {
+    const path = activeLorePath();
+    return presentTravelInspector(
+      loreIndex,
+      travelModel,
+      travelJourneyAnalyses,
+      path,
+      path ? fingerprintContent(content) : null,
+      travelCalendars,
+    );
+  });
   const saveStatus = $derived.by(() => {
     if (!activeFilePath) return "";
     if (saveState.phase === "saving") return "Saving…";
@@ -3123,6 +3147,15 @@
   async function openContinuityReference(path: string): Promise<void> {
     writingToolsOpen = false;
     await openLoreReference(path);
+  }
+
+  async function openTravelSource(
+    path: string,
+    range: SourceRange | null,
+  ): Promise<void> {
+    writingToolsOpen = false;
+    await tick();
+    await openIndexedLorePath(path, range);
   }
 
   async function confirmContinuityAuthoring(
@@ -6208,6 +6241,10 @@
         onConfirmAuthoring={confirmContinuityAuthoring}
         onUndoAuthoring={undoLastContinuityAuthoring}
       />
+      <TravelInspector
+        presentation={travelInspector}
+        onOpenSource={(path, range) => void openTravelSource(path, range)}
+      />
       {#if manuscriptProject.kind === "absent" && loreIndexPhase === "ready"}
         <button
           class="open-btn manuscript-create"
@@ -6372,6 +6409,8 @@
           <TimelineWorkspace
             result={timelineProject}
             model={timelineModel}
+            journeyAnalyses={travelJourneyAnalyses}
+            calendars={travelCalendars}
             loading={timelineLoading}
             onClose={closeTimelineWorkspace}
             onRefresh={() => void refreshTimelineProject()}

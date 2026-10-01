@@ -1,4 +1,5 @@
 import { fingerprintContent } from "$lib/editor/recovery";
+import { continuityPropertyDefinition } from "./continuity-registry";
 import type {
   CanonStatus,
   LoreDocumentRecord,
@@ -10,6 +11,7 @@ export interface ContinuityNoteChoice {
   id: string;
   title: string;
   path: string;
+  noteType: string | null;
 }
 
 export type ContinuityAuthoringContext =
@@ -58,6 +60,20 @@ export function continuityAuthoringContext(
   };
 }
 
+export function continuityNoteChoicesForProperty(
+  choices: readonly ContinuityNoteChoice[],
+  property: string,
+  retainId = "",
+): ContinuityNoteChoice[] {
+  const targetTypes = continuityPropertyDefinition(property)?.targetTypes;
+  if (!targetTypes) return [...choices];
+  return choices.filter(
+    ({ id, noteType }) =>
+      id === retainId ||
+      (noteType !== null && targetTypes.includes(noteType)),
+  );
+}
+
 function uniqueNoteChoices(index: LoreProjectIndex): ContinuityNoteChoice[] {
   const records = new Map<string, LoreDocumentRecord[]>();
   for (const document of index.documents.values()) {
@@ -72,6 +88,7 @@ function uniqueNoteChoices(index: LoreProjectIndex): ContinuityNoteChoice[] {
       id,
       title: matches[0]!.title,
       path: matches[0]!.path,
+      noteType: matches[0]!.type,
     }))
     .sort((left, right) =>
       left.title.localeCompare(right.title) || left.path.localeCompare(right.path),

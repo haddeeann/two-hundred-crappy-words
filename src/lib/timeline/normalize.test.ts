@@ -7,6 +7,7 @@ import type {
 import {
   calculateCalendarYearAge,
   compareTimelineRanges,
+  formatTimelineDayRange,
   normalizeTimelineExpression,
   relateTimelineRanges,
   type TimelineRange,
@@ -248,6 +249,91 @@ describe("timeline expression normalization", () => {
       kind: "non-computable",
       code: "unknown-calendar",
       reason: 'Calendar "lost-calendar" is not defined by this project.',
+    });
+  });
+});
+
+describe("timeline day-range presentation", () => {
+  it("round-trips Gregorian dates, leap boundaries, and enormous years", () => {
+    for (const expression of [
+      "2160-02-29",
+      "2161-01-01",
+      "123456789012345678901234567890-12-31",
+    ]) {
+      const normalized = normalizeTimelineExpression("gregorian", expression, []);
+      expect(normalized.kind).toBe("computable");
+      if (normalized.kind !== "computable") continue;
+      expect(formatTimelineDayRange(normalized.range, [])).toEqual({
+        kind: "formatted",
+        expression,
+      });
+    }
+  });
+
+  it("formats derived Gregorian windows as inclusive date intervals", () => {
+    const first = normalizeTimelineExpression("gregorian", "2161-04-06", []);
+    expect(first.kind).toBe("computable");
+    if (first.kind !== "computable") return;
+    expect(formatTimelineDayRange({
+      ...first.range,
+      latest: first.range.latest + 1n,
+      interval: true,
+    }, [])).toEqual({
+      kind: "formatted",
+      expression: "2161-04-06/2161-04-07",
+    });
+  });
+
+  it("round-trips anchored and unanchored fixed-calendar day coordinates", () => {
+    for (const calendar of [
+      fixedCalendar(),
+      fixedCalendar({
+        anchor: { expression: "af:1-01-01", gregorian: "2160-01-01" },
+      }),
+    ]) {
+      const normalized = normalizeTimelineExpression(calendar.id, "0-1-1", [calendar]);
+      expect(normalized.kind).toBe("computable");
+      if (normalized.kind !== "computable") continue;
+      expect(formatTimelineDayRange(normalized.range, [calendar])).toEqual({
+        kind: "formatted",
+        expression: "0-1-1",
+      });
+    }
+  });
+
+  it("round-trips anchored and unanchored ordinal ranges", () => {
+    for (const calendar of [
+      ordinalCalendar(),
+      ordinalCalendar({
+        anchor: { expression: "0", gregorian: "2160-01-01" },
+      }),
+    ]) {
+      const normalized = normalizeTimelineExpression(calendar.id, "-2/4", [calendar]);
+      expect(normalized.kind).toBe("computable");
+      if (normalized.kind !== "computable") continue;
+      expect(formatTimelineDayRange(normalized.range, [calendar])).toEqual({
+        kind: "formatted",
+        expression: "-2/4",
+      });
+    }
+  });
+
+  it("refuses missing calendars and mismatched axes", () => {
+    expect(formatTimelineDayRange({
+      ...range(1n, 1n),
+      calendarId: "missing",
+    }, [])).toMatchObject({
+      kind: "unavailable",
+      reason: expect.stringContaining("not defined"),
+    });
+    expect(formatTimelineDayRange({
+      ...range(1n, 1n, "calendar:red-reckoning"),
+      calendarId: "red-reckoning",
+    }, [fixedCalendar({
+      anchor: { expression: "af:1-01-01", gregorian: "2160-01-01" },
+    })])).toMatchObject({
+      kind: "unavailable",
+      reason: expect.stringContaining("axis"),
     });
   });
 });

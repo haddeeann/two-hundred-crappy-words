@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { buildLoreProjectIndex } from "./index";
-import { continuityAuthoringContext } from "./continuity-authoring";
+import {
+  continuityAuthoringContext,
+  continuityNoteChoicesForProperty,
+} from "./continuity-authoring";
 
 const NOTE_ID = "2cd59970-6ab4-46f9-b54b-a0e35af5b9e1";
 const TARGET_ID = "f8c20f24-4368-4c21-a1f7-a2ba31bd73a4";
@@ -22,8 +25,8 @@ describe("continuity authoring eligibility", () => {
       noteId: NOTE_ID,
       noteType: "character",
       noteChoices: [
-        { id: TARGET_ID, title: "Fleet", path: "fleet.md" },
-        { id: NOTE_ID, title: "Mara", path: "mara.md" },
+        { id: TARGET_ID, title: "Fleet", path: "fleet.md", noteType: null },
+        { id: NOTE_ID, title: "Mara", path: "mara.md", noteType: "character" },
       ],
     });
     expect(continuityAuthoringContext(index, "mara.md", active, false)).toMatchObject({
@@ -34,6 +37,26 @@ describe("continuity authoring eligibility", () => {
       kind: "unavailable",
       reason: expect.stringContaining("catch up"),
     });
+  });
+
+  it("offers only compatible travel targets while retaining an existing mismatch for safe editing", () => {
+    const choices = [
+      { id: "location", title: "Port", path: "port.md", noteType: "location" },
+      { id: "craft", title: "Courier", path: "courier.md", noteType: "spacecraft" },
+      { id: "faction", title: "Fleet", path: "fleet.md", noteType: "faction" },
+      { id: "route", title: "Outbound", path: "outbound.md", noteType: "route" },
+    ];
+
+    expect(
+      continuityNoteChoicesForProperty(choices, "route-origin").map(({ id }) => id),
+    ).toEqual(["location", "craft"]);
+    expect(
+      continuityNoteChoicesForProperty(choices, "uses-route").map(({ id }) => id),
+    ).toEqual(["route"]);
+    expect(
+      continuityNoteChoicesForProperty(choices, "route-origin", "faction").map(({ id }) => id),
+    ).toEqual(["location", "craft", "faction"]);
+    expect(continuityNoteChoicesForProperty(choices, "writer-custom")).toEqual(choices);
   });
 
   it("refuses missing and duplicated stable note identities", () => {
