@@ -10,26 +10,29 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.6f — Presence and travel continuity findings**
+**0.7.7 — Relationship views research and contract**
 
 ### Intended outcome
 
-Derive bounded, memory-only review findings when a journey participant's applicable location evidence disagrees with the route's origin or destination, while preserving uncertainty and linking every conclusion to its exact sources.
+Research and propose the smallest portable relationship model and focused writer-facing views before extending permanent property semantics or interface behavior.
 
 ### Acceptance criteria
 
-- [ ] Define conservative departure and arrival presence-comparison rules from existing `participant`, `located-at`, route, containment, applicability, certainty, and calendar evidence.
-- [ ] Derive stable source-linked information, review, and contradiction findings without choosing claims or writing project state.
-- [ ] Present bounded findings in the existing Travel and Timeline surfaces with plain-language limits and exact source actions.
-- [ ] Verify ambiguity, containment, applicability, stale-source, no-write, and no-daily-credit behavior through focused tests and packaged macOS QA.
+- [ ] Inventory the existing relationship-capable properties, note types, directionality, validity, canon, certainty, and source-link boundaries.
+- [ ] Research established graph/relationship standards and focused views in writing tools using primary sources where available.
+- [ ] Propose explicit direction, inverse-display, multiplicity, time-bound, ambiguity, and contradiction semantics without inventing a universal social ontology.
+- [ ] Define focused character, faction, and spacecraft views, safety/performance bounds, and their separation from the later map model.
+- [ ] Record the permanent decision gates and obtain user approval before implementing new relationship semantics.
 
 ## Next slices
 
-1. Implement source-linked presence/travel findings on the verified read-only travel model.
-2. Continue milestone 0.7 with focused relationship views.
+1. Complete and review the relationship model proposal.
+2. Implement approved source-linked relationship views in independently verified slices.
 3. Research and approve the separately gated map model before adding any map format or persistence.
 
 ## Completed checkpoint
+
+- Slice 0.7.6f completes bounded presence/travel continuity findings. Rule `travel.presence.endpoint` version 1 compares character or spacecraft participant locations against route origin and destination only when the participant, location, containment, route, duration, and complete departure or derived-arrival ranges are sufficiently usable. Same or definitely nested places are compatible; broader or potentially nested places remain indeterminate; several applicable locations must form one definite containment chain; and unrelated places produce review—not contradiction—because the format has no disjoint-location assertion. Missing covering presence evidence produces no finding because tracking is optional. Stable memory-only findings retain exact source ranges, cap project output at 100 with an omission notice, appear in the active journey's Travel disclosure and Timeline card, write nothing, and award no daily words. Packaged macOS QA verified the closed default, readable compatible/review presentation, exact `located-at` source selection from both surfaces, unchanged source hashes, unchanged `0 / 200`, and restoration of Arcadia. The final gate has 527 passing frontend tests across seventy-six files, fifteen passing native tests, clean Rust formatting/checks, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 
 - Slice 0.7.6e completes the source-linked travel experience. Timeline day coordinates format back into Gregorian, fixed-calendar, or ordinal expressions on the correct anchored or local axis, including huge years and inclusive derived windows. A closed-by-default Travel disclosure presents active location containment, route direction/model/duration/distance, or journey departure/derived arrival/authored-arrival comparison with exact source actions and stale-overlay suppression. Timeline cards expose the same journey result beside chronological or Needs time evidence. The existing exact-preview continuity editor supplies all seven approved properties; new note-reference choices are filtered by documented target type, while an existing incompatible target remains selectable during editing so no source is lost accidentally. Derived results remain memory-only and award no daily words. Packaged macOS QA verified route direction and duration, definite location containment, day-widened derived arrival, compatible authored arrival, Timeline travel details, exact route and duration source selection, Escape plus forward/backward Tab navigation, the Route template and Locations default, unchanged source hashes, and unchanged `0 / 200`; the writer's Arcadia project was restored afterward. The final gate has 519 passing frontend tests across seventy-five files, fifteen passing native tests, clean Rust formatting/checks, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 
@@ -148,7 +151,7 @@ Derive bounded, memory-only review findings when a journey participant's applica
 
 ## Blockers and decision gates
 
-There is no technical implementation blocker. The approved route format, read-only travel model, exact duration arithmetic, journey comparison, source-linked interface, authoring integration, and packaged QA are complete. The next executable slice derives memory-only presence/travel findings from those existing sources; relationship views follow, while maps remain a separate research and approval gate.
+There is no technical blocker. Travel and presence findings are complete. Relationship views are now at a deliberate research and permanent-semantics gate: the proposal must define direction, inverse display, time bounds, ambiguity, focused scope, and refusal behavior before implementation. Maps remain a separate later research and approval gate.
 
 ## Handoff protocol
 
