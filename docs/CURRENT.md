@@ -10,26 +10,29 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.6a — Route note and property contract**
+**0.7.6b — Pure location and travel evidence model**
 
 ### Intended outcome
 
-Publish the approved route note type and seven location/travel property definitions without changing or migrating existing writer projects.
+Derive routes, specific journeys, and explicit location containment from one immutable lore-index generation while refusing every ambiguous identity and source shape before arithmetic or interface work.
 
 ### Acceptance criteria
 
-- [x] Record approval of all eight permanent choices in [`LOCATION_TRAVEL_FORMAT.md`](LOCATION_TRAVEL_FORMAT.md).
-- [x] Add `route` as the tenth app-created structured note type, defaulting to the existing locations folder.
-- [x] Add the seven approved property definitions with exact subject, value, target, multiplicity, and validity-bound semantics.
-- [x] Verify the focused compatibility tests and broader project gates.
+- [x] Include only uniquely identified locations, routes, and event/scene notes that actually claim `uses-route`; explain missing or copied subject identities separately.
+- [x] Resolve route endpoints, optional models, journey routes, direct containers, and every missing, copied, ambiguous, malformed, or wrong-type target without choosing a winner.
+- [x] Preserve typed duration/distance/departure/arrival claims, validity bounds, certainty, effective canon, exact source ranges, and relevant source diagnostics for later rules and links.
+- [x] Derive separate explicit containment paths with definite/potential status, cycle detection, unresolved evidence, multiple-parent branches, and a 64-link limit.
+- [x] Verify focused ambiguity fixtures, the complete frontend suite, type checks, production build, and dependency audit without filesystem or interface changes.
 
 ## Next slices
 
-1. Derive a pure read-only location/route/journey evidence model before filesystem or interface work.
-2. Add exact supported-duration normalization and conservative arrival-date enclosure independently of UI.
+1. Add exact supported-duration normalization and conservative arrival-date enclosure independently of UI.
+2. Select applicable duration evidence conservatively and compare a derived window with independent authored arrival evidence.
 3. Expose source-linked route and journey details after the pure behavior is complete.
 
 ## Completed checkpoint
+
+- Slice 0.7.6b completes the pure read-only location and travel evidence model. It includes only unique stable locations and routes plus event/scene notes that actually claim `uses-route`; missing and copied subject identities remain excluded with reasons. Route endpoints, optional models, journey routes, typed durations/distances/departures/arrivals, and direct containers retain certainty, effective canon, applicability bounds, exact source ranges, and relevant parse diagnostics. Missing, copied, ambiguous, malformed, and wrong-type references never resolve; competing one-to-review claims remain explicit rather than selecting a usable-looking neighbor. Explicit containment creates one path per writer-authored parent, marks bounded or non-exact chains potential, reports missing targets and cycles, and stops after 64 links. Nine focused fixtures cover the successful model, every major refusal, copied identities/facts, applicability-ready duration claims, unrelated-event exclusion, definite/potential/cyclic/unresolved/branching containment, and the traversal bound. The full gate has 481 passing frontend tests across seventy-two files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities. No filesystem or interface behavior changed.
 
 - Slice 0.7.6a publishes the user-approved route-note and continuity-property contract. `route` is the tenth app-created structured note type, defaults to the existing locations folder without adding a manifest role, and creates only a human-readable directional planning scaffold rather than invented facts. The seven approved location/travel properties now define subject types, typed value kinds, simultaneous-value review behavior, applicability bounds, relationship direction, and—where relevant—permitted target note types. The existing inspector diagnoses a uniquely resolved but wrong-type travel reference without changing its source. The approved storage, identity, direction, arithmetic, evidence, containment, and map boundaries are recorded in the durable format and decision documents. The gate has 472 passing frontend tests across seventy-one files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities. No project file was migrated or rewritten.
 
