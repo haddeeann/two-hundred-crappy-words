@@ -10,30 +10,28 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.6e — Source-linked travel experience**
+**0.7.6f — Presence and travel continuity findings**
 
 ### Intended outcome
 
-Expose the approved location, route, and journey model through quiet source-linked Writing tools and Timeline details, then complete packaged macOS interaction QA.
+Derive bounded, memory-only review findings when a journey participant's applicable location evidence disagrees with the route's origin or destination, while preserving uncertainty and linking every conclusion to its exact sources.
 
 ### Acceptance criteria
 
-- [x] Format derived Gregorian, anchored fixed-calendar, and anchored ordinal-calendar day windows without JavaScript `Date` limits.
-- [x] Add a closed-by-default Travel disclosure for active locations, route profiles, and journey notes with readable refusals, containment paths, derived arrivals, and exact source actions.
-- [x] Add route and arrival evidence to chronological and Needs time Timeline cards without changing narrative order or writing derived values.
-- [x] Reuse guarded continuity authoring for the seven approved properties and filter new note-reference choices to compatible target types while preserving an existing mismatch for safe editing.
-- [x] Pass focused presentation/format/authoring tests, the full frontend and native suites, type checks, web and production macOS `.app`/DMG builds, and the production dependency audit.
-- [ ] Complete packaged macOS visual, keyboard, source-navigation, no-write, and no-daily-credit QA.
+- [ ] Define conservative departure and arrival presence-comparison rules from existing `participant`, `located-at`, route, containment, applicability, certainty, and calendar evidence.
+- [ ] Derive stable source-linked information, review, and contradiction findings without choosing claims or writing project state.
+- [ ] Present bounded findings in the existing Travel and Timeline surfaces with plain-language limits and exact source actions.
+- [ ] Verify ambiguity, containment, applicability, stale-source, no-write, and no-daily-credit behavior through focused tests and packaged macOS QA.
 
 ## Next slices
 
-1. Complete packaged macOS QA for the source-linked travel experience.
-2. Add later continuity findings that compare presence and travel only after the experience is verified.
-3. Continue milestone 0.7 with focused relationship views and the separately gated map model.
+1. Implement source-linked presence/travel findings on the verified read-only travel model.
+2. Continue milestone 0.7 with focused relationship views.
+3. Research and approve the separately gated map model before adding any map format or persistence.
 
 ## Completed checkpoint
 
-- Slice 0.7.6e implementation is automated-gate complete and awaits only packaged interaction QA. Timeline day coordinates now format back into Gregorian, fixed-calendar, or ordinal expressions on the correct anchored or local axis, including huge years and inclusive derived windows. A closed-by-default Travel disclosure presents active location containment, route direction/model/duration/distance, or journey departure/derived arrival/authored-arrival comparison with exact source actions and stale-overlay suppression. Timeline cards expose the same journey result beside chronological or Needs time evidence. The existing exact-preview continuity editor supplies all seven approved properties; new note-reference choices are filtered by documented target type, while an existing incompatible target remains selectable during editing so no source is lost accidentally. Derived results remain memory-only and award no daily words. The automated gate has 519 passing frontend tests across seventy-five files, fifteen passing native tests, clean Rust formatting/checks, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities. Packaged visual, keyboard, source-navigation, no-write, and no-credit QA remains pending because the Mac locked before Computer Use could inspect the app.
+- Slice 0.7.6e completes the source-linked travel experience. Timeline day coordinates format back into Gregorian, fixed-calendar, or ordinal expressions on the correct anchored or local axis, including huge years and inclusive derived windows. A closed-by-default Travel disclosure presents active location containment, route direction/model/duration/distance, or journey departure/derived arrival/authored-arrival comparison with exact source actions and stale-overlay suppression. Timeline cards expose the same journey result beside chronological or Needs time evidence. The existing exact-preview continuity editor supplies all seven approved properties; new note-reference choices are filtered by documented target type, while an existing incompatible target remains selectable during editing so no source is lost accidentally. Derived results remain memory-only and award no daily words. Packaged macOS QA verified route direction and duration, definite location containment, day-widened derived arrival, compatible authored arrival, Timeline travel details, exact route and duration source selection, Escape plus forward/backward Tab navigation, the Route template and Locations default, unchanged source hashes, and unchanged `0 / 200`; the writer's Arcadia project was restored afterward. The final gate has 519 passing frontend tests across seventy-five files, fifteen passing native tests, clean Rust formatting/checks, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 
 - Slice 0.7.6d completes pure journey-level duration selection and independent authored-arrival comparison. A calculation requires one resolved route, different resolved endpoints, one computable departure, and exactly one supported duration whose applicability bounds definitely contain the complete departure. Definitely outside claims are ignored; partly overlapping, cross-axis, non-computable, and several applicable claims all refuse selection. A missing `ends-at` leaves the derived result usable, overlapping authored evidence is compatible, and ambiguous, interval, invalid, or cross-axis arrival evidence remains indeterminate. Disjoint ranges become a hard contradiction only when the route-use, both endpoints, departure, duration, and authored arrival are all unique and explicitly exact; otherwise they are a qualified review. An `occurs-at` interval combined with `ends-at` retains the existing timeline refusal. Ten focused end-to-end fixtures cover success, exact and qualified conflict, no authored arrival, applicability selection/outside/potential/competing states, unsupported units, ambiguous and interval arrival, interval departure, same endpoints, and unanchored-calendar refusal. The full gate has 510 passing frontend tests across seventy-four files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities. No interface or filesystem behavior changed.
 
@@ -150,7 +148,7 @@ Expose the approved location, route, and journey model through quiet source-link
 
 ## Blockers and decision gates
 
-There is no technical implementation blocker. Timeline and character-age evidence are verified, and location/travel research is complete. The next change would add a permanent structured note type and property semantics, so implementation is deliberately paused for the eight decisions in `docs/LOCATION_TRAVEL_FORMAT.md`; timeline-file creation and mutation remain separate later guarded slices.
+There is no technical implementation blocker. The approved route format, read-only travel model, exact duration arithmetic, journey comparison, source-linked interface, authoring integration, and packaged QA are complete. The next executable slice derives memory-only presence/travel findings from those existing sources; relationship views follow, while maps remain a separate research and approval gate.
 
 ## Handoff protocol
 
