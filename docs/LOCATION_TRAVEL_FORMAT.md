@@ -1,10 +1,10 @@
 # Location and travel model
 
-Status: **PROPOSED; research and decision gate only**
+Status: **APPROVED; implementation active**
 
 Last updated: 2026-10-01
 
-This proposal defines the smallest portable location and travel boundary for 200 Crappy Words. It does not change a project file, note, parser, registry, or interface. The permanent choices at the end require approval before implementation.
+This document defines the approved portable location and travel boundary for 200 Crappy Words. The user approved all eight permanent choices on 2026-10-01. Implementation proceeds in independently verified slices; ordinary projects remain valid and are never migrated on open.
 
 The central recommendation is deliberately modest: keep places, reusable route profiles, and specific journeys as separate structured Markdown notes. Reuse the approved continuity facts and timeline arithmetic instead of adding a central spatial database or a universal propulsion engine. A writer states the travel duration that is true for one route and model; the app may add that duration to a sufficiently computable departure and show an honest arrival window.
 
@@ -36,16 +36,16 @@ It should not:
 
 The project already has most of the required primitives. Their current meanings remain unchanged.
 
-| Existing source | Current meaning | Travel use |
-| --- | --- | --- |
-| Stable structured-note UUID | Portable identity for a Markdown note | Identifies locations, route profiles, models, and journey events without path or title guesses |
-| `located-at` | A character, spacecraft, event, or scene is at one referenced place during an optional applicability span | Presence evidence; not a route, origin/destination pair, or duration |
-| `validFrom` / `validTo` | Inclusive applicability bounds for the fact that contains them | Selects whether containment or a duration claim applies; never becomes a trip's start/end |
-| `occurs-at` / `ends-at` | Start/occurrence and optional end of an event, scene, or chapter | Departure and optional authored arrival of a specific journey |
-| `quantity` / `range` | Canonical decimal amount or inclusive bounds plus unit system and unit | Route distance and travel duration without floating-point rewriting |
-| `certainty` | `exact`, `approximate`, `uncertain`, or unspecified | Qualifies each input and limits whether a hard contradiction is possible |
-| Timeline normalized range | Inclusive earliest/latest calendar-day coordinates with explicit axes | Supplies departure/arrival date arithmetic when the duration unit can share that axis |
-| Manuscript `location` / `storyDate` | Free-form planning labels | Display context only; never parsed or migrated silently |
+| Existing source                     | Current meaning                                                                                           | Travel use                                                                                     |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Stable structured-note UUID         | Portable identity for a Markdown note                                                                     | Identifies locations, route profiles, models, and journey events without path or title guesses |
+| `located-at`                        | A character, spacecraft, event, or scene is at one referenced place during an optional applicability span | Presence evidence; not a route, origin/destination pair, or duration                           |
+| `validFrom` / `validTo`             | Inclusive applicability bounds for the fact that contains them                                            | Selects whether containment or a duration claim applies; never becomes a trip's start/end      |
+| `occurs-at` / `ends-at`             | Start/occurrence and optional end of an event, scene, or chapter                                          | Departure and optional authored arrival of a specific journey                                  |
+| `quantity` / `range`                | Canonical decimal amount or inclusive bounds plus unit system and unit                                    | Route distance and travel duration without floating-point rewriting                            |
+| `certainty`                         | `exact`, `approximate`, `uncertain`, or unspecified                                                       | Qualifies each input and limits whether a hard contradiction is possible                       |
+| Timeline normalized range           | Inclusive earliest/latest calendar-day coordinates with explicit axes                                     | Supplies departure/arrival date arithmetic when the duration unit can share that axis          |
+| Manuscript `location` / `storyDate` | Free-form planning labels                                                                                 | Display context only; never parsed or migrated silently                                        |
 
 Ordinary Markdown and ordinary folders remain valid. Unknown note types and custom properties already remain visible and preserved. Opening, indexing, inspecting, or calculating must never create a route note or insert a fact.
 
@@ -73,16 +73,16 @@ These sources inform local behavior. None is imported, contacted, or required at
 The existing property remains the assertion that its subject is at the referenced place during the fact's optional applicability window:
 
 ```yaml
-  - id: "4d600744-c78d-40f9-a386-baf870506c1a"
-    property: "located-at"
-    value:
-      kind: "note"
-      id: "f06f18fa-2ae9-4946-93fc-5b1125ef65fd"
-    validFrom:
-      kind: "time"
-      calendar: "gregorian"
-      expression: "2161-04"
-    certainty: "exact"
+- id: "4d600744-c78d-40f9-a386-baf870506c1a"
+  property: "located-at"
+  value:
+    kind: "note"
+    id: "f06f18fa-2ae9-4946-93fc-5b1125ef65fd"
+  validFrom:
+    kind: "time"
+    calendar: "gregorian"
+    expression: "2161-04"
+  certainty: "exact"
 ```
 
 A deterministic location rule should accept only a uniquely resolved `location` or `spacecraft` target. A target of another type remains visible with a diagnostic. Multiple applicable locations remain competing claims unless containment proves that one is an ancestor of another; array order, note recency, canon, title, and path never choose a winner.
@@ -92,12 +92,12 @@ A deterministic location rule should accept only a uniquely resolved `location` 
 A location may assert one or more direct containers:
 
 ```yaml
-  - id: "a954e576-df6e-4670-856d-324564856d71"
-    property: "contained-by"
-    value:
-      kind: "note"
-      id: "01739c54-b396-4978-abd6-0ceaf57b2e6f"
-    certainty: "exact"
+- id: "a954e576-df6e-4670-856d-324564856d71"
+  property: "contained-by"
+  value:
+    kind: "note"
+    id: "01739c54-b396-4978-abd6-0ceaf57b2e6f"
+  certainty: "exact"
 ```
 
 `contained-by` is allowed on `location` notes and points to a uniquely identified `location` or `spacecraft`. It means writer-asserted semantic containment, not an OGC geometry test, legal jurisdiction, ownership, proximity, or route access. Applicability bounds may represent a changing boundary or a location aboard a craft.
@@ -162,19 +162,19 @@ A route is usable for arrival arithmetic only with one unambiguous origin, one d
 A specific journey uses the existing event/scene timeline identity and refers to one reusable route:
 
 ```yaml
-  - id: "51ba36bb-61a0-4c12-b94a-f74dd8d8394e"
-    property: "occurs-at"
-    value:
-      kind: "time"
-      calendar: "gregorian"
-      expression: "2161-04-06"
-    certainty: "exact"
-  - id: "cfe37c23-e42b-42ce-a620-b57168677eb6"
-    property: "uses-route"
-    value:
-      kind: "note"
-      id: "478139f5-bd24-4d2f-b7dd-97527c3cc7b5"
-    certainty: "exact"
+- id: "51ba36bb-61a0-4c12-b94a-f74dd8d8394e"
+  property: "occurs-at"
+  value:
+    kind: "time"
+    calendar: "gregorian"
+    expression: "2161-04-06"
+  certainty: "exact"
+- id: "cfe37c23-e42b-42ce-a620-b57168677eb6"
+  property: "uses-route"
+  value:
+    kind: "note"
+    id: "478139f5-bd24-4d2f-b7dd-97527c3cc7b5"
+  certainty: "exact"
 ```
 
 For a journey, `occurs-at` is the departure range. An optional existing `ends-at` fact is the writer's independent arrival evidence. The app never changes either fact to keep it synchronized with the route. Instead it derives an arrival window and compares that window with `ends-at`, if present.
@@ -274,21 +274,21 @@ No prose, route, coordinate, finding, or calculation leaves the selected project
 
 ## Proposed registry additions
 
-| Property | Subject types | Value | Simultaneous values | Validity bounds | Target/meaning |
-| --- | --- | --- | --- | --- | --- |
-| `contained-by` | location | note | many | yes | Direct location or spacecraft container |
-| `route-origin` | route | note | one to review | no | Directional location/spacecraft origin |
-| `route-destination` | route | note | one to review | no | Directional location/spacecraft destination |
-| `travel-model` | route | note | one to review | no | Optional technology/spacecraft model; never interpreted as physics |
-| `travel-duration` | route | quantity, range | one applicable to review | yes | Explicit elapsed duration or duration window |
-| `travel-distance` | route | quantity, range | one to review | no | Optional context; never converted into time automatically |
-| `uses-route` | event, scene | note | one to review | no | One specific journey's route profile |
+| Property            | Subject types | Value           | Simultaneous values      | Validity bounds | Target/meaning                                                     |
+| ------------------- | ------------- | --------------- | ------------------------ | --------------- | ------------------------------------------------------------------ |
+| `contained-by`      | location      | note            | many                     | yes             | Direct location or spacecraft container                            |
+| `route-origin`      | route         | note            | one to review            | no              | Directional location/spacecraft origin                             |
+| `route-destination` | route         | note            | one to review            | no              | Directional location/spacecraft destination                        |
+| `travel-model`      | route         | note            | one to review            | no              | Optional technology/spacecraft model; never interpreted as physics |
+| `travel-duration`   | route         | quantity, range | one applicable to review | yes             | Explicit elapsed duration or duration window                       |
+| `travel-distance`   | route         | quantity, range | one to review            | no              | Optional context; never converted into time automatically          |
+| `uses-route`        | event, scene  | note            | one to review            | no              | One specific journey's route profile                               |
 
 As with the existing registry, a mismatch remains visible and preserved. Registry semantics guide deterministic rules; they do not make an unknown or conflicting source invalid Markdown.
 
 ## Approval gates
 
-Implementation should begin only after the user approves or revises these permanent choices:
+The user approved these permanent choices on 2026-10-01:
 
 1. **Storage:** keep reusable route profiles as structured Markdown notes and facts, with no central travel JSON file or derived cache.
 2. **Route identity:** add `route` as the tenth app-created structured note type, defaulting its template destination to the existing locations folder and adding no manifest role.

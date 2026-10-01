@@ -10,29 +10,30 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.6 — Location and travel format approval**
+**0.7.6a — Route note and property contract**
 
 ### Intended outcome
 
-Review and approve or revise the proposed writer-owned location, route-profile, and arrival-window contract before changing note types, the property registry, or app behavior.
+Publish the approved route note type and seven location/travel property definitions without changing or migrating existing writer projects.
 
 ### Acceptance criteria
 
-- [x] Inventory the existing `located-at`, quantity/range, validity-bound, timeline, and stable-note identity semantics before proposing a new format.
-- [x] Research primary standards and established writing-tool conventions for coordinates, containment, routes, duration, and uncertain arrival windows.
-- [x] Separate generic arithmetic from project-defined propulsion, calendars, map coordinates, and narrative shorthand.
-- [x] Draft source shapes, refusal rules, source-linked UX, safety limits, and explicit approval gates without changing a project file or interface.
-- [ ] Receive approval or requested revisions for the eight permanent choices in [`LOCATION_TRAVEL_FORMAT.md`](LOCATION_TRAVEL_FORMAT.md).
+- [x] Record approval of all eight permanent choices in [`LOCATION_TRAVEL_FORMAT.md`](LOCATION_TRAVEL_FORMAT.md).
+- [x] Add `route` as the tenth app-created structured note type, defaulting to the existing locations folder.
+- [x] Add the seven approved property definitions with exact subject, value, target, multiplicity, and validity-bound semantics.
+- [x] Verify the focused compatibility tests and broader project gates.
 
 ## Next slices
 
-1. Resolve the documented storage, route identity, vocabulary, direction, arithmetic, evidence, containment, and map-boundary decisions.
-2. Add the approved route note template and property-registry contract with compatibility tests.
-3. Derive a pure read-only location/route/journey evidence model before filesystem or interface work.
+1. Derive a pure read-only location/route/journey evidence model before filesystem or interface work.
+2. Add exact supported-duration normalization and conservative arrival-date enclosure independently of UI.
+3. Expose source-linked route and journey details after the pure behavior is complete.
 
 ## Completed checkpoint
 
-- Slice 0.7.6 research and contract drafting are complete. Existing `located-at`, note identity, quantity/range, applicability bounds, timeline axes, certainty, and free-form manuscript metadata were inventoried before proposing changes. Primary research covered GeoSPARQL topological relations, GeoJSON's WGS 84 boundary, OGC local/engineering coordinate reference systems, GTFS route/trip separation, OGC route distance/duration structure, OWL-Time duration semantics, UCUM units, interval enclosure, and the place/timeline/map conventions of Aeon Timeline, Plottr, World Anvil, and Campfire. [`LOCATION_TRAVEL_FORMAT.md`](LOCATION_TRAVEL_FORMAT.md) proposes ordinary Markdown route-profile notes, explicit location containment, directional origin/destination/model/duration facts, specific journey events that reuse `occurs-at`/`ends-at`, conservative arrival-date enclosure, exact refusal rules, source-linked UX, and a strict separation from future map coordinates and fictional physics. No project file, note, schema, parser, registry, capability, dependency, or interface changed. Implementation is paused at eight permanent-format approval gates.
+- Slice 0.7.6a publishes the user-approved route-note and continuity-property contract. `route` is the tenth app-created structured note type, defaults to the existing locations folder without adding a manifest role, and creates only a human-readable directional planning scaffold rather than invented facts. The seven approved location/travel properties now define subject types, typed value kinds, simultaneous-value review behavior, applicability bounds, relationship direction, and—where relevant—permitted target note types. The existing inspector diagnoses a uniquely resolved but wrong-type travel reference without changing its source. The approved storage, identity, direction, arithmetic, evidence, containment, and map boundaries are recorded in the durable format and decision documents. The gate has 472 passing frontend tests across seventy-one files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities. No project file was migrated or rewritten.
+
+- Slice 0.7.6 research and contract drafting are complete. Existing `located-at`, note identity, quantity/range, applicability bounds, timeline axes, certainty, and free-form manuscript metadata were inventoried before proposing changes. Primary research covered GeoSPARQL topological relations, GeoJSON's WGS 84 boundary, OGC local/engineering coordinate reference systems, GTFS route/trip separation, OGC route distance/duration structure, OWL-Time duration semantics, UCUM units, interval enclosure, and the place/timeline/map conventions of Aeon Timeline, Plottr, World Anvil, and Campfire. [`LOCATION_TRAVEL_FORMAT.md`](LOCATION_TRAVEL_FORMAT.md) proposes ordinary Markdown route-profile notes, explicit location containment, directional origin/destination/model/duration facts, specific journey events that reuse `occurs-at`/`ends-at`, conservative arrival-date enclosure, exact refusal rules, source-linked UX, and a strict separation from future map coordinates and fictional physics. No project file, note, schema, parser, registry, capability, dependency, or interface changed in that research slice; implementation waited for its eight permanent-format approval gates.
 
 - A focused window-quality checkpoint replaces the app-drawn frameless controls with the standard decorated macOS title bar. Native red, yellow, and green traffic lights now own close, minimize, zoom/full-screen, hover symbols, and system half-screen tiling choices. The webview retains its safe-close interception, but no longer needs command permissions to imitate title-bar dragging, minimizing, or close requests. The writing workspace uses the complete native content viewport, and the active continuity roadmap resumes at 0.7.6 without changing any project or writing format. Packaged macOS QA verified the native controls, full-screen entry and **Exit Full Screen**, Fill/Center, halves, quarters, arranged layouts, full-screen left/right tiling, working left-half placement, **Return to Previous Size**, and clean restart with the saved draft restored. The gate has 470 passing frontend tests across seventy-one files, fifteen passing native tests, clean Rust formatting/checks, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 

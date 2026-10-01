@@ -30,6 +30,13 @@ export const BUILT_IN_CONTINUITY_PROPERTIES = [
   "partner-of",
   "operated-by",
   "home-port",
+  "contained-by",
+  "route-origin",
+  "route-destination",
+  "travel-model",
+  "travel-duration",
+  "travel-distance",
+  "uses-route",
 ] as const;
 
 export interface ContinuitySourceLine {
@@ -125,7 +132,8 @@ export function parseContinuityFacts(
   }
 
   const idCounts = new Map<string, number>();
-  for (const fact of facts) idCounts.set(fact.id, (idCounts.get(fact.id) ?? 0) + 1);
+  for (const fact of facts)
+    idCounts.set(fact.id, (idCounts.get(fact.id) ?? 0) + 1);
   const uniqueFacts = facts.filter((fact) => {
     if (idCounts.get(fact.id) === 1) return true;
     issues.push({
@@ -145,12 +153,19 @@ function parseFactGroup(
 ): { fact: ParsedContinuityFact | null; issues: LoreIssue[] } {
   const issues: LoreIssue[] = [];
   const first = group.lines[0]!;
-  const last = [...group.lines].reverse().find((line) => line.text.trim()) ?? first;
+  const last =
+    [...group.lines].reverse().find((line) => line.text.trim()) ?? first;
   const factRange = sourceRange(first.start, last.end, lineStarts);
   if (group.malformedStart) {
     return {
       fact: null,
-      issues: [continuityIssue("Each fact item must begin with a field.", first, lineStarts)],
+      issues: [
+        continuityIssue(
+          "Each fact item must begin with a field.",
+          first,
+          lineStarts,
+        ),
+      ],
     };
   }
 
@@ -168,7 +183,11 @@ function parseFactGroup(
     } else {
       if (line.text.includes("\t")) {
         issues.push(
-          continuityIssue("Continuity facts use spaces, not tabs.", line, lineStarts),
+          continuityIssue(
+            "Continuity facts use spaces, not tabs.",
+            line,
+            lineStarts,
+          ),
         );
         continue;
       }
@@ -236,11 +255,7 @@ function parseFieldLine(
   lineStarts: readonly number[],
 ): { field: ParsedField | null; issue: LoreIssue | null } {
   const match = /^([A-Za-z][A-Za-z0-9_-]*):(?:\s*(.*))?$/u.exec(content);
-  if (
-    !match ||
-    !KEY_PATTERN.test(match[1]!) ||
-    [...match[1]!].length > 80
-  ) {
+  if (!match || !KEY_PATTERN.test(match[1]!) || [...match[1]!].length > 80) {
     return {
       field: null,
       issue: continuityIssue(
@@ -320,7 +335,9 @@ function buildFact(
   const validTo = optionalTime(fields, "validTo", issues);
 
   if (id !== null && validateProjectId(id)) {
-    issues.push(fieldIssue(fields.get("id"), "id must be a canonical lowercase UUID v4."));
+    issues.push(
+      fieldIssue(fields.get("id"), "id must be a canonical lowercase UUID v4."),
+    );
   }
   if (
     property !== null &&
@@ -333,7 +350,8 @@ function buildFact(
       ),
     );
   }
-  if (note !== null) validateBoundedText(note, "note", 1_000, fields.get("note"), issues);
+  if (note !== null)
+    validateBoundedText(note, "note", 1_000, fields.get("note"), issues);
   const value = valueField ? buildValue(valueField, issues) : null;
 
   if (issues.length || id === null || property === null || value === null) {
@@ -359,7 +377,10 @@ function buildFact(
   };
 }
 
-function buildValue(field: ParsedField, issues: LoreIssue[]): ContinuityValue | null {
+function buildValue(
+  field: ParsedField,
+  issues: LoreIssue[],
+): ContinuityValue | null {
   const fields = field.children;
   const kind = requiredScalar(fields, "kind", issues, field.range);
   if (!kind) return null;
@@ -367,13 +388,19 @@ function buildValue(field: ParsedField, issues: LoreIssue[]): ContinuityValue | 
   if (kind === "note") {
     const id = requiredScalar(fields, "id", issues, field.range);
     if (id !== null && validateProjectId(id)) {
-      issues.push(fieldIssue(fields.get("id"), "A note value ID must be a canonical lowercase UUID v4."));
+      issues.push(
+        fieldIssue(
+          fields.get("id"),
+          "A note value ID must be a canonical lowercase UUID v4.",
+        ),
+      );
     }
     return id && !issues.length ? { ...source, kind, id } : null;
   }
   if (kind === "text") {
     const text = requiredScalar(fields, "text", issues, field.range);
-    if (text !== null) validateBoundedText(text, "text", 1_000, fields.get("text"), issues);
+    if (text !== null)
+      validateBoundedText(text, "text", 1_000, fields.get("text"), issues);
     return text !== null && !issues.length ? { ...source, kind, text } : null;
   }
   if (kind === "quantity") {
@@ -391,7 +418,10 @@ function buildValue(field: ParsedField, issues: LoreIssue[]): ContinuityValue | 
     const unit = boundedField(fields, "unit", 80, issues, field.range);
     if (minimum && maximum && compareDecimals(minimum, maximum) > 0) {
       issues.push(
-        fieldIssue(fields.get("maximum"), "maximum must be greater than or equal to minimum."),
+        fieldIssue(
+          fields.get("maximum"),
+          "maximum must be greater than or equal to minimum.",
+        ),
       );
     }
     return minimum && maximum && unitSystem && unit && !issues.length
@@ -402,9 +432,17 @@ function buildValue(field: ParsedField, issues: LoreIssue[]): ContinuityValue | 
   if (kind === "unknown") {
     const reason = requiredScalar(fields, "reason", issues, field.range);
     if (reason !== null) {
-      validateBoundedText(reason, "reason", 1_000, fields.get("reason"), issues);
+      validateBoundedText(
+        reason,
+        "reason",
+        1_000,
+        fields.get("reason"),
+        issues,
+      );
     }
-    return reason !== null && !issues.length ? { ...source, kind, reason } : null;
+    return reason !== null && !issues.length
+      ? { ...source, kind, reason }
+      : null;
   }
   issues.push(
     fieldIssue(
@@ -422,11 +460,23 @@ function buildTimeValue(
   const fields = field.children;
   const kind = requiredScalar(fields, "kind", issues, field.range);
   const calendar = kebabField(fields, "calendar", issues, field.range);
-  const expression = boundedField(fields, "expression", 120, issues, field.range);
+  const expression = boundedField(
+    fields,
+    "expression",
+    120,
+    issues,
+    field.range,
+  );
   if (kind !== null && kind !== "time") {
-    issues.push(fieldIssue(fields.get("kind"), "A time bound must have kind time."));
+    issues.push(
+      fieldIssue(fields.get("kind"), "A time bound must have kind time."),
+    );
   }
-  if (calendar === "gregorian" && expression && !isGregorianExpression(expression)) {
+  if (
+    calendar === "gregorian" &&
+    expression &&
+    !isGregorianExpression(expression)
+  ) {
     issues.push(
       fieldIssue(
         fields.get("expression"),
@@ -489,7 +539,11 @@ function requiredScalar(
   const value = optionalScalar(fields, key, issues);
   if (!fields.has(key)) {
     issues.push(
-      fieldIssue(undefined, `A continuity fact requires ${key}.`, fallbackRange),
+      fieldIssue(
+        undefined,
+        `A continuity fact requires ${key}.`,
+        fallbackRange,
+      ),
     );
   }
   return value;
@@ -518,7 +572,11 @@ function requiredMapping(
   const field = fields.get(key);
   if (!field) {
     issues.push(
-      fieldIssue(undefined, `A continuity fact requires ${key}.`, fallbackRange),
+      fieldIssue(
+        undefined,
+        `A continuity fact requires ${key}.`,
+        fallbackRange,
+      ),
     );
     return null;
   }
@@ -538,7 +596,9 @@ function optionalEnum<T extends string>(
   const value = optionalScalar(fields, key, issues);
   if (value === null) return null;
   if (!allowed.includes(value as T)) {
-    issues.push(fieldIssue(fields.get(key), `${key} must be ${joinChoices(allowed)}.`));
+    issues.push(
+      fieldIssue(fields.get(key), `${key} must be ${joinChoices(allowed)}.`),
+    );
     return null;
   }
   return value as T;
@@ -552,11 +612,18 @@ function decimalField(
 ): string | null {
   const value = requiredScalar(fields, key, issues, fallbackRange);
   if (value !== null && !DECIMAL_PATTERN.test(value)) {
-    issues.push(fieldIssue(fields.get(key), `${key} must be a canonical decimal string.`));
+    issues.push(
+      fieldIssue(fields.get(key), `${key} must be a canonical decimal string.`),
+    );
     return null;
   }
   if (value !== null && [...value].length > 120) {
-    issues.push(fieldIssue(fields.get(key), `${key} must contain at most 120 characters.`));
+    issues.push(
+      fieldIssue(
+        fields.get(key),
+        `${key} must contain at most 120 characters.`,
+      ),
+    );
     return null;
   }
   return value;
@@ -569,8 +636,16 @@ function kebabField(
   fallbackRange: SourceRange,
 ): string | null {
   const value = requiredScalar(fields, key, issues, fallbackRange);
-  if (value !== null && (!KEBAB_PATTERN.test(value) || [...value].length > 80)) {
-    issues.push(fieldIssue(fields.get(key), `${key} must use at most 80 lowercase kebab-case characters.`));
+  if (
+    value !== null &&
+    (!KEBAB_PATTERN.test(value) || [...value].length > 80)
+  ) {
+    issues.push(
+      fieldIssue(
+        fields.get(key),
+        `${key} must use at most 80 lowercase kebab-case characters.`,
+      ),
+    );
     return null;
   }
   return value;
@@ -584,7 +659,8 @@ function boundedField(
   fallbackRange: SourceRange,
 ): string | null {
   const value = requiredScalar(fields, key, issues, fallbackRange);
-  if (value !== null) validateBoundedText(value, key, maximum, fields.get(key), issues);
+  if (value !== null)
+    validateBoundedText(value, key, maximum, fields.get(key), issues);
   return value;
 }
 
@@ -598,15 +674,23 @@ function validateBoundedText(
   if (!value.trim()) {
     issues.push(fieldIssue(field, `${label} must not be empty.`));
   } else if (CONTROL_CHARACTER_PATTERN.test(value)) {
-    issues.push(fieldIssue(field, `${label} must not contain control characters.`));
+    issues.push(
+      fieldIssue(field, `${label} must not contain control characters.`),
+    );
   } else if ([...value].length > maximum) {
-    issues.push(fieldIssue(field, `${label} must contain at most ${maximum} Unicode characters.`));
+    issues.push(
+      fieldIssue(
+        field,
+        `${label} must contain at most ${maximum} Unicode characters.`,
+      ),
+    );
   }
 }
 
 function isGregorianExpression(value: string): boolean {
   const parts = value.split("/");
-  if (parts.length > 2 || parts.some((part) => !isGregorianPart(part))) return false;
+  if (parts.length > 2 || parts.some((part) => !isGregorianPart(part)))
+    return false;
   return true;
 }
 
@@ -619,7 +703,20 @@ function isGregorianPart(value: string): boolean {
   if (!match[3]) return true;
   const day = Number(match[3]);
   const year = BigInt(match[1]!);
-  const days = [31, isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const days = [
+    31,
+    isLeapYear(year) ? 29 : 28,
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ];
   return day >= 1 && day <= days[month - 1]!;
 }
 
@@ -638,7 +735,9 @@ function compareDecimals(first: string, second: string): number {
   const whole = a.whole.localeCompare(b.whole);
   if (whole) return Math.sign(whole) * direction;
   const length = Math.max(a.fraction.length, b.fraction.length);
-  const fraction = a.fraction.padEnd(length, "0").localeCompare(b.fraction.padEnd(length, "0"));
+  const fraction = a.fraction
+    .padEnd(length, "0")
+    .localeCompare(b.fraction.padEnd(length, "0"));
   return Math.sign(fraction) * direction;
 }
 

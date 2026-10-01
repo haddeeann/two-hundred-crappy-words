@@ -12,7 +12,10 @@ describe("portable continuity contract", () => {
   it("publishes a parseable versioned JSON Schema matching the parser boundary", () => {
     const schema = JSON.parse(
       readFileSync(
-        new URL("../../../docs/schemas/continuity-frontmatter-v1.schema.json", import.meta.url),
+        new URL(
+          "../../../docs/schemas/continuity-frontmatter-v1.schema.json",
+          import.meta.url,
+        ),
         "utf8",
       ),
     ) as Record<string, any>;
@@ -44,6 +47,13 @@ describe("portable continuity contract", () => {
       "partner-of",
       "operated-by",
       "home-port",
+      "contained-by",
+      "route-origin",
+      "route-destination",
+      "travel-model",
+      "travel-duration",
+      "travel-distance",
+      "uses-route",
     ]);
   });
 });

@@ -22,10 +22,28 @@ describe("structured Markdown note templates", () => {
       "event",
       "scene",
       "chapter",
+      "route",
     ]);
     expect(STRUCTURED_NOTE_TEMPLATES.spacecraft.defaultRole).toBe("technology");
     expect(STRUCTURED_NOTE_TEMPLATES.event.defaultRole).toBe("timeline");
     expect(STRUCTURED_NOTE_TEMPLATES.scene.defaultRole).toBe("manuscript");
+    expect(STRUCTURED_NOTE_TEMPLATES.route).toMatchObject({
+      label: "Route",
+      defaultRole: "locations",
+    });
+  });
+
+  it("creates a directional route planning note without inventing facts", () => {
+    const note = createStructuredNote({
+      id: NOTE_ID,
+      type: "route",
+      title: "Aster Vale to Nacre Station",
+    });
+
+    expect(note).toContain('type: "route"');
+    expect(note).toContain("## Path and endpoints");
+    expect(note).toContain("## Travel assumptions");
+    expect(note).not.toContain("facts:");
   });
 
   it("emits only the approved frontmatter fields in deterministic order", () => {
@@ -77,9 +95,12 @@ describe("structured note filenames", () => {
     ["A Quiet Red Planet", "location", "a-quiet-red-planet.md"],
     ["Élan Station", "location", "elan-station.md"],
     ["東京", "location", "location.md"],
-  ] as const)("suggests a portable filename for %j", (title, type, expected) => {
-    expect(suggestStructuredNoteFileName(title, type)).toBe(expected);
-  });
+  ] as const)(
+    "suggests a portable filename for %j",
+    (title, type, expected) => {
+      expect(suggestStructuredNoteFileName(title, type)).toBe(expected);
+    },
+  );
 
   it("requires a valid Markdown filename", () => {
     expect(validateStructuredNoteFileName("captain-veyra.md")).toBeNull();

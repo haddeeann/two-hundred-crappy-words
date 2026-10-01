@@ -1,9 +1,7 @@
 import type { ContinuityValue } from "./types";
 
 export type ContinuityRelationshipDirection =
-  | "attribute"
-  | "outgoing"
-  | "symmetric";
+  "attribute" | "outgoing" | "symmetric";
 
 export interface ContinuityPropertyDefinition {
   key: string;
@@ -15,6 +13,7 @@ export interface ContinuityPropertyDefinition {
   allowsValidityBounds: boolean;
   direction: ContinuityRelationshipDirection;
   inverseProperty: string | null;
+  targetTypes?: readonly string[];
 }
 
 export const CONTINUITY_PROPERTY_DEFINITIONS = [
@@ -65,7 +64,8 @@ export const CONTINUITY_PROPERTY_DEFINITIONS = [
   {
     key: "located-at",
     label: "Located at",
-    description: "The place containing the subject during an optional time span.",
+    description:
+      "The place containing the subject during an optional time span.",
     subjectTypes: ["character", "spacecraft", "event", "scene"],
     valueKinds: ["note"],
     simultaneousValues: "one-to-review",
@@ -76,7 +76,8 @@ export const CONTINUITY_PROPERTY_DEFINITIONS = [
   {
     key: "participant",
     label: "Participant",
-    description: "A character, faction, species, or craft involved in an event or scene.",
+    description:
+      "A character, faction, species, or craft involved in an event or scene.",
     subjectTypes: ["event", "scene", "chapter"],
     valueKinds: ["note"],
     simultaneousValues: "many",
@@ -98,6 +99,7 @@ export const CONTINUITY_PROPERTY_DEFINITIONS = [
       "event",
       "scene",
       "chapter",
+      "route",
     ],
     valueKinds: ["note"],
     simultaneousValues: "many",
@@ -141,7 +143,8 @@ export const CONTINUITY_PROPERTY_DEFINITIONS = [
   {
     key: "partner-of",
     label: "Partner of",
-    description: "A symmetric character partnership during an optional time span.",
+    description:
+      "A symmetric character partnership during an optional time span.",
     subjectTypes: ["character"],
     valueKinds: ["note"],
     simultaneousValues: "many",
@@ -152,7 +155,8 @@ export const CONTINUITY_PROPERTY_DEFINITIONS = [
   {
     key: "operated-by",
     label: "Operated by",
-    description: "The character or faction operating a spacecraft or technology.",
+    description:
+      "The character or faction operating a spacecraft or technology.",
     subjectTypes: ["spacecraft", "technology"],
     valueKinds: ["note"],
     simultaneousValues: "one-to-review",
@@ -171,10 +175,100 @@ export const CONTINUITY_PROPERTY_DEFINITIONS = [
     direction: "outgoing",
     inverseProperty: null,
   },
+  {
+    key: "contained-by",
+    label: "Contained by",
+    description:
+      "The direct writer-asserted container of a location during an optional time span.",
+    subjectTypes: ["location"],
+    valueKinds: ["note"],
+    simultaneousValues: "many",
+    allowsValidityBounds: true,
+    direction: "outgoing",
+    inverseProperty: null,
+    targetTypes: ["location", "spacecraft"],
+  },
+  {
+    key: "route-origin",
+    label: "Route origin",
+    description: "The directional origin of a reusable route profile.",
+    subjectTypes: ["route"],
+    valueKinds: ["note"],
+    simultaneousValues: "one-to-review",
+    allowsValidityBounds: false,
+    direction: "outgoing",
+    inverseProperty: null,
+    targetTypes: ["location", "spacecraft"],
+  },
+  {
+    key: "route-destination",
+    label: "Route destination",
+    description: "The directional destination of a reusable route profile.",
+    subjectTypes: ["route"],
+    valueKinds: ["note"],
+    simultaneousValues: "one-to-review",
+    allowsValidityBounds: false,
+    direction: "outgoing",
+    inverseProperty: null,
+    targetTypes: ["location", "spacecraft"],
+  },
+  {
+    key: "travel-model",
+    label: "Travel model",
+    description:
+      "An optional technology or spacecraft whose prose explains the route's travel assumptions.",
+    subjectTypes: ["route"],
+    valueKinds: ["note"],
+    simultaneousValues: "one-to-review",
+    allowsValidityBounds: false,
+    direction: "outgoing",
+    inverseProperty: null,
+    targetTypes: ["technology", "spacecraft"],
+  },
+  {
+    key: "travel-duration",
+    label: "Travel duration",
+    description:
+      "An explicit elapsed duration or inclusive duration window for a route.",
+    subjectTypes: ["route"],
+    valueKinds: ["quantity", "range"],
+    simultaneousValues: "one-to-review",
+    allowsValidityBounds: true,
+    direction: "attribute",
+    inverseProperty: null,
+  },
+  {
+    key: "travel-distance",
+    label: "Travel distance",
+    description:
+      "Optional route context that is never converted into travel time automatically.",
+    subjectTypes: ["route"],
+    valueKinds: ["quantity", "range"],
+    simultaneousValues: "one-to-review",
+    allowsValidityBounds: false,
+    direction: "attribute",
+    inverseProperty: null,
+  },
+  {
+    key: "uses-route",
+    label: "Uses route",
+    description:
+      "The reusable directional route profile used by a specific event or scene journey.",
+    subjectTypes: ["event", "scene"],
+    valueKinds: ["note"],
+    simultaneousValues: "one-to-review",
+    allowsValidityBounds: false,
+    direction: "outgoing",
+    inverseProperty: null,
+    targetTypes: ["route"],
+  },
 ] as const satisfies readonly ContinuityPropertyDefinition[];
 
 const DEFINITIONS_BY_KEY = new Map<string, ContinuityPropertyDefinition>(
-  CONTINUITY_PROPERTY_DEFINITIONS.map((definition) => [definition.key, definition]),
+  CONTINUITY_PROPERTY_DEFINITIONS.map((definition) => [
+    definition.key,
+    definition,
+  ]),
 );
 
 export function continuityPropertyDefinition(

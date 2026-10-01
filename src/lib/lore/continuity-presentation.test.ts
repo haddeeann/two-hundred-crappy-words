@@ -14,8 +14,10 @@ const MEMBER_FACT_ID = "2e3120e7-0e74-4e3c-99a1-f2f76469559d";
 
 describe("continuity property registry", () => {
   it("publishes explicit semantics for every approved built-in property", () => {
-    expect(CONTINUITY_PROPERTY_DEFINITIONS).toHaveLength(13);
-    expect(new Set(CONTINUITY_PROPERTY_DEFINITIONS.map(({ key }) => key)).size).toBe(13);
+    expect(CONTINUITY_PROPERTY_DEFINITIONS).toHaveLength(20);
+    expect(
+      new Set(CONTINUITY_PROPERTY_DEFINITIONS.map(({ key }) => key)).size,
+    ).toBe(20);
     for (const definition of CONTINUITY_PROPERTY_DEFINITIONS) {
       expect(definition.subjectTypes.length).toBeGreaterThan(0);
       expect(definition.valueKinds.length).toBeGreaterThan(0);
@@ -27,6 +29,61 @@ describe("continuity property registry", () => {
       valueKinds: ["note"],
     });
     expect(continuityPropertyDefinition("writer-invented")).toBeNull();
+    expect(continuityPropertyDefinition("route-origin")).toMatchObject({
+      subjectTypes: ["route"],
+      valueKinds: ["note"],
+      targetTypes: ["location", "spacecraft"],
+      allowsValidityBounds: false,
+    });
+    expect(continuityPropertyDefinition("travel-duration")).toMatchObject({
+      subjectTypes: ["route"],
+      valueKinds: ["quantity", "range"],
+      simultaneousValues: "one-to-review",
+      allowsValidityBounds: true,
+    });
+    expect(continuityPropertyDefinition("uses-route")).toMatchObject({
+      subjectTypes: ["event", "scene"],
+      targetTypes: ["route"],
+    });
+    expect(continuityPropertyDefinition("instance-of")?.subjectTypes).toContain(
+      "route",
+    );
+  });
+
+  it("diagnoses a resolved travel reference whose note type is incompatible", () => {
+    const route = `---
+id: "${MARA_ID}"
+type: "route"
+facts:
+  - id: "${MEMBER_FACT_ID}"
+    property: "route-origin"
+    value:
+      kind: "note"
+      id: "${FLEET_ID}"
+---`;
+    const index = buildLoreProjectIndex([
+      { path: "Routes/outbound.md", text: route },
+      {
+        path: "Lore/fleet.md",
+        text: `---\nid: "${FLEET_ID}"\ntype: "faction"\ntitle: "The Fleet"\n---`,
+      },
+    ]);
+
+    expect(
+      presentContinuityInspector(index, "Routes/outbound.md"),
+    ).toMatchObject({
+      kind: "ready",
+      facts: [
+        {
+          reference: { kind: "resolved", noteType: "faction" },
+          diagnostics: [
+            expect.stringContaining(
+              "location, or spacecraft target, not faction",
+            ),
+          ],
+        },
+      ],
+    });
   });
 });
 
@@ -59,7 +116,11 @@ facts:
     ]);
 
     expect(
-      presentContinuityInspector(index, "Lore/mara.md", fingerprintContent(mara)),
+      presentContinuityInspector(
+        index,
+        "Lore/mara.md",
+        fingerprintContent(mara),
+      ),
     ).toMatchObject({
       kind: "ready",
       summary: "Continuity · 1 fact",

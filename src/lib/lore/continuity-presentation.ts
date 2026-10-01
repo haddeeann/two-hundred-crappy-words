@@ -18,7 +18,7 @@ export interface ContinuityFactPresentation {
   valueKind: ContinuityValue["kind"];
   reference:
     | { kind: "none" }
-    | { kind: "resolved"; path: string; title: string }
+    | { kind: "resolved"; path: string; title: string; noteType: string | null }
     | { kind: "missing" | "ambiguous"; id: string };
   canon: CanonStatus | null;
   canonSource: "fact" | "note" | "unspecified";
@@ -51,11 +51,19 @@ export function presentContinuityInspector(
   activePath: string | null,
   activeFingerprint: string | null = null,
 ): ContinuityInspectorPresentation {
-  if (!index || !activePath) return { kind: "no-active-note", summary: "Continuity" };
+  if (!index || !activePath)
+    return { kind: "no-active-note", summary: "Continuity" };
   const document = index.documents.get(activePath);
   if (!document) return { kind: "no-active-note", summary: "Continuity" };
-  if (activeFingerprint !== null && document.fingerprint !== activeFingerprint) {
-    return { kind: "updating", summary: "Continuity · updating…", path: activePath };
+  if (
+    activeFingerprint !== null &&
+    document.fingerprint !== activeFingerprint
+  ) {
+    return {
+      kind: "updating",
+      summary: "Continuity · updating…",
+      path: activePath,
+    };
   }
 
   const notesById = noteIdentityMap(index);
@@ -76,40 +84,68 @@ export function presentContinuityInspector(
           `${definition.label} is documented for ${joinWords(definition.subjectTypes)}, not ${document.type}.`,
         );
       } else if (!document.type) {
-        diagnostics.push("The note type is unspecified, so subject compatibility is not checked.");
+        diagnostics.push(
+          "The note type is unspecified, so subject compatibility is not checked.",
+        );
       }
       if (!definition.valueKinds.includes(fact.value.kind)) {
         diagnostics.push(
           `${definition.label} expects ${joinWords(definition.valueKinds)} values, not ${fact.value.kind}.`,
         );
       }
-      if (!definition.allowsValidityBounds && (fact.validFrom || fact.validTo)) {
+      if (
+        definition.targetTypes &&
+        reference.kind === "resolved" &&
+        (!reference.noteType ||
+          !definition.targetTypes.includes(reference.noteType))
+      ) {
+        diagnostics.push(
+          reference.noteType
+            ? `${definition.label} expects a ${joinWords(definition.targetTypes)} target, not ${reference.noteType}.`
+            : `${definition.label} expects a ${joinWords(definition.targetTypes)} target, but the referenced note type is unspecified.`,
+        );
+      }
+      if (
+        !definition.allowsValidityBounds &&
+        (fact.validFrom || fact.validTo)
+      ) {
         diagnostics.push(`${definition.label} does not use validity bounds.`);
       }
     }
     if (reference.kind === "missing") {
       diagnostics.push(`Referenced note ID ${reference.id} is unavailable.`);
     } else if (reference.kind === "ambiguous") {
-      diagnostics.push(`Referenced note ID ${reference.id} appears in more than one note.`);
+      diagnostics.push(
+        `Referenced note ID ${reference.id} appears in more than one note.`,
+      );
     }
     if (duplicatedFactIds.has(fact.id)) {
-      diagnostics.push("This fact ID is duplicated in another note and is unavailable to checks.");
+      diagnostics.push(
+        "This fact ID is duplicated in another note and is unavailable to checks.",
+      );
     }
     if (fact.unknownKeys.length + fact.value.unknownKeys.length > 0) {
-      diagnostics.push("Unrecognized fields are preserved in Markdown but ignored here.");
+      diagnostics.push(
+        "Unrecognized fields are preserved in Markdown but ignored here.",
+      );
     }
     const canon = fact.canon ?? document.canon;
     return {
       id: fact.id,
       property: fact.property,
       propertyLabel: definition?.label ?? humanizeProperty(fact.property),
-      propertyDescription: definition?.description ?? "Writer-defined continuity property.",
+      propertyDescription:
+        definition?.description ?? "Writer-defined continuity property.",
       customProperty: !definition,
       valueText: presentValue(fact.value, reference),
       valueKind: fact.value.kind,
       reference,
       canon,
-      canonSource: fact.canon ? "fact" : document.canon ? "note" : "unspecified",
+      canonSource: fact.canon
+        ? "fact"
+        : document.canon
+          ? "note"
+          : "unspecified",
       certainty: fact.certainty ?? "unspecified",
       validity: presentValidity(fact.validFrom, fact.validTo),
       note: fact.note,
@@ -120,10 +156,11 @@ export function presentContinuityInspector(
     } satisfies ContinuityFactPresentation;
   });
   const metadataIssues = document.parseIssues
-    .filter(({ kind }) =>
-      kind === "frontmatter-malformed" ||
-      kind === "frontmatter-field" ||
-      kind === "duplicate-metadata",
+    .filter(
+      ({ kind }) =>
+        kind === "frontmatter-malformed" ||
+        kind === "frontmatter-field" ||
+        kind === "duplicate-metadata",
     )
     .map(
       ({ message, range }) =>
@@ -167,6 +204,7 @@ function presentReference(
     kind: "resolved",
     path: matches[0]!.path,
     title: matches[0]!.title,
+    noteType: matches[0]!.type,
   };
 }
 
@@ -195,7 +233,8 @@ function presentValidity(
   validTo: ContinuityTimeValue | null,
 ): string | null {
   if (!validFrom && !validTo) return null;
-  if (validFrom && validTo) return `${presentTime(validFrom)} → ${presentTime(validTo)}`;
+  if (validFrom && validTo)
+    return `${presentTime(validFrom)} → ${presentTime(validTo)}`;
   if (validFrom) return `From ${presentTime(validFrom)}`;
   return `Until ${presentTime(validTo!)}`;
 }

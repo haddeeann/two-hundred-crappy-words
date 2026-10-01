@@ -15,6 +15,7 @@ export const STRUCTURED_NOTE_TYPES = [
   "event",
   "scene",
   "chapter",
+  "route",
 ] as const;
 
 export type StructuredNoteType = (typeof STRUCTURED_NOTE_TYPES)[number];
@@ -33,19 +34,37 @@ export const STRUCTURED_NOTE_TEMPLATES: Readonly<
     defaultRole: "characters",
     prompts: [
       { heading: "Summary", prompt: "Who are they in one or two sentences?" },
-      { heading: "Desire and conflict", prompt: "What do they want, and what resists them?" },
+      {
+        heading: "Desire and conflict",
+        prompt: "What do they want, and what resists them?",
+      },
       { heading: "Story role", prompt: "How do they change the story?" },
-      { heading: "Notes", prompt: "Voice, appearance, history, relationships, or open questions." },
+      {
+        heading: "Notes",
+        prompt: "Voice, appearance, history, relationships, or open questions.",
+      },
     ],
   },
   location: {
     label: "Location",
     defaultRole: "locations",
     prompts: [
-      { heading: "Summary", prompt: "What is this place, and why does it matter?" },
-      { heading: "Environment", prompt: "Climate, scale, hazards, resources, or sensory character." },
-      { heading: "People and power", prompt: "Who lives here, and who controls it?" },
-      { heading: "Story use", prompt: "Scenes, conflicts, discoveries, or travel constraints." },
+      {
+        heading: "Summary",
+        prompt: "What is this place, and why does it matter?",
+      },
+      {
+        heading: "Environment",
+        prompt: "Climate, scale, hazards, resources, or sensory character.",
+      },
+      {
+        heading: "People and power",
+        prompt: "Who lives here, and who controls it?",
+      },
+      {
+        heading: "Story use",
+        prompt: "Scenes, conflicts, discoveries, or travel constraints.",
+      },
     ],
   },
   faction: {
@@ -53,9 +72,15 @@ export const STRUCTURED_NOTE_TEMPLATES: Readonly<
     defaultRole: "factions",
     prompts: [
       { heading: "Summary", prompt: "What binds this group together?" },
-      { heading: "Goals", prompt: "What does it want now and in the long term?" },
+      {
+        heading: "Goals",
+        prompt: "What does it want now and in the long term?",
+      },
       { heading: "Methods and resources", prompt: "How does it exert power?" },
-      { heading: "Relationships", prompt: "Allies, rivals, internal divisions, or public reputation." },
+      {
+        heading: "Relationships",
+        prompt: "Allies, rivals, internal divisions, or public reputation.",
+      },
     ],
   },
   species: {
@@ -63,9 +88,18 @@ export const STRUCTURED_NOTE_TEMPLATES: Readonly<
     defaultRole: "species",
     prompts: [
       { heading: "Summary", prompt: "What makes this species distinct?" },
-      { heading: "Biology", prompt: "Body, senses, life cycle, needs, and meaningful variation." },
-      { heading: "Culture", prompt: "Avoid a monoculture: what values and disagreements recur?" },
-      { heading: "Story implications", prompt: "How does this shape choices, conflict, or connection?" },
+      {
+        heading: "Biology",
+        prompt: "Body, senses, life cycle, needs, and meaningful variation.",
+      },
+      {
+        heading: "Culture",
+        prompt: "Avoid a monoculture: what values and disagreements recur?",
+      },
+      {
+        heading: "Story implications",
+        prompt: "How does this shape choices, conflict, or connection?",
+      },
     ],
   },
   technology: {
@@ -73,19 +107,41 @@ export const STRUCTURED_NOTE_TEMPLATES: Readonly<
     defaultRole: "technology",
     prompts: [
       { heading: "Summary", prompt: "What does it do, and who can use it?" },
-      { heading: "Rules", prompt: "Capabilities, limits, costs, dependencies, and failure modes." },
-      { heading: "Consequences", prompt: "How has it changed ordinary life or power?" },
-      { heading: "Story use", prompt: "What problems can it create as well as solve?" },
+      {
+        heading: "Rules",
+        prompt: "Capabilities, limits, costs, dependencies, and failure modes.",
+      },
+      {
+        heading: "Consequences",
+        prompt: "How has it changed ordinary life or power?",
+      },
+      {
+        heading: "Story use",
+        prompt: "What problems can it create as well as solve?",
+      },
     ],
   },
   spacecraft: {
     label: "Spacecraft",
     defaultRole: "technology",
     prompts: [
-      { heading: "Summary", prompt: "Purpose, class, owner, and defining character." },
-      { heading: "Capabilities", prompt: "Drive, range, crew, payload, defenses, or special systems." },
-      { heading: "Limits", prompt: "Costs, maintenance, vulnerabilities, and operating constraints." },
-      { heading: "History and story role", prompt: "How did it get here, and what happens aboard it?" },
+      {
+        heading: "Summary",
+        prompt: "Purpose, class, owner, and defining character.",
+      },
+      {
+        heading: "Capabilities",
+        prompt: "Drive, range, crew, payload, defenses, or special systems.",
+      },
+      {
+        heading: "Limits",
+        prompt:
+          "Costs, maintenance, vulnerabilities, and operating constraints.",
+      },
+      {
+        heading: "History and story role",
+        prompt: "How did it get here, and what happens aboard it?",
+      },
     ],
   },
   event: {
@@ -93,9 +149,15 @@ export const STRUCTURED_NOTE_TEMPLATES: Readonly<
     defaultRole: "timeline",
     prompts: [
       { heading: "Summary", prompt: "What happened?" },
-      { heading: "When and where", prompt: "Dates, era, duration, locations, and uncertainty." },
+      {
+        heading: "When and where",
+        prompt: "Dates, era, duration, locations, and uncertainty.",
+      },
       { heading: "Causes", prompt: "What conditions and choices produced it?" },
-      { heading: "Consequences", prompt: "Immediate effects, long echoes, and disputed interpretations." },
+      {
+        heading: "Consequences",
+        prompt: "Immediate effects, long echoes, and disputed interpretations.",
+      },
     ],
   },
   scene: {
@@ -103,7 +165,10 @@ export const STRUCTURED_NOTE_TEMPLATES: Readonly<
     defaultRole: "manuscript",
     prompts: [
       { heading: "Scene", prompt: "Write the scene here." },
-      { heading: "Planning notes", prompt: "POV, location, story date, purpose, turn, or unresolved work." },
+      {
+        heading: "Planning notes",
+        prompt: "POV, location, story date, purpose, turn, or unresolved work.",
+      },
     ],
   },
   chapter: {
@@ -111,7 +176,34 @@ export const STRUCTURED_NOTE_TEMPLATES: Readonly<
     defaultRole: "manuscript",
     prompts: [
       { heading: "Chapter", prompt: "Write the chapter here." },
-      { heading: "Planning notes", prompt: "Synopsis, included scenes, POV, status, or revision notes." },
+      {
+        heading: "Planning notes",
+        prompt: "Synopsis, included scenes, POV, status, or revision notes.",
+      },
+    ],
+  },
+  route: {
+    label: "Route",
+    defaultRole: "locations",
+    prompts: [
+      {
+        heading: "Summary",
+        prompt: "What directional journey does this route describe?",
+      },
+      {
+        heading: "Path and endpoints",
+        prompt:
+          "Origin, destination, waypoints, hazards, or access constraints.",
+      },
+      {
+        heading: "Travel assumptions",
+        prompt:
+          "Model, duration, distance, costs, limits, or fictional physics.",
+      },
+      {
+        heading: "Story use",
+        prompt: "Who uses this route, when, and what can happen along it?",
+      },
     ],
   },
 };
@@ -128,7 +220,8 @@ export function createStructuredNote({
   const idIssue = validateProjectId(id);
   if (idIssue) throw new RangeError(idIssue);
   const titleIssue = validateProjectName(title);
-  if (titleIssue) throw new RangeError(`title ${titleIssue.slice("name ".length)}`);
+  if (titleIssue)
+    throw new RangeError(`title ${titleIssue.slice("name ".length)}`);
 
   const normalizedTitle = title.trim();
   const template = STRUCTURED_NOTE_TEMPLATES[type];

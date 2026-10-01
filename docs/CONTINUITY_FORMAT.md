@@ -161,7 +161,7 @@ Each built-in property definition should state:
 
 Unknown property keys remain preserved and visible as custom facts but do not participate in checks. This lets the registry grow without migrating every note and avoids claiming one vocabulary fits every fictional world.
 
-The first registry should be selected only to unlock the next concrete tools. A recommended minimal seed is:
+The registry grows only to unlock concrete tools. The initial seed was:
 
 - time and age: `born`, `died`, `occurs-at`, `ends-at`;
 - presence: `located-at`, `participant`;
@@ -169,25 +169,38 @@ The first registry should be selected only to unlock the next concrete tools. A 
 - relationships: `member-of`, `parent-of`, `partner-of`;
 - spacecraft/faction context: `operated-by`, `home-port`.
 
+The approved location/travel extension adds:
+
+- containment: `contained-by`;
+- reusable routes: `route-origin`, `route-destination`, `travel-model`, `travel-duration`, `travel-distance`;
+- specific journeys: `uses-route`.
+
 These names are the approved version-one seed vocabulary. The parser also accepts lowercase kebab-case custom properties and records them without assigning semantics. Each deterministic checker must document the subject types, value kind, simultaneous-value behavior, validity bounds, direction or inverse behavior, and rule version it actually consumes before that checker ships.
 
 The shipped registry currently defines:
 
-| Property | Subject note types | Value | Simultaneous values | Validity bounds | Direction |
-| --- | --- | --- | --- | --- | --- |
-| `born` | character | time | one to review | no | attribute |
-| `died` | character | time | one to review | no | attribute |
-| `occurs-at` | event, scene, chapter | time | one to review | no | attribute |
-| `ends-at` | event, scene, chapter | time | one to review | no | attribute |
-| `located-at` | character, spacecraft, event, scene | note | one to review | yes | outgoing |
-| `participant` | event, scene, chapter | note | many | yes | outgoing |
-| `instance-of` | every built-in note type | note | many | yes | outgoing |
-| `species` | character | note | one to review | yes | outgoing |
-| `member-of` | character, faction, spacecraft | note | many | yes | outgoing |
-| `parent-of` | character | note | many | yes | outgoing parent to child |
-| `partner-of` | character | note | many | yes | symmetric; self-inverse |
-| `operated-by` | spacecraft, technology | note | one to review | yes | outgoing |
-| `home-port` | spacecraft | note | one to review | yes | outgoing |
+| Property            | Subject note types                  | Value           | Simultaneous values      | Bounds | Target / direction       |
+| ------------------- | ----------------------------------- | --------------- | ------------------------ | ------ | ------------------------ |
+| `born`              | character                           | time            | one to review            | no     | attribute                |
+| `died`              | character                           | time            | one to review            | no     | attribute                |
+| `occurs-at`         | event, scene, chapter               | time            | one to review            | no     | attribute                |
+| `ends-at`           | event, scene, chapter               | time            | one to review            | no     | attribute                |
+| `located-at`        | character, spacecraft, event, scene | note            | one to review            | yes    | outgoing                 |
+| `participant`       | event, scene, chapter               | note            | many                     | yes    | outgoing                 |
+| `instance-of`       | every built-in note type            | note            | many                     | yes    | outgoing                 |
+| `species`           | character                           | note            | one to review            | yes    | outgoing                 |
+| `member-of`         | character, faction, spacecraft      | note            | many                     | yes    | outgoing                 |
+| `parent-of`         | character                           | note            | many                     | yes    | outgoing parent to child |
+| `partner-of`        | character                           | note            | many                     | yes    | symmetric; self-inverse  |
+| `operated-by`       | spacecraft, technology              | note            | one to review            | yes    | outgoing                 |
+| `home-port`         | spacecraft                          | note            | one to review            | yes    | outgoing                 |
+| `contained-by`      | location                            | note            | many                     | yes    | location or spacecraft   |
+| `route-origin`      | route                               | note            | one to review            | no     | location or spacecraft   |
+| `route-destination` | route                               | note            | one to review            | no     | location or spacecraft   |
+| `travel-model`      | route                               | note            | one to review            | no     | technology or spacecraft |
+| `travel-duration`   | route                               | quantity, range | one applicable to review | yes    | elapsed-time attribute   |
+| `travel-distance`   | route                               | quantity, range | one to review            | no     | display-only attribute   |
+| `uses-route`        | event, scene                        | note            | one to review            | no     | route                    |
 
 “One to review” does not make a second fact invalid. It tells a later deterministic rule that overlapping values deserve explanation; both writer claims remain intact.
 
