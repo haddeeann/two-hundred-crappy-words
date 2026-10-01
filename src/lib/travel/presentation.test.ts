@@ -4,12 +4,14 @@ import { fingerprintContent } from "$lib/editor/recovery";
 import { buildLoreProjectIndex } from "$lib/lore/index";
 import { deriveJourneyAnalyses } from "./journey";
 import { deriveTravelModel } from "./model";
+import { deriveTravelPresenceFindings } from "./presence";
 import { presentTravelInspector } from "./presentation";
 
 const ORIGIN = "20000000-0000-4000-8000-000000000001";
 const DESTINATION = "20000000-0000-4000-8000-000000000002";
 const ROUTE = "20000000-0000-4000-8000-000000000003";
 const JOURNEY = "20000000-0000-4000-8000-000000000004";
+const TRAVELER = "20000000-0000-4000-8000-000000000005";
 
 function note(id: string, type: string, title: string, facts: string[] = []): string {
   return [
@@ -62,6 +64,7 @@ function fixture() {
   ]);
   const journeyText = note(JOURNEY, "event", "Departure", [
     referenceFact("20000000-0000-4000-8000-000000000104", "uses-route", ROUTE),
+    referenceFact("20000000-0000-4000-8000-000000000108", "participant", TRAVELER),
     timeFact("20000000-0000-4000-8000-000000000105", "occurs-at", "2161-04-06"),
     timeFact("20000000-0000-4000-8000-000000000106", "ends-at", "2161-04-07"),
   ]);
@@ -79,7 +82,13 @@ function fixture() {
     },
     { path: "Routes/outbound.md", text: routeText },
     { path: "Timeline/departure.md", text: journeyText },
-    { path: "Lore/other.md", text: note("20000000-0000-4000-8000-000000000005", "character", "Other") },
+    {
+      path: "Characters/traveler.md",
+      text: note(TRAVELER, "character", "Traveler", [
+        referenceFact("20000000-0000-4000-8000-000000000109", "located-at", ORIGIN),
+      ]),
+    },
+    { path: "Lore/other.md", text: note("20000000-0000-4000-8000-000000000006", "character", "Other") },
   ]);
   const model = deriveTravelModel(index);
   const analyses = deriveJourneyAnalyses(model, []);
@@ -155,6 +164,45 @@ describe("travel inspector presentation", () => {
           }),
         ]),
       }],
+    });
+  });
+
+  it("presents source-linked participant presence findings on a journey", () => {
+    const { index, model, analyses, journeyText } = fixture();
+    const presence = deriveTravelPresenceFindings(index, model, analyses, []);
+    const presented = presentTravelInspector(
+      index,
+      model,
+      analyses,
+      "Timeline/departure.md",
+      fingerprintContent(journeyText),
+      [],
+      presence.findings,
+    );
+
+    expect(presented).toMatchObject({
+      kind: "ready",
+      summary: "Travel · journey · 2 presence",
+      sections: expect.arrayContaining([expect.objectContaining({
+        title: "Presence findings",
+        items: [
+          expect.objectContaining({
+            label: "Departure · Traveler",
+            value: "Compatible",
+            reference: { title: "Traveler", path: "Characters/traveler.md" },
+            sources: expect.arrayContaining([
+              expect.objectContaining({
+                label: expect.stringContaining("presence · located-at"),
+                path: "Characters/traveler.md",
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            label: "Arrival · Traveler",
+            value: "Indeterminate",
+          }),
+        ],
+      })]),
     });
   });
 

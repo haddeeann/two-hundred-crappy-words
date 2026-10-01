@@ -3,6 +3,10 @@
   import type { TimelineCalendar } from "./format";
   import { formatTimelineDayRange } from "./normalize";
   import type { TravelJourneyAnalysis } from "$lib/travel/journey";
+  import {
+    MAX_TRAVEL_PRESENCE_FINDINGS,
+    type TravelPresenceFinding,
+  } from "$lib/travel/presence";
   import type { TimelineProjectLoadResult } from "./load";
   import type {
     TimelineCharacterAppearance,
@@ -16,6 +20,8 @@
     result: TimelineProjectLoadResult;
     model: TimelineModel;
     journeyAnalyses: readonly TravelJourneyAnalysis[];
+    presenceFindings: readonly TravelPresenceFinding[];
+    presenceOmittedCount: number;
     calendars: readonly TimelineCalendar[];
     loading: boolean;
     onClose: () => void;
@@ -27,6 +33,8 @@
     result,
     model,
     journeyAnalyses,
+    presenceFindings,
+    presenceOmittedCount,
     calendars,
     loading,
     onClose,
@@ -41,6 +49,15 @@
   const journeyById = $derived(
     new Map(journeyAnalyses.map((analysis) => [analysis.journey.noteId, analysis])),
   );
+  const presenceByJourneyId = $derived.by(() => {
+    const values = new Map<string, TravelPresenceFinding[]>();
+    for (const finding of presenceFindings) {
+      const current = values.get(finding.journeyNoteId) ?? [];
+      current.push(finding);
+      values.set(finding.journeyNoteId, current);
+    }
+    return values;
+  });
 
   function subjects(ids: readonly string[]): TimelineSubject[] {
     return ids.flatMap((id) => {
@@ -145,6 +162,12 @@
     </p>
   {/if}
 
+  {#if presenceOmittedCount > 0}
+    <p class="load-message problem" role="status">
+      {presenceOmittedCount} additional travel presence {presenceOmittedCount === 1 ? "finding was" : "findings were"} omitted by the project-wide {MAX_TRAVEL_PRESENCE_FINDINGS}-finding limit.
+    </p>
+  {/if}
+
   {#if model.calendarGroups.length === 0}
     <section class="empty-panel">
       <h2>Chronology</h2>
@@ -189,7 +212,7 @@
                   </ul>
                 {/if}
                 {#if journeyById.get(subject.noteId)}
-                  {@render JourneyTravel({ analysis: journeyById.get(subject.noteId)!, onOpenSource })}
+                  {@render JourneyTravel({ analysis: journeyById.get(subject.noteId)!, findings: presenceByJourneyId.get(subject.noteId) ?? [], onOpenSource })}
                 {/if}
                 {@render CharacterAppearances({ values: subject.appearances, onOpenSource })}
                 <div class="evidence" aria-label={`Source evidence for ${subject.title}`}>
@@ -249,7 +272,7 @@
                 </div>
               {/if}
               {#if journeyById.get(subject.noteId)}
-                {@render JourneyTravel({ analysis: journeyById.get(subject.noteId)!, onOpenSource })}
+                {@render JourneyTravel({ analysis: journeyById.get(subject.noteId)!, findings: presenceByJourneyId.get(subject.noteId) ?? [], onOpenSource })}
               {/if}
               {@render CharacterAppearances({ values: subject.appearances, onOpenSource })}
             </article>
@@ -332,7 +355,7 @@
   </article>
 {/snippet}
 
-{#snippet JourneyTravel({ analysis, onOpenSource }: { analysis: TravelJourneyAnalysis; onOpenSource: Props["onOpenSource"] })}
+{#snippet JourneyTravel({ analysis, findings, onOpenSource }: { analysis: TravelJourneyAnalysis; findings: TravelPresenceFinding[]; onOpenSource: Props["onOpenSource"] })}
   <details class="journey" class:contradiction={analysis.kind === "computed" && analysis.comparison.hardContradiction}>
     <summary>Travel · {arrivalLabel(analysis)}</summary>
     {#if analysis.kind === "unavailable"}
@@ -349,6 +372,29 @@
       {#if analysis.arrival.widenedByDayPrecision}
         <p>The arrival window widens outward because departure time of day is unspecified.</p>
       {/if}
+    {/if}
+    {#if findings.length > 0}
+      <section class="travel-presence" aria-label={`Travel presence findings for ${analysis.journey.title}`}>
+        <h4>Presence findings · {findings.length}</h4>
+        <ul>
+          {#each findings as finding (finding.id)}
+            <li class:review={finding.kind === "review"}>
+              <div class="journey-heading">
+                <strong>{finding.phase === "departure" ? "Departure" : "Arrival"} · {finding.participantTitle}</strong>
+                <span>{finding.kind === "compatible" ? "Compatible" : finding.kind === "review" ? "Review" : "Indeterminate"}</span>
+              </div>
+              <p>{finding.explanation}</p>
+              <div class="evidence" aria-label={`Presence evidence for ${finding.participantTitle}`}>
+                {#each finding.evidence as item (`${item.role}:${item.factId}:${item.range.start}`)}
+                  <button type="button" onclick={() => onOpenSource(item.path, item.range)}>
+                    {item.role} · {item.property} · {item.certainty ?? "certainty unspecified"} · line {item.range.line}
+                  </button>
+                {/each}
+              </div>
+            </li>
+          {/each}
+        </ul>
+      </section>
     {/if}
     <div class="evidence" aria-label={`Travel evidence for ${analysis.journey.title}`}>
       {#each analysis.evidence as item (`${item.role}:${item.factId}:${item.range.start}`)}
@@ -673,6 +719,37 @@
   .journey p {
     margin: 0.35rem 0 0;
     line-height: 1.4;
+  }
+
+  .travel-presence {
+    margin-top: 0.65rem;
+    padding-top: 0.55rem;
+    border-top: 1px solid #405746;
+  }
+
+  .travel-presence h4 {
+    margin: 0 0 0.35rem;
+    color: #c8d9cb;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .travel-presence ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .travel-presence li + li {
+    margin-top: 0.55rem;
+    padding-top: 0.55rem;
+    border-top: 1px solid #3d493f;
+  }
+
+  .travel-presence li.review .journey-heading > span {
+    border-color: #7d6844;
+    color: #ddc98e;
   }
 
   .appearance-list {

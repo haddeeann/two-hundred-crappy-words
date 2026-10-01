@@ -323,6 +323,7 @@
   import TravelInspector from "$lib/travel/TravelInspector.svelte";
   import { deriveJourneyAnalyses } from "$lib/travel/journey";
   import { deriveTravelModel } from "$lib/travel/model";
+  import { deriveTravelPresenceFindings } from "$lib/travel/presence";
   import { presentTravelInspector } from "$lib/travel/presentation";
 
   interface SaveFailure {
@@ -694,6 +695,16 @@
   const travelJourneyAnalyses = $derived(
     travelModel ? deriveJourneyAnalyses(travelModel, travelCalendars) : [],
   );
+  const travelPresenceFindingSet = $derived(
+    loreIndex && travelModel
+      ? deriveTravelPresenceFindings(
+          loreIndex,
+          travelModel,
+          travelJourneyAnalyses,
+          travelCalendars,
+        )
+      : { findings: [], omittedCount: 0 },
+  );
   const travelInspector = $derived.by(() => {
     const path = activeLorePath();
     return presentTravelInspector(
@@ -703,6 +714,8 @@
       path,
       path ? fingerprintContent(content) : null,
       travelCalendars,
+      travelPresenceFindingSet.findings,
+      travelPresenceFindingSet.omittedCount,
     );
   });
   const saveStatus = $derived.by(() => {
@@ -6410,6 +6423,8 @@
             result={timelineProject}
             model={timelineModel}
             journeyAnalyses={travelJourneyAnalyses}
+            presenceFindings={travelPresenceFindingSet.findings}
+            presenceOmittedCount={travelPresenceFindingSet.omittedCount}
             calendars={travelCalendars}
             loading={timelineLoading}
             onClose={closeTimelineWorkspace}

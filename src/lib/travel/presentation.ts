@@ -12,6 +12,11 @@ import type {
   TravelValueClaim,
   TravelValueSelection,
 } from "./model";
+import {
+  MAX_TRAVEL_PRESENCE_FINDINGS,
+  type TravelPresenceEvidence,
+  type TravelPresenceFinding,
+} from "./presence";
 
 export interface TravelPresentationSource {
   label: string;
@@ -58,6 +63,8 @@ export function presentTravelInspector(
   activePath: string | null,
   activeFingerprint: string | null,
   calendars: readonly TimelineCalendar[],
+  presenceFindings: readonly TravelPresenceFinding[] = [],
+  presenceOmittedCount = 0,
 ): TravelInspectorPresentation {
   if (!index || !model || !activePath) {
     return { kind: "no-active-note", summary: "Travel" };
@@ -79,7 +86,12 @@ export function presentTravelInspector(
     const analysis = analyses.find(
       ({ journey: candidate }) => candidate.noteId === journey.noteId,
     );
-    return presentJourney(analysis ?? null, calendars);
+    return presentJourney(
+      analysis ?? null,
+      calendars,
+      presenceFindings.filter(({ journeyNoteId }) => journeyNoteId === journey.noteId),
+      presenceOmittedCount,
+    );
   }
   return { kind: "no-active-note", summary: "Travel" };
 }
@@ -160,6 +172,8 @@ function presentRoute(route: TravelRouteProfile): TravelInspectorPresentation {
 function presentJourney(
   analysis: TravelJourneyAnalysis | null,
   calendars: readonly TimelineCalendar[],
+  presenceFindings: readonly TravelPresenceFinding[],
+  presenceOmittedCount: number,
 ): TravelInspectorPresentation {
   if (!analysis) {
     return { kind: "no-active-note", summary: "Travel" };
@@ -169,7 +183,13 @@ function presentJourney(
     referenceSelectionItem("Route", journey.route),
     valueSelectionItem("Departure", journey.departure),
   ];
-  const issues = [...journey.issues, ...journey.sourceDiagnostics.map(({ message }) => message)];
+  const issues = [
+    ...journey.issues,
+    ...journey.sourceDiagnostics.map(({ message }) => message),
+    ...(presenceOmittedCount > 0
+      ? [`${presenceOmittedCount} additional presence ${presenceOmittedCount === 1 ? "finding was" : "findings were"} omitted by the project-wide ${MAX_TRAVEL_PRESENCE_FINDINGS}-finding limit.`]
+      : []),
+  ];
   if (analysis.kind === "unavailable") {
     issues.unshift(analysis.reason);
   } else {
@@ -203,12 +223,44 @@ function presentJourney(
   }
   return {
     kind: "ready",
-    summary: "Travel · journey",
+    summary: `Travel · journey${presenceFindings.length ? ` · ${presenceFindings.length} presence` : ""}`,
     title: journey.title,
     path: journey.path,
     noteType: journey.noteType,
-    sections: [{ title: "Journey", items }],
+    sections: [
+      { title: "Journey", items },
+      ...(presenceFindings.length > 0
+        ? [{
+            title: "Presence findings",
+            items: presenceFindings.map(presenceFindingItem),
+          }]
+        : []),
+    ],
     issues: uniqueStrings(issues),
+  };
+}
+
+function presenceFindingItem(
+  finding: TravelPresenceFinding,
+): TravelPresentationItem {
+  return {
+    label: `${finding.phase === "departure" ? "Departure" : "Arrival"} · ${finding.participantTitle}`,
+    value: finding.kind === "compatible"
+      ? "Compatible"
+      : finding.kind === "review"
+        ? "Review"
+        : "Indeterminate",
+    detail: finding.explanation,
+    tone: finding.kind === "review"
+      ? "review"
+      : finding.kind === "indeterminate"
+        ? "potential"
+        : "normal",
+    sources: presenceEvidenceSources(finding.evidence),
+    reference: {
+      title: finding.participantTitle,
+      path: finding.participantPath,
+    },
   };
 }
 
@@ -304,6 +356,22 @@ function evidenceSources(
     seen.add(key);
     return [{
       label: `${item.property} · ${item.path}:${item.range.line}`,
+      path: item.path,
+      range: item.range,
+    }];
+  });
+}
+
+function presenceEvidenceSources(
+  evidence: readonly TravelPresenceEvidence[],
+): TravelPresentationSource[] {
+  const seen = new Set<string>();
+  return evidence.flatMap((item) => {
+    const key = `${item.path}:${item.factId}:${item.range.start}`;
+    if (seen.has(key)) return [];
+    seen.add(key);
+    return [{
+      label: `${item.role} · ${item.property} · ${item.path}:${item.range.line}`,
       path: item.path,
       range: item.range,
     }];
