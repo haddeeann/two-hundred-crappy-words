@@ -10,27 +10,29 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.6b — Pure location and travel evidence model**
+**0.7.6c — Exact duration and arrival enclosure arithmetic**
 
 ### Intended outcome
 
-Derive routes, specific journeys, and explicit location containment from one immutable lore-index generation while refusing every ambiguous identity and source shape before arithmetic or interface work.
+Normalize the approved elapsed-time subset without floating point and add it conservatively to timeline day ranges without selecting source claims or exposing interface behavior yet.
 
 ### Acceptance criteria
 
-- [x] Include only uniquely identified locations, routes, and event/scene notes that actually claim `uses-route`; explain missing or copied subject identities separately.
-- [x] Resolve route endpoints, optional models, journey routes, direct containers, and every missing, copied, ambiguous, malformed, or wrong-type target without choosing a winner.
-- [x] Preserve typed duration/distance/departure/arrival claims, validity bounds, certainty, effective canon, exact source ranges, and relevant source diagnostics for later rules and links.
-- [x] Derive separate explicit containment paths with definite/potential status, cycle detection, unresolved evidence, multiple-parent branches, and a 64-link limit.
-- [x] Verify focused ambiguity fixtures, the complete frontend suite, type checks, production build, and dependency audit without filesystem or interface changes.
+- [x] Convert canonical decimal `s`, `min`, `h`, `d`, and `wk` values into reduced exact rational seconds using `bigint` only.
+- [x] Keep calendar-variable `mo`/`a`, other UCUM expressions, project units, fictional units, negative durations, and invalid or reversed ranges visible but non-computable.
+- [x] Enclose every possible departure-plus-duration sum at calendar-day precision using outward floor/ceiling rules.
+- [x] Explain widening caused by unknown time of day, preserve reduced departure ranges, accept Gregorian or anchored calendar axes, and refuse unanchored custom calendars.
+- [x] Verify the focused unit/arithmetic matrix, complete frontend suite, type checks, production build, and dependency audit without source selection, filesystem, or interface changes.
 
 ## Next slices
 
-1. Add exact supported-duration normalization and conservative arrival-date enclosure independently of UI.
-2. Select applicable duration evidence conservatively and compare a derived window with independent authored arrival evidence.
+1. Select applicable duration evidence conservatively and compare a derived window with independent authored arrival evidence.
+2. Add date-window presentation for Gregorian and anchored writer-defined calendars.
 3. Expose source-linked route and journey details after the pure behavior is complete.
 
 ## Completed checkpoint
+
+- Slice 0.7.6c completes exact elapsed-duration normalization and conservative calendar-day arrival enclosure independently of source selection and UI. Canonical decimal `s`, `min`, `h`, `d`, and `wk` values become reduced rational seconds through `bigint` arithmetic; binary floating point is never used. Calendar-variable months/years, unsupported UCUM expressions, project or fictional systems, invalid decimals, negative values, and reversed ranges remain visible refusals. Arrival enclosure floors the minimum and ceilings the maximum duration against the departure's complete inclusive day range, so a five-hour trip from an unknown time of day honestly spans the departure date and next date while an exact 24-hour trip advances one day exactly. Reduced-precision departures widen rather than narrow. Gregorian and explicitly anchored custom calendars share the supported axis; unanchored calendars refuse elapsed-time addition. Nineteen focused cases cover the complete unit/refusal matrix, decimal exactness, sub-day and whole-day behavior, duration/departure ranges, anchored calendars, and unanchored refusal. The full gate has 500 passing frontend tests across seventy-three files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities. No source selection, filesystem, or interface behavior changed.
 
 - Slice 0.7.6b completes the pure read-only location and travel evidence model. It includes only unique stable locations and routes plus event/scene notes that actually claim `uses-route`; missing and copied subject identities remain excluded with reasons. Route endpoints, optional models, journey routes, typed durations/distances/departures/arrivals, and direct containers retain certainty, effective canon, applicability bounds, exact source ranges, and relevant parse diagnostics. Missing, copied, ambiguous, malformed, and wrong-type references never resolve; competing one-to-review claims remain explicit rather than selecting a usable-looking neighbor. Explicit containment creates one path per writer-authored parent, marks bounded or non-exact chains potential, reports missing targets and cycles, and stops after 64 links. Nine focused fixtures cover the successful model, every major refusal, copied identities/facts, applicability-ready duration claims, unrelated-event exclusion, definite/potential/cyclic/unresolved/branching containment, and the traversal bound. The full gate has 481 passing frontend tests across seventy-two files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities. No filesystem or interface behavior changed.
 
