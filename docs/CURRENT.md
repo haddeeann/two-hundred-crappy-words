@@ -10,27 +10,29 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.6c — Exact duration and arrival enclosure arithmetic**
+**0.7.6d — Applicable-duration selection and arrival comparison**
 
 ### Intended outcome
 
-Normalize the approved elapsed-time subset without floating point and add it conservatively to timeline day ranges without selecting source claims or exposing interface behavior yet.
+Combine the pure evidence and arithmetic layers without guessing: select one definitely applicable duration, derive a journey arrival, and compare it with independent authored arrival evidence.
 
 ### Acceptance criteria
 
-- [x] Convert canonical decimal `s`, `min`, `h`, `d`, and `wk` values into reduced exact rational seconds using `bigint` only.
-- [x] Keep calendar-variable `mo`/`a`, other UCUM expressions, project units, fictional units, negative durations, and invalid or reversed ranges visible but non-computable.
-- [x] Enclose every possible departure-plus-duration sum at calendar-day precision using outward floor/ceiling rules.
-- [x] Explain widening caused by unknown time of day, preserve reduced departure ranges, accept Gregorian or anchored calendar axes, and refuse unanchored custom calendars.
-- [x] Verify the focused unit/arithmetic matrix, complete frontend suite, type checks, production build, and dependency audit without source selection, filesystem, or interface changes.
+- [x] Require one resolved route, different resolved endpoints, one computable departure, and one definitely applicable supported duration before calculation.
+- [x] Select applicability only when the complete departure range is inside the claim bounds; ignore definitely outside claims and refuse potential or competing claims.
+- [x] Treat `ends-at` as independent authored evidence, preserving absent, ambiguous, interval, non-computable, compatible, qualified-review, and exact-contradiction states.
+- [x] Require every contributing route-use, endpoint, departure, duration, and arrival fact to be unique and explicitly exact before a disjoint range becomes a hard contradiction.
+- [x] Retain all contributing source evidence and verify focused journey fixtures, the full suite, type checks, production build, and dependency audit without UI or filesystem changes.
 
 ## Next slices
 
-1. Select applicable duration evidence conservatively and compare a derived window with independent authored arrival evidence.
-2. Add date-window presentation for Gregorian and anchored writer-defined calendars.
-3. Expose source-linked route and journey details after the pure behavior is complete.
+1. Add date-window presentation for Gregorian and anchored writer-defined calendars.
+2. Expose source-linked route and journey details in Writing tools and Timeline.
+3. Add guarded travel-fact authoring through the existing continuity editor and complete packaged QA.
 
 ## Completed checkpoint
+
+- Slice 0.7.6d completes pure journey-level duration selection and independent authored-arrival comparison. A calculation requires one resolved route, different resolved endpoints, one computable departure, and exactly one supported duration whose applicability bounds definitely contain the complete departure. Definitely outside claims are ignored; partly overlapping, cross-axis, non-computable, and several applicable claims all refuse selection. A missing `ends-at` leaves the derived result usable, overlapping authored evidence is compatible, and ambiguous, interval, invalid, or cross-axis arrival evidence remains indeterminate. Disjoint ranges become a hard contradiction only when the route-use, both endpoints, departure, duration, and authored arrival are all unique and explicitly exact; otherwise they are a qualified review. An `occurs-at` interval combined with `ends-at` retains the existing timeline refusal. Ten focused end-to-end fixtures cover success, exact and qualified conflict, no authored arrival, applicability selection/outside/potential/competing states, unsupported units, ambiguous and interval arrival, interval departure, same endpoints, and unanchored-calendar refusal. The full gate has 510 passing frontend tests across seventy-four files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities. No interface or filesystem behavior changed.
 
 - Slice 0.7.6c completes exact elapsed-duration normalization and conservative calendar-day arrival enclosure independently of source selection and UI. Canonical decimal `s`, `min`, `h`, `d`, and `wk` values become reduced rational seconds through `bigint` arithmetic; binary floating point is never used. Calendar-variable months/years, unsupported UCUM expressions, project or fictional systems, invalid decimals, negative values, and reversed ranges remain visible refusals. Arrival enclosure floors the minimum and ceilings the maximum duration against the departure's complete inclusive day range, so a five-hour trip from an unknown time of day honestly spans the departure date and next date while an exact 24-hour trip advances one day exactly. Reduced-precision departures widen rather than narrow. Gregorian and explicitly anchored custom calendars share the supported axis; unanchored calendars refuse elapsed-time addition. Nineteen focused cases cover the complete unit/refusal matrix, decimal exactness, sub-day and whole-day behavior, duration/departure ranges, anchored calendars, and unanchored refusal. The full gate has 500 passing frontend tests across seventy-three files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities. No source selection, filesystem, or interface behavior changed.
 
