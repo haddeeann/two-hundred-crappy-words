@@ -1,6 +1,6 @@
 # Current work
 
-Last updated: 2026-09-27
+Last updated: 2026-10-01
 
 ## Active milestone
 
@@ -10,26 +10,29 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.6 — Location and travel model research**
+**0.7.6 — Location and travel format approval**
 
 ### Intended outcome
 
-Define the smallest portable, writer-owned model that can represent locations, movement, travel duration, and arrival windows without assuming one fictional physics system.
+Review and approve or revise the proposed writer-owned location, route-profile, and arrival-window contract before changing note types, the property registry, or app behavior.
 
 ### Acceptance criteria
 
-- [ ] Inventory the existing `located-at`, quantity/range, validity-bound, timeline, and stable-note identity semantics before proposing a new format.
-- [ ] Research primary standards and established writing-tool conventions for coordinates, containment, routes, duration, and uncertain arrival windows.
-- [ ] Separate generic arithmetic from project-defined propulsion, calendars, map coordinates, and narrative shorthand.
-- [ ] Draft source shapes, refusal rules, source-linked UX, safety limits, and explicit approval gates without changing a project file or interface.
+- [x] Inventory the existing `located-at`, quantity/range, validity-bound, timeline, and stable-note identity semantics before proposing a new format.
+- [x] Research primary standards and established writing-tool conventions for coordinates, containment, routes, duration, and uncertain arrival windows.
+- [x] Separate generic arithmetic from project-defined propulsion, calendars, map coordinates, and narrative shorthand.
+- [x] Draft source shapes, refusal rules, source-linked UX, safety limits, and explicit approval gates without changing a project file or interface.
+- [ ] Receive approval or requested revisions for the eight permanent choices in [`LOCATION_TRAVEL_FORMAT.md`](LOCATION_TRAVEL_FORMAT.md).
 
 ## Next slices
 
-1. Inventory current spatial and duration data boundaries.
-2. Research interoperable primitives and fiction-planning conventions.
-3. Draft the location/travel contract and pause at its permanent-format decisions.
+1. Resolve the documented storage, route identity, vocabulary, direction, arithmetic, evidence, containment, and map-boundary decisions.
+2. Add the approved route note template and property-registry contract with compatibility tests.
+3. Derive a pure read-only location/route/journey evidence model before filesystem or interface work.
 
 ## Completed checkpoint
+
+- Slice 0.7.6 research and contract drafting are complete. Existing `located-at`, note identity, quantity/range, applicability bounds, timeline axes, certainty, and free-form manuscript metadata were inventoried before proposing changes. Primary research covered GeoSPARQL topological relations, GeoJSON's WGS 84 boundary, OGC local/engineering coordinate reference systems, GTFS route/trip separation, OGC route distance/duration structure, OWL-Time duration semantics, UCUM units, interval enclosure, and the place/timeline/map conventions of Aeon Timeline, Plottr, World Anvil, and Campfire. [`LOCATION_TRAVEL_FORMAT.md`](LOCATION_TRAVEL_FORMAT.md) proposes ordinary Markdown route-profile notes, explicit location containment, directional origin/destination/model/duration facts, specific journey events that reuse `occurs-at`/`ends-at`, conservative arrival-date enclosure, exact refusal rules, source-linked UX, and a strict separation from future map coordinates and fictional physics. No project file, note, schema, parser, registry, capability, dependency, or interface changed. Implementation is paused at eight permanent-format approval gates.
 
 - A focused window-quality checkpoint replaces the app-drawn frameless controls with the standard decorated macOS title bar. Native red, yellow, and green traffic lights now own close, minimize, zoom/full-screen, hover symbols, and system half-screen tiling choices. The webview retains its safe-close interception, but no longer needs command permissions to imitate title-bar dragging, minimizing, or close requests. The writing workspace uses the complete native content viewport, and the active continuity roadmap resumes at 0.7.6 without changing any project or writing format. Packaged macOS QA verified the native controls, full-screen entry and **Exit Full Screen**, Fill/Center, halves, quarters, arranged layouts, full-screen left/right tiling, working left-half placement, **Return to Previous Size**, and clean restart with the saved draft restored. The gate has 470 passing frontend tests across seventy-one files, fifteen passing native tests, clean Rust formatting/checks, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 
@@ -136,7 +139,7 @@ Define the smallest portable, writer-owned model that can represent locations, m
 
 ## Blockers and decision gates
 
-There is no current implementation blocker. Timeline and character-age evidence are verified. Location/travel work starts with research and a format decision gate; timeline-file creation and mutation remain separate later guarded slices.
+There is no technical implementation blocker. Timeline and character-age evidence are verified, and location/travel research is complete. The next change would add a permanent structured note type and property semantics, so implementation is deliberately paused for the eight decisions in `docs/LOCATION_TRAVEL_FORMAT.md`; timeline-file creation and mutation remain separate later guarded slices.
 
 ## Handoff protocol
 
