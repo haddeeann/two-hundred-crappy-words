@@ -18,11 +18,11 @@ Research and propose the smallest portable relationship model and focused writer
 
 ### Acceptance criteria
 
-- [ ] Inventory the existing relationship-capable properties, note types, directionality, validity, canon, certainty, and source-link boundaries.
-- [ ] Research established graph/relationship standards and focused views in writing tools using primary sources where available.
-- [ ] Propose explicit direction, inverse-display, multiplicity, time-bound, ambiguity, and contradiction semantics without inventing a universal social ontology.
-- [ ] Define focused character, faction, and spacecraft views, safety/performance bounds, and their separation from the later map model.
-- [ ] Record the permanent decision gates and obtain user approval before implementing new relationship semantics.
+- [x] Inventory the existing relationship-capable properties, note types, directionality, validity, canon, certainty, and source-link boundaries.
+- [x] Research established graph/relationship standards and focused views in writing tools using primary sources where available.
+- [x] Propose explicit direction, inverse-display, multiplicity, time-bound, ambiguity, and contradiction semantics without inventing a universal social ontology.
+- [x] Define focused character, faction, and spacecraft views, safety/performance bounds, and their separation from the later map model.
+- [ ] Review the recorded permanent decision gates and obtain user approval before implementing new relationship semantics.
 
 ## Next slices
 
@@ -31,6 +31,8 @@ Research and propose the smallest portable relationship model and focused writer
 3. Research and approve the separately gated map model before adding any map format or persistence.
 
 ## Completed checkpoint
+
+- Slice 0.7.7 research and contract drafting are complete. The existing stable fact identity, note references, open property vocabulary, relationship-capable registry entries, validity, canon, certainty, exact-source navigation, guarded authoring, prose-link Connections surface, and specialized timeline/travel boundaries were inventoried before proposing changes. Primary research covered RDF labeled directed edges, OWL direction/inverse/symmetry semantics, Schema.org's distinct relationship properties, Wikidata multi-value statements and time qualifiers, Aeon Timeline's typed relationships and context grid, and World Anvil's character-centered family and extended relationships. [`RELATIONSHIP_FORMAT.md`](RELATIONSHIP_FORMAT.md) proposes no new database: one existing fact remains one assertion, incoming and symmetric readings are derived without reciprocal writes, custom entity links stay literal and semantically neutral, multiple and time-qualified claims remain visible, ambiguity is never guessed, and version one is a closed-by-default first-degree list capped at 100 rather than a global graph. No project file, schema, parser, registry, capability, dependency, or interface changed. Verification retained 527 passing frontend tests across seventy-six files, zero Svelte/TypeScript diagnostics, a successful production web build, and a clean diff check. Eight permanent decisions now await approval before implementation.
 
 - Slice 0.7.6f completes bounded presence/travel continuity findings. Rule `travel.presence.endpoint` version 1 compares character or spacecraft participant locations against route origin and destination only when the participant, location, containment, route, duration, and complete departure or derived-arrival ranges are sufficiently usable. Same or definitely nested places are compatible; broader or potentially nested places remain indeterminate; several applicable locations must form one definite containment chain; and unrelated places produce review—not contradiction—because the format has no disjoint-location assertion. Missing covering presence evidence produces no finding because tracking is optional. Stable memory-only findings retain exact source ranges, cap project output at 100 with an omission notice, appear in the active journey's Travel disclosure and Timeline card, write nothing, and award no daily words. Packaged macOS QA verified the closed default, readable compatible/review presentation, exact `located-at` source selection from both surfaces, unchanged source hashes, unchanged `0 / 200`, and restoration of Arcadia. The final gate has 527 passing frontend tests across seventy-six files, fifteen passing native tests, clean Rust formatting/checks, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 
@@ -151,7 +153,7 @@ Research and propose the smallest portable relationship model and focused writer
 
 ## Blockers and decision gates
 
-There is no technical blocker. Travel and presence findings are complete. Relationship views are now at a deliberate research and permanent-semantics gate: the proposal must define direction, inverse display, time bounds, ambiguity, focused scope, and refusal behavior before implementation. Maps remain a separate later research and approval gate.
+There is no technical blocker. Travel and presence findings are complete. The relationship proposal now defines direction, inverse display, time bounds, ambiguity, focused scope, and refusal behavior. Its eight permanent choices await user approval before implementation. Maps remain a separate later research and approval gate.
 
 ## Handoff protocol
 
