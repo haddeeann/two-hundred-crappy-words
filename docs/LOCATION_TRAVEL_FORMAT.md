@@ -208,6 +208,14 @@ If an authored `ends-at` exists:
 
 Distance is never part of this calculation. A later physics layer may define a project-owned rule such as a constant-speed leg, acceleration profile, transfer-window table, jump network, or narrative lookup, but it must be explicit, versioned, and separately approved.
 
+### Presence at route endpoints
+
+After the source-linked travel experience is verified, rule `travel.presence.endpoint` version 1 may compare a journey's character or spacecraft participants with applicable `located-at` facts on those participant notes. Departure presence is queried across the complete departure range and arrival presence across the complete derived arrival range. A `participant`, `located-at`, or `contained-by` fact with bounds applies only when those bounds definitely contain the complete queried range; an overlapping, cross-axis, invalid, or non-computable bound keeps the result indeterminate. A definitely outside claim is ignored, and absence of a covering `located-at` fact produces no finding because location tracking is optional.
+
+Several applicable `located-at` claims are usable together only when their distinct targets form one definite containment chain for the complete queried range. The most specific target is then compared with the route endpoint. The same endpoint, or a place definitely contained by it, is compatible. A route endpoint contained by the written presence is only broad evidence and remains indeterminate. A potential containment path remains indeterminate. Unconnected locations create a review finding, never a hard contradiction: this format has no disjoint-location assertion, and absence of a `contained-by` path does not prove that two writer-defined places cannot overlap or denote the same physical area.
+
+Each finding is memory-only, bounded, stable by rule/version plus journey and participant fact identity, and retains the journey route, endpoint, departure, duration where needed, participant, location, and containment sources used. The rule does not invent a participant, infer travel between scenes, choose among competing places, write a correction, persist an exception, or award daily words.
+
 ## Refusal and ambiguity rules
 
 Arrival calculation is unavailable when any of these is true:
