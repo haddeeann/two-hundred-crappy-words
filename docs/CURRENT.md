@@ -1,6 +1,6 @@
 # Current work
 
-Last updated: 2026-10-01
+Last updated: 2026-10-02
 
 ## Active milestone
 
@@ -10,28 +10,29 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.7a — Relationship evidence model**
+**0.7.7b — Focused relationship inspector**
 
 ### Intended outcome
 
-Implement the approved relationship semantics as a pure, bounded, source-linked evidence model before adding interface behavior.
+Present the approved bounded relationship evidence beside the active note with verified source and reference actions, without changing project files or daily credit.
 
 ### Acceptance criteria
 
-- [ ] Add the approved target-type and inverse-display metadata without changing source facts or automatically writing reciprocal claims.
-- [ ] Derive bounded outgoing, incoming, symmetric, and literal custom relationship evidence from the memory index.
-- [ ] Preserve fact identity, direction, qualification, exact source ranges, deterministic ordering, and every ambiguity or refusal.
-- [ ] Cover character, faction, spacecraft, technology, and location anchors plus malformed, copied, missing, wrong-type, and stale evidence in focused tests.
-- [ ] Verify the complete automated gate and document the next interface slice.
+- [ ] Add a closed-by-default Relationships disclosure for the active relationship-capable note in Writing tools.
+- [ ] Show outgoing, incoming, symmetric, and custom claims with direction, other endpoint, validity, canon, certainty, notes, issues, and omission counts.
+- [ ] Open the other endpoint through the verified reference pane and select the sole source fact only behind its current fingerprint.
+- [ ] Preserve the stale-overlay, no-write, no-network, and no-daily-credit boundaries with keyboard-accessible controls.
+- [ ] Verify focused presentation tests, the full automated gate, and packaged macOS behavior before advancing to authoring refinements.
 
 ## Next slices
 
-1. Complete the pure relationship evidence model.
-2. Add the approved source-linked focused relationship inspector.
-3. Refine relationship authoring, research evidence-safe findings and optional completeness suggestions, and complete packaged QA in independent slices.
-4. Research and approve the separately gated map model before adding any map format or persistence.
+1. Add the approved source-linked focused relationship inspector.
+2. Refine relationship authoring, research evidence-safe findings and optional completeness suggestions, and complete packaged QA in independent slices.
+3. Research and approve the separately gated map model before adding any map format or persistence.
 
 ## Completed checkpoint
+
+- Slice 0.7.7a completes the pure relationship evidence model. The five approved built-in relationship properties now declare exact target note types and inverse display labels without adding reciprocal property keys or source writes. A bounded memory-only derivation produces first-degree outgoing, incoming, symmetric, and literal custom entity links for uniquely identified character, faction, spacecraft, technology, and location notes; each assertion retains the sole fact ID, source fingerprint and range, direction, both endpoints, effective canon, certainty, validity bounds, and writer note. Independent reciprocal facts remain independent, self-edges are not duplicated, specialized location/timeline/travel/classification facts stay out, and deterministic registry/property/title/path/fact ordering precedes the 100-assertion cap. Missing or copied source identities are excluded with reasons; duplicated facts, malformed metadata, invalid values, missing or copied targets, and wrong source/target types remain explicit and capped rather than becoming guessed edges. Active-fingerprint selection withholds stale evidence. Seven focused relationship fixtures plus the registry suite cover all approved entity types, qualifications, custom direction, reciprocal/self behavior, every refusal, valid neighbors beside malformed facts, deterministic limits, and stale selection. The full gate has 534 passing frontend tests across seventy-seven files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities. No filesystem or interface behavior changed.
 
 - Slice 0.7.7 research and contract drafting are complete and approved. The existing stable fact identity, note references, open property vocabulary, relationship-capable registry entries, validity, canon, certainty, exact-source navigation, guarded authoring, prose-link Connections surface, and specialized timeline/travel boundaries were inventoried before proposing changes. Primary research covered RDF labeled directed edges, OWL direction/inverse/symmetry semantics, Schema.org's distinct relationship properties, Wikidata multi-value statements and time qualifiers, Aeon Timeline's typed relationships and context grid, and World Anvil's character-centered family and extended relationships. [`RELATIONSHIP_FORMAT.md`](RELATIONSHIP_FORMAT.md) adds no new database: one existing fact remains one assertion, incoming and symmetric readings are derived without reciprocal writes, custom entity links stay literal and semantically neutral, multiple and time-qualified claims remain visible, ambiguity is never guessed, and version one is a closed-by-default first-degree list capped at 100 rather than a global graph. The user approved all eight storage, vocabulary, direction, qualification, multiplicity, ambiguity, initial-UX, and map-separation decisions on 2026-10-01. No project file, schema, parser, registry, capability, dependency, or interface changed. Verification retained 527 passing frontend tests across seventy-six files, zero Svelte/TypeScript diagnostics, a successful production web build, and a clean diff check.
 
@@ -154,7 +155,7 @@ Implement the approved relationship semantics as a pure, bounded, source-linked 
 
 ## Blockers and decision gates
 
-There is no technical blocker. The relationship contract is approved, and the pure evidence model is the next executable slice. Maps remain a separate later research and approval gate.
+There is no technical blocker. The relationship evidence model is complete, and the focused read-only inspector is the next executable slice. Maps remain a separate later research and approval gate.
 
 ## Handoff protocol
 

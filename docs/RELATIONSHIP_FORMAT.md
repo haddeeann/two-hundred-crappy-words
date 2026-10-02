@@ -15,6 +15,10 @@ This proposal defines the smallest useful relationship model for a local-first s
 
 It deliberately does not define a universal social ontology, infer relationships from prose, or make a global network diagram the primary experience. Writers may invent relationships that do not fit ordinary family, political, or organizational categories. The app should preserve those claims without pretending to understand more than their sources say.
 
+## Implementation status
+
+Slice 0.7.7a is complete. The built-in registry now carries the approved target types and inverse display labels, and a pure bounded model derives source-linked outgoing, incoming, symmetric, and custom relationship evidence plus explicit refusal states. No relationship interface or project-file behavior shipped in that slice. The focused read-only inspector is next.
+
 ## Existing project boundary
 
 No new storage layer is required for a first relationship view. The approved continuity fact envelope already provides:

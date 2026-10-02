@@ -13,6 +13,7 @@ export interface ContinuityPropertyDefinition {
   allowsValidityBounds: boolean;
   direction: ContinuityRelationshipDirection;
   inverseProperty: string | null;
+  inverseLabel?: string;
   targetTypes?: readonly string[];
 }
 
@@ -128,6 +129,8 @@ export const CONTINUITY_PROPERTY_DEFINITIONS = [
     allowsValidityBounds: true,
     direction: "outgoing",
     inverseProperty: null,
+    inverseLabel: "Has member",
+    targetTypes: ["faction", "spacecraft"],
   },
   {
     key: "parent-of",
@@ -139,6 +142,8 @@ export const CONTINUITY_PROPERTY_DEFINITIONS = [
     allowsValidityBounds: true,
     direction: "outgoing",
     inverseProperty: null,
+    inverseLabel: "Child of",
+    targetTypes: ["character"],
   },
   {
     key: "partner-of",
@@ -151,6 +156,8 @@ export const CONTINUITY_PROPERTY_DEFINITIONS = [
     allowsValidityBounds: true,
     direction: "symmetric",
     inverseProperty: "partner-of",
+    inverseLabel: "Partner of",
+    targetTypes: ["character"],
   },
   {
     key: "operated-by",
@@ -163,6 +170,8 @@ export const CONTINUITY_PROPERTY_DEFINITIONS = [
     allowsValidityBounds: true,
     direction: "outgoing",
     inverseProperty: null,
+    inverseLabel: "Operates",
+    targetTypes: ["character", "faction"],
   },
   {
     key: "home-port",
@@ -174,6 +183,8 @@ export const CONTINUITY_PROPERTY_DEFINITIONS = [
     allowsValidityBounds: true,
     direction: "outgoing",
     inverseProperty: null,
+    inverseLabel: "Home to",
+    targetTypes: ["location", "spacecraft"],
   },
   {
     key: "contained-by",

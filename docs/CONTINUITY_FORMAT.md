@@ -157,6 +157,7 @@ Each built-in property definition should state:
 - whether multiple simultaneous values are ordinary, suspicious, or forbidden for a deterministic calculation;
 - whether `validFrom`/`validTo` apply;
 - an optional inverse property used only for display or checks, never auto-written;
+- an optional inverse display label that reads one source assertion from its target endpoint without creating a reciprocal fact;
 - the deterministic rules that consume it.
 
 Unknown property keys remain preserved and visible as custom facts but do not participate in checks. This lets the registry grow without migrating every note and avoids claiming one vocabulary fits every fictional world.
@@ -189,11 +190,11 @@ The shipped registry currently defines:
 | `participant`       | event, scene, chapter               | note            | many                     | yes    | outgoing                 |
 | `instance-of`       | every built-in note type            | note            | many                     | yes    | outgoing                 |
 | `species`           | character                           | note            | one to review            | yes    | outgoing                 |
-| `member-of`         | character, faction, spacecraft      | note            | many                     | yes    | outgoing                 |
-| `parent-of`         | character                           | note            | many                     | yes    | outgoing parent to child |
-| `partner-of`        | character                           | note            | many                     | yes    | symmetric; self-inverse  |
-| `operated-by`       | spacecraft, technology              | note            | one to review            | yes    | outgoing                 |
-| `home-port`         | spacecraft                          | note            | one to review            | yes    | outgoing                 |
+| `member-of`         | character, faction, spacecraft      | note            | many                     | yes    | faction or spacecraft; inverse display `Has member` |
+| `parent-of`         | character                           | note            | many                     | yes    | character; inverse display `Child of` |
+| `partner-of`        | character                           | note            | many                     | yes    | character; symmetric `Partner of` |
+| `operated-by`       | spacecraft, technology              | note            | one to review            | yes    | character or faction; inverse display `Operates` |
+| `home-port`         | spacecraft                          | note            | one to review            | yes    | location or spacecraft; inverse display `Home to` |
 | `contained-by`      | location                            | note            | many                     | yes    | location or spacecraft   |
 | `route-origin`      | route                               | note            | one to review            | no     | location or spacecraft   |
 | `route-destination` | route                               | note            | one to review            | no     | location or spacecraft   |

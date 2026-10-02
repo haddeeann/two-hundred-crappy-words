@@ -26,7 +26,25 @@ describe("continuity property registry", () => {
     expect(continuityPropertyDefinition("partner-of")).toMatchObject({
       direction: "symmetric",
       inverseProperty: "partner-of",
+      inverseLabel: "Partner of",
+      targetTypes: ["character"],
       valueKinds: ["note"],
+    });
+    expect(continuityPropertyDefinition("member-of")).toMatchObject({
+      inverseLabel: "Has member",
+      targetTypes: ["faction", "spacecraft"],
+    });
+    expect(continuityPropertyDefinition("parent-of")).toMatchObject({
+      inverseLabel: "Child of",
+      targetTypes: ["character"],
+    });
+    expect(continuityPropertyDefinition("operated-by")).toMatchObject({
+      inverseLabel: "Operates",
+      targetTypes: ["character", "faction"],
+    });
+    expect(continuityPropertyDefinition("home-port")).toMatchObject({
+      inverseLabel: "Home to",
+      targetTypes: ["location", "spacecraft"],
     });
     expect(continuityPropertyDefinition("writer-invented")).toBeNull();
     expect(continuityPropertyDefinition("route-origin")).toMatchObject({

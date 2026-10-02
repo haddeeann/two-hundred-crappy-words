@@ -100,7 +100,7 @@ Goal: provide science-fiction-specific tools that help a complex world remain in
 - [x] Add structured canon status and typed worldbuilding properties with source-linked inspection and guarded, source-preserving authoring.
 - [x] Build read-only story and world timelines with eras, fictional calendars, parallel tracks, narrative context, unresolved evidence, and exact source links.
 - [x] Calculate source-linked character ages and flag only evidence-supported impossible appearances.
-- [ ] Model locations, travel durations, and arrival windows without pretending fictional physics is universal.
+- [x] Model locations, travel durations, and arrival windows without pretending fictional physics is universal.
 - [ ] Visualize character and faction relationships.
 - [ ] Attach project-owned maps and link lore to map locations.
 - [ ] Add deterministic continuity checks and source-linked findings.
