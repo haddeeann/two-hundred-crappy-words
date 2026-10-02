@@ -1,5 +1,12 @@
 <script lang="ts">
+  import ContinuityAuthoring from "$lib/lore/ContinuityAuthoring.svelte";
+  import type { ContinuityAuthoringContext } from "$lib/lore/continuity-authoring";
   import type {
+    ContinuityMutationPlan,
+    ContinuityMutationRequest,
+  } from "$lib/lore/continuity-mutation";
+  import type {
+    RelationshipAuthoringRequest,
     RelationshipInspectorPresentation,
     RelationshipPresentationSection,
     RelationshipPresentationSource,
@@ -7,11 +14,37 @@
 
   interface Props {
     presentation: RelationshipInspectorPresentation;
+    authoring: ContinuityAuthoringContext;
+    authoringBusy: boolean;
+    authoringNotice: string;
+    authoringUndoLabel: string;
+    authoringRequest: RelationshipAuthoringRequest | null;
     onOpenReference: (path: string) => void;
     onOpenSource: (source: RelationshipPresentationSource) => void;
+    onEditRelationship: (
+      factId: string,
+      source: RelationshipPresentationSource,
+    ) => void;
+    onConfirmAuthoring: (
+      plan: ContinuityMutationPlan,
+      request: ContinuityMutationRequest,
+    ) => Promise<boolean>;
+    onUndoAuthoring: () => Promise<void>;
   }
 
-  let { presentation, onOpenReference, onOpenSource }: Props = $props();
+  let {
+    presentation,
+    authoring,
+    authoringBusy,
+    authoringNotice,
+    authoringUndoLabel,
+    authoringRequest,
+    onOpenReference,
+    onOpenSource,
+    onEditRelationship,
+    onConfirmAuthoring,
+    onUndoAuthoring,
+  }: Props = $props();
 </script>
 
 {#snippet sections(values: readonly RelationshipPresentationSection[])}
@@ -44,6 +77,10 @@
                 class="source"
                 onclick={() => onOpenSource(item.source)}
               >{item.source.label}</button>
+              <button
+                type="button"
+                onclick={() => onEditRelationship(item.factId, item.source)}
+              >Edit relationship at its source</button>
             </div>
           </li>
         {/each}
@@ -117,6 +154,10 @@
                 class="source"
                 onclick={() => onOpenSource(issue.source)}
               >{issue.source.label}</button>
+              <button
+                type="button"
+                onclick={() => onEditRelationship(issue.factId, issue.source)}
+              >Edit source fact</button>
             </li>
           {/each}
         </ul>
@@ -151,6 +192,20 @@
         omitted by the review limit.
       </p>
     {/if}
+
+    <ContinuityAuthoring
+      context={authoring}
+      busy={authoringBusy}
+      notice={authoringNotice}
+      undoLabel={authoringUndoLabel}
+      scope="relationships"
+      requestedFactId={authoringRequest?.factId ?? null}
+      requestedSourcePath={authoringRequest?.sourcePath ?? null}
+      requestRevision={authoringRequest?.revision ?? 0}
+      idPrefix="relationship"
+      onConfirm={onConfirmAuthoring}
+      onUndo={onUndoAuthoring}
+    />
 
     <p class="privacy">
       Derived locally from this project. Relationships are never added,

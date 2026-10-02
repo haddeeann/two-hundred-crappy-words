@@ -10,27 +10,29 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.7c — Relationship authoring refinements**
+**0.7.7d — Relationship review and completeness research**
 
 ### Intended outcome
 
-Make relationship creation and editing focused and safe while preserving the one writer-owned source fact and never generating reciprocal facts.
+Research the smallest explainable relationship-review rules and planning suggestions, then obtain explicit approval for their evidence, false-positive, and persistence boundaries before implementation.
 
 ### Acceptance criteria
 
-- [ ] Offer a relationship-focused authoring path whose built-in property choices match the active note type and whose targets match each property's documented target types.
-- [ ] Route edits from outgoing, incoming, and symmetric displays to the sole source fact; never create or update a reciprocal fact automatically.
-- [ ] Retain existing unknown custom properties and incompatible targets during editing so source data cannot disappear accidentally.
-- [ ] Reuse the exact Markdown preview, compare-before-write, guarded Undo, stale-source refusal, and no-daily-credit boundaries.
-- [ ] Verify focused authoring tests, the full automated gate, and packaged macOS behavior before researching relationship review suggestions.
+- [ ] Inventory existing continuity findings, source problems, authoring affordances, and any durable exception mechanisms before proposing new behavior.
+- [ ] Research evidence-based relationship checks and writing-tool conventions using primary sources where available.
+- [ ] Separate source errors, deterministic contradictions, and optional **possibly missing** planning prompts in both semantics and presentation.
+- [ ] Define each candidate rule, required evidence, false-positive risk, whether expectations are built-in or project-selected, and whether dismissals need portable persistence.
+- [ ] Make no schema, project-file, or interface change until the proposal's permanent decisions are explicitly approved.
 
 ## Next slices
 
-1. Refine relationship authoring without adding reciprocal source writes.
-2. Research evidence-safe findings and optional completeness suggestions in a separate approval gate, then complete final relationship regression QA.
+1. Research and approve evidence-safe relationship findings and optional completeness suggestions.
+2. Implement only the approved deterministic rules, then complete final relationship regression QA.
 3. Research and approve the separately gated map model before adding any map format or persistence.
 
 ## Completed checkpoint
+
+- Slice 0.7.7c completes focused relationship authoring. The existing guarded continuity editor now has a relationship scope with a deterministic built-in type selector, an explicit custom-property path, registry-filtered targets, and only relationship facts sourced by the active note in its editable list. Existing unknown custom links and incompatible targets remain selectable during editing so repair cannot erase source data accidentally. Every resolved outgoing, incoming, or symmetric relationship and every source issue can request editing at the one owning fact; the app verifies its source fingerprint, opens the source note, and starts that exact fact's editor rather than writing a reciprocal. Exact Markdown preview, compare-before-write execution, guarded Undo, stale refusal, and zero daily-credit behavior are unchanged. Packaged macOS QA found and fixed two add-flow filtering defects—the prior target was initially retained after choosing a different property, and WebKit datalist completion could capitalize a built-in into a custom key—before the final selector-based pass. The final run verified character-only `parent-of` targets, exact add preview, confirmed write, byte-exact Undo, incoming `operated-by` routing to its spacecraft source, keyboard exit, unchanged hashes, unchanged `0 / 200`, and Arcadia restoration. The final gate has 539 passing frontend tests across seventy-eight files, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 
 - Slice 0.7.7b completes the focused relationship inspector. A closed-by-default Relationships disclosure in Writing tools presents the active character, faction, spacecraft, technology, or location note's bounded first-degree outgoing, incoming, symmetric, and literal custom links with plain-language direction, endpoint type, validity, canon, certainty, writer notes, explicit issues, source diagnostics, and omission counts. Built-ins retain registry order while custom links remain nested and semantically neutral. Every usable assertion can open the other endpoint in the verified read-only reference pane and can open the sole writer-owned source fact only while its indexed fingerprint still matches; stale evidence refuses navigation. The surface writes nothing, stores no derived graph, performs no network request, and awards no daily credit. Packaged macOS QA exercised all four relationship forms, a missing target, nested custom disclosure, exact incoming-source selection, reference opening, Tab/Shift+Tab/Escape behavior, unchanged source hashes, unchanged `0 / 200`, and restoration of the writer's Arcadia project. The final gate has 538 passing frontend tests across seventy-eight files, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 

@@ -1,6 +1,6 @@
 # Relationship views research and proposed contract
 
-Status: **approved and in incremental implementation; evidence model and focused inspector complete**
+Status: **approved and in incremental implementation; evidence, focused inspection, and focused authoring complete**
 
 Last updated: 2026-10-02
 
@@ -17,7 +17,7 @@ It deliberately does not define a universal social ontology, infer relationships
 
 ## Implementation status
 
-Slices 0.7.7a and 0.7.7b are complete. The built-in registry carries the approved target types and inverse display labels, and a pure bounded model derives source-linked outgoing, incoming, symmetric, and custom relationship evidence plus explicit refusal states. A closed-by-default focused inspector now presents that evidence beside the active note, opens verified endpoint references, and selects the sole source fact only behind its current fingerprint. It stores no derived graph, changes no project file, awards no daily credit, and sends nothing over the network. Focused authoring refinements are next.
+Slices 0.7.7a through 0.7.7c are complete. The built-in registry carries the approved target types and inverse display labels, and a pure bounded model derives source-linked outgoing, incoming, symmetric, and custom relationship evidence plus explicit refusal states. A closed-by-default focused inspector presents that evidence beside the active note, opens verified endpoint references, and selects the sole source fact only behind its current fingerprint. Focused authoring filters built-in properties and targets, keeps custom vocabulary open, and always edits the one owning source fact through exact preview and guarded Undo; it never writes a reciprocal. Derived evidence changes no project file, awards no daily credit, and sends nothing over the network. Relationship-review and completeness research is next and remains an approval gate.
 
 ## Existing project boundary
 

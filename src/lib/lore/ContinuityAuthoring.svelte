@@ -1,6 +1,9 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import { CONTINUITY_PROPERTY_DEFINITIONS } from "./continuity-registry";
+  import {
+    CONTINUITY_PROPERTY_DEFINITIONS,
+    type ContinuityPropertyDefinition,
+  } from "./continuity-registry";
   import {
     continuityValueDraft,
     planContinuityMutation,
@@ -14,7 +17,12 @@
     ContinuityAuthoringContext,
     ContinuityNoteChoice,
   } from "./continuity-authoring";
-  import { continuityNoteChoicesForProperty } from "./continuity-authoring";
+  import {
+    continuityNoteChoicesForProperty,
+    continuityRelationshipFacts,
+    continuityRelationshipNoteChoices,
+    continuityRelationshipPropertyDefinitions,
+  } from "./continuity-authoring";
   import type {
     CanonStatus,
     ContinuityCertainty,
@@ -32,12 +40,29 @@
       request: ContinuityMutationRequest,
     ) => Promise<boolean>;
     onUndo: () => Promise<void>;
+    scope?: "all" | "relationships";
+    requestedFactId?: string | null;
+    requestedSourcePath?: string | null;
+    requestRevision?: number;
+    idPrefix?: string;
   }
 
   type EditorMode = "add" | "edit";
   type ValueKind = ContinuityValue["kind"];
 
-  let { context, busy, notice, undoLabel, onConfirm, onUndo }: Props = $props();
+  let {
+    context,
+    busy,
+    notice,
+    undoLabel,
+    onConfirm,
+    onUndo,
+    scope = "all",
+    requestedFactId = null,
+    requestedSourcePath = null,
+    requestRevision = 0,
+    idPrefix = "continuity",
+  }: Props = $props();
   let canonChoice = $state("");
   let editorMode = $state<EditorMode | null>(null);
   let editingFactId = $state("");
@@ -61,23 +86,69 @@
   let validToCalendar = $state("gregorian");
   let validToExpression = $state("");
   let factNote = $state("");
+  let relationshipPropertyChoice = $state("");
   let formError = $state("");
   let preview = $state<{
     plan: ContinuityMutationPlan;
     request: ContinuityMutationRequest;
     exact: ContinuityMutationPreview;
   } | null>(null);
-  let firstField = $state<HTMLInputElement>();
+  let firstField = $state<HTMLInputElement | HTMLSelectElement>();
   let previewHeading = $state<HTMLElement>();
   let authoringHeading = $state<HTMLElement>();
+  let handledRequestKey = $state("");
 
   const ready = $derived(context.kind === "ready" ? context : null);
+  const relationshipScope = $derived(scope === "relationships");
+  const propertyDefinitions = $derived.by(() =>
+    relationshipScope
+      ? continuityRelationshipPropertyDefinitions(ready?.noteType ?? null)
+      : CONTINUITY_PROPERTY_DEFINITIONS,
+  );
+  const relationshipPropertyDefinitions = $derived.by(() => {
+    if (!relationshipScope) return [];
+    const definitions = [...propertyDefinitions];
+    const current = (CONTINUITY_PROPERTY_DEFINITIONS as readonly ContinuityPropertyDefinition[]).find(
+      ({ key, inverseLabel }) => key === property && Boolean(inverseLabel),
+    );
+    if (
+      editorMode === "edit" &&
+      current &&
+      !definitions.some(({ key }) => key === current.key)
+    ) definitions.unshift(current);
+    return definitions;
+  });
+  const editableFacts = $derived.by(() => {
+    if (!ready) return [];
+    return relationshipScope
+      ? continuityRelationshipFacts(ready.facts, ready.noteChoices)
+      : [...ready.facts];
+  });
   const compatibleNoteChoices = $derived.by(() =>
-    noteChoicesForProperty(property, noteTargetId),
+    noteChoicesForProperty(
+      property,
+      editorMode === "edit" ? noteTargetId : "",
+    ),
   );
 
   $effect(() => {
     canonChoice = context.kind === "ready" ? (context.noteCanon ?? "") : "";
+  });
+
+  $effect(() => {
+    if (
+      !relationshipScope ||
+      !ready ||
+      !requestedFactId ||
+      !requestedSourcePath ||
+      ready.path !== requestedSourcePath
+    ) return;
+    const requestKey = `${requestRevision}:${requestedSourcePath}:${requestedFactId}`;
+    if (handledRequestKey === requestKey) return;
+    const fact = editableFacts.find(({ id }) => id === requestedFactId);
+    if (!fact) return;
+    handledRequestKey = requestKey;
+    void beginEdit(fact);
   });
 
   async function beginAdd(): Promise<void> {
@@ -85,9 +156,10 @@
     editorMode = "add";
     editingFactId = "";
     factId = crypto.randomUUID();
-    property = compatibleProperty() ?? "born";
+    property = compatibleProperty() ?? (relationshipScope ? "" : "born");
+    relationshipPropertyChoice = property || "__custom";
     const definition = CONTINUITY_PROPERTY_DEFINITIONS.find(({ key }) => key === property);
-    valueKind = definition?.valueKinds[0] ?? "text";
+    valueKind = relationshipScope ? "note" : (definition?.valueKinds[0] ?? "text");
     clearValueFields();
     noteTargetId = noteChoicesForProperty(property)[0]?.id ?? "";
     factCanon = "";
@@ -105,8 +177,15 @@
     editingFactId = fact.id;
     factId = fact.id;
     property = fact.property;
+    relationshipPropertyChoice = (CONTINUITY_PROPERTY_DEFINITIONS as readonly ContinuityPropertyDefinition[]).some(
+      ({ key, inverseLabel }) => key === fact.property && Boolean(inverseLabel),
+    ) ? fact.property : "__custom";
     noteTargetId = ready?.noteChoices[0]?.id ?? "";
     loadValue(continuityValueDraft(fact.value));
+    if (relationshipScope && fact.value.kind !== "note") {
+      valueKind = "note";
+      noteTargetId = noteChoicesForProperty(property)[0]?.id ?? "";
+    }
     factCanon = fact.canon ?? "";
     certainty = fact.certainty ?? "";
     validFromCalendar = fact.validFrom?.calendar ?? "gregorian";
@@ -160,7 +239,7 @@
 
   function compatibleProperty(): string | null {
     if (!ready) return null;
-    const currentType = CONTINUITY_PROPERTY_DEFINITIONS.find(
+    const currentType = propertyDefinitions.find(
       ({ subjectTypes }) =>
         ready.noteType !== null && (subjectTypes as readonly string[]).includes(ready.noteType),
     );
@@ -169,15 +248,25 @@
 
   function changeProperty(): void {
     const definition = CONTINUITY_PROPERTY_DEFINITIONS.find(({ key }) => key === property);
-    if (definition && !(definition.valueKinds as readonly ValueKind[]).includes(valueKind)) {
+    if (relationshipScope) {
+      valueKind = "note";
+    } else if (definition && !(definition.valueKinds as readonly ValueKind[]).includes(valueKind)) {
       valueKind = definition.valueKinds[0];
     }
     if (valueKind === "note") {
-      const choices = noteChoicesForProperty(property, noteTargetId);
+      const retainId = editorMode === "edit" ? noteTargetId : "";
+      const choices = noteChoicesForProperty(property, retainId);
       noteTargetId = choices.some(({ id }) => id === noteTargetId)
         ? noteTargetId
         : (choices[0]?.id ?? "");
     }
+  }
+
+  function changeRelationshipProperty(): void {
+    property = relationshipPropertyChoice === "__custom"
+      ? ""
+      : relationshipPropertyChoice;
+    changeProperty();
   }
 
   function noteChoicesForProperty(
@@ -185,11 +274,9 @@
     retainId = "",
   ): ContinuityNoteChoice[] {
     if (!ready) return [];
-    return continuityNoteChoicesForProperty(
-      ready.noteChoices,
-      propertyKey,
-      retainId,
-    );
+    return relationshipScope
+      ? continuityRelationshipNoteChoices(ready.noteChoices, propertyKey, retainId)
+      : continuityNoteChoicesForProperty(ready.noteChoices, propertyKey, retainId);
   }
 
   function draft(): ContinuityFactDraft {
@@ -300,37 +387,39 @@
   }
 </script>
 
-<section class="authoring" aria-labelledby="continuity-authoring-heading">
-  <h3 id="continuity-authoring-heading" tabindex="-1" bind:this={authoringHeading}>Authoring</h3>
+<section class="authoring" aria-labelledby={`${idPrefix}-authoring-heading`}>
+  <h3 id={`${idPrefix}-authoring-heading`} tabindex="-1" bind:this={authoringHeading}>{relationshipScope ? "Relationship authoring" : "Authoring"}</h3>
   {#if context.kind === "unavailable"}
     <p class="unavailable">{context.reason}</p>
   {:else}
-    <div class="canon-row">
-      <label for="continuity-note-canon">Note canon</label>
-      <select id="continuity-note-canon" bind:value={canonChoice} disabled={busy}>
-        <option value="">Unspecified</option>
-        <option value="idea">Idea</option>
-        <option value="draft">Draft</option>
-        <option value="canon">Canon</option>
-        <option value="retired">Retired</option>
-      </select>
-      <button type="button" onclick={previewCanon} disabled={busy}>Preview canon</button>
-    </div>
+    {#if !relationshipScope}
+      <div class="canon-row">
+        <label for={`${idPrefix}-note-canon`}>Note canon</label>
+        <select id={`${idPrefix}-note-canon`} bind:value={canonChoice} disabled={busy}>
+          <option value="">Unspecified</option>
+          <option value="idea">Idea</option>
+          <option value="draft">Draft</option>
+          <option value="canon">Canon</option>
+          <option value="retired">Retired</option>
+        </select>
+        <button type="button" onclick={previewCanon} disabled={busy}>Preview canon</button>
+      </div>
+    {/if}
 
     <div class="fact-actions">
-      <button type="button" class="primary" onclick={() => void beginAdd()} disabled={busy}>Add fact</button>
+      <button type="button" class="primary" onclick={() => void beginAdd()} disabled={busy}>{relationshipScope ? "Add relationship" : "Add fact"}</button>
       {#if undoLabel}
         <button type="button" onclick={() => void handleUndo()} disabled={busy}>{undoLabel}</button>
       {/if}
     </div>
 
-    {#if context.facts.length > 0}
-      <ul class="editable-facts" aria-label="Editable continuity facts">
-        {#each context.facts as fact (fact.id)}
+    {#if editableFacts.length > 0}
+      <ul class="editable-facts" aria-label={relationshipScope ? "Editable relationships sourced by this note" : "Editable continuity facts"}>
+        {#each editableFacts as fact (fact.id)}
           <li>
             <span><strong>{fact.property}</strong> · {fact.value.kind}</span>
             <span class="row-buttons">
-              <button type="button" onclick={() => void beginEdit(fact)} disabled={busy}>Edit</button>
+              <button type="button" onclick={() => void beginEdit(fact)} disabled={busy}>{relationshipScope ? "Edit relationship" : "Edit"}</button>
               <button type="button" class="danger" onclick={() => previewRemoval(fact.id)} disabled={busy}>Remove</button>
             </span>
           </li>
@@ -341,26 +430,48 @@
     {#if editorMode}
       <form class="fact-form" onsubmit={(event) => { event.preventDefault(); previewFact(); }}>
         <h4>{editorMode === "add" ? "New fact" : "Edit fact"}</h4>
-        <label>
-          Property
-          <input bind:this={firstField} bind:value={property} list="continuity-properties" oninput={changeProperty} disabled={busy} />
-        </label>
-        <datalist id="continuity-properties">
-          {#each CONTINUITY_PROPERTY_DEFINITIONS as definition}
-            <option value={definition.key}>{definition.label}</option>
-          {/each}
-        </datalist>
-        <label>
-          Value kind
-          <select bind:value={valueKind} disabled={busy}>
-            <option value="note">Note reference</option>
-            <option value="text">Text</option>
-            <option value="quantity">Quantity</option>
-            <option value="range">Range</option>
-            <option value="time">Time</option>
-            <option value="unknown">Intentional unknown</option>
-          </select>
-        </label>
+        {#if relationshipScope}
+          <label>
+            Relationship type
+            <select bind:this={firstField} bind:value={relationshipPropertyChoice} onchange={changeRelationshipProperty} disabled={busy}>
+              {#each relationshipPropertyDefinitions as definition}
+                <option value={definition.key}>{definition.label}</option>
+              {/each}
+              <option value="__custom">Custom relationship…</option>
+            </select>
+          </label>
+          {#if relationshipPropertyChoice === "__custom"}
+            <label>
+              Custom property
+              <input bind:value={property} oninput={changeProperty} placeholder="for example, rival-of" disabled={busy} />
+            </label>
+          {/if}
+          <p class="scope-help">
+            Choose a documented relationship or type a custom property. One
+            note-reference fact will remain the sole source; no reciprocal is added.
+          </p>
+        {:else}
+          <label>
+            Property
+            <input bind:this={firstField} bind:value={property} list={`${idPrefix}-properties`} oninput={changeProperty} disabled={busy} />
+          </label>
+          <datalist id={`${idPrefix}-properties`}>
+            {#each propertyDefinitions as definition}
+              <option value={definition.key}>{definition.label}</option>
+            {/each}
+          </datalist>
+          <label>
+            Value kind
+            <select bind:value={valueKind} disabled={busy}>
+              <option value="note">Note reference</option>
+              <option value="text">Text</option>
+              <option value="quantity">Quantity</option>
+              <option value="range">Range</option>
+              <option value="time">Time</option>
+              <option value="unknown">Intentional unknown</option>
+            </select>
+          </label>
+        {/if}
 
         {#if valueKind === "note"}
           <label>
@@ -434,8 +545,8 @@
     {#if notice}<p class="notice" role="status">{notice}</p>{/if}
 
     {#if preview}
-      <section class="preview" aria-labelledby="continuity-preview-heading">
-        <h4 id="continuity-preview-heading" tabindex="-1" bind:this={previewHeading}>Review exact Markdown change</h4>
+      <section class="preview" aria-labelledby={`${idPrefix}-preview-heading`}>
+        <h4 id={`${idPrefix}-preview-heading`} tabindex="-1" bind:this={previewHeading}>Review exact Markdown change</h4>
         <p>{preview.plan.summary} Fact identity and all unshown bytes stay unchanged.</p>
         <p class="unchanged">{preview.exact.unchangedBeforeCharacters} characters before and {preview.exact.unchangedAfterCharacters} after this excerpt are unchanged. Excerpt begins at line {preview.exact.firstLine}.</p>
         <div class="source-excerpt"><strong>Before</strong><pre>{preview.exact.before || "(nothing)"}</pre></div>
@@ -459,6 +570,7 @@
   h3 { color: #d4d4d4; font-size: 0.76rem; }
   h4 { color: #e1e1e1; font-size: 0.76rem; }
   .unavailable, .notice, .form-error, .preview p { margin-top: 0.45rem; line-height: 1.4; }
+  .scope-help { margin-top: 0.45rem; color: #929292; line-height: 1.4; }
   .unavailable, .unchanged { color: #929292; }
   .notice { color: #a7d7ad; }
   .form-error { color: #f2b8b5; }

@@ -1,5 +1,9 @@
 import { fingerprintContent } from "$lib/editor/recovery";
-import { continuityPropertyDefinition } from "./continuity-registry";
+import {
+  CONTINUITY_PROPERTY_DEFINITIONS,
+  continuityPropertyDefinition,
+  type ContinuityPropertyDefinition,
+} from "./continuity-registry";
 import type {
   CanonStatus,
   LoreDocumentRecord,
@@ -13,6 +17,14 @@ export interface ContinuityNoteChoice {
   path: string;
   noteType: string | null;
 }
+
+const RELATIONSHIP_ENTITY_TYPES = new Set([
+  "character",
+  "faction",
+  "spacecraft",
+  "technology",
+  "location",
+]);
 
 export type ContinuityAuthoringContext =
   | { kind: "unavailable"; reason: string }
@@ -71,6 +83,47 @@ export function continuityNoteChoicesForProperty(
     ({ id, noteType }) =>
       id === retainId ||
       (noteType !== null && targetTypes.includes(noteType)),
+  );
+}
+
+export function continuityRelationshipPropertyDefinitions(
+  noteType: string | null,
+): ContinuityPropertyDefinition[] {
+  if (!noteType) return [];
+  return (CONTINUITY_PROPERTY_DEFINITIONS as readonly ContinuityPropertyDefinition[])
+    .filter(
+      ({ inverseLabel, subjectTypes }) =>
+        Boolean(inverseLabel) && subjectTypes.includes(noteType),
+    );
+}
+
+export function continuityRelationshipFacts(
+  facts: readonly ParsedContinuityFact[],
+  choices: readonly ContinuityNoteChoice[],
+): ParsedContinuityFact[] {
+  const choicesById = new Map(choices.map((choice) => [choice.id, choice]));
+  return facts.filter((fact) => {
+    const definition = continuityPropertyDefinition(fact.property);
+    if (definition?.inverseLabel) return true;
+    if (definition || fact.value.kind !== "note") return false;
+    const target = choicesById.get(fact.value.id);
+    return Boolean(target?.noteType && RELATIONSHIP_ENTITY_TYPES.has(target.noteType));
+  });
+}
+
+export function continuityRelationshipNoteChoices(
+  choices: readonly ContinuityNoteChoice[],
+  property: string,
+  retainId = "",
+): ContinuityNoteChoice[] {
+  const definition = continuityPropertyDefinition(property);
+  if (definition?.inverseLabel) {
+    return continuityNoteChoicesForProperty(choices, property, retainId);
+  }
+  return choices.filter(
+    ({ id, noteType }) =>
+      id === retainId ||
+      (noteType !== null && RELATIONSHIP_ENTITY_TYPES.has(noteType)),
   );
 }
 

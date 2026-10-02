@@ -98,6 +98,7 @@ describe("relationship inspector presentation", () => {
           title: "Member of",
           items: [
             {
+              factId: memberFact,
               otherTitle: "Fleet",
               direction: "Outgoing · source is this note",
               certainty: "exact",
@@ -118,6 +119,7 @@ describe("relationship inspector presentation", () => {
           title: "Rival of",
           items: [
             {
+              factId: customFact,
               otherTitle: "Rival",
               direction: "Outgoing · source is this note",
             },
@@ -159,6 +161,7 @@ describe("relationship inspector presentation", () => {
           title: "Child of",
           items: [
             {
+              factId: parentFact,
               otherTitle: "Mara",
               direction: "Incoming · source is Mara",
               source: { path: "Characters/mara.md" },
@@ -196,6 +199,7 @@ describe("relationship inspector presentation", () => {
       builtInSections: [],
       issues: [
         {
+          factId: missingFact,
           message: expect.stringContaining("not present"),
           source: {
             path: "Characters/source.md",

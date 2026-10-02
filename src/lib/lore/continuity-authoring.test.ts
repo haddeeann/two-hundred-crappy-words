@@ -4,6 +4,9 @@ import { buildLoreProjectIndex } from "./index";
 import {
   continuityAuthoringContext,
   continuityNoteChoicesForProperty,
+  continuityRelationshipFacts,
+  continuityRelationshipNoteChoices,
+  continuityRelationshipPropertyDefinitions,
 } from "./continuity-authoring";
 
 const NOTE_ID = "2cd59970-6ab4-46f9-b54b-a0e35af5b9e1";
@@ -57,6 +60,38 @@ describe("continuity authoring eligibility", () => {
       continuityNoteChoicesForProperty(choices, "route-origin", "faction").map(({ id }) => id),
     ).toEqual(["location", "craft", "faction"]);
     expect(continuityNoteChoicesForProperty(choices, "writer-custom")).toEqual(choices);
+  });
+
+  it("focuses relationship authoring without closing the custom vocabulary", () => {
+    const choices = [
+      { id: "character", title: "Mara", path: "mara.md", noteType: "character" },
+      { id: "location", title: "Port", path: "port.md", noteType: "location" },
+      { id: "event", title: "Launch", path: "launch.md", noteType: "event" },
+    ];
+    const facts = [
+      { id: "member", property: "member-of", value: { kind: "text", text: "broken" } },
+      { id: "custom", property: "rival-of", value: { kind: "note", id: "character" } },
+      { id: "event-link", property: "foreshadows", value: { kind: "note", id: "event" } },
+      { id: "travel", property: "located-at", value: { kind: "note", id: "location" } },
+    ] as unknown as Parameters<typeof continuityRelationshipFacts>[0];
+
+    expect(
+      continuityRelationshipPropertyDefinitions("character").map(({ key }) => key),
+    ).toEqual(["member-of", "parent-of", "partner-of"]);
+    expect(continuityRelationshipPropertyDefinitions("location")).toEqual([]);
+    expect(continuityRelationshipFacts(facts, choices).map(({ id }) => id)).toEqual([
+      "member",
+      "custom",
+    ]);
+    expect(
+      continuityRelationshipNoteChoices(choices, "parent-of").map(({ id }) => id),
+    ).toEqual(["character"]);
+    expect(
+      continuityRelationshipNoteChoices(choices, "rival-of").map(({ id }) => id),
+    ).toEqual(["character", "location"]);
+    expect(
+      continuityRelationshipNoteChoices(choices, "parent-of", "event").map(({ id }) => id),
+    ).toEqual(["character", "event"]);
   });
 
   it("refuses missing and duplicated stable note identities", () => {

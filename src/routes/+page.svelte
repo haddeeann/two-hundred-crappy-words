@@ -148,6 +148,7 @@
   import { deriveRelationshipModel } from "$lib/relationships/model";
   import {
     presentRelationshipInspector,
+    type RelationshipAuthoringRequest,
     type RelationshipPresentationSource,
   } from "$lib/relationships/presentation";
   import {
@@ -478,6 +479,8 @@
   let continuityAuthoringNotice = $state("");
   let continuityAuthoringNoticePath = $state("");
   let continuityAuthoringUndo = $state<ContinuityMutationUndo | null>(null);
+  let relationshipAuthoringRequest = $state<RelationshipAuthoringRequest | null>(null);
+  let relationshipAuthoringRevision = 0;
   let manuscriptProject = $state<ManuscriptProjectLoadResult>({ kind: "absent" });
   let manuscriptLoading = $state(false);
   let manuscriptLoadRevision = 0;
@@ -3198,6 +3201,31 @@
     if (opened && fingerprintContent(content) !== source.fingerprint) {
       error = "The relationship source changed while it was opening, so its old source range was not selected.";
     }
+  }
+
+  async function editRelationshipAtSource(
+    factId: string,
+    source: RelationshipPresentationSource,
+  ): Promise<void> {
+    const record = loreIndex?.documents.get(source.path);
+    if (!record || record.fingerprint !== source.fingerprint) {
+      error = "The relationship source changed before it could be edited. Wait for the lore index to refresh and try again.";
+      return;
+    }
+    if (activeLorePath() !== source.path || fingerprintContent(content) !== source.fingerprint) {
+      const opened = await openIndexedLorePath(source.path, source.range);
+      if (!opened || fingerprintContent(content) !== source.fingerprint) {
+        error = "The relationship source changed while it was opening, so editing did not begin.";
+        return;
+      }
+    }
+    relationshipAuthoringRevision += 1;
+    relationshipAuthoringRequest = {
+      factId,
+      sourcePath: source.path,
+      revision: relationshipAuthoringRevision,
+    };
+    writingToolsOpen = true;
   }
 
   async function openTravelSource(
@@ -6294,8 +6322,16 @@
       />
       <RelationshipInspector
         presentation={relationshipInspector}
+        authoring={continuityAuthoring}
+        authoringBusy={continuityAuthoringBusy}
+        authoringNotice={visibleContinuityNotice}
+        authoringUndoLabel={visibleContinuityUndoLabel}
+        authoringRequest={relationshipAuthoringRequest}
         onOpenReference={(path) => void openRelationshipReference(path)}
         onOpenSource={(source) => void openRelationshipSource(source)}
+        onEditRelationship={(factId, source) => void editRelationshipAtSource(factId, source)}
+        onConfirmAuthoring={confirmContinuityAuthoring}
+        onUndoAuthoring={undoLastContinuityAuthoring}
       />
       <TravelInspector
         presentation={travelInspector}

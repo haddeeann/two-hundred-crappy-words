@@ -14,8 +14,15 @@ export interface RelationshipPresentationSource {
   range: SourceRange;
 }
 
+export interface RelationshipAuthoringRequest {
+  factId: string;
+  sourcePath: string;
+  revision: number;
+}
+
 export interface RelationshipPresentationItem {
   key: string;
+  factId: string;
   label: string;
   otherTitle: string;
   otherPath: string;
@@ -35,10 +42,15 @@ export interface RelationshipPresentationSection {
   items: readonly RelationshipPresentationItem[];
 }
 
-export interface RelationshipPresentationIssue {
+export interface RelationshipPresentationMessage {
   key: string;
   message: string;
   source: RelationshipPresentationSource;
+}
+
+export interface RelationshipPresentationIssue
+  extends RelationshipPresentationMessage {
+  factId: string;
 }
 
 export type RelationshipInspectorPresentation =
@@ -58,7 +70,7 @@ export type RelationshipInspectorPresentation =
       builtInSections: readonly RelationshipPresentationSection[];
       customSections: readonly RelationshipPresentationSection[];
       issues: readonly RelationshipPresentationIssue[];
-      sourceDiagnostics: readonly RelationshipPresentationIssue[];
+      sourceDiagnostics: readonly RelationshipPresentationMessage[];
       omittedAssertionCount: number;
       omittedIssueCount: number;
       omittedSourceDiagnosticCount: number;
@@ -166,6 +178,7 @@ function presentAssertion(
 ): RelationshipPresentationItem {
   return {
     key: assertion.key,
+    factId: assertion.factId,
     label: assertion.displayLabel,
     otherTitle: assertion.other.title,
     otherPath: assertion.other.path,
@@ -193,6 +206,7 @@ function presentIssue(
 ): RelationshipPresentationIssue {
   return {
     key: `${issue.factId}:${issue.kind}`,
+    factId: issue.factId,
     message: issue.message,
     source: {
       label: sourceLabel(
