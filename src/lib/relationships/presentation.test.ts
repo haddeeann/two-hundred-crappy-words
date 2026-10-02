@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { buildLoreProjectIndex } from "$lib/lore/index";
 import { deriveRelationshipModel } from "./model";
 import { presentRelationshipInspector } from "./presentation";
+import { deriveRelationshipReviewFindings } from "./review";
 
 function id(value: number): string {
   return `00000000-0000-4000-8000-${value.toString().padStart(12, "0")}`;
@@ -195,7 +196,7 @@ describe("relationship inspector presentation", () => {
 
     expect(presented).toMatchObject({
       kind: "ready",
-      summary: "Relationships · 0 · 1 review",
+      summary: "Relationships · 0 · 1 source problem",
       builtInSections: [],
       issues: [
         {
@@ -207,6 +208,69 @@ describe("relationship inspector presentation", () => {
           },
         },
       ],
+    });
+  });
+
+  it("keeps source problems separate from source-linked relationship reviews", () => {
+    const first = id(25);
+    const second = id(26);
+    const firstFact = id(251);
+    const secondFact = id(252);
+    const index = buildLoreProjectIndex([
+      {
+        path: "Characters/first.md",
+        text: note({
+          noteId: first,
+          type: "character",
+          title: "First",
+          facts: [fact(firstFact, "parent-of", second)],
+        }),
+      },
+      {
+        path: "Characters/second.md",
+        text: note({
+          noteId: second,
+          type: "character",
+          title: "Second",
+          facts: [fact(secondFact, "parent-of", first)],
+        }),
+      },
+    ]);
+    const model = deriveRelationshipModel(index);
+    const reviews = deriveRelationshipReviewFindings(model);
+    const presented = presentRelationshipInspector(
+      model,
+      "Characters/first.md",
+      index.documents.get("Characters/first.md")!.fingerprint,
+      reviews.findings,
+      reviews.omittedCount,
+    );
+
+    expect(presented).toMatchObject({
+      kind: "ready",
+      summary: "Relationships · 2 · 1 relationship review",
+      issues: [],
+      sourceDiagnostics: [],
+      reviews: [
+        {
+          title: expect.stringContaining("parent cycle"),
+          explanation: expect.stringContaining("review bound"),
+          rule: "relationship.parent.cycle · v1",
+          evidence: expect.arrayContaining([
+            expect.objectContaining({
+              factId: firstFact,
+              relationship: "First —parent of→ Second",
+              source: expect.objectContaining({ path: "Characters/first.md" }),
+            }),
+            expect.objectContaining({
+              factId: secondFact,
+              relationship: "Second —parent of→ First",
+              source: expect.objectContaining({ path: "Characters/second.md" }),
+            }),
+          ]),
+        },
+      ],
+      omittedReviewCount: 0,
     });
   });
 

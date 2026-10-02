@@ -10,32 +10,34 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.7d — Relationship review and completeness research**
+**0.7.8 — Portable maps research and format boundary**
 
 ### Intended outcome
 
-Research the smallest explainable relationship-review rules and planning suggestions, then obtain explicit approval for their evidence, false-positive, and persistence boundaries before implementation.
+Research the smallest portable map model for project-owned images and source-linked lore anchors, then obtain explicit approval before adding a map file, persistence, or interface.
 
 ### Acceptance criteria
 
-- [x] Inventory existing continuity findings, source problems, authoring affordances, and any durable exception mechanisms before proposing new behavior.
-- [x] Research evidence-based relationship checks and writing-tool conventions using primary sources where available.
-- [x] Separate source errors, deterministic review findings, and optional **possibly missing** planning prompts in both semantics and presentation.
-- [x] Define each candidate rule, required evidence, false-positive risk, whether expectations are built-in or project-selected, and whether dismissals need portable persistence.
-- [x] Make no schema, project-file, or interface change before approval.
-- [ ] Receive explicit approval for the six permanent choices in [`RELATIONSHIP_REVIEW_PROPOSAL.md`](RELATIONSHIP_REVIEW_PROPOSAL.md).
+- [ ] Inventory existing image, location, event, identity, source-navigation, and project-format boundaries before proposing map behavior.
+- [ ] Research common portable image, coordinate, region, and map-annotation conventions using primary sources where available.
+- [ ] Define ownership, stable map identity, supported image types, coordinate space, point/region anchors, source links, limits, and missing/moved-image behavior.
+- [ ] Keep real-world geospatial assumptions separate from fictional or illustrative maps.
+- [ ] Make no schema, project-file, persistence, capability, dependency, or interface change before approval.
+- [ ] Receive explicit approval for the permanent portable-map choices.
 
 ## Next slices
 
-1. Research and approve evidence-safe relationship findings and optional completeness suggestions.
-2. Implement only the approved deterministic rules, then complete final relationship regression QA.
-3. Research and approve the separately gated map model before adding any map format or persistence.
+1. Research and approve the separately gated portable map model.
+2. Publish and parse only the approved optional map format, then add a source-linked read-only viewer.
+3. Add guarded point/region authoring and complete map regression QA.
 
 ## Current approval gate
 
-Research is complete with no schema, project-file, persistence, or interface change. The recommended first review contains only bounded parent cycles, exact duplicate assertions, and potentially simultaneous `operated-by`/`home-port` claims; every result is **review**, never contradiction. Missing relationships remain absent—not false—and future completeness prompts require a writer-selected portable policy. App-local dismissal is not proposed because the app has no portable exception format. Implementation is waiting for the six explicit choices in [`RELATIONSHIP_REVIEW_PROPOSAL.md`](RELATIONSHIP_REVIEW_PROPOSAL.md).
+No map format or behavior is approved yet. Research may recommend a portable contract, but implementation must pause before introducing a new project file, image-copy policy, coordinate semantics, persistence, dependency, or interface.
 
 ## Completed checkpoint
+
+- Slice 0.7.7e completes relationship review version one. The user approved all six choices in [`RELATIONSHIP_REVIEW_PROPOSAL.md`](RELATIONSHIP_REVIEW_PROPOSAL.md) on 2026-10-02: the initial rules, review-only severity, no built-in completeness prompts, no reciprocal-source requirement, no app-local dismissal, and visibly separate source problems/reviews/future planning prompts. A pure memory-only model now derives bounded `parent-of` cycles, semantically exact duplicate assertions, and `operated-by`/`home-port` claim groups that are not definitely separated by inclusive validity bounds. Stable IDs include rule/version and sorted fact IDs; every result retains exact source fingerprint/range, all rules are capped at 100 project findings after deterministic ordering, and the parent traversal is explicitly limited to 64 links. The focused inspector counts source problems separately, labels every finding **Review**, explains why it appeared, and reuses stale-safe open/edit actions for every contributing fact. Missing relationships, missing reciprocal facts, custom-property expectations, repairs, persistence, dismissals, network access, and daily credit remain absent. Packaged macOS QA exercised a reciprocal parent cycle, exact two-source expansion/navigation, a potentially simultaneous two-operator claim, review language, and `0 / 200` daily progress before restoring the writer's prior project. The final gate has 546 passing frontend tests across seventy-nine files, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 
 - Slice 0.7.7c completes focused relationship authoring. The existing guarded continuity editor now has a relationship scope with a deterministic built-in type selector, an explicit custom-property path, registry-filtered targets, and only relationship facts sourced by the active note in its editable list. Existing unknown custom links and incompatible targets remain selectable during editing so repair cannot erase source data accidentally. Every resolved outgoing, incoming, or symmetric relationship and every source issue can request editing at the one owning fact; the app verifies its source fingerprint, opens the source note, and starts that exact fact's editor rather than writing a reciprocal. Exact Markdown preview, compare-before-write execution, guarded Undo, stale refusal, and zero daily-credit behavior are unchanged. Packaged macOS QA found and fixed two add-flow filtering defects—the prior target was initially retained after choosing a different property, and WebKit datalist completion could capitalize a built-in into a custom key—before the final selector-based pass. The final run verified character-only `parent-of` targets, exact add preview, confirmed write, byte-exact Undo, incoming `operated-by` routing to its spacecraft source, keyboard exit, unchanged hashes, unchanged `0 / 200`, and Arcadia restoration. The final gate has 539 passing frontend tests across seventy-eight files, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 
@@ -164,7 +166,7 @@ Research is complete with no schema, project-file, persistence, or interface cha
 
 ## Blockers and decision gates
 
-There is no technical blocker. The relationship evidence model is complete, and the focused read-only inspector is the next executable slice. Maps remain a separate later research and approval gate.
+There is no technical blocker. Relationship version one is complete. Portable-map research is the next executable slice and must stop for approval before any format or interface change.
 
 ## Handoff protocol
 

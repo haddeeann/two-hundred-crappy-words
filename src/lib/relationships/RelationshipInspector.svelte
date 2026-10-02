@@ -142,9 +142,13 @@
       </p>
     {/if}
 
-    {#if presentation.issues.length > 0}
-      <section class="issues" aria-labelledby="relationship-review-heading">
-        <h3 id="relationship-review-heading">Relationship review</h3>
+    {#if presentation.issues.length > 0 || presentation.sourceDiagnostics.length > 0}
+      <section class="issues" aria-labelledby="relationship-source-problems-heading">
+        <h3 id="relationship-source-problems-heading">Source problems</h3>
+        <p class="section-explanation">
+          These facts or metadata cannot be used safely until their source is
+          repaired.
+        </p>
         <ul>
           {#each presentation.issues as issue (issue.key)}
             <li>
@@ -160,14 +164,6 @@
               >Edit source fact</button>
             </li>
           {/each}
-        </ul>
-      </section>
-    {/if}
-
-    {#if presentation.sourceDiagnostics.length > 0}
-      <section class="issues" aria-labelledby="relationship-metadata-heading">
-        <h3 id="relationship-metadata-heading">Structured metadata issues</h3>
-        <ul>
           {#each presentation.sourceDiagnostics as issue (issue.key)}
             <li>
               <p>{issue.message}</p>
@@ -182,6 +178,47 @@
       </section>
     {/if}
 
+    {#if presentation.reviews.length > 0}
+      <section class="reviews" aria-labelledby="relationship-review-heading">
+        <h3 id="relationship-review-heading">Relationship review</h3>
+        <p class="section-explanation">
+          Deterministic patterns worth checking. Every result is a review, not
+          an error or automatic conclusion.
+        </p>
+        <ul>
+          {#each presentation.reviews as review (review.key)}
+            <li>
+              <div class="review-heading">
+                <strong>{review.title}</strong>
+                <span>Review</span>
+              </div>
+              <p>{review.explanation}</p>
+              <details class="review-evidence">
+                <summary>Why this appeared · {review.evidence.length} {review.evidence.length === 1 ? "source" : "sources"}</summary>
+                <ul>
+                  {#each review.evidence as evidence (evidence.key)}
+                    <li>
+                      <p>{evidence.relationship}</p>
+                      <button
+                        type="button"
+                        class="source"
+                        onclick={() => onOpenSource(evidence.source)}
+                      >{evidence.source.label}</button>
+                      <button
+                        type="button"
+                        onclick={() => onEditRelationship(evidence.factId, evidence.source)}
+                      >Edit source fact</button>
+                    </li>
+                  {/each}
+                </ul>
+              </details>
+              <small class="rule">{review.rule}</small>
+            </li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
+
     {#if presentation.omittedIssueCount + presentation.omittedSourceDiagnosticCount > 0}
       <p class="limit-note">
         {presentation.omittedIssueCount + presentation.omittedSourceDiagnosticCount}
@@ -190,6 +227,14 @@
           ? " item is"
           : " items are"}
         omitted by the review limit.
+      </p>
+    {/if}
+
+    {#if presentation.omittedReviewCount > 0}
+      <p class="limit-note">
+        {presentation.omittedReviewCount} additional relationship
+        {presentation.omittedReviewCount === 1 ? " review was" : " reviews were"}
+        omitted by the project-wide 100-finding limit.
       </p>
     {/if}
 
@@ -274,7 +319,8 @@
   }
 
   .relationship-group,
-  .issues {
+  .issues,
+  .reviews {
     padding-top: 0.5rem;
     border-top: 1px solid #3c3c3c;
   }
@@ -298,18 +344,64 @@
   }
 
   .relationship-group li,
-  .issues li {
+  .issues li,
+  .reviews > ul > li {
     padding: 0.45rem 0;
   }
 
   .relationship-group li + li,
-  .issues li + li {
+  .issues li + li,
+  .reviews > ul > li + li {
     border-top: 1px solid #333;
   }
 
   .relationship-heading strong {
     color: #e1e1e1;
     overflow-wrap: anywhere;
+  }
+
+  .review-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+
+  .review-heading strong {
+    color: #e1e1e1;
+  }
+
+  .review-heading span {
+    flex: 0 0 auto;
+    padding: 0.1rem 0.3rem;
+    border: 1px solid #765f31;
+    border-radius: 999px;
+    color: #ddc98e;
+    font-size: 0.65rem;
+  }
+
+  .section-explanation,
+  .rule {
+    color: #929292;
+    line-height: 1.4;
+  }
+
+  .review-evidence {
+    margin: 0.35rem 0;
+  }
+
+  .review-evidence > summary {
+    color: #b8b8b8;
+    font-size: 0.7rem;
+  }
+
+  .review-evidence li {
+    padding: 0.35rem 0 0.2rem 0.45rem;
+    border-left: 2px solid #4a4a4a;
+  }
+
+  .review-evidence li + li {
+    margin-top: 0.25rem;
   }
 
   .direction,
@@ -378,6 +470,7 @@
   }
 
   .issues p,
+  .reviews > ul > li > p,
   .review {
     color: #ddc98e;
   }

@@ -6,6 +6,10 @@ import {
   type RelationshipModel,
   type RelationshipProfile,
 } from "./model";
+import type {
+  RelationshipReviewEvidence,
+  RelationshipReviewFinding,
+} from "./review";
 
 export interface RelationshipPresentationSource {
   label: string;
@@ -53,6 +57,21 @@ export interface RelationshipPresentationIssue
   factId: string;
 }
 
+export interface RelationshipPresentationReviewEvidence {
+  key: string;
+  factId: string;
+  relationship: string;
+  source: RelationshipPresentationSource;
+}
+
+export interface RelationshipPresentationReview {
+  key: string;
+  title: string;
+  explanation: string;
+  rule: string;
+  evidence: readonly RelationshipPresentationReviewEvidence[];
+}
+
 export type RelationshipInspectorPresentation =
   | { kind: "no-active-note"; summary: "Relationships" }
   | { kind: "updating"; summary: "Relationships · updating…" }
@@ -71,15 +90,19 @@ export type RelationshipInspectorPresentation =
       customSections: readonly RelationshipPresentationSection[];
       issues: readonly RelationshipPresentationIssue[];
       sourceDiagnostics: readonly RelationshipPresentationMessage[];
+      reviews: readonly RelationshipPresentationReview[];
       omittedAssertionCount: number;
       omittedIssueCount: number;
       omittedSourceDiagnosticCount: number;
+      omittedReviewCount: number;
     };
 
 export function presentRelationshipInspector(
   model: RelationshipModel | null,
   activePath: string | null,
   activeFingerprint: string | null = null,
+  reviews: readonly RelationshipReviewFinding[] = [],
+  omittedReviewCount = 0,
 ): RelationshipInspectorPresentation {
   if (!model || !activePath) {
     return { kind: "no-active-note", summary: "Relationships" };
@@ -108,23 +131,40 @@ export function presentRelationshipInspector(
   if (selection.kind !== "ready") {
     return { kind: "no-active-note", summary: "Relationships" };
   }
-  return presentProfile(selection.profile);
+  return presentProfile(
+    selection.profile,
+    reviews.filter(({ profileNoteIds }) =>
+      profileNoteIds.includes(selection.profile.noteId),
+    ),
+    omittedReviewCount,
+  );
 }
 
 function presentProfile(
   profile: RelationshipProfile,
+  reviews: readonly RelationshipReviewFinding[],
+  omittedReviewCount: number,
 ): RelationshipInspectorPresentation {
   const builtIn = profile.assertions.filter(({ customProperty }) => !customProperty);
   const custom = profile.assertions.filter(({ customProperty }) => customProperty);
   const count = profile.assertions.length + profile.omittedAssertionCount;
-  const reviewCount =
+  const sourceProblemCount =
     profile.issues.length +
     profile.omittedIssueCount +
     profile.sourceDiagnostics.length +
     profile.omittedSourceDiagnosticCount;
+  const reviewCount = reviews.length;
+  const qualifiers = [
+    sourceProblemCount
+      ? `${sourceProblemCount} source ${sourceProblemCount === 1 ? "problem" : "problems"}`
+      : null,
+    reviewCount
+      ? `${reviewCount} relationship ${reviewCount === 1 ? "review" : "reviews"}`
+      : null,
+  ].filter((value): value is string => value !== null);
   return {
     kind: "ready",
-    summary: `Relationships · ${count}${reviewCount ? ` · ${reviewCount} review` : ""}`,
+    summary: `Relationships · ${count}${qualifiers.length ? ` · ${qualifiers.join(" · ")}` : ""}`,
     title: profile.title,
     path: profile.path,
     noteType: profile.noteType,
@@ -141,9 +181,40 @@ function presentProfile(
         range: diagnostic.range,
       },
     })),
+    reviews: reviews.map(presentReview),
     omittedAssertionCount: profile.omittedAssertionCount,
     omittedIssueCount: profile.omittedIssueCount,
     omittedSourceDiagnosticCount: profile.omittedSourceDiagnosticCount,
+    omittedReviewCount,
+  };
+}
+
+function presentReview(
+  finding: RelationshipReviewFinding,
+): RelationshipPresentationReview {
+  return {
+    key: finding.id,
+    title: finding.summary,
+    explanation: finding.explanation,
+    rule: `${finding.ruleId} · v${finding.ruleVersion}`,
+    evidence: finding.evidence.map((item) => presentReviewEvidence(finding.id, item)),
+  };
+}
+
+function presentReviewEvidence(
+  findingId: string,
+  evidence: RelationshipReviewEvidence,
+): RelationshipPresentationReviewEvidence {
+  return {
+    key: `${findingId}:${evidence.sourcePath}:${evidence.factId}`,
+    factId: evidence.factId,
+    relationship: `${evidence.sourceTitle} —${evidence.propertyLabel.toLowerCase()}→ ${evidence.targetTitle}`,
+    source: {
+      label: sourceLabel(evidence.sourcePath, evidence.sourceRange),
+      path: evidence.sourcePath,
+      fingerprint: evidence.sourceFingerprint,
+      range: evidence.sourceRange,
+    },
   };
 }
 

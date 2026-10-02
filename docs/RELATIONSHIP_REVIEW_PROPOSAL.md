@@ -1,8 +1,12 @@
 # Relationship review and completeness proposal
 
-Status: **research complete; awaiting product approval**
+Status: **approved and implemented**
 
 Last updated: 2026-10-02
+
+The user approved all six permanent choices on 2026-10-02. The implemented
+review follows this proposal without adding project persistence, inferred
+missing relationships, reciprocal requirements, or app-local dismissals.
 
 ## Purpose
 

@@ -146,6 +146,7 @@
   import LoreRenameDialog from "$lib/lore/LoreRenameDialog.svelte";
   import RelationshipInspector from "$lib/relationships/RelationshipInspector.svelte";
   import { deriveRelationshipModel } from "$lib/relationships/model";
+  import { deriveRelationshipReviewFindings } from "$lib/relationships/review";
   import {
     presentRelationshipInspector,
     type RelationshipAuthoringRequest,
@@ -704,6 +705,11 @@
   const travelCalendars = $derived(
     timelineProject.kind === "ready" ? timelineProject.timeline.calendars : [],
   );
+  const relationshipReviewFindingSet = $derived(
+    relationshipModel
+      ? deriveRelationshipReviewFindings(relationshipModel, travelCalendars)
+      : { findings: [], omittedCount: 0 },
+  );
   const travelJourneyAnalyses = $derived(
     travelModel ? deriveJourneyAnalyses(travelModel, travelCalendars) : [],
   );
@@ -736,6 +742,8 @@
       relationshipModel,
       path,
       path ? fingerprintContent(content) : null,
+      relationshipReviewFindingSet.findings,
+      relationshipReviewFindingSet.omittedCount,
     );
   });
   const saveStatus = $derived.by(() => {

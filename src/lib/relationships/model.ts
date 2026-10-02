@@ -106,6 +106,7 @@ export interface RelationshipExcludedSource {
 export interface RelationshipModel {
   generation: number;
   profiles: readonly RelationshipProfile[];
+  sourceAssertions: readonly RelationshipAssertion[];
   excludedSources: readonly RelationshipExcludedSource[];
 }
 
@@ -192,11 +193,23 @@ export function deriveRelationshipModel(
     }
   }
 
+  const sourceAssertions = [...mutableProfiles.values()]
+    .flatMap((profile) =>
+      profile.assertions.filter(
+        ({ evidence }) => evidence.sourcePath === profile.path,
+      ),
+    )
+    .sort(compareSourceAssertions);
   const profiles = [...mutableProfiles.values()]
     .sort((left, right) => compareText(left.path, right.path))
     .map(finalizeProfile);
   excludedSources.sort((left, right) => compareText(left.path, right.path));
-  return { generation: index.generation, profiles, excludedSources };
+  return {
+    generation: index.generation,
+    profiles,
+    sourceAssertions,
+    excludedSources,
+  };
 }
 
 export function selectActiveRelationshipProfile(
@@ -466,6 +479,18 @@ function compareAssertions(
     compareText(left.source.path, right.source.path) ||
     compareText(left.factId, right.factId) ||
     compareText(left.perspective, right.perspective)
+  );
+}
+
+function compareSourceAssertions(
+  left: RelationshipAssertion,
+  right: RelationshipAssertion,
+): number {
+  return (
+    compareText(left.source.path, right.source.path) ||
+    compareText(left.property, right.property) ||
+    compareText(left.target.path, right.target.path) ||
+    compareText(left.factId, right.factId)
   );
 }
 
