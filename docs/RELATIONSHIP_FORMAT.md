@@ -1,6 +1,6 @@
 # Relationship views research and proposed contract
 
-Status: **proposal; no relationship behavior or project format changes are approved yet**
+Status: **approved for incremental implementation on 2026-10-01**
 
 Last updated: 2026-10-01
 
@@ -186,9 +186,9 @@ The relationship experience must:
 
 Pair, family, diplomacy, time-filtered, and graph views are later optional slices, not requirements hidden inside the first inspector.
 
-## Approval gates
+## Approved decisions
 
-Implementation should begin only after the user approves or revises these permanent choices:
+The user approved these permanent choices on 2026-10-01:
 
 1. **Storage:** reuse existing per-note continuity facts; add no central relationship file, relationship entity, reciprocal source write, or persisted graph layout.
 2. **Vocabulary:** give semantics to the five existing relationship-capable built-ins; show uniquely resolved custom note-valued entity links only as literal, directed, clearly custom links; defer new universal social property names.
