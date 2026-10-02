@@ -10,27 +10,29 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.7b — Focused relationship inspector**
+**0.7.7c — Relationship authoring refinements**
 
 ### Intended outcome
 
-Present the approved bounded relationship evidence beside the active note with verified source and reference actions, without changing project files or daily credit.
+Make relationship creation and editing focused and safe while preserving the one writer-owned source fact and never generating reciprocal facts.
 
 ### Acceptance criteria
 
-- [ ] Add a closed-by-default Relationships disclosure for the active relationship-capable note in Writing tools.
-- [ ] Show outgoing, incoming, symmetric, and custom claims with direction, other endpoint, validity, canon, certainty, notes, issues, and omission counts.
-- [ ] Open the other endpoint through the verified reference pane and select the sole source fact only behind its current fingerprint.
-- [ ] Preserve the stale-overlay, no-write, no-network, and no-daily-credit boundaries with keyboard-accessible controls.
-- [ ] Verify focused presentation tests, the full automated gate, and packaged macOS behavior before advancing to authoring refinements.
+- [ ] Offer a relationship-focused authoring path whose built-in property choices match the active note type and whose targets match each property's documented target types.
+- [ ] Route edits from outgoing, incoming, and symmetric displays to the sole source fact; never create or update a reciprocal fact automatically.
+- [ ] Retain existing unknown custom properties and incompatible targets during editing so source data cannot disappear accidentally.
+- [ ] Reuse the exact Markdown preview, compare-before-write, guarded Undo, stale-source refusal, and no-daily-credit boundaries.
+- [ ] Verify focused authoring tests, the full automated gate, and packaged macOS behavior before researching relationship review suggestions.
 
 ## Next slices
 
-1. Add the approved source-linked focused relationship inspector.
-2. Refine relationship authoring, research evidence-safe findings and optional completeness suggestions, and complete packaged QA in independent slices.
+1. Refine relationship authoring without adding reciprocal source writes.
+2. Research evidence-safe findings and optional completeness suggestions in a separate approval gate, then complete final relationship regression QA.
 3. Research and approve the separately gated map model before adding any map format or persistence.
 
 ## Completed checkpoint
+
+- Slice 0.7.7b completes the focused relationship inspector. A closed-by-default Relationships disclosure in Writing tools presents the active character, faction, spacecraft, technology, or location note's bounded first-degree outgoing, incoming, symmetric, and literal custom links with plain-language direction, endpoint type, validity, canon, certainty, writer notes, explicit issues, source diagnostics, and omission counts. Built-ins retain registry order while custom links remain nested and semantically neutral. Every usable assertion can open the other endpoint in the verified read-only reference pane and can open the sole writer-owned source fact only while its indexed fingerprint still matches; stale evidence refuses navigation. The surface writes nothing, stores no derived graph, performs no network request, and awards no daily credit. Packaged macOS QA exercised all four relationship forms, a missing target, nested custom disclosure, exact incoming-source selection, reference opening, Tab/Shift+Tab/Escape behavior, unchanged source hashes, unchanged `0 / 200`, and restoration of the writer's Arcadia project. The final gate has 538 passing frontend tests across seventy-eight files, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 
 - Slice 0.7.7a completes the pure relationship evidence model. The five approved built-in relationship properties now declare exact target note types and inverse display labels without adding reciprocal property keys or source writes. A bounded memory-only derivation produces first-degree outgoing, incoming, symmetric, and literal custom entity links for uniquely identified character, faction, spacecraft, technology, and location notes; each assertion retains the sole fact ID, source fingerprint and range, direction, both endpoints, effective canon, certainty, validity bounds, and writer note. Independent reciprocal facts remain independent, self-edges are not duplicated, specialized location/timeline/travel/classification facts stay out, and deterministic registry/property/title/path/fact ordering precedes the 100-assertion cap. Missing or copied source identities are excluded with reasons; duplicated facts, malformed metadata, invalid values, missing or copied targets, and wrong source/target types remain explicit and capped rather than becoming guessed edges. Active-fingerprint selection withholds stale evidence. Seven focused relationship fixtures plus the registry suite cover all approved entity types, qualifications, custom direction, reciprocal/self behavior, every refusal, valid neighbors beside malformed facts, deterministic limits, and stale selection. The full gate has 534 passing frontend tests across seventy-seven files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities. No filesystem or interface behavior changed.
 

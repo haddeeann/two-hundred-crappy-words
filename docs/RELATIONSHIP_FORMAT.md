@@ -1,8 +1,8 @@
 # Relationship views research and proposed contract
 
-Status: **approved for incremental implementation on 2026-10-01**
+Status: **approved and in incremental implementation; evidence model and focused inspector complete**
 
-Last updated: 2026-10-01
+Last updated: 2026-10-02
 
 ## Purpose
 
@@ -17,7 +17,7 @@ It deliberately does not define a universal social ontology, infer relationships
 
 ## Implementation status
 
-Slice 0.7.7a is complete. The built-in registry now carries the approved target types and inverse display labels, and a pure bounded model derives source-linked outgoing, incoming, symmetric, and custom relationship evidence plus explicit refusal states. No relationship interface or project-file behavior shipped in that slice. The focused read-only inspector is next.
+Slices 0.7.7a and 0.7.7b are complete. The built-in registry carries the approved target types and inverse display labels, and a pure bounded model derives source-linked outgoing, incoming, symmetric, and custom relationship evidence plus explicit refusal states. A closed-by-default focused inspector now presents that evidence beside the active note, opens verified endpoint references, and selects the sole source fact only behind its current fingerprint. It stores no derived graph, changes no project file, awards no daily credit, and sends nothing over the network. Focused authoring refinements are next.
 
 ## Existing project boundary
 

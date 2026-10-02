@@ -144,6 +144,12 @@
   import LoreQuickOpen from "$lib/lore/LoreQuickOpen.svelte";
   import LoreReferencePane from "$lib/lore/LoreReferencePane.svelte";
   import LoreRenameDialog from "$lib/lore/LoreRenameDialog.svelte";
+  import RelationshipInspector from "$lib/relationships/RelationshipInspector.svelte";
+  import { deriveRelationshipModel } from "$lib/relationships/model";
+  import {
+    presentRelationshipInspector,
+    type RelationshipPresentationSource,
+  } from "$lib/relationships/presentation";
   import {
     findWikiLinkCompletion,
     loreCompletionCandidates,
@@ -689,6 +695,9 @@
   const travelModel = $derived.by(() =>
     loreIndex ? deriveTravelModel(loreIndex) : null,
   );
+  const relationshipModel = $derived.by(() =>
+    loreIndex ? deriveRelationshipModel(loreIndex) : null,
+  );
   const travelCalendars = $derived(
     timelineProject.kind === "ready" ? timelineProject.timeline.calendars : [],
   );
@@ -716,6 +725,14 @@
       travelCalendars,
       travelPresenceFindingSet.findings,
       travelPresenceFindingSet.omittedCount,
+    );
+  });
+  const relationshipInspector = $derived.by(() => {
+    const path = activeLorePath();
+    return presentRelationshipInspector(
+      relationshipModel,
+      path,
+      path ? fingerprintContent(content) : null,
     );
   });
   const saveStatus = $derived.by(() => {
@@ -3160,6 +3177,27 @@
   async function openContinuityReference(path: string): Promise<void> {
     writingToolsOpen = false;
     await openLoreReference(path);
+  }
+
+  async function openRelationshipReference(path: string): Promise<void> {
+    writingToolsOpen = false;
+    await openLoreReference(path);
+  }
+
+  async function openRelationshipSource(
+    source: RelationshipPresentationSource,
+  ): Promise<void> {
+    const record = loreIndex?.documents.get(source.path);
+    if (!record || record.fingerprint !== source.fingerprint) {
+      error = "The relationship source changed before it could be selected. Wait for the lore index to refresh and try again.";
+      return;
+    }
+    writingToolsOpen = false;
+    await tick();
+    const opened = await openIndexedLorePath(source.path, source.range);
+    if (opened && fingerprintContent(content) !== source.fingerprint) {
+      error = "The relationship source changed while it was opening, so its old source range was not selected.";
+    }
   }
 
   async function openTravelSource(
@@ -6253,6 +6291,11 @@
         onOpenReference={(path) => void openContinuityReference(path)}
         onConfirmAuthoring={confirmContinuityAuthoring}
         onUndoAuthoring={undoLastContinuityAuthoring}
+      />
+      <RelationshipInspector
+        presentation={relationshipInspector}
+        onOpenReference={(path) => void openRelationshipReference(path)}
+        onOpenSource={(source) => void openRelationshipSource(source)}
       />
       <TravelInspector
         presentation={travelInspector}
