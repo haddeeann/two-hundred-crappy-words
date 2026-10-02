@@ -18,17 +18,22 @@ Research the smallest explainable relationship-review rules and planning suggest
 
 ### Acceptance criteria
 
-- [ ] Inventory existing continuity findings, source problems, authoring affordances, and any durable exception mechanisms before proposing new behavior.
-- [ ] Research evidence-based relationship checks and writing-tool conventions using primary sources where available.
-- [ ] Separate source errors, deterministic contradictions, and optional **possibly missing** planning prompts in both semantics and presentation.
-- [ ] Define each candidate rule, required evidence, false-positive risk, whether expectations are built-in or project-selected, and whether dismissals need portable persistence.
-- [ ] Make no schema, project-file, or interface change until the proposal's permanent decisions are explicitly approved.
+- [x] Inventory existing continuity findings, source problems, authoring affordances, and any durable exception mechanisms before proposing new behavior.
+- [x] Research evidence-based relationship checks and writing-tool conventions using primary sources where available.
+- [x] Separate source errors, deterministic review findings, and optional **possibly missing** planning prompts in both semantics and presentation.
+- [x] Define each candidate rule, required evidence, false-positive risk, whether expectations are built-in or project-selected, and whether dismissals need portable persistence.
+- [x] Make no schema, project-file, or interface change before approval.
+- [ ] Receive explicit approval for the six permanent choices in [`RELATIONSHIP_REVIEW_PROPOSAL.md`](RELATIONSHIP_REVIEW_PROPOSAL.md).
 
 ## Next slices
 
 1. Research and approve evidence-safe relationship findings and optional completeness suggestions.
 2. Implement only the approved deterministic rules, then complete final relationship regression QA.
 3. Research and approve the separately gated map model before adding any map format or persistence.
+
+## Current approval gate
+
+Research is complete with no schema, project-file, persistence, or interface change. The recommended first review contains only bounded parent cycles, exact duplicate assertions, and potentially simultaneous `operated-by`/`home-port` claims; every result is **review**, never contradiction. Missing relationships remain absent—not false—and future completeness prompts require a writer-selected portable policy. App-local dismissal is not proposed because the app has no portable exception format. Implementation is waiting for the six explicit choices in [`RELATIONSHIP_REVIEW_PROPOSAL.md`](RELATIONSHIP_REVIEW_PROPOSAL.md).
 
 ## Completed checkpoint
 
