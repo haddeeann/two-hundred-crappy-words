@@ -28,7 +28,7 @@ Implement the approved relationship semantics as a pure, bounded, source-linked 
 
 1. Complete the pure relationship evidence model.
 2. Add the approved source-linked focused relationship inspector.
-3. Refine relationship authoring, research evidence-safe findings, and complete packaged QA in independent slices.
+3. Refine relationship authoring, research evidence-safe findings and optional completeness suggestions, and complete packaged QA in independent slices.
 4. Research and approve the separately gated map model before adding any map format or persistence.
 
 ## Completed checkpoint

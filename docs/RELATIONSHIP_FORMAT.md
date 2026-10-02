@@ -161,6 +161,21 @@ After the inspector is proven, useful bounded views can be added independently:
 
 A global all-notes graph is not planned for version one. It could become an optional exploration surface only after performance, accessibility, layout ownership, filtering, and usefulness are demonstrated. It must never be the only way to read or edit relationships.
 
+### Later completeness suggestions
+
+The absence of a relationship can be useful planning information without being a continuity error. A later review surface may therefore offer **completeness suggestions** separately from contradictions and source problems. Examples could include a character with one explicitly recorded parent but no other family planning, a relationship type the writer has chosen to treat as paired but recorded on only one side, or a faction whose otherwise-used membership structure has an obvious unfilled role.
+
+These prompts must remain conservative and easy to understand:
+
+- each suggestion states the explicit source pattern that caused it;
+- it says **possibly missing**, never that an unstated relationship is false or broken;
+- ordinary sparse, secret, unknown, asymmetric, unconventional, or intentionally unfinished relationships remain valid;
+- dismissal or an intentional-unknown explanation is available when durable exception semantics are approved;
+- an accepted suggestion opens the existing guarded fact authoring flow with the proposed property and target preselected, but still requires exact Markdown preview and confirmation; and
+- the app never writes a reciprocal, family, social, or organizational claim merely to make a graph look complete.
+
+The first candidate rules, their false-positive risks, whether expectations are built-in or project-selected, and how dismissals persist require a separate research and approval gate. The initial evidence model and inspector do not imply that missing edges are errors.
+
 ## Refusal and safety boundary
 
 The relationship experience must:
@@ -181,7 +196,7 @@ The relationship experience must:
 1. **0.7.7a — Relationship evidence model.** Add target-type and inverse-display metadata to the registry, derive bounded outgoing/incoming/custom assertions and issues in a pure module, and exhaustively test resolution, direction, source identity, ordering, and refusal.
 2. **0.7.7b — Focused relationship inspector.** Add the closed-by-default active-note disclosure, exact source selection, verified reference opening, stale-overlay behavior, accessibility, omission messaging, and no-credit/no-write guarantees.
 3. **0.7.7c — Relationship authoring refinements.** Reuse the existing continuity editor with relationship-filtered property and target choices; verify that symmetric and incoming displays always edit the sole source fact and never auto-write another note.
-4. **0.7.7d — Relationship review findings.** Research and approve each proposed deterministic rule before shipping it. Begin only with evidence-safe conditions rather than broad social assumptions.
+4. **0.7.7d — Relationship review and completeness suggestions.** Research and approve each proposed deterministic rule before shipping it. Keep source problems, contradictions, and possibly missing planning coverage visibly distinct; begin only with evidence-safe conditions rather than broad social assumptions.
 5. **0.7.7e — Packaged QA and documentation.** Exercise active character, faction, and spacecraft views; outgoing/incoming/symmetric/custom claims; time bounds; missing and copied identities; stale source protection; keyboard behavior; source hashes; daily credit; restart; and project restoration.
 
 Pair, family, diplomacy, time-filtered, and graph views are later optional slices, not requirements hidden inside the first inspector.
