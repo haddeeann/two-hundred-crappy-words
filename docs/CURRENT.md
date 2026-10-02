@@ -18,11 +18,11 @@ Research the smallest portable map model for project-owned images and source-lin
 
 ### Acceptance criteria
 
-- [ ] Inventory existing image, location, event, identity, source-navigation, and project-format boundaries before proposing map behavior.
-- [ ] Research common portable image, coordinate, region, and map-annotation conventions using primary sources where available.
-- [ ] Define ownership, stable map identity, supported image types, coordinate space, point/region anchors, source links, limits, and missing/moved-image behavior.
-- [ ] Keep real-world geospatial assumptions separate from fictional or illustrative maps.
-- [ ] Make no schema, project-file, persistence, capability, dependency, or interface change before approval.
+- [x] Inventory existing image, location, event, identity, source-navigation, and project-format boundaries before proposing map behavior.
+- [x] Research common portable image, coordinate, region, and map-annotation conventions using primary sources where available.
+- [x] Define ownership, stable map identity, supported image types, coordinate space, point/region anchors, source links, limits, and missing/moved-image behavior.
+- [x] Keep real-world geospatial assumptions separate from fictional or illustrative maps.
+- [x] Make no schema, project-file, persistence, capability, dependency, or interface change before approval.
 - [ ] Receive explicit approval for the permanent portable-map choices.
 
 ## Next slices
@@ -33,7 +33,7 @@ Research the smallest portable map model for project-owned images and source-lin
 
 ## Current approval gate
 
-No map format or behavior is approved yet. Research may recommend a portable contract, but implementation must pause before introducing a new project file, image-copy policy, coordinate semantics, persistence, dependency, or interface.
+Research is complete with no schema, project-file, persistence, capability, dependency, or interface change. The proposal recommends one optional project-scoped maps file, project-owned static PNG/JPEG/WebP images, a stable logical image canvas, note-linked point/polygon anchors, strict replacement/refusal behavior, and no geographic or continuity inference. Implementation is waiting for the nine explicit choices in [`MAP_FORMAT_PROPOSAL.md`](MAP_FORMAT_PROPOSAL.md).
 
 ## Completed checkpoint
 
