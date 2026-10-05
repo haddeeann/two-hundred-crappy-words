@@ -1,6 +1,6 @@
 # Current work
 
-Last updated: 2026-10-02
+Last updated: 2026-10-05
 
 ## Active milestone
 
@@ -10,32 +10,35 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.8 — Portable maps research and format boundary**
+**0.7.8b — Read-only portable map workspace**
 
 ### Intended outcome
 
-Research the smallest portable map model for project-owned images and source-linked lore anchors, then obtain explicit approval before adding a map file, persistence, or interface.
+Open verified project maps in a dedicated accessible main-pane workspace with local-only image rendering, source-linked anchors, session-only view state, and explicit stale-image behavior.
 
 ### Acceptance criteria
 
-- [x] Inventory existing image, location, event, identity, source-navigation, and project-format boundaries before proposing map behavior.
-- [x] Research common portable image, coordinate, region, and map-annotation conventions using primary sources where available.
-- [x] Define ownership, stable map identity, supported image types, coordinate space, point/region anchors, source links, limits, and missing/moved-image behavior.
-- [x] Keep real-world geospatial assumptions separate from fictional or illustrative maps.
-- [x] Make no schema, project-file, persistence, capability, dependency, or interface change before approval.
-- [ ] Receive explicit approval for the permanent portable-map choices.
+- [ ] Load the optional maps file for a selected valid world project without affecting ordinary folders or editor use.
+- [ ] Launch Maps from the closed-by-default Writing tools dock into the main pane while preserving the left file tree.
+- [ ] Render only verified local image bytes through a revocable blob URL and keep remote image sources prohibited.
+- [ ] Provide keyboard-operable map selection, fit/reset zoom, pan, text-equivalent anchor selection, and unique-note navigation.
+- [ ] Withhold overlays and explain missing, changed, ambiguous, unsafe, unsupported, unreadable, or unstable sources.
+- [ ] Keep all map view state session-only, perform no project write, and award no daily words.
+- [ ] Exercise the verified workspace in a packaged macOS build and restore the prior writer project afterward.
 
 ## Next slices
 
-1. Research and approve the separately gated portable map model.
-2. Publish and parse only the approved optional map format, then add a source-linked read-only viewer.
-3. Add guarded point/region authoring and complete map regression QA.
+1. Add and package-QA the source-linked read-only map workspace.
+2. Add previewed map creation/import and point authoring with exact-source Undo.
+3. Add polygon authoring and image replacement/relocation, then complete map regression QA.
 
-## Current approval gate
+## Current approval state
 
-Research is complete with no schema, project-file, persistence, capability, dependency, or interface change. The proposal recommends one optional project-scoped maps file, project-owned static PNG/JPEG/WebP images, a stable logical image canvas, note-linked point/polygon anchors, strict replacement/refusal behavior, and no geographic or continuity inference. Implementation is waiting for the nine explicit choices in [`MAP_FORMAT_PROPOSAL.md`](MAP_FORMAT_PROPOSAL.md).
+The user approved all nine choices in [`MAP_FORMAT_PROPOSAL.md`](MAP_FORMAT_PROPOSAL.md) on 2026-10-05: one optional project-scoped file, project-owned static PNG/JPEG/WebP images, a stable logical image canvas, note-linked point/polygon anchors, strict mutation and replacement boundaries, explicit failures, an accessible main-pane workspace, and no geographic or continuity inference. There is no remaining decision gate for the approved version-one sequence.
 
 ## Completed checkpoint
+
+- Slice 0.7.8a publishes the approved portable map boundary without creating or changing project data. The user approved all nine storage, image ownership/format, canvas, anchor, experience, mutation, failure, and deferred-scope decisions on 2026-10-05. A version-one JSON Schema and dependency-free parser now bound the optional 5 MiB root file to 64 maps, 10,000 total anchors, 256 polygon vertices, canonical stable identities, portable paths, static PNG/JPEG/WebP metadata, display-oriented dimensions, and valid in-canvas point/non-collinear-polygon geometry while retaining unknown supported-version fields. Stable loading requires the matching valid world-project identity and refuses symbolic or non-regular metadata files. Image loading traverses every path segment without following links, stable-reads at most 50 MiB, validates PNG/JPEG/WebP container headers and static behavior, resolves EXIF orientation, bounds either oriented axis to 8,192 pixels and total pixels to 40 million, computes SHA-256, and keeps missing, unsafe, unreadable, unstable, oversized, unsupported, animated, invalid, and changed sources distinct. A changed image withholds anchors. No capability, dependency, interface, project write, or daily-credit behavior changed. The full gate has 571 passing frontend tests across eighty-three files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities.
 
 - Slice 0.7.7e completes relationship review version one. The user approved all six choices in [`RELATIONSHIP_REVIEW_PROPOSAL.md`](RELATIONSHIP_REVIEW_PROPOSAL.md) on 2026-10-02: the initial rules, review-only severity, no built-in completeness prompts, no reciprocal-source requirement, no app-local dismissal, and visibly separate source problems/reviews/future planning prompts. A pure memory-only model now derives bounded `parent-of` cycles, semantically exact duplicate assertions, and `operated-by`/`home-port` claim groups that are not definitely separated by inclusive validity bounds. Stable IDs include rule/version and sorted fact IDs; every result retains exact source fingerprint/range, all rules are capped at 100 project findings after deterministic ordering, and the parent traversal is explicitly limited to 64 links. The focused inspector counts source problems separately, labels every finding **Review**, explains why it appeared, and reuses stale-safe open/edit actions for every contributing fact. Missing relationships, missing reciprocal facts, custom-property expectations, repairs, persistence, dismissals, network access, and daily credit remain absent. Packaged macOS QA exercised a reciprocal parent cycle, exact two-source expansion/navigation, a potentially simultaneous two-operator claim, review language, and `0 / 200` daily progress before restoring the writer's prior project. The final gate has 546 passing frontend tests across seventy-nine files, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 
@@ -166,7 +169,7 @@ Research is complete with no schema, project-file, persistence, capability, depe
 
 ## Blockers and decision gates
 
-There is no technical blocker. Relationship version one is complete. Portable-map research is the next executable slice and must stop for approval before any format or interface change.
+There is no technical blocker. Relationship version one and safe portable-map loading are complete; the read-only map workspace is the current executable work.
 
 ## Handoff protocol
 

@@ -1,8 +1,8 @@
 # Portable maps proposal
 
-Status: **research complete; awaiting product approval**
+Status: **approved for implementation**
 
-Last updated: 2026-10-02
+Last updated: 2026-10-05
 
 ## Purpose
 
@@ -12,8 +12,10 @@ canvas over that image, and map-owned anchors link points or regions back to
 stable lore notes. It deliberately does not turn the app into a map painter,
 GIS, route solver, or second continuity database.
 
-No map file, image copy, schema, parser, capability, dependency, or interface
-change has been made. The permanent choices at the end require approval first.
+The user approved all nine permanent choices on 2026-10-05. Implementation
+now follows the staged sequence at the end of this document; this proposal
+remains the durable product contract rather than a claim that every stage is
+already available.
 
 ## Existing product boundary
 
@@ -109,6 +111,8 @@ decision.
 The proposed root file is:
 
 `200-crappy-words.maps.json`
+
+The published version-one contract is [`schemas/maps-v1.schema.json`](schemas/maps-v1.schema.json).
 
 Its discriminator is `200-crappy-words/maps`, and version one is a bounded,
 human-readable JSON object:
@@ -270,10 +274,9 @@ These are scope boundaries, not judgments that the features are undesirable.
 The format keeps map and anchor UUIDs so later layers or richer presentation can
 refer to existing identities without redefining version-one geometry.
 
-## Approval gates
+## Approved decisions
 
-Implementation should begin only after explicit answers to these permanent
-choices:
+The user approved these permanent choices on 2026-10-05:
 
 1. **Storage and identity:** approve one optional root
    `200-crappy-words.maps.json` file, scoped to a matching world-project UUID,
