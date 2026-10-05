@@ -37,6 +37,8 @@ describe("desktop security configuration", () => {
 
     expect(csp["default-src"]).toBe("'self'");
     expect(csp["connect-src"]).toBe("'self' ipc: http://ipc.localhost");
+    expect(csp["img-src"]).toBe("'self' data: blob:");
+    expect(devCsp["img-src"]).toBe("'self' data: blob:");
     expect(csp["object-src"]).toBe("'none'");
     expect(csp["frame-src"]).toBe("'none'");
     expect(devCsp["connect-src"]).toContain("ws://localhost:1420");

@@ -333,6 +333,18 @@
   import { deriveTravelModel } from "$lib/travel/model";
   import { deriveTravelPresenceFindings } from "$lib/travel/presence";
   import { presentTravelInspector } from "$lib/travel/presentation";
+  import MapWorkspace from "$lib/maps/MapWorkspace.svelte";
+  import { MAPS_FILE } from "$lib/maps/format";
+  import {
+    loadMapImage,
+    type MapImageLoadResult,
+  } from "$lib/maps/image";
+  import {
+    loadMapsProject,
+    type MapsProjectLoadResult,
+  } from "$lib/maps/load";
+  import { deriveMapsWorkspaceModel } from "$lib/maps/model";
+  import { tauriMapBinaryBackend } from "$lib/maps/tauri-image";
 
   interface SaveFailure {
     path: string;
@@ -490,6 +502,15 @@
   let timelineLoadRevision = 0;
   let timelineOpen = $state(false);
   let timelineEditorSelection = { start: 0, end: 0 };
+  let mapsProject = $state<MapsProjectLoadResult>({ kind: "absent" });
+  let mapsLoading = $state(false);
+  let mapsLoadRevision = 0;
+  let mapOpen = $state(false);
+  let mapEditorSelection = { start: 0, end: 0 };
+  let selectedMapId = $state("");
+  let mapImageResult = $state<MapImageLoadResult | null>(null);
+  let mapImageLoading = $state(false);
+  let mapImageLoadRevision = 0;
   let manuscriptCompileId = $state("");
   let manuscriptCompileFormat = $state<ManuscriptCompileFormat>("markdown");
   let manuscriptCompilePlan = $state<ManuscriptCompilePlan | null>(null);
@@ -694,6 +715,11 @@
             ? manuscriptProject.reconciled.structure
             : null,
         )
+      : null,
+  );
+  const mapsModel = $derived.by(() =>
+    mapsProject.kind === "ready"
+      ? deriveMapsWorkspaceModel(mapsProject.mapsProject, loreIndex)
       : null,
   );
   const travelModel = $derived.by(() =>
@@ -1141,6 +1167,15 @@
     timelineLoading = false;
     timelineOpen = false;
     timelineEditorSelection = { start: 0, end: 0 };
+    mapsLoadRevision += 1;
+    mapImageLoadRevision += 1;
+    mapsProject = { kind: "absent" };
+    mapsLoading = false;
+    mapOpen = false;
+    mapEditorSelection = { start: 0, end: 0 };
+    selectedMapId = "";
+    mapImageResult = null;
+    mapImageLoading = false;
     resetManuscriptCompile(true);
     resetManuscriptSourceResolution(true);
     manuscriptSourceResolutionReturnId = "";
@@ -1189,6 +1224,7 @@
       if (loreReference) void openLoreReference(loreReference.path, false);
       void refreshManuscriptStructure(path, session, loreIndex);
       void refreshTimelineProject(path, session);
+      void refreshMapsProject(path, session);
     } catch (cause) {
       if (session !== loreIndexSession || path !== folderPath) return;
       loreIndexPhase = "error";
@@ -1257,6 +1293,7 @@
           }
           void refreshManuscriptStructure(path, session, loreIndex);
           void refreshTimelineProject(path, session);
+          if (shouldRefreshMaps(changedPaths)) void refreshMapsProject(path, session);
         } catch (cause) {
           if (session !== loreIndexSession || path !== folderPath) return;
           loreIndexNeedsRefresh = true;
@@ -1376,6 +1413,122 @@
       };
     } finally {
       if (revision === timelineLoadRevision) timelineLoading = false;
+    }
+  }
+
+  function shouldRefreshMaps(changedPaths: readonly string[]): boolean {
+    if (changedPaths.some((path) => pathsOverlap(path, MAPS_FILE))) return true;
+    if (mapsProject.kind !== "ready") return false;
+    return mapsProject.mapsProject.maps.some(({ image }) =>
+      changedPaths.some((path) => pathsOverlap(path, image.path)),
+    );
+  }
+
+  async function refreshMapsProject(
+    path = folderPath,
+    session = loreIndexSession,
+  ): Promise<void> {
+    if (!path) return;
+    const revision = ++mapsLoadRevision;
+    mapsLoading = true;
+    if (projectInspection.kind !== "world-project") {
+      mapsProject = { kind: "absent" };
+      selectedMapId = "";
+      mapImageResult = null;
+      mapsLoading = false;
+      return;
+    }
+    try {
+      const result = await loadMapsProject(
+        path,
+        tauriLoreScanBackend,
+        projectInspection.manifest.projectId,
+      );
+      if (
+        revision !== mapsLoadRevision ||
+        session !== loreIndexSession ||
+        path !== folderPath
+      ) {
+        return;
+      }
+      mapsProject = result;
+      if (result.kind !== "ready" || result.mapsProject.maps.length === 0) {
+        selectedMapId = "";
+        mapImageResult = null;
+        mapImageLoadRevision += 1;
+        return;
+      }
+      if (!result.mapsProject.maps.some(({ id }) => id === selectedMapId)) {
+        selectedMapId = result.mapsProject.maps[0]!.id;
+      }
+      if (mapOpen) await refreshSelectedMapImage(selectedMapId, result, path, session);
+    } catch (cause) {
+      if (
+        revision !== mapsLoadRevision ||
+        session !== loreIndexSession ||
+        path !== folderPath
+      ) {
+        return;
+      }
+      mapsProject = {
+        kind: "unreadable",
+        message: `The maps file could not be refreshed safely: ${formatError(cause)}`,
+      };
+      mapImageResult = null;
+    } finally {
+      if (revision === mapsLoadRevision) mapsLoading = false;
+    }
+  }
+
+  async function refreshSelectedMapImage(
+    mapId = selectedMapId,
+    project = mapsProject,
+    path = folderPath,
+    session = loreIndexSession,
+  ): Promise<void> {
+    const revision = ++mapImageLoadRevision;
+    mapImageResult = null;
+    if (!path || project.kind !== "ready") {
+      mapImageLoading = false;
+      return;
+    }
+    const selected = project.mapsProject.maps.find(({ id }) => id === mapId);
+    if (!selected) {
+      mapImageLoading = false;
+      return;
+    }
+    const expectedFingerprint = project.fingerprint;
+    mapImageLoading = true;
+    try {
+      const result = await loadMapImage(path, selected.image, tauriMapBinaryBackend);
+      if (
+        revision !== mapImageLoadRevision ||
+        session !== loreIndexSession ||
+        path !== folderPath ||
+        mapsProject.kind !== "ready" ||
+        mapsProject.fingerprint !== expectedFingerprint ||
+        mapId !== selectedMapId
+      ) {
+        return;
+      }
+      mapImageResult = result;
+    } catch (cause) {
+      if (
+        revision !== mapImageLoadRevision ||
+        session !== loreIndexSession ||
+        path !== folderPath ||
+        mapsProject.kind !== "ready" ||
+        mapsProject.fingerprint !== expectedFingerprint ||
+        mapId !== selectedMapId
+      ) {
+        return;
+      }
+      mapImageResult = {
+        kind: "unreadable",
+        message: `The map image could not be verified safely: ${formatError(cause)}`,
+      };
+    } finally {
+      if (revision === mapImageLoadRevision) mapImageLoading = false;
     }
   }
 
@@ -2923,6 +3076,7 @@
     manuscriptCorkboardFocusItemId = "";
     writingToolsOpen = false;
     timelineOpen = false;
+    mapOpen = false;
     manuscriptCorkboardId = manuscriptId;
   }
 
@@ -2951,6 +3105,7 @@
       end: editorInput?.selectionEnd ?? editorSelectionEnd,
     };
     manuscriptCorkboardId = "";
+    mapOpen = false;
     writingToolsOpen = false;
     timelineOpen = true;
   }
@@ -2973,6 +3128,56 @@
     timelineOpen = false;
     await tick();
     await openIndexedLorePath(path, range);
+  }
+
+  function openMapWorkspace(): void {
+    if (!folderPath || projectInspection.kind !== "world-project") return;
+    dismissLoreCompletion();
+    mapEditorSelection = {
+      start: editorInput?.selectionStart ?? editorSelectionStart,
+      end: editorInput?.selectionEnd ?? editorSelectionEnd,
+    };
+    manuscriptCorkboardId = "";
+    timelineOpen = false;
+    writingToolsOpen = false;
+    mapOpen = true;
+    if (mapsProject.kind === "ready" && mapsProject.mapsProject.maps.length > 0) {
+      if (!mapsProject.mapsProject.maps.some(({ id }) => id === selectedMapId)) {
+        selectedMapId = mapsProject.mapsProject.maps[0]!.id;
+      }
+      void refreshSelectedMapImage();
+    }
+  }
+
+  function closeMapWorkspace(): void {
+    mapOpen = false;
+    mapImageLoadRevision += 1;
+    mapImageLoading = false;
+    void tick().then(() => {
+      if (!editorInput) return;
+      const start = Math.min(mapEditorSelection.start, editorInput.value.length);
+      const end = Math.min(mapEditorSelection.end, editorInput.value.length);
+      editorInput.setSelectionRange(start, Math.max(start, end));
+      editorInput.focus();
+    });
+  }
+
+  function selectMap(mapId: string): void {
+    if (mapId === selectedMapId) return;
+    selectedMapId = mapId;
+    void refreshSelectedMapImage(mapId);
+  }
+
+  async function refreshMapWorkspace(): Promise<void> {
+    await refreshMapsProject();
+  }
+
+  async function openMapNote(path: string): Promise<void> {
+    mapOpen = false;
+    mapImageLoadRevision += 1;
+    mapImageLoading = false;
+    await tick();
+    await openIndexedLorePath(path, null);
   }
 
   async function preferredManuscriptImportDirectory(): Promise<string> {
@@ -5879,6 +6084,11 @@
       setWritingTools(false);
       return;
     }
+    if (mapOpen && event.key === "Escape") {
+      event.preventDefault();
+      closeMapWorkspace();
+      return;
+    }
     if (focusMode && event.key === "Escape") {
       event.preventDefault();
       setWritingFocus(false);
@@ -6013,6 +6223,14 @@
           onclick={openTimelineWorkspace}
           disabled={!timelineModel || timelineLoading}
         >{timelineLoading ? "Refreshing Timeline…" : "Open Timeline"}</button>
+      {/if}
+
+      {#if projectInspection.kind === "world-project"}
+        <button
+          class="open-btn"
+          onclick={openMapWorkspace}
+          disabled={mapsLoading}
+        >{mapsLoading ? "Refreshing Maps…" : "Open Maps"}</button>
       {/if}
 
     {#if recentProjects.length > 0}
@@ -6431,7 +6649,9 @@
           >→</button>
         </nav>{/if}
         <span>
-          {timelineOpen
+          {mapOpen
+            ? "Maps"
+            : timelineOpen
             ? "Timeline"
             : manuscriptCorkboard
             ? `Corkboard · ${manuscriptCorkboard.manuscript.title}`
@@ -6471,7 +6691,7 @@
             class:save-error={saveState.phase === "error"}
             aria-live="polite"
           >{saveStatus}</span>
-          {#if !timelineOpen && !manuscriptCorkboard && activeSceneSplitAvailability.kind === "available"}
+          {#if !timelineOpen && !mapOpen && !manuscriptCorkboard && activeSceneSplitAvailability.kind === "available"}
             <button
               type="button"
               class="focus-mode-button"
@@ -6480,7 +6700,7 @@
               onclick={() => void beginManuscriptSceneSplit()}
             >Split scene…</button>
           {/if}
-          {#if !timelineOpen}
+          {#if !timelineOpen && !mapOpen}
             <button
               type="button"
               class="focus-mode-button"
@@ -6502,10 +6722,23 @@
       class="writing-split"
       class:corkboard-mode={Boolean(manuscriptCorkboard)}
       class:focus-mode={focusMode}
-      class:has-reference={Boolean(loreReference) && !timelineOpen}
+      class:has-reference={Boolean(loreReference) && !timelineOpen && !mapOpen}
     >
       <div class="editor-workspace">
-        {#if timelineOpen && timelineModel}
+        {#if mapOpen}
+          <MapWorkspace
+            result={mapsProject}
+            model={mapsModel}
+            selectedMapId={selectedMapId}
+            imageResult={mapImageResult}
+            loading={mapsLoading}
+            imageLoading={mapImageLoading}
+            onClose={closeMapWorkspace}
+            onRefresh={() => void refreshMapWorkspace()}
+            onSelectMap={selectMap}
+            onOpenNote={(path) => void openMapNote(path)}
+          />
+        {:else if timelineOpen && timelineModel}
           <TimelineWorkspace
             result={timelineProject}
             model={timelineModel}
@@ -6569,7 +6802,7 @@
           {/if}
         {/if}
       </div>
-      {#if loreReference && !timelineOpen && !manuscriptCorkboard}
+      {#if loreReference && !timelineOpen && !mapOpen && !manuscriptCorkboard}
         <LoreReferencePane
           reference={loreReference}
           onClose={() => closeLoreReference()}

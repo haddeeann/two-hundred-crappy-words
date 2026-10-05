@@ -10,33 +10,35 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.8b — Read-only portable map workspace**
+**0.7.8c — Guarded map creation, import, and point authoring**
 
 ### Intended outcome
 
-Open verified project maps in a dedicated accessible main-pane workspace with local-only image rendering, source-linked anchors, session-only view state, and explicit stale-image behavior.
+Let a writer deliberately create the optional maps file, import or select one verified project-owned image, and add/move/remove point anchors through exact preview, fresh-source comparison, no-clobber writes, and one guarded Undo.
 
 ### Acceptance criteria
 
-- [ ] Load the optional maps file for a selected valid world project without affecting ordinary folders or editor use.
-- [ ] Launch Maps from the closed-by-default Writing tools dock into the main pane while preserving the left file tree.
-- [ ] Render only verified local image bytes through a revocable blob URL and keep remote image sources prohibited.
-- [ ] Provide keyboard-operable map selection, fit/reset zoom, pan, text-equivalent anchor selection, and unique-note navigation.
-- [ ] Withhold overlays and explain missing, changed, ambiguous, unsafe, unsupported, unreadable, or unstable sources.
-- [ ] Keep all map view state session-only, perform no project write, and award no daily words.
-- [ ] Exercise the verified workspace in a packaged macOS build and restore the prior writer project afterward.
+- [ ] Plan one new map from a verified in-project image or an explicit create-new copy into `Maps/`, never moving or overwriting the chosen source.
+- [ ] Preview exact maps JSON and any image-copy destination before confirmation, preserve supported-version unknown fields, and require fresh semantic equivalence.
+- [ ] Add, move, retarget, and remove point anchors only for uniquely identified structured notes through accessible coordinate controls and direct map placement.
+- [ ] Remove map metadata without deleting its image or linked notes.
+- [ ] Execute through guarded writes with one stale-sensitive in-session Undo and no daily-word credit.
+- [ ] Refuse path collisions, stale source/image bytes, ambiguous targets, different project identity, and all unsupported image states without partial writes.
+- [ ] Package-QA creation, point authoring, stale/collision refusal, exact Undo, source preservation, and writer-project restoration.
 
 ## Next slices
 
-1. Add and package-QA the source-linked read-only map workspace.
-2. Add previewed map creation/import and point authoring with exact-source Undo.
-3. Add polygon authoring and image replacement/relocation, then complete map regression QA.
+1. Add previewed map creation/import and point authoring with exact-source Undo.
+2. Add polygon authoring and image replacement/relocation.
+3. Complete portable-map regression QA and the milestone documentation gate.
 
 ## Current approval state
 
 The user approved all nine choices in [`MAP_FORMAT_PROPOSAL.md`](MAP_FORMAT_PROPOSAL.md) on 2026-10-05: one optional project-scoped file, project-owned static PNG/JPEG/WebP images, a stable logical image canvas, note-linked point/polygon anchors, strict mutation and replacement boundaries, explicit failures, an accessible main-pane workspace, and no geographic or continuity inference. There is no remaining decision gate for the approved version-one sequence.
 
 ## Completed checkpoint
+
+- Slice 0.7.8b adds the read-only portable map workspace without changing project data. A selected valid world project now stable-loads its optional maps file alongside the memory-only lore index. Closed-by-default Writing tools opens Maps in the main pane while the left project tree remains intact. Only verified local bytes render through a revocable `blob:` URL; the CSP adds `blob:` solely to `img-src` while remote image and network sources remain prohibited. The workspace preserves configured map and anchor order, provides native map selection, fit/reset zoom, scroll panning, keyboard-operable visual point/polygon shapes, a complete text-equivalent anchor list, explicit missing/duplicate/unstructured note states, and verified note navigation. Missing, changed, unsafe, unsupported, unreadable, unstable, or invalid images render no image or overlay; an external image replacement was detected automatically and restoring the exact bytes restored the map. Escape returns to the preserved draft selection, all state is process-local, and map navigation awards no daily credit. Packaged macOS QA covered local rendering, visual/accessibility inspection, one resolved point, one unresolved polygon, note navigation, external stale-image refusal and recovery, Escape focus restoration, unchanged `0 / 200`, and restoration of Arcadia. The final gate has 573 passing frontend tests across eighty-four files, zero Svelte/TypeScript diagnostics, and successful web and production macOS `.app`/DMG builds.
 
 - Slice 0.7.8a publishes the approved portable map boundary without creating or changing project data. The user approved all nine storage, image ownership/format, canvas, anchor, experience, mutation, failure, and deferred-scope decisions on 2026-10-05. A version-one JSON Schema and dependency-free parser now bound the optional 5 MiB root file to 64 maps, 10,000 total anchors, 256 polygon vertices, canonical stable identities, portable paths, static PNG/JPEG/WebP metadata, display-oriented dimensions, and valid in-canvas point/non-collinear-polygon geometry while retaining unknown supported-version fields. Stable loading requires the matching valid world-project identity and refuses symbolic or non-regular metadata files. Image loading traverses every path segment without following links, stable-reads at most 50 MiB, validates PNG/JPEG/WebP container headers and static behavior, resolves EXIF orientation, bounds either oriented axis to 8,192 pixels and total pixels to 40 million, computes SHA-256, and keeps missing, unsafe, unreadable, unstable, oversized, unsupported, animated, invalid, and changed sources distinct. A changed image withholds anchors. No capability, dependency, interface, project write, or daily-credit behavior changed. The full gate has 571 passing frontend tests across eighty-three files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities.
 
@@ -169,7 +171,7 @@ The user approved all nine choices in [`MAP_FORMAT_PROPOSAL.md`](MAP_FORMAT_PROP
 
 ## Blockers and decision gates
 
-There is no technical blocker. Relationship version one and safe portable-map loading are complete; the read-only map workspace is the current executable work.
+There is no technical blocker. Relationship version one and read-only portable maps are complete; guarded map creation/import and point authoring are the current executable work.
 
 ## Handoff protocol
 

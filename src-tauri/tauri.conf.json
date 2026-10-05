@@ -27,7 +27,7 @@
       "csp": {
         "default-src": "'self'",
         "connect-src": "'self' ipc: http://ipc.localhost",
-        "img-src": "'self' data:",
+        "img-src": "'self' data: blob:",
         "style-src": "'self' 'unsafe-inline'",
         "object-src": "'none'",
         "base-uri": "'none'",
@@ -37,7 +37,7 @@
       "devCsp": {
         "default-src": "'self'",
         "connect-src": "'self' ipc: http://ipc.localhost http://localhost:1420 ws://localhost:1420",
-        "img-src": "'self' data:",
+        "img-src": "'self' data: blob:",
         "style-src": "'self' 'unsafe-inline'",
         "object-src": "'none'",
         "base-uri": "'none'",
