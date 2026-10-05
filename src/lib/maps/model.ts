@@ -22,6 +22,35 @@ export interface MapsWorkspaceModel {
   problemAnchorCount: number;
 }
 
+export interface MapAnchorNoteOption {
+  id: string;
+  path: string;
+  title: string;
+  noteType: string;
+}
+
+export function mapAnchorNoteOptions(loreIndex: LoreProjectIndex | null): MapAnchorNoteOption[] {
+  const byId = new Map<string, MapAnchorNoteOption[]>();
+  for (const document of loreIndex?.documents.values() ?? []) {
+    if (!document.id || !document.type) continue;
+    const current = byId.get(document.id) ?? [];
+    current.push({
+      id: document.id,
+      path: document.path,
+      title: document.title,
+      noteType: document.type,
+    });
+    byId.set(document.id, current);
+  }
+  return [...byId.values()]
+    .filter((values) => values.length === 1)
+    .map(([value]) => value!)
+    .sort((first, second) =>
+      first.title.localeCompare(second.title, undefined, { sensitivity: "base", numeric: true }) ||
+      first.path.localeCompare(second.path),
+    );
+}
+
 export function deriveMapsWorkspaceModel(
   project: MapsProject,
   loreIndex: LoreProjectIndex | null,

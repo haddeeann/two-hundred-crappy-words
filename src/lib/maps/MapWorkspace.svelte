@@ -14,6 +14,14 @@
     onRefresh: () => void;
     onSelectMap: (mapId: string) => void;
     onOpenNote: (path: string) => void;
+    onAddMap: () => void;
+    onAddPoint: (mapId: string, x: number, y: number) => void;
+    onEditPoint: (mapId: string, anchor: MapAnchorModel) => void;
+    onRemoveAnchor: (mapId: string, anchor: MapAnchorModel) => void;
+    onRemoveMap: (mapId: string) => void;
+    undoLabel: string;
+    undoBusy: boolean;
+    onUndo: () => void;
   }
 
   let {
@@ -27,6 +35,14 @@
     onRefresh,
     onSelectMap,
     onOpenNote,
+    onAddMap,
+    onAddPoint,
+    onEditPoint,
+    onRemoveAnchor,
+    onRemoveMap,
+    undoLabel,
+    undoBusy,
+    onUndo,
   }: Props = $props();
 
   let imageUrl = $state("");
@@ -120,6 +136,31 @@
   function zoomBy(delta: number): void {
     zoom = Math.max(0.5, Math.min(3, Math.round((zoom + delta) * 100) / 100));
   }
+
+  function addPointAtCenter(): void {
+    if (!selectedMap) return;
+    onAddPoint(
+      selectedMap.map.id,
+      Math.round(selectedMap.map.canvas.width / 2),
+      Math.round(selectedMap.map.canvas.height / 2),
+    );
+  }
+
+  function placePoint(event: PointerEvent): void {
+    if (!selectedMap || imageResult?.kind !== "ready") return;
+    const overlay = event.currentTarget as SVGSVGElement;
+    const bounds = overlay.getBoundingClientRect();
+    if (bounds.width <= 0 || bounds.height <= 0) return;
+    const x = Math.max(0, Math.min(
+      selectedMap.map.canvas.width - 1,
+      Math.round(((event.clientX - bounds.left) / bounds.width) * selectedMap.map.canvas.width),
+    ));
+    const y = Math.max(0, Math.min(
+      selectedMap.map.canvas.height - 1,
+      Math.round(((event.clientY - bounds.top) / bounds.height) * selectedMap.map.canvas.height),
+    ));
+    onAddPoint(selectedMap.map.id, x, y);
+  }
 </script>
 
 <section class="map-workspace" aria-labelledby="maps-heading">
@@ -130,6 +171,8 @@
       <p>Points and regions link to lore. They do not create geographic or continuity facts.</p>
     </div>
     <div class="workspace-actions">
+      {#if undoLabel}<button type="button" onclick={onUndo} disabled={undoBusy || loading}>{undoBusy ? "Undoing…" : undoLabel}</button>{/if}
+      <button type="button" onclick={onAddMap} disabled={loading}>Add map…</button>
       <button type="button" onclick={onRefresh} disabled={loading || imageLoading}>
         {loading || imageLoading ? "Refreshing…" : "Refresh"}
       </button>
@@ -152,6 +195,7 @@
       <section class="empty-panel">
         <h2>No maps configured</h2>
         <p>The portable maps file is valid and currently contains no maps.</p>
+        <button type="button" class="primary" onclick={onAddMap}>Add a map…</button>
       </section>
     {:else}
       <div class="map-controls" aria-label="Map view controls">
@@ -177,7 +221,11 @@
             <h2>{selectedMap.map.title}</h2>
             <p>{selectedMap.map.image.path} · {selectedMap.map.canvas.width} × {selectedMap.map.canvas.height} logical canvas</p>
           </div>
-          <span>{selectedMap.anchors.length} {selectedMap.anchors.length === 1 ? "anchor" : "anchors"}</span>
+          <div class="map-heading-actions">
+            <span>{selectedMap.anchors.length} {selectedMap.anchors.length === 1 ? "anchor" : "anchors"}</span>
+            <button type="button" onclick={addPointAtCenter} disabled={imageResult?.kind !== "ready"}>Add point…</button>
+            <button type="button" class="danger-text" onclick={() => onRemoveMap(selectedMap.map.id)}>Remove map…</button>
+          </div>
         </div>
 
         {#if imageLoading}
@@ -195,7 +243,9 @@
                 <svg
                   class="map-overlay"
                   viewBox={`0 0 ${selectedMap.map.canvas.width} ${selectedMap.map.canvas.height}`}
+                  role="group"
                   aria-label={`Visual anchors for ${selectedMap.map.title}`}
+                  onpointerdown={placePoint}
                 >
                   {#each selectedMap.anchors as anchor (anchor.anchor.id)}
                     {#if anchor.anchor.geometry.kind === "point"}
@@ -208,7 +258,8 @@
                         role="button"
                         tabindex="0"
                         aria-label={`${anchorTitle(anchor)}. ${geometryLabel(anchor)}`}
-                        onclick={() => chooseAnchor(anchor)}
+                        onclick={(event) => { event.stopPropagation(); chooseAnchor(anchor); }}
+                        onpointerdown={(event) => event.stopPropagation()}
                         onkeydown={(event) => activateShape(event, anchor)}
                       />
                     {:else}
@@ -219,7 +270,8 @@
                         role="button"
                         tabindex="0"
                         aria-label={`${anchorTitle(anchor)}. ${geometryLabel(anchor)}`}
-                        onclick={() => chooseAnchor(anchor)}
+                        onclick={(event) => { event.stopPropagation(); chooseAnchor(anchor); }}
+                        onpointerdown={(event) => event.stopPropagation()}
                         onkeydown={(event) => activateShape(event, anchor)}
                       />
                     {/if}
@@ -253,6 +305,12 @@
                       <p class="anchor-problem">{anchor.target.message}</p>
                       {#if anchor.target.kind === "ambiguous"}<p>{anchor.target.paths.join(", ")}</p>{/if}
                     {/if}
+                    <div class="anchor-actions">
+                      {#if anchor.anchor.geometry.kind === "point"}
+                        <button type="button" onclick={() => onEditPoint(selectedMap.map.id, anchor)}>Edit point…</button>
+                      {/if}
+                      <button type="button" class="danger-text" onclick={() => onRemoveAnchor(selectedMap.map.id, anchor)}>Remove…</button>
+                    </div>
                   </li>
                 {/each}
               </ol>
@@ -272,7 +330,7 @@
     background: #fbfaf7;
     color: #292529;
   }
-  header, .map-heading, .anchor-heading, .map-controls, .workspace-actions {
+  header, .map-heading, .anchor-heading, .map-controls, .workspace-actions, .map-heading-actions, .anchor-actions {
     display: flex;
     align-items: center;
     gap: 0.7rem;
@@ -286,6 +344,7 @@
   button { border: 1px solid #cfc5d1; border-radius: 0.45rem; background: #fff; color: inherit; padding: 0.42rem 0.7rem; cursor: pointer; }
   button:disabled { opacity: 0.5; cursor: default; }
   button.primary { background: #4f3f59; border-color: #4f3f59; color: #fff; }
+  button.danger-text { color: #8e2020; }
   .load-message { padding: 0.75rem 0.9rem; border: 1px solid #d9d0dc; border-radius: 0.55rem; background: #fff; }
   .load-message.good { border-color: #b8d8c2; background: #f3faf5; }
   .load-message.problem, .anchor-problem { color: #7b2f31; }
@@ -294,12 +353,14 @@
   .map-controls select { min-width: min(18rem, 50vw); padding: 0.42rem; }
   .map-heading { margin: 1.1rem 0 0.7rem; }
   .map-heading h2 { margin-bottom: 0.2rem; }
+  .map-heading-actions { flex-wrap: wrap; justify-content: flex-end; }
   .map-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(15rem, 22rem); gap: 1rem; align-items: start; }
   .map-viewport { overflow: auto; min-height: 18rem; max-height: 68vh; border: 1px solid #cfc5d1; border-radius: 0.6rem; background: #211e22; }
   .map-viewport:focus-visible { outline: 3px solid #8a5cf5; outline-offset: 2px; }
   .map-canvas { position: relative; min-width: 100%; line-height: 0; }
   .map-canvas img { width: 100%; height: auto; display: block; image-orientation: from-image; user-select: none; }
   .map-overlay { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .map-overlay { cursor: crosshair; }
   .map-overlay circle, .map-overlay polygon { fill: rgb(255 229 92 / 0.42); stroke: #4b2f5b; stroke-width: max(2px, 0.25%); vector-effect: non-scaling-stroke; cursor: pointer; }
   .map-overlay .problem { fill: rgb(216 75 75 / 0.35); stroke: #8e2020; stroke-dasharray: 7 4; }
   .map-overlay .selected { fill: rgb(138 92 245 / 0.52); stroke: #fff; stroke-width: max(3px, 0.4%); }
@@ -313,6 +374,7 @@
   .anchor-panel li p { margin: 0.35rem 0; overflow-wrap: anywhere; font-size: 0.85rem; color: #6d646c; }
   .anchor-select { width: 100%; border: 0; padding: 0; text-align: left; display: grid; gap: 0.15rem; }
   .anchor-select span { color: #6d646c; font-size: 0.8rem; }
+  .anchor-actions { flex-wrap: wrap; margin-top: 0.45rem; }
   .empty-panel { padding: 1.2rem; border: 1px dashed #cfc5d1; border-radius: 0.6rem; }
   @media (max-width: 850px) {
     header, .map-heading { align-items: stretch; flex-direction: column; }

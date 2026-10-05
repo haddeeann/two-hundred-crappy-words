@@ -334,8 +334,10 @@
   import { deriveTravelPresenceFindings } from "$lib/travel/presence";
   import { presentTravelInspector } from "$lib/travel/presentation";
   import MapWorkspace from "$lib/maps/MapWorkspace.svelte";
+  import MapMutationDialog from "$lib/maps/MapMutationDialog.svelte";
   import { MAPS_FILE } from "$lib/maps/format";
   import {
+    inspectMapImage,
     loadMapImage,
     type MapImageLoadResult,
   } from "$lib/maps/image";
@@ -343,8 +345,16 @@
     loadMapsProject,
     type MapsProjectLoadResult,
   } from "$lib/maps/load";
-  import { deriveMapsWorkspaceModel } from "$lib/maps/model";
+  import { deriveMapsWorkspaceModel, mapAnchorNoteOptions, type MapAnchorModel } from "$lib/maps/model";
+  import {
+    executeMapsMutation,
+    undoMapsMutation,
+    type MapsMutationIo,
+    type MapsMutationUndo,
+  } from "$lib/maps/mutation-execution";
+  import type { MapsMutationPlan, MapsMutationRequest } from "$lib/maps/mutation";
   import { tauriMapBinaryBackend } from "$lib/maps/tauri-image";
+  import { createMapUuid } from "$lib/maps/identity";
 
   interface SaveFailure {
     path: string;
@@ -511,6 +521,11 @@
   let mapImageResult = $state<MapImageLoadResult | null>(null);
   let mapImageLoading = $state(false);
   let mapImageLoadRevision = 0;
+  let mapMutationRequest = $state<MapsMutationRequest | null>(null);
+  let mapMutationOriginalText = $state<string | null>(null);
+  let mapMutationBusy = $state(false);
+  let mapMutationError = $state("");
+  let mapMutationUndo = $state<MapsMutationUndo | null>(null);
   let manuscriptCompileId = $state("");
   let manuscriptCompileFormat = $state<ManuscriptCompileFormat>("markdown");
   let manuscriptCompilePlan = $state<ManuscriptCompilePlan | null>(null);
@@ -722,6 +737,7 @@
       ? deriveMapsWorkspaceModel(mapsProject.mapsProject, loreIndex)
       : null,
   );
+  const mapNoteOptions = $derived(mapAnchorNoteOptions(loreIndex));
   const travelModel = $derived.by(() =>
     loreIndex ? deriveTravelModel(loreIndex) : null,
   );
@@ -1176,6 +1192,11 @@
     selectedMapId = "";
     mapImageResult = null;
     mapImageLoading = false;
+    mapMutationRequest = null;
+    mapMutationOriginalText = null;
+    mapMutationBusy = false;
+    mapMutationError = "";
+    mapMutationUndo = null;
     resetManuscriptCompile(true);
     resetManuscriptSourceResolution(true);
     manuscriptSourceResolutionReturnId = "";
@@ -1452,6 +1473,12 @@
         return;
       }
       mapsProject = result;
+      if (
+        mapMutationUndo &&
+        (result.kind !== "ready" || result.fingerprint !== mapMutationUndo.expectedFingerprint)
+      ) {
+        mapMutationUndo = null;
+      }
       if (result.kind !== "ready" || result.mapsProject.maps.length === 0) {
         selectedMapId = "";
         mapImageResult = null;
@@ -3178,6 +3205,173 @@
     mapImageLoading = false;
     await tick();
     await openIndexedLorePath(path, null);
+  }
+
+  function mapsMutationIo(rootPath: string, projectId: string): MapsMutationIo {
+    return {
+      reload: () => loadMapsProject(rootPath, tauriLoreScanBackend, projectId),
+      createNew: (text) => invoke("create_maps_file_new", { rootPath, newText: text }),
+      replaceAtomic: (expectedText, newText) =>
+        invoke("replace_maps_file_atomic", { rootPath, expectedText, newText }),
+      removeCreated: (expectedText) =>
+        invoke("remove_maps_file_if_exact", { rootPath, expectedText }),
+    };
+  }
+
+  async function beginAddMap(): Promise<void> {
+    if (!folderPath || mapMutationBusy || projectInspection.kind !== "world-project") return;
+    if (mapsProject.kind !== "absent" && mapsProject.kind !== "ready") {
+      appendError("Resolve the current maps-file problem before adding a map.");
+      return;
+    }
+    const rootAtStart = folderPath;
+    const originalText = mapsProject.kind === "ready" ? mapsProject.text : null;
+    mapMutationError = "";
+    try {
+      const selected = await open({
+        title: "Choose a map image inside this project",
+        multiple: false,
+        directory: false,
+        defaultPath: rootAtStart,
+        filters: [{ name: "Map image", extensions: ["png", "jpg", "jpeg", "webp"] }],
+      });
+      if (!selected || Array.isArray(selected)) return;
+      const relativePath = projectRelativePath(rootAtStart, selected);
+      if (!relativePath) throw new Error("Choose an image already contained by the open project.");
+      const inspected = await inspectMapImage(await readFile(selected));
+      if (inspected.kind !== "ready") throw new Error(inspected.message);
+      const image = {
+        path: relativePath,
+        mediaType: inspected.inspection.mediaType,
+        sha256: inspected.inspection.sha256,
+        width: inspected.inspection.width,
+        height: inspected.inspection.height,
+      };
+      const verified = await loadMapImage(rootAtStart, image, tauriMapBinaryBackend);
+      if (verified.kind !== "ready") throw new Error(verified.message);
+      if (folderPath !== rootAtStart) throw new Error("The open project changed while the image was verified.");
+      const filename = relativePath.split("/").at(-1) ?? "Map";
+      const title = filename.replace(/\.(?:png|jpe?g|webp)$/iu, "").replace(/[-_]+/gu, " ").trim() || "Map";
+      mapMutationRequest = {
+        kind: "add-map",
+        mapId: createMapUuid(),
+        title,
+        image,
+      };
+      mapMutationOriginalText = originalText;
+    } catch (cause) {
+      appendError(`Could not prepare the map: ${formatError(cause)}`);
+    }
+  }
+
+  function beginAddMapPoint(mapId: string, x: number, y: number): void {
+    try {
+      const firstNote = mapNoteOptions[0];
+      mapMutationError = "";
+      mapMutationRequest = {
+        kind: "add-point",
+        mapId,
+        anchorId: createMapUuid(),
+        noteId: firstNote?.id ?? "",
+        x,
+        y,
+      };
+      mapMutationOriginalText = mapsProject.kind === "ready" ? mapsProject.text : null;
+    } catch (cause) {
+      appendError(`Could not prepare the point anchor: ${formatError(cause)}`);
+    }
+  }
+
+  function beginEditMapPoint(mapId: string, anchor: MapAnchorModel): void {
+    if (anchor.anchor.geometry.kind !== "point") return;
+    mapMutationError = "";
+    mapMutationRequest = {
+      kind: "update-point",
+      mapId,
+      anchorId: anchor.anchor.id,
+      noteId: anchor.anchor.noteId,
+      x: anchor.anchor.geometry.x,
+      y: anchor.anchor.geometry.y,
+    };
+    mapMutationOriginalText = mapsProject.kind === "ready" ? mapsProject.text : null;
+  }
+
+  function beginRemoveMapAnchor(mapId: string, anchor: MapAnchorModel): void {
+    mapMutationError = "";
+    mapMutationRequest = { kind: "remove-anchor", mapId, anchorId: anchor.anchor.id };
+    mapMutationOriginalText = mapsProject.kind === "ready" ? mapsProject.text : null;
+  }
+
+  function beginRemoveMap(mapId: string): void {
+    mapMutationError = "";
+    mapMutationRequest = { kind: "remove-map", mapId };
+    mapMutationOriginalText = mapsProject.kind === "ready" ? mapsProject.text : null;
+  }
+
+  function closeMapMutation(): void {
+    if (mapMutationBusy) return;
+    mapMutationRequest = null;
+    mapMutationOriginalText = null;
+    mapMutationError = "";
+  }
+
+  async function applyMapMutation(
+    plan: Extract<MapsMutationPlan, { kind: "ready" }>,
+    request: MapsMutationRequest,
+  ): Promise<void> {
+    if (!folderPath || projectInspection.kind !== "world-project" || mapMutationBusy) return;
+    const rootAtStart = folderPath;
+    const projectId = projectInspection.manifest.projectId;
+    mapMutationBusy = true;
+    mapMutationError = "";
+    try {
+      const result = await executeMapsMutation(plan, request, mapsMutationIo(rootAtStart, projectId));
+      if (folderPath !== rootAtStart) throw new Error("The open project changed while the maps edit ran.");
+      if (result.kind === "failed") throw new Error(result.message);
+      mapsProject = result.project;
+      mapMutationUndo = result.undo;
+      mapMutationRequest = null;
+      mapMutationOriginalText = null;
+      if (request.kind === "add-map") selectedMapId = request.mapId;
+      if (request.kind === "remove-map" && selectedMapId === request.mapId) {
+        selectedMapId = result.project.mapsProject.maps[0]?.id ?? "";
+      }
+      await refreshSelectedMapImage(selectedMapId, result.project, rootAtStart, loreIndexSession);
+    } catch (cause) {
+      mapMutationError = formatError(cause);
+    } finally {
+      mapMutationBusy = false;
+    }
+  }
+
+  async function undoMapMutation(): Promise<void> {
+    if (!folderPath || projectInspection.kind !== "world-project" || !mapMutationUndo || mapMutationBusy) return;
+    const rootAtStart = folderPath;
+    const undo = mapMutationUndo;
+    mapMutationBusy = true;
+    try {
+      const result = await undoMapsMutation(
+        undo,
+        mapsMutationIo(rootAtStart, projectInspection.manifest.projectId),
+      );
+      if (folderPath !== rootAtStart) throw new Error("The open project changed while Undo ran.");
+      if (result.kind === "failed") throw new Error(result.message);
+      mapsProject = result.project;
+      mapMutationUndo = null;
+      if (result.project.kind === "ready") {
+        if (!result.project.mapsProject.maps.some(({ id }) => id === selectedMapId)) {
+          selectedMapId = result.project.mapsProject.maps[0]?.id ?? "";
+        }
+        await refreshSelectedMapImage(selectedMapId, result.project, rootAtStart, loreIndexSession);
+      } else {
+        selectedMapId = "";
+        mapImageResult = null;
+      }
+    } catch (cause) {
+      appendError(`Could not undo the maps change: ${formatError(cause)}`);
+    } finally {
+      mapMutationBusy = false;
+    }
   }
 
   async function preferredManuscriptImportDirectory(): Promise<string> {
@@ -6737,6 +6931,14 @@
             onRefresh={() => void refreshMapWorkspace()}
             onSelectMap={selectMap}
             onOpenNote={(path) => void openMapNote(path)}
+            onAddMap={() => void beginAddMap()}
+            onAddPoint={beginAddMapPoint}
+            onEditPoint={beginEditMapPoint}
+            onRemoveAnchor={beginRemoveMapAnchor}
+            onRemoveMap={beginRemoveMap}
+            undoLabel={mapMutationUndo?.label ?? ""}
+            undoBusy={mapMutationBusy}
+            onUndo={() => void undoMapMutation()}
           />
         {:else if timelineOpen && timelineModel}
           <TimelineWorkspace
@@ -7019,6 +7221,19 @@
         {/if}
       </div>
     </div>
+    {#if mapMutationRequest && projectInspection.kind === "world-project"}
+      <MapMutationDialog
+        request={mapMutationRequest}
+        originalText={mapMutationOriginalText}
+        projectId={projectInspection.manifest.projectId}
+        noteOptions={mapNoteOptions}
+        busy={mapMutationBusy}
+        error={mapMutationError}
+        onChange={(request) => { mapMutationRequest = request; mapMutationError = ""; }}
+        onConfirm={(plan, request) => void applyMapMutation(plan, request)}
+        onCancel={closeMapMutation}
+      />
+    {/if}
   </main>
 </div>
 

@@ -94,7 +94,7 @@ export function planMapsMutation(
   return {
     kind: "ready",
     operation: request.kind,
-    request: structuredClone(request),
+    request: cloneJson(request),
     projectId: expectedProjectId,
     summary: summary.summary,
     originalText,
@@ -175,7 +175,11 @@ function unavailable(reason: string): Extract<MapsMutationPlan, { kind: "unavail
 }
 
 function cloneRecord(value: Record<string, unknown>): Record<string, unknown> {
-  return JSON.parse(JSON.stringify(value)) as Record<string, unknown>;
+  return cloneJson(value);
+}
+
+function cloneJson<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

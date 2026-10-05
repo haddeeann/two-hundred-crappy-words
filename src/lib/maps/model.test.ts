@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { LoreDocumentRecord, LoreProjectIndex } from "$lib/lore/types";
 import { MAPS_FORMAT, type MapsProject } from "./format";
-import { deriveMapsWorkspaceModel } from "./model";
+import { deriveMapsWorkspaceModel, mapAnchorNoteOptions } from "./model";
 
 const PROJECT_ID = "7848b5c8-4b08-4bc2-912e-c74c7ec8b001";
 const NOTE_ID = "a46e0dbc-4304-449f-8292-c65dcc6529cf";
@@ -85,5 +85,15 @@ describe("map workspace model", () => {
       document("Notes/Mars.md", NOTE_ID, null),
     ]));
     expect(unstructured.maps[0]!.anchors[0]!.target).toMatchObject({ kind: "unstructured" });
+  });
+
+  it("offers only uniquely identified structured notes for new anchors", () => {
+    const options = mapAnchorNoteOptions(index([
+      document("Locations/Zeta.md", NOTE_ID, "location"),
+      document("Notes/plain.md", MISSING_ID, null),
+      document("A.md", "6675a835-c599-4490-a2f3-8a7865a924f7", "character"),
+      document("B.md", "6675a835-c599-4490-a2f3-8a7865a924f7", "character"),
+    ]));
+    expect(options).toEqual([{ id: NOTE_ID, path: "Locations/Zeta.md", title: "Locations/Zeta", noteType: "location" }]);
   });
 });

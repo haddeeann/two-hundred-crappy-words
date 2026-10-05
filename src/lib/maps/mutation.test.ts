@@ -93,6 +93,20 @@ describe("guarded maps mutation planning", () => {
     });
   });
 
+  it("freezes reactive-proxy-shaped requests through the JSON data boundary", () => {
+    const request = new Proxy({
+      kind: "add-point" as const,
+      mapId: MAP_ID,
+      anchorId: "b5899528-7b36-48e9-98e6-b1ef80bc093b",
+      noteId: OTHER_NOTE_ID,
+      x: 200,
+      y: 120,
+    }, {});
+    expect(() => structuredClone(request)).toThrow();
+    const plan = planMapsMutation(source(), PROJECT_ID, request);
+    expect(plan).toMatchObject({ kind: "ready", request: { x: 200, y: 120 } });
+  });
+
   it("updates only recognized point fields and retains extensions", () => {
     const plan = planMapsMutation(source(), PROJECT_ID, {
       kind: "update-point",
