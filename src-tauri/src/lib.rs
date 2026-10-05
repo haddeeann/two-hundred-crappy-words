@@ -9,6 +9,7 @@ use tauri_plugin_fs::FsExt;
 
 mod manuscript_merge;
 mod manuscript_split;
+mod maps;
 
 const MANUSCRIPT_STRUCTURE_FILE: &str = "200-crappy-words.manuscripts.json";
 const TIMELINE_PROJECT_FILE: &str = "200-crappy-words.timeline.json";
@@ -556,6 +557,9 @@ pub fn run() {
             rename_project_file_no_clobber,
             trash_project_file,
             replace_manuscript_structure_atomic,
+            maps::create_maps_file_new,
+            maps::replace_maps_file_atomic,
+            maps::remove_maps_file_if_exact,
             manuscript_merge::merge_manuscript_scenes_atomic,
             manuscript_merge::undo_manuscript_scene_merge_atomic,
             manuscript_split::split_manuscript_scene_atomic,
