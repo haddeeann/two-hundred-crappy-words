@@ -26,8 +26,8 @@ export async function executeMapsMutationWithImport(
   importIo: MapImageImportIo,
 ): Promise<MapsMutationExecutionResult> {
   if (!imageImport) return executeMapsMutation(plan, request, mapsIo);
-  if (request.kind !== "add-map") {
-    return { kind: "failed", message: "Only a new map can own a pending image import." };
+  if (request.kind !== "add-map" && request.kind !== "replace-image") {
+    return { kind: "failed", message: "Only a new map or image replacement can own a pending image import." };
   }
 
   try {

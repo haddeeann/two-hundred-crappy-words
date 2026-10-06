@@ -102,4 +102,55 @@ describe("map image import transaction", () => {
     expect(result).toMatchObject({ kind: "failed", message: expect.stringContaining("retained for review") });
     expect(value.rollbackExact).not.toHaveBeenCalled();
   });
+
+  it("imports a new no-clobber copy for an image replacement", async () => {
+    const original = `${JSON.stringify({
+      format: MAPS_FORMAT,
+      formatVersion: 1,
+      projectId: PROJECT_ID,
+      maps: [{
+        id: MAP_ID,
+        title: "Existing",
+        image: { ...image, path: "Maps/old.png", sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
+        canvas: { width: 10, height: 10 },
+        anchors: [],
+      }],
+    }, null, 2)}\n`;
+    const replacementRequest: MapsMutationRequest = {
+      kind: "replace-image",
+      mapId: MAP_ID,
+      image,
+      clearAnchors: false,
+    };
+    const plan = planMapsMutation(original, PROJECT_ID, replacementRequest);
+    if (plan.kind !== "ready") throw new Error("plan");
+    let text = original;
+    const mapsIo: MapsMutationIo = {
+      reload: vi.fn(async () => {
+        const project = ready(text);
+        project.fingerprint = text === original ? plan.originalFingerprint! : plan.updatedFingerprint;
+        return project;
+      }),
+      createNew: vi.fn(),
+      replaceAtomic: vi.fn(async (expected, next) => {
+        expect(expected).toBe(text);
+        text = next;
+      }),
+      removeCreated: vi.fn(),
+    };
+    const copyNew = vi.fn(async () => undefined);
+    const rollbackExact = vi.fn(async () => undefined);
+
+    const result = await executeMapsMutationWithImport(
+      plan,
+      replacementRequest,
+      mapsIo,
+      imageImport,
+      { copyNew, rollbackExact },
+    );
+    expect(result.kind).toBe("applied");
+    expect(copyNew).toHaveBeenCalledWith(imageImport);
+    expect(rollbackExact).not.toHaveBeenCalled();
+    expect(JSON.parse(text).maps[0].image).toEqual(image);
+  });
 });

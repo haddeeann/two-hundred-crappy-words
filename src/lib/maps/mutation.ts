@@ -9,6 +9,7 @@ import {
 
 export type MapsMutationRequest =
   | { kind: "add-map"; mapId: string; title: string; image: MapImage }
+  | { kind: "replace-image"; mapId: string; image: MapImage; clearAnchors: boolean }
   | { kind: "remove-map"; mapId: string }
   | {
       kind: "add-point";
@@ -145,6 +146,51 @@ function applyMutation(
     const title = typeof map.title === "string" ? map.title : request.mapId;
     maps.splice(mapIndex, 1);
     return { kind: "applied", summary: `Remove map metadata for ${title}; keep its image and notes.` };
+  }
+
+  if (request.kind === "replace-image") {
+    if (!isRecord(map.image) || !isRecord(map.canvas) || !Array.isArray(map.anchors)) {
+      return unavailable("That map's image, canvas, or anchors are unavailable.");
+    }
+    if (map.image.sha256 === request.image.sha256) {
+      return { kind: "unchanged", summary: "The selected image has the same verified bytes as the current image." };
+    }
+    const canvasWidth = map.canvas.width;
+    const canvasHeight = map.canvas.height;
+    if (
+      typeof canvasWidth !== "number" || typeof canvasHeight !== "number" ||
+      !Number.isInteger(canvasWidth) || !Number.isInteger(canvasHeight)
+    ) {
+      return unavailable("That map's logical canvas is unavailable.");
+    }
+    const sameAspectRatio = request.image.width * canvasHeight === request.image.height * canvasWidth;
+    if (!sameAspectRatio && map.anchors.length > 0 && !request.clearAnchors) {
+      return unavailable(
+        `The selected image has a different aspect ratio. Create a new map or explicitly clear all ${map.anchors.length} anchors before replacing it.`,
+      );
+    }
+    map.image = { ...map.image, ...cloneJson(request.image) };
+    const title = typeof map.title === "string" ? map.title : request.mapId;
+    if (request.clearAnchors) {
+      const anchorCount = map.anchors.length;
+      map.anchors = [];
+      map.canvas = { ...map.canvas, width: request.image.width, height: request.image.height };
+      return {
+        kind: "applied",
+        summary: `Replace the image for ${title}; clear ${anchorCount} ${anchorCount === 1 ? "anchor" : "anchors"} and reset the logical canvas to ${request.image.width} × ${request.image.height}.`,
+      };
+    }
+    if (!sameAspectRatio) {
+      map.canvas = { ...map.canvas, width: request.image.width, height: request.image.height };
+      return {
+        kind: "applied",
+        summary: `Replace the image for ${title} and reset its empty logical canvas to ${request.image.width} × ${request.image.height}.`,
+      };
+    }
+    return {
+      kind: "applied",
+      summary: `Replace the image for ${title}; retain ${map.anchors.length} ${map.anchors.length === 1 ? "anchor" : "anchors"} on the existing ${canvasWidth} × ${canvasHeight} logical canvas.`,
+    };
   }
 
   if (!Array.isArray(map.anchors)) return unavailable("That map's source anchors are unavailable.");

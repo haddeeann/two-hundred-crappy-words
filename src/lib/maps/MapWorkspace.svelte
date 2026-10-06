@@ -15,6 +15,7 @@
     onSelectMap: (mapId: string) => void;
     onOpenNote: (path: string) => void;
     onAddMap: () => void;
+    onReplaceImage: (mapId: string) => void;
     onAddPoint: (mapId: string, x: number, y: number) => void;
     onAddPolygon: (mapId: string, points: [number, number][]) => void;
     onEditPoint: (mapId: string, anchor: MapAnchorModel) => void;
@@ -38,6 +39,7 @@
     onSelectMap,
     onOpenNote,
     onAddMap,
+    onReplaceImage,
     onAddPoint,
     onAddPolygon,
     onEditPoint,
@@ -257,6 +259,7 @@
             <button type="button" onclick={addPointAtCenter} disabled={imageResult?.kind !== "ready"}>Add point…</button>
             <button type="button" onclick={defaultPolygon} disabled={imageResult?.kind !== "ready"}>Add region…</button>
             <button type="button" onclick={beginPolygonDraft} disabled={imageResult?.kind !== "ready" || polygonDraft !== null}>Draw region on map</button>
+            <button type="button" onclick={() => onReplaceImage(selectedMap.map.id)}>Replace image…</button>
             <button type="button" class="danger-text" onclick={() => onRemoveMap(selectedMap.map.id)}>Remove map…</button>
           </div>
         </div>

@@ -238,4 +238,94 @@ describe("guarded maps mutation planning", () => {
       reason: expect.stringContaining("geometry type"),
     });
   });
+
+  it("replaces a same-aspect image while retaining the logical canvas and anchors", () => {
+    const replacement: MapImage = {
+      ...image,
+      path: "Maps/system-large.png",
+      sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      width: 800,
+      height: 600,
+    };
+    const original = JSON.parse(source());
+    original.maps[0].image.futureImage = "kept";
+    original.maps[0].canvas.futureCanvas = "kept";
+    const plan = planMapsMutation(`${JSON.stringify(original, null, 2)}\n`, PROJECT_ID, {
+      kind: "replace-image",
+      mapId: MAP_ID,
+      image: replacement,
+      clearAnchors: false,
+    });
+    expect(plan).toMatchObject({
+      kind: "ready",
+      operation: "replace-image",
+      summary: expect.stringContaining("retain 1 anchor"),
+    });
+    if (plan.kind !== "ready") return;
+    const updated = JSON.parse(plan.updatedText);
+    expect(updated.maps[0].image).toEqual({ ...replacement, futureImage: "kept" });
+    expect(updated.maps[0].canvas).toEqual({ width: 400, height: 300, futureCanvas: "kept" });
+    expect(updated.maps[0].anchors).toHaveLength(1);
+    expect(updated.maps[0].futureMap).toEqual({ retained: true });
+  });
+
+  it("requires explicit anchor clearing for a different-aspect replacement", () => {
+    const replacement: MapImage = {
+      ...image,
+      path: "Maps/system-square.png",
+      sha256: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      width: 500,
+      height: 500,
+    };
+    expect(planMapsMutation(source(), PROJECT_ID, {
+      kind: "replace-image",
+      mapId: MAP_ID,
+      image: replacement,
+      clearAnchors: false,
+    })).toMatchObject({
+      kind: "unavailable",
+      reason: expect.stringContaining("explicitly clear all 1 anchors"),
+    });
+
+    const plan = planMapsMutation(source(), PROJECT_ID, {
+      kind: "replace-image",
+      mapId: MAP_ID,
+      image: replacement,
+      clearAnchors: true,
+    });
+    expect(plan).toMatchObject({ kind: "ready", summary: expect.stringContaining("clear 1 anchor") });
+    if (plan.kind !== "ready") return;
+    const updated = JSON.parse(plan.updatedText);
+    expect(updated.maps[0].image).toEqual(replacement);
+    expect(updated.maps[0].canvas).toEqual({ width: 500, height: 500 });
+    expect(updated.maps[0].anchors).toEqual([]);
+  });
+
+  it("needs no update for identical bytes and can reset an empty different-aspect canvas", () => {
+    expect(planMapsMutation(source(), PROJECT_ID, {
+      kind: "replace-image",
+      mapId: MAP_ID,
+      image: { ...image, path: "Maps/same-bytes.png" },
+      clearAnchors: false,
+    })).toEqual({
+      kind: "unchanged",
+      summary: "The selected image has the same verified bytes as the current image.",
+    });
+
+    const empty = JSON.parse(source());
+    empty.maps[0].anchors = [];
+    const plan = planMapsMutation(`${JSON.stringify(empty, null, 2)}\n`, PROJECT_ID, {
+      kind: "replace-image",
+      mapId: MAP_ID,
+      image: {
+        ...image,
+        path: "Maps/empty-square.png",
+        sha256: "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        width: 500,
+        height: 500,
+      },
+      clearAnchors: false,
+    });
+    expect(plan).toMatchObject({ kind: "ready", summary: expect.stringContaining("empty logical canvas") });
+  });
 });

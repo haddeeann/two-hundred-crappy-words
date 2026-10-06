@@ -335,7 +335,7 @@
   import { presentTravelInspector } from "$lib/travel/presentation";
   import MapWorkspace from "$lib/maps/MapWorkspace.svelte";
   import MapMutationDialog from "$lib/maps/MapMutationDialog.svelte";
-  import { MAPS_FILE } from "$lib/maps/format";
+  import { MAPS_FILE, type MapImage } from "$lib/maps/format";
   import {
     inspectMapImage,
     loadMapImage,
@@ -3230,6 +3230,65 @@
     return response instanceof ArrayBuffer ? new Uint8Array(response) : Uint8Array.from(response);
   }
 
+  async function chooseMapImage(
+    rootPath: string,
+    title: string,
+  ): Promise<{ image: MapImage; imageImport: PendingMapImageImport | null } | null> {
+    const selected = await open({
+      title,
+      multiple: false,
+      directory: false,
+      fileAccessMode: "scoped",
+      defaultPath: rootPath,
+      filters: [
+        {
+          name: "Map images",
+          extensions: ["png", "jpg", "jpeg", "webp"],
+        },
+      ],
+    });
+    if (!selected || Array.isArray(selected)) return null;
+    const relativePath = projectRelativePath(rootPath, selected);
+    const firstBytes = await readSelectedMapImage(selected);
+    const inspected = await inspectMapImage(firstBytes);
+    if (inspected.kind !== "ready") throw new Error(inspected.message);
+    const secondBytes = await readSelectedMapImage(selected);
+    const secondInspection = await inspectMapImage(secondBytes);
+    if (secondInspection.kind !== "ready") throw new Error(secondInspection.message);
+    if (
+      inspected.inspection.sha256 !== secondInspection.inspection.sha256 ||
+      inspected.inspection.encodedBytes !== secondInspection.inspection.encodedBytes
+    ) {
+      throw new Error("The selected image changed while it was inspected. Choose it again when stable.");
+    }
+    const sourceName = selected.split(/[\\/]/u).at(-1) ?? "";
+    const targetNameIssue = validateFileName(sourceName);
+    if (!relativePath && targetNameIssue) {
+      throw new Error(`The image filename is not portable: ${targetNameIssue}`);
+    }
+    const imagePath = relativePath || `Maps/${sourceName}`;
+    const image: MapImage = {
+      path: imagePath,
+      mediaType: inspected.inspection.mediaType,
+      sha256: inspected.inspection.sha256,
+      width: inspected.inspection.width,
+      height: inspected.inspection.height,
+    };
+    if (relativePath) {
+      const verified = await loadMapImage(rootPath, image, tauriMapBinaryBackend);
+      if (verified.kind !== "ready") throw new Error(verified.message);
+    }
+    return {
+      image,
+      imageImport: relativePath ? null : {
+        sourcePath: selected,
+        targetName: sourceName,
+        targetPath: imagePath,
+        sha256: inspected.inspection.sha256,
+      },
+    };
+  }
+
   async function beginAddMap(): Promise<void> {
     if (!folderPath || mapMutationBusy || projectInspection.kind !== "world-project") return;
     if (mapsProject.kind !== "absent" && mapsProject.kind !== "ready") {
@@ -3242,68 +3301,49 @@
     mapMutationError = "";
     pendingMapImageImport = null;
     try {
-      const selected = await open({
-        title: "Choose a PNG, JPEG, or WebP map image",
-        multiple: false,
-        directory: false,
-        fileAccessMode: "scoped",
-        defaultPath: rootAtStart,
-        filters: [
-          {
-            name: "Map images",
-            extensions: ["png", "jpg", "jpeg", "webp"],
-          },
-        ],
-      });
-      if (!selected || Array.isArray(selected)) return;
-      const relativePath = projectRelativePath(rootAtStart, selected);
-      const firstBytes = await readSelectedMapImage(selected);
-      const inspected = await inspectMapImage(firstBytes);
-      if (inspected.kind !== "ready") throw new Error(inspected.message);
-      const secondBytes = await readSelectedMapImage(selected);
-      const secondInspection = await inspectMapImage(secondBytes);
-      if (secondInspection.kind !== "ready") throw new Error(secondInspection.message);
-      if (
-        inspected.inspection.sha256 !== secondInspection.inspection.sha256 ||
-        inspected.inspection.encodedBytes !== secondInspection.inspection.encodedBytes
-      ) {
-        throw new Error("The selected image changed while it was inspected. Choose it again when stable.");
-      }
-      const sourceName = selected.split(/[\\/]/u).at(-1) ?? "";
-      const targetNameIssue = validateFileName(sourceName);
-      if (!relativePath && targetNameIssue) {
-        throw new Error(`The image filename is not portable: ${targetNameIssue}`);
-      }
-      const imagePath = relativePath || `Maps/${sourceName}`;
-      const image = {
-        path: imagePath,
-        mediaType: inspected.inspection.mediaType,
-        sha256: inspected.inspection.sha256,
-        width: inspected.inspection.width,
-        height: inspected.inspection.height,
-      };
-      if (relativePath) {
-        const verified = await loadMapImage(rootAtStart, image, tauriMapBinaryBackend);
-        if (verified.kind !== "ready") throw new Error(verified.message);
-      }
+      const selection = await chooseMapImage(rootAtStart, "Choose a PNG, JPEG, or WebP map image");
+      if (!selection) return;
       if (folderPath !== rootAtStart) throw new Error("The open project changed while the image was verified.");
-      const filename = imagePath.split("/").at(-1) ?? "Map";
+      const filename = selection.image.path.split("/").at(-1) ?? "Map";
       const title = filename.replace(/\.(?:png|jpe?g|webp)$/iu, "").replace(/[-_]+/gu, " ").trim() || "Map";
-      pendingMapImageImport = relativePath ? null : {
-        sourcePath: selected,
-        targetName: sourceName,
-        targetPath: imagePath,
-        sha256: inspected.inspection.sha256,
-      };
+      pendingMapImageImport = selection.imageImport;
       mapMutationRequest = {
         kind: "add-map",
         mapId: createMapUuid(),
         title,
-        image,
+        image: selection.image,
       };
       mapMutationOriginalText = originalText;
     } catch (cause) {
       appendError(`Could not prepare the map: ${formatError(cause)}`);
+    }
+  }
+
+  async function beginReplaceMapImage(mapId: string): Promise<void> {
+    if (!folderPath || mapMutationBusy || projectInspection.kind !== "world-project") return;
+    if (mapsProject.kind !== "ready" || !mapsProject.mapsProject.maps.some(({ id }) => id === mapId)) {
+      appendError("Refresh a valid maps file before replacing an image.");
+      return;
+    }
+    const rootAtStart = folderPath;
+    const originalText = mapsProject.text;
+    error = "";
+    mapMutationError = "";
+    pendingMapImageImport = null;
+    try {
+      const selection = await chooseMapImage(rootAtStart, "Choose the replacement PNG, JPEG, or WebP map image");
+      if (!selection) return;
+      if (folderPath !== rootAtStart) throw new Error("The open project changed while the image was verified.");
+      pendingMapImageImport = selection.imageImport;
+      mapMutationRequest = {
+        kind: "replace-image",
+        mapId,
+        image: selection.image,
+        clearAnchors: false,
+      };
+      mapMutationOriginalText = originalText;
+    } catch (cause) {
+      appendError(`Could not prepare the replacement image: ${formatError(cause)}`);
     }
   }
 
@@ -7032,6 +7072,7 @@
             onSelectMap={selectMap}
             onOpenNote={(path) => void openMapNote(path)}
             onAddMap={() => void beginAddMap()}
+            onReplaceImage={(mapId) => void beginReplaceMapImage(mapId)}
             onAddPoint={beginAddMapPoint}
             onAddPolygon={beginAddMapPolygon}
             onEditPoint={beginEditMapPoint}
@@ -7331,6 +7372,7 @@
         noteOptions={mapNoteOptions}
         busy={mapMutationBusy}
         error={mapMutationError}
+        importSource={pendingMapImageImport?.sourcePath ?? ""}
         importDestination={pendingMapImageImport?.targetPath ?? ""}
         onChange={(request) => { mapMutationRequest = request; mapMutationError = ""; }}
         onConfirm={(plan, request) => void applyMapMutation(plan, request)}

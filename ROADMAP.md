@@ -102,7 +102,7 @@ Goal: provide science-fiction-specific tools that help a complex world remain in
 - [x] Calculate source-linked character ages and flag only evidence-supported impossible appearances.
 - [x] Model locations, travel durations, and arrival windows without pretending fictional physics is universal.
 - [x] Visualize character and faction relationships.
-- [ ] Attach project-owned maps and link lore to map locations.
+- [x] Attach project-owned maps and link lore to map locations.
 - [ ] Add deterministic continuity checks and source-linked findings.
 - [ ] Explore optional, privacy-explicit AI assistance only behind a separate decision gate.
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { parseMapsProject } from "./format";
   import { planMapsMutation, type MapsMutationPlan, type MapsMutationRequest } from "./mutation";
   import type { MapAnchorNoteOption } from "./model";
 
@@ -9,6 +10,7 @@
     noteOptions: MapAnchorNoteOption[];
     busy: boolean;
     error: string;
+    importSource: string;
     importDestination: string;
     onChange: (request: MapsMutationRequest) => void;
     onConfirm: (plan: Extract<MapsMutationPlan, { kind: "ready" }>, request: MapsMutationRequest) => void;
@@ -22,6 +24,7 @@
     noteOptions,
     busy,
     error,
+    importSource,
     importDestination,
     onChange,
     onConfirm,
@@ -30,7 +33,23 @@
 
   const plan = $derived(planMapsMutation(originalText, projectId, request));
   const title = $derived(dialogTitle(request));
-  const destructive = $derived(request.kind === "remove-map" || request.kind === "remove-anchor");
+  const destructive = $derived(
+    request.kind === "remove-map" || request.kind === "remove-anchor" ||
+    (request.kind === "replace-image" && request.clearAnchors),
+  );
+  const replacementMap = $derived.by(() => {
+    if (request.kind !== "replace-image" || originalText === null) return null;
+    const parsed = parseMapsProject(originalText);
+    return parsed.kind === "valid"
+      ? parsed.mapsProject.maps.find(({ id }) => id === request.mapId) ?? null
+      : null;
+  });
+  const replacementSameAspect = $derived(
+    request.kind === "replace-image" && replacementMap
+      ? request.image.width * replacementMap.canvas.height ===
+        request.image.height * replacementMap.canvas.width
+      : false,
+  );
   let cancelButton: HTMLButtonElement;
 
   $effect(() => {
@@ -39,6 +58,7 @@
 
   function dialogTitle(value: MapsMutationRequest): string {
     if (value.kind === "add-map") return "Add map";
+    if (value.kind === "replace-image") return "Replace map image";
     if (value.kind === "add-point") return "Add point anchor";
     if (value.kind === "update-point") return "Edit point anchor";
     if (value.kind === "add-polygon") return "Add region anchor";
@@ -49,6 +69,10 @@
 
   function updateTitle(value: string): void {
     if (request.kind === "add-map") onChange({ ...request, title: value });
+  }
+
+  function updateClearAnchors(value: boolean): void {
+    if (request.kind === "replace-image") onChange({ ...request, clearAnchors: value });
   }
 
   function updateNote(value: string): void {
@@ -122,8 +146,44 @@
       <p class="source"><strong>Verified project image:</strong> {request.image.path}</p>
       <p class="source">{request.image.width} × {request.image.height} · {request.image.mediaType}</p>
       {#if importDestination}
+        <p class="import"><strong>Selected external source:</strong> {importSource}</p>
         <p class="import"><strong>New project copy:</strong> {importDestination}</p>
         <p class="source">The external source will remain where it is. The new copy must not already exist.</p>
+      {/if}
+    {:else if request.kind === "replace-image"}
+      {#if replacementMap}
+        <p class="source"><strong>Current project image:</strong> {replacementMap.image.path}</p>
+        <p class="source">{replacementMap.image.width} × {replacementMap.image.height} · <code>{replacementMap.image.sha256}</code></p>
+      {/if}
+      <p class="source"><strong>Selected project image:</strong> {request.image.path}</p>
+      <p class="source">{request.image.width} × {request.image.height} · {request.image.mediaType} · <code>{request.image.sha256}</code></p>
+      {#if importDestination}
+        <p class="import"><strong>Selected external source:</strong> {importSource}</p>
+        <p class="import"><strong>New project copy:</strong> {importDestination}</p>
+        <p class="source">The external source will remain where it is. The new copy must not already exist.</p>
+      {/if}
+      {#if replacementMap}
+        {#if replacementMap.image.sha256 === request.image.sha256}
+          <p class="summary">These are the same verified bytes, so no maps update or image copy is needed.</p>
+        {:else if replacementSameAspect}
+          <p class="summary">The existing {replacementMap.canvas.width} × {replacementMap.canvas.height} logical canvas and all {replacementMap.anchors.length} anchors will stay exactly where they are.</p>
+          {#if request.image.width !== replacementMap.image.width || request.image.height !== replacementMap.image.height}
+            <p class="source">The new image has the same aspect ratio and will scale into that existing logical canvas.</p>
+          {/if}
+        {:else if replacementMap.anchors.length === 0}
+          <p class="summary">This map has no anchors. Its logical canvas will reset to {request.image.width} × {request.image.height} for the new aspect ratio.</p>
+        {:else}
+          <p class="problem">The aspect ratio changed. Existing anchors cannot be retained without silently moving their meaning.</p>
+          <label class="clear-anchors">
+            <input
+              type="checkbox"
+              checked={request.clearAnchors}
+              onchange={(event) => updateClearAnchors(event.currentTarget.checked)}
+            />
+            Clear all {replacementMap.anchors.length} anchors and reset the logical canvas to {request.image.width} × {request.image.height}
+          </label>
+          <p class="source">Linked lore notes and the old image file remain untouched. Leave this unchecked and cancel to create a separate map instead.</p>
+        {/if}
       {/if}
     {:else if request.kind === "add-point" || request.kind === "update-point" || request.kind === "add-polygon" || request.kind === "update-polygon"}
       <label>
@@ -245,6 +305,8 @@
   input, select, button { font: inherit; }
   input, select { box-sizing: border-box; width: 100%; border: 1px solid #bfb5c2; border-radius: 0.45rem; background: #fff; color: inherit; padding: 0.52rem; }
   .coordinates label { flex: 1; }
+  .clear-anchors { grid-template-columns: auto 1fr; align-items: start; }
+  .clear-anchors input { width: auto; margin-top: 0.2rem; }
   fieldset { margin: 0.8rem 0; border: 1px solid #d9d0dc; border-radius: 0.5rem; padding: 0.7rem; }
   legend { font-weight: 700; }
   .vertices { display: grid; gap: 0.45rem; margin: 0 0 0.65rem; padding: 0; list-style: none; }
