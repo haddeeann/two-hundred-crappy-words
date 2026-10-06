@@ -4,7 +4,15 @@ This checklist uses disposable files and is the human checkpoint for milestone 0
 
 ## Latest result
 
-Completed successfully on macOS through the final print-interior PDF checks on 2026-09-21. The latest run verified publication metadata validation, packaged local font loading, native Save, exact binary reread, 6 × 9 inch page boxes, embedded fonts, searchable content, clean rendered title/chapter pages, a truthful short-book warning, no-clobber refusal, and unchanged sources/structure/daily credit. The earlier EPUB, Markdown/plain-text, and missing-source-resolution checkpoints remain complete. Detailed current and historical checkpoints follow.
+Completed successfully on macOS through the Daily Draft ritual on 2026-10-06. The latest run verified lazy no-clutter preparation, first-edit creation, one dated Markdown file, daily credit, restart/resume, and collision refusal. Detailed current and historical checkpoints follow.
+
+## Milestone 0.3.8 Daily Draft ritual checkpoint
+
+Completed on macOS on 2026-10-06 using Computer Use against a freshly built production `.app` and two disposable ordinary folders. Opening the empty project showed the keyboard-accessible **Write today** action, `0 / 200`, and the humane rhythm summary. Opening the project created no file. Activating **Write today** presented `2026-10-06.md`, focused the editor, and showed **Starts when you type**; a direct filesystem inspection still showed an entirely empty project.
+
+Entering `A small signal crosses the quiet red horizon.` created exactly `Daily/2026-10-06.md` with those exact bytes, expanded the new ordinary folder/file in the project tree, showed Saved, counted eight document words, and credited `8 / 200`. A normal close and packaged-app restart restored the same selected file, exact text, eight-word document count, and eight credited daily words without recounting. In a separate fixture, a regular root file named `Daily` caused **Write today** to report `Today's draft is unavailable: A file named Daily already exists at the project root.` The colliding file was not changed and no alternate path was invented.
+
+The automated companion coverage validates the portable date path, missing/unloaded/existing states, file/symbolic-folder/date-file collisions, and malformed/impossible dates. The final gate has 648 passing frontend tests across ninety-seven files, zero Svelte/TypeScript diagnostics, successful production web and macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 
 ## Milestone 0.6.15 print-interior PDF checkpoint
 

@@ -491,3 +491,23 @@ One optional root `200-crappy-words.continuity-review.json` file belongs to the 
 The supported-version parser preserves unknown fields, and the 5 MiB root source is accepted only as one regular non-symbolic, stable-read file for the same valid project. Absent, malformed, invalid, newer, unsafe, unreadable, unstable, unavailable-manifest, and project-mismatch states remain distinct and disable policy rather than blocking writing. Matching occurs against Whole world before manuscript filtering; intentional findings follow scope, while stale entries remain project-wide because vanished evidence may no longer have safe scope membership. Opening or refreshing never creates the optional file. Create, explanation edit, and removal use a complete exact JSON preview, fresh semantic equivalence, atomic compare-before-write, and one guarded Undo, with no daily credit or network access. First creation is no-clobber and its Undo removes only the exact file it created; any external change invalidates replacement or Undo rather than being overwritten.
 
 Why: an accepted science-fiction contradiction is a creative decision that should survive backup and another computer without disappearing into app-local state. Stable semantic evidence avoids line-number churn, mandatory explanations preserve the writer's reasoning, and visible staleness prevents an old decision from silently applying to a different claim. The user approved all eight deterministic review, severity, canon, manuscript-scope, exception, completeness, privacy, and limit choices on 2026-10-05 after reviewing [`CONTINUITY_REVIEW_PROPOSAL.md`](CONTINUITY_REVIEW_PROPOSAL.md).
+
+## D-051 — Daily Drafts are lazy-created ordinary Markdown
+
+- Date: 2026-10-06
+- Status: accepted
+
+The first app-native daily ritual uses one conventional project-relative path:
+`Daily/YYYY-MM-DD.md`, based on the same local calendar date as the practice
+ledger. **Write today** resumes that file when present or prepares it as an empty
+editor when absent. Preparing or reopening a project creates nothing; the missing
+folder and file are created without clobbering only after the first non-empty edit.
+After creation, the draft uses the ordinary editor, recovery, external-change,
+rename, and Trash behavior. A colliding file, symbolic folder, or unsafe path is
+reported rather than reinterpreted. Daily prose is not automatically classified as
+manuscript or lore material; harvesting is a later explicit workflow.
+
+Why: a daily writer needs a reliable one-action place to begin, but empty dates
+should not accumulate merely because the app was opened. Ordinary Markdown keeps
+the ritual portable and inspectable, while delayed classification lets exploratory
+writing stay exploratory until the writer decides where it belongs.

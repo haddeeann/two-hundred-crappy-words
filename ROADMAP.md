@@ -9,11 +9,11 @@ Status legend: `PLANNED`, `ACTIVE`, `BLOCKED`, `COMPLETE`, `DEFERRED`.
 | Milestone | Outcome | Status |
 | --- | --- | --- |
 | 0.2 Trustworthy editor | A writer can trust the app not to lose work | COMPLETE |
-| 0.3 Daily practice | The 200-words-a-day promise is real and encouraging | COMPLETE |
+| 0.3 Daily practice | The 200-words-a-day promise is real and encouraging | ACTIVE |
 | 0.4 World projects | A folder becomes a portable, structured science-fiction world | COMPLETE |
 | 0.5 Connected lore | Manuscript and world bible can reference each other fluidly | COMPLETE |
 | 0.6 Novel structure | Scenes and chapters can be planned, reordered, and exported | COMPLETE |
-| 0.7 Continuity tools | Time, travel, relationships, and canon can be reasoned about | ACTIVE |
+| 0.7 Continuity tools | Time, travel, relationships, and canon can be reasoned about | COMPLETE |
 | 0.8 Release readiness | The app is accessible, documented, packaged, and recoverable | PLANNED |
 
 ## 0.2 — Trustworthy editor
@@ -42,6 +42,8 @@ Goal: fulfill the product's central promise with an accurate, humane daily writi
 - [x] Allow the daily target to be changed while keeping 200 as the default.
 - [x] Add writing history and gentle streak information.
 - [x] Make corrections, time-zone changes, and recovery behavior understandable.
+- [x] Make returning each day a one-action ritual with an ordinary date-named draft.
+- [ ] Let a writer deliberately harvest daily material into manuscript and lore destinations.
 
 Specification: [`docs/milestones/0.3-daily-practice.md`](docs/milestones/0.3-daily-practice.md)
 
@@ -104,7 +106,7 @@ Goal: provide science-fiction-specific tools that help a complex world remain in
 - [x] Visualize character and faction relationships.
 - [x] Attach project-owned maps and link lore to map locations.
 - [x] Add deterministic continuity checks, source-linked findings, and portable explained intentional exceptions.
-- [ ] Explore optional, privacy-explicit AI assistance only behind a separate decision gate.
+- [ ] Explore optional, privacy-explicit AI assistance only behind a separate decision gate. *(Deferred; not required to complete deterministic continuity tools.)*
 
 Specification: [`docs/milestones/0.7-continuity-tools.md`](docs/milestones/0.7-continuity-tools.md)
 

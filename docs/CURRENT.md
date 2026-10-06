@@ -1,37 +1,41 @@
 # Current work
 
-Last updated: 2026-10-05
+Last updated: 2026-10-06
 
 ## Active milestone
 
-**0.7 — Continuity tools**
+**0.3 — Daily practice (reopened from real use)**
 
-Novel structure is complete. The active milestone will help writers reason about canon, time, travel, appearances, and relationships while keeping every finding explainable from ordinary project sources.
+The deterministic continuity milestone is complete and optional AI remains deferred. Real daily use now takes priority: make opening the app and beginning today's words feel native, while keeping every draft an ordinary portable file.
 
 ## Active slice
 
-**0.7.9d — Guarded intentional-exception authoring (complete)**
+**0.3.8 — Daily Draft ritual (complete)**
 
 ### Intended outcome
 
-Let a writer mark an eligible finding intentional, revise its explanation, or remove a stale/active exception through the app's established exact-preview and guarded-Undo boundary.
+Let a writer resume or begin today's ordinary date-named Markdown draft in one action, without creating empty project clutter merely by opening the app.
 
 ### Acceptance criteria
 
-- [x] Add pure create, explanation-edit, and remove plans that preserve every supported-version unknown field and regenerate an exact complete JSON preview.
-- [x] Execute create-new or exact replacement only after a fresh equivalent reload, verify the committed bytes, and retain one stale-sensitive Undo.
-- [x] Expose **Mark intentional…** only for active Review or Contradiction findings, plus edit/remove actions for loaded intentional or stale exceptions.
-- [x] Complete packaged macOS QA for create, edit, remove, Undo, stale-preview refusal, external refresh, source integrity, keyboard flow, and zero daily credit.
+- [x] Add a visible, keyboard-accessible **Write today** action and compact humane rhythm summary whenever a folder is open.
+- [x] Resume an existing `Daily/YYYY-MM-DD.md` without changing it.
+- [x] Prepare a missing daily draft in the editor without creating either the folder or file until the first non-empty edit.
+- [x] Create the folder/file without clobbering, reject unsafe/colliding `Daily` entries, and then use the normal autosave, recovery, external-change, rename, and Trash paths.
+- [x] Keep daily drafts as ordinary Markdown, visible in the file tree and unclassified as manuscript or lore structure.
+- [x] Add focused automated coverage and packaged macOS QA for empty-open, first-write, resume, collision, restart, keyboard, and daily-credit behavior.
 
 ## Next decision gate
 
-The deterministic, local-first continuity-tool scope is complete. Milestone 0.7 has one deliberately separate item left: decide whether to research optional, privacy-explicit AI assistance or defer that exploration and advance to milestone 0.8 release readiness. Existing approval does not authorize networked manuscript analysis.
+After the Daily Draft ritual is verified, define the first deliberate harvesting interaction: selecting material from a daily draft and choosing an existing/new scene or lore destination. Automatic semantic extraction, copying versus moving, and source traceability remain product choices; this slice will not guess them.
 
 ## Current approval state
 
-Portable maps are complete under the nine choices approved in [`MAP_FORMAT_PROPOSAL.md`](MAP_FORMAT_PROPOSAL.md) on 2026-10-05. The user approved all eight deterministic continuity-review choices in [`CONTINUITY_REVIEW_PROPOSAL.md`](CONTINUITY_REVIEW_PROPOSAL.md) on 2026-10-05. The read-only workspace and the approved optional portable exception format may proceed in the documented sequence; optional AI assistance remains outside this approval.
+The user approved the Daily Draft first iteration on 2026-10-06: ordinary date-named Markdown in a `Daily` folder, one-action resume/start, no empty file from merely opening the app, a small rhythm/history surface, and harvesting deferred to the next slice. Optional AI assistance and release readiness remain deferred.
 
 ## Completed checkpoint
+
+- Slice 0.3.8 makes the daily writing ritual a first-class path into the existing trustworthy editor. The footer now offers **Write today** beside a compact humane rhythm summary whenever a folder is open. It resumes the local-date path `Daily/YYYY-MM-DD.md` when present; when absent it opens an empty recoverable editor state labeled **Starts when you type** without touching the project. The first edit creates the regular `Daily` folder if needed and the Markdown file with create-new/no-clobber semantics, then hands the document to normal autosave, external-change protection, recovery, navigation restore, rename, Trash, indexing, and word credit. Root-file, symbolic-folder, and date-entry collisions refuse with the writer's typed text retained. Five focused planner tests bring the full frontend gate to 648 passing tests across ninety-seven files; Svelte/TypeScript reports zero diagnostics, the production web and macOS `.app`/DMG builds pass, and the production dependency audit reports zero vulnerabilities. Packaged macOS QA proved that project open and **Write today** created no path, the first eight-word sentence created exactly one dated Markdown file and credited eight words, restart restored the exact text and progress, and a root `Daily` file was refused without overwrite. Harvesting daily material remains the next product-design slice.
 
 - Slice 0.7.9d completes guarded portable intentional-exception authoring. Active Review and Contradiction findings can be marked intentional only with a required writer explanation; exact intentional and stale entries can revise that explanation or be removed. Every dialog starts on Cancel, traps forward and backward Tab, closes safely with Escape, and shows the complete exact JSON before and after each replacement. A fresh authoritative reload must reproduce the reviewed plan before native create-new or atomic compare-before-replace commands run; committed bytes are reread exactly, supported-version unknown fields survive, and the one retained Undo refuses any externally changed file. First-file Undo removes only its own exact created bytes. Packaged macOS QA created and removed the optional file, edited and restored an explanation, refused a removal preview after an external root-field change, preserved that unknown field on a fresh removal, restored the removed entry, refreshed an intentionally changed evidence tuple into the stale section with edit/remove actions, retained both source hashes, kept Today at `0 / 200`, verified modal focus containment and Escape, and restored Arcadia. The final gate has 643 passing frontend tests across ninety-six files, twenty-six passing native tests, zero Svelte/TypeScript diagnostics, clean Rust formatting and Clippy, zero production dependency vulnerabilities, and successful web plus production macOS `.app`/DMG builds.
 
@@ -192,7 +196,7 @@ Portable maps are complete under the nine choices approved in [`MAP_FORMAT_PROPO
 
 ## Blockers and decision gates
 
-There is no technical blocker. The portable read-only exception boundary is verified. The approved guarded create/edit/remove/Undo boundary is next.
+There is no technical blocker. Daily Drafts are complete; the next work is a product decision about deliberate harvesting semantics before implementation.
 
 ## Handoff protocol
 

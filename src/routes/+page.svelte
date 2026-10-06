@@ -93,6 +93,14 @@
   import PracticeHistory from "$lib/practice/PracticeHistory.svelte";
   import { correctDailyProgressRecord } from "$lib/practice/correction";
   import {
+    DAILY_DRAFT_DIRECTORY,
+    planDailyDraft,
+  } from "$lib/practice/daily-draft";
+  import {
+    formatStreakSummary,
+    summarizeStreaks,
+  } from "$lib/practice/history";
+  import {
     inspectWorldProjectFolder,
     type WorldProjectFolderInspection,
   } from "$lib/project/folder-project";
@@ -491,6 +499,14 @@
   let completionMessage = $state("");
   let dailyProgressError = $state("");
   let correctingDailyProgress = $state(false);
+  let pendingDailyDraft = $state<{
+    rootPath: string;
+    directoryPath: string;
+    filePath: string;
+    dateKey: string;
+  } | null>(null);
+  let dailyDraftCreating = $state(false);
+  let dailyDraftCreationPromise: Promise<boolean> | null = null;
   let recentProjects = $state<RecentProject[]>([]);
   let unavailableRecentKeys = $state<string[]>([]);
   let loreIndex = $state<LoreProjectIndex | null>(null);
@@ -899,6 +915,9 @@
   });
   const saveStatus = $derived.by(() => {
     if (!activeFilePath) return "";
+    if (pendingDailyDraft?.filePath === activeFilePath && !dirty) {
+      return "Starts when you type";
+    }
     if (saveState.phase === "saving") return "Saving…";
     if (saveState.phase === "error") return "Save failed";
     if (dirty) return "Unsaved";
@@ -920,6 +939,18 @@
   const practicePresentation = $derived(
     presentPractice(practiceState, dailyTarget),
   );
+  const dailyRhythmLabel = $derived(
+    formatStreakSummary(
+      summarizeStreaks(dailyRecordsByDate, activeDailyDateKey),
+    ),
+  );
+  const activeIsTodayDraft = $derived.by(() => {
+    if (!folderPath || !activeFilePath) return false;
+    return (
+      projectRelativePath(folderPath, activeFilePath) ===
+      `${DAILY_DRAFT_DIRECTORY}/${activeDailyDateKey}.md`
+    );
+  });
   const loreIssueCount = $derived.by(() => {
     if (!loreIndex) return loreScanIssues.length + loreSuppressedIssueCount;
     let count = loreScanIssues.length + loreSuppressedIssueCount + loreIndex.issues.length;
@@ -5167,7 +5198,11 @@
   }
 
   function currentSaveRequest(): AutosaveRequest | null {
-    if (!activeFilePath || !dirty) return null;
+    if (
+      !activeFilePath ||
+      !dirty ||
+      pendingDailyDraft?.filePath === activeFilePath
+    ) return null;
     return {
       path: activeFilePath,
       content,
@@ -5245,6 +5280,7 @@
     }
     practiceState = beginDailyPractice("", practiceState.dailyWords);
     saveState = createSaveState();
+    if (pendingDailyDraft?.filePath === path) pendingDailyDraft = null;
     scheduleNavigationState();
   }
 
@@ -5282,7 +5318,8 @@
       folderPath,
       selectedDirectoryPath || folderPath,
     );
-    const activeFileRelative = activeFilePath
+    const activeFileRelative =
+      activeFilePath && pendingDailyDraft?.filePath !== activeFilePath
       ? projectRelativePath(folderPath, activeFilePath)
       : null;
     if (selectedDirectory === null || (activeFilePath && !activeFileRelative)) {
@@ -5637,6 +5674,9 @@
     saveState = restoredRevision
       ? createRecoveredSaveState(restoredRevision)
       : createSaveState();
+    pendingDailyDraft = null;
+    dailyDraftCreating = false;
+    dailyDraftCreationPromise = null;
     creatingFile = false;
     newFileName = "";
     adoptingWorldProject = false;
@@ -6415,6 +6455,176 @@
     }
   }
 
+  function showDraftEditor(): void {
+    dismissLoreCompletion();
+    manuscriptCorkboardId = "";
+    timelineOpen = false;
+    mapOpen = false;
+    continuityReviewOpen = false;
+  }
+
+  async function startDailyDraft(): Promise<void> {
+    if (!folderPath || worldProjectBusy || dailyDraftCreating) return;
+    refreshDailyDate();
+    if (activeIsTodayDraft) {
+      showDraftEditor();
+      await tick();
+      editorInput?.focus();
+      return;
+    }
+
+    let existingEntry: FileTreeEntry | null = null;
+    await navigate(async () => {
+      const rootAtStart = folderPath;
+      const dateKey = localDateKey();
+      await refreshDirectory(rootAtStart);
+      if (folderPath !== rootAtStart) return;
+
+      let plan = planDailyDraft(entries, dateKey);
+      if (plan.kind === "unavailable") {
+        error = `Today's draft is unavailable: ${plan.reason}`;
+        return;
+      }
+
+      const directoryPath = await join(rootAtStart, plan.directoryName);
+      if (plan.knownFile === "unknown") {
+        const children = await readEntries(directoryPath);
+        entries = updateTreeEntry(entries, directoryPath, (entry) => ({
+          ...entry,
+          expanded: true,
+          children,
+        }));
+        plan = planDailyDraft(entries, dateKey);
+        if (plan.kind === "unavailable") {
+          error = `Today's draft is unavailable: ${plan.reason}`;
+          return;
+        }
+      }
+
+      const filePath = await join(directoryPath, plan.fileName);
+      if (plan.knownFile === "present") {
+        existingEntry = findTreeEntry(entries, filePath);
+        if (!existingEntry) {
+          error = "Today's draft changed while it was being opened. Try again.";
+        }
+        return;
+      }
+
+      pendingDailyDraft = {
+        rootPath: rootAtStart,
+        directoryPath,
+        filePath,
+        dateKey,
+      };
+      persistedContentByPath.delete(filePath);
+      forcedSave = null;
+      lastSaveFailure = null;
+      activeFile = plan.fileName;
+      activeFilePath = filePath;
+      content = "";
+      persistedContent = "";
+      practiceState = beginDailyPractice("", practiceState.dailyWords);
+      saveState = createSaveState();
+      editorSelectionStart = 0;
+      editorSelectionEnd = 0;
+      selectedDirectoryPath = directoryPath;
+      error = "";
+      showDraftEditor();
+    });
+
+    if (existingEntry) {
+      const opened = await openFile(existingEntry);
+      if (opened) showDraftEditor();
+    }
+    await tick();
+    editorInput?.focus();
+  }
+
+  async function materializeDailyDraft(
+    initialContent: string,
+    revision: number,
+  ): Promise<boolean> {
+    if (!pendingDailyDraft || pendingDailyDraft.filePath !== activeFilePath) {
+      return true;
+    }
+    if (dailyDraftCreationPromise) return dailyDraftCreationPromise;
+
+    const draft = { ...pendingDailyDraft };
+    dailyDraftCreating = true;
+    saveState = startSave(saveState, revision);
+    dailyDraftCreationPromise = (async () => {
+      try {
+        await refreshDirectory(draft.rootPath);
+        let plan = planDailyDraft(entries, draft.dateKey);
+        if (plan.kind === "unavailable") throw new Error(plan.reason);
+
+        if (!plan.directoryExists) {
+          try {
+            await mkdir(draft.directoryPath);
+          } catch (cause) {
+            await refreshDirectory(draft.rootPath);
+            plan = planDailyDraft(entries, draft.dateKey);
+            if (plan.kind === "unavailable" || !plan.directoryExists) throw cause;
+          }
+          await refreshDirectory(draft.rootPath);
+          plan = planDailyDraft(entries, draft.dateKey);
+        }
+        if (plan.kind === "unavailable" || !plan.directoryExists) {
+          throw new Error(
+            plan.kind === "unavailable"
+              ? plan.reason
+              : "The Daily folder could not be verified after creation.",
+          );
+        }
+
+        await writeTextFile(draft.filePath, initialContent, { createNew: true });
+        persistedContentByPath.set(draft.filePath, initialContent);
+        if (activeFilePath === draft.filePath) {
+          pendingDailyDraft = null;
+          persistedContent = initialContent;
+          saveState = saveSucceeded(saveState, revision);
+          updateLoreSourceAfterSave(draft.filePath, initialContent);
+        }
+        void clearRecoveryAfterSave(draft.filePath, revision);
+
+        let refreshWarning = "";
+        try {
+          await refreshDirectory(draft.rootPath);
+          const directory = findTreeEntry(entries, draft.directoryPath);
+          if (directory?.isDirectory && !directory.isSymlink) {
+            const children = await readEntries(draft.directoryPath, directory.children ?? []);
+            entries = updateTreeEntry(entries, draft.directoryPath, (entry) => ({
+              ...entry,
+              expanded: true,
+              children,
+            }));
+          }
+        } catch (cause) {
+          refreshWarning = `Today's draft was created and saved, but the file tree could not refresh: ${formatError(cause)}`;
+        }
+        selectedDirectoryPath = draft.directoryPath;
+        scheduleNavigationState();
+        error = refreshWarning;
+
+        const request = currentSaveRequest();
+        if (request) autosave.schedule(request);
+        return true;
+      } catch (cause) {
+        const message = `Could not create today's draft without overwriting anything. Your writing is still open: ${formatError(cause)}`;
+        if (activeFilePath === draft.filePath) {
+          saveState = saveFailed(saveState, revision, message);
+        }
+        error = message;
+        return false;
+      } finally {
+        dailyDraftCreating = false;
+        dailyDraftCreationPromise = null;
+      }
+    })();
+
+    return dailyDraftCreationPromise;
+  }
+
   function startNewFile() {
     if (worldProjectBusy) return;
     // Only meaningful once a folder is open.
@@ -6517,6 +6727,7 @@
         saveState = recovered.revision
           ? createRecoveredSaveState(recovered.revision)
           : createSaveState();
+        pendingDailyDraft = null;
         activeFile = entry.name;
         activeFilePath = entry.path;
         editorSelectionStart = 0;
@@ -6540,6 +6751,14 @@
   }
 
   async function saveFile() {
+    if (
+      pendingDailyDraft?.filePath === activeFilePath &&
+      dirty &&
+      content.length > 0
+    ) {
+      await materializeDailyDraft(content, saveState.currentRevision);
+      return;
+    }
     const request = currentSaveRequest();
     if (!request) return;
     autosave.schedule(request);
@@ -6621,8 +6840,15 @@
         }),
       );
     }
-    const request = currentSaveRequest();
-    if (request) autosave.schedule(request);
+    if (
+      pendingDailyDraft?.filePath === activeFilePath &&
+      nextContent.length > 0
+    ) {
+      void materializeDailyDraft(nextContent, saveState.currentRevision);
+    } else {
+      const request = currentSaveRequest();
+      if (request) autosave.schedule(request);
+    }
     if (!insertingLoreCompletion) {
       dismissedLoreCompletion = "";
       updateLoreCompletion(textarea);
@@ -7735,9 +7961,27 @@
       />
     {/if}
     <div class="practice-bar" aria-label="Writing progress">
-      <span class="document-count">
-        {activeFile ? practicePresentation.documentLabel : "No document open"}
-      </span>
+      <div class="practice-context">
+        {#if folderPath}
+          <button
+            type="button"
+            class="write-today-button"
+            class:active-draft={activeIsTodayDraft}
+            disabled={worldProjectBusy || dailyDraftCreating}
+            aria-label={activeIsTodayDraft
+              ? "Focus today's daily draft"
+              : `Write today's daily draft for ${activeDailyDateKey}`}
+            title={`Ordinary Markdown at Daily/${activeDailyDateKey}.md`}
+            onclick={() => void startDailyDraft()}
+          >{dailyDraftCreating ? "Starting…" : activeIsTodayDraft ? "Today’s draft" : "Write today"}</button>
+          <span class="daily-rhythm" title="Completed-day rhythm; a missed day never erases your best">
+            {dailyRhythmLabel}
+          </span>
+        {/if}
+        <span class="document-count">
+          {activeFile ? practicePresentation.documentLabel : "No document open"}
+        </span>
+      </div>
       {#if completionMessage}
         <span class="completion-message" role="status" aria-live="polite">
           {completionMessage}
@@ -8559,6 +8803,54 @@
     flex: 0 0 auto;
   }
 
+  .practice-context {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  .write-today-button {
+    box-sizing: border-box;
+    min-height: 26px;
+    padding: 0.2rem 0.65rem;
+    border: 1px solid #4da3d9;
+    border-radius: 4px;
+    background: #173247;
+    color: #d9efff;
+    font: inherit;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .write-today-button:hover:not(:disabled) {
+    background: #21455f;
+  }
+
+  .write-today-button.active-draft {
+    border-color: #557b5b;
+    background: #213927;
+    color: #d9f2dc;
+  }
+
+  .write-today-button:focus-visible {
+    outline: 2px solid #75beff;
+    outline-offset: 2px;
+  }
+
+  .write-today-button:disabled {
+    opacity: 0.58;
+    cursor: default;
+  }
+
+  .daily-rhythm {
+    overflow: hidden;
+    color: #9fcba4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .completion-message {
     min-width: 0;
     color: #a7d7ad;
@@ -8648,6 +8940,11 @@
   @media (max-width: 620px) {
     .writing-tools {
       width: min(330px, calc(100vw - 3rem));
+    }
+
+    .daily-rhythm,
+    .document-count {
+      display: none;
     }
   }
 </style>
