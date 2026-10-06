@@ -347,11 +347,14 @@
   } from "$lib/maps/load";
   import { deriveMapsWorkspaceModel, mapAnchorNoteOptions, type MapAnchorModel } from "$lib/maps/model";
   import {
-    executeMapsMutation,
     undoMapsMutation,
     type MapsMutationIo,
     type MapsMutationUndo,
   } from "$lib/maps/mutation-execution";
+  import {
+    executeMapsMutationWithImport,
+    type PendingMapImageImport,
+  } from "$lib/maps/import-execution";
   import type { MapsMutationPlan, MapsMutationRequest } from "$lib/maps/mutation";
   import { tauriMapBinaryBackend } from "$lib/maps/tauri-image";
   import { createMapUuid } from "$lib/maps/identity";
@@ -523,6 +526,7 @@
   let mapImageLoadRevision = 0;
   let mapMutationRequest = $state<MapsMutationRequest | null>(null);
   let mapMutationOriginalText = $state<string | null>(null);
+  let pendingMapImageImport = $state<PendingMapImageImport | null>(null);
   let mapMutationBusy = $state(false);
   let mapMutationError = $state("");
   let mapMutationUndo = $state<MapsMutationUndo | null>(null);
@@ -1194,6 +1198,7 @@
     mapImageLoading = false;
     mapMutationRequest = null;
     mapMutationOriginalText = null;
+    pendingMapImageImport = null;
     mapMutationBusy = false;
     mapMutationError = "";
     mapMutationUndo = null;
@@ -3218,6 +3223,13 @@
     };
   }
 
+  async function readSelectedMapImage(path: string): Promise<Uint8Array> {
+    const response = await invoke<ArrayBuffer | number[]>("read_map_image_preview", {
+      sourcePath: path,
+    });
+    return response instanceof ArrayBuffer ? new Uint8Array(response) : Uint8Array.from(response);
+  }
+
   async function beginAddMap(): Promise<void> {
     if (!folderPath || mapMutationBusy || projectInspection.kind !== "world-project") return;
     if (mapsProject.kind !== "absent" && mapsProject.kind !== "ready") {
@@ -3226,32 +3238,63 @@
     }
     const rootAtStart = folderPath;
     const originalText = mapsProject.kind === "ready" ? mapsProject.text : null;
+    error = "";
     mapMutationError = "";
+    pendingMapImageImport = null;
     try {
       const selected = await open({
-        title: "Choose a map image inside this project",
+        title: "Choose a PNG, JPEG, or WebP map image",
         multiple: false,
         directory: false,
+        fileAccessMode: "scoped",
         defaultPath: rootAtStart,
-        filters: [{ name: "Map image", extensions: ["png", "jpg", "jpeg", "webp"] }],
+        filters: [
+          {
+            name: "Map images",
+            extensions: ["png", "jpg", "jpeg", "webp"],
+          },
+        ],
       });
       if (!selected || Array.isArray(selected)) return;
       const relativePath = projectRelativePath(rootAtStart, selected);
-      if (!relativePath) throw new Error("Choose an image already contained by the open project.");
-      const inspected = await inspectMapImage(await readFile(selected));
+      const firstBytes = await readSelectedMapImage(selected);
+      const inspected = await inspectMapImage(firstBytes);
       if (inspected.kind !== "ready") throw new Error(inspected.message);
+      const secondBytes = await readSelectedMapImage(selected);
+      const secondInspection = await inspectMapImage(secondBytes);
+      if (secondInspection.kind !== "ready") throw new Error(secondInspection.message);
+      if (
+        inspected.inspection.sha256 !== secondInspection.inspection.sha256 ||
+        inspected.inspection.encodedBytes !== secondInspection.inspection.encodedBytes
+      ) {
+        throw new Error("The selected image changed while it was inspected. Choose it again when stable.");
+      }
+      const sourceName = selected.split(/[\\/]/u).at(-1) ?? "";
+      const targetNameIssue = validateFileName(sourceName);
+      if (!relativePath && targetNameIssue) {
+        throw new Error(`The image filename is not portable: ${targetNameIssue}`);
+      }
+      const imagePath = relativePath || `Maps/${sourceName}`;
       const image = {
-        path: relativePath,
+        path: imagePath,
         mediaType: inspected.inspection.mediaType,
         sha256: inspected.inspection.sha256,
         width: inspected.inspection.width,
         height: inspected.inspection.height,
       };
-      const verified = await loadMapImage(rootAtStart, image, tauriMapBinaryBackend);
-      if (verified.kind !== "ready") throw new Error(verified.message);
+      if (relativePath) {
+        const verified = await loadMapImage(rootAtStart, image, tauriMapBinaryBackend);
+        if (verified.kind !== "ready") throw new Error(verified.message);
+      }
       if (folderPath !== rootAtStart) throw new Error("The open project changed while the image was verified.");
-      const filename = relativePath.split("/").at(-1) ?? "Map";
+      const filename = imagePath.split("/").at(-1) ?? "Map";
       const title = filename.replace(/\.(?:png|jpe?g|webp)$/iu, "").replace(/[-_]+/gu, " ").trim() || "Map";
+      pendingMapImageImport = relativePath ? null : {
+        sourcePath: selected,
+        targetName: sourceName,
+        targetPath: imagePath,
+        sha256: inspected.inspection.sha256,
+      };
       mapMutationRequest = {
         kind: "add-map",
         mapId: createMapUuid(),
@@ -3277,6 +3320,7 @@
         y,
       };
       mapMutationOriginalText = mapsProject.kind === "ready" ? mapsProject.text : null;
+      pendingMapImageImport = null;
     } catch (cause) {
       appendError(`Could not prepare the point anchor: ${formatError(cause)}`);
     }
@@ -3294,24 +3338,28 @@
       y: anchor.anchor.geometry.y,
     };
     mapMutationOriginalText = mapsProject.kind === "ready" ? mapsProject.text : null;
+    pendingMapImageImport = null;
   }
 
   function beginRemoveMapAnchor(mapId: string, anchor: MapAnchorModel): void {
     mapMutationError = "";
     mapMutationRequest = { kind: "remove-anchor", mapId, anchorId: anchor.anchor.id };
     mapMutationOriginalText = mapsProject.kind === "ready" ? mapsProject.text : null;
+    pendingMapImageImport = null;
   }
 
   function beginRemoveMap(mapId: string): void {
     mapMutationError = "";
     mapMutationRequest = { kind: "remove-map", mapId };
     mapMutationOriginalText = mapsProject.kind === "ready" ? mapsProject.text : null;
+    pendingMapImageImport = null;
   }
 
   function closeMapMutation(): void {
     if (mapMutationBusy) return;
     mapMutationRequest = null;
     mapMutationOriginalText = null;
+    pendingMapImageImport = null;
     mapMutationError = "";
   }
 
@@ -3322,16 +3370,36 @@
     if (!folderPath || projectInspection.kind !== "world-project" || mapMutationBusy) return;
     const rootAtStart = folderPath;
     const projectId = projectInspection.manifest.projectId;
+    const imageImport = pendingMapImageImport;
     mapMutationBusy = true;
     mapMutationError = "";
     try {
-      const result = await executeMapsMutation(plan, request, mapsMutationIo(rootAtStart, projectId));
+      const result = await executeMapsMutationWithImport(
+        plan,
+        request,
+        mapsMutationIo(rootAtStart, projectId),
+        imageImport,
+        {
+          copyNew: (value) => invoke("import_map_image_new", {
+            rootPath: rootAtStart,
+            sourcePath: value.sourcePath,
+            targetName: value.targetName,
+            expectedSha256: value.sha256,
+          }),
+          rollbackExact: (value) => invoke("remove_imported_map_image_if_exact", {
+            rootPath: rootAtStart,
+            targetName: value.targetName,
+            expectedSha256: value.sha256,
+          }),
+        },
+      );
       if (folderPath !== rootAtStart) throw new Error("The open project changed while the maps edit ran.");
       if (result.kind === "failed") throw new Error(result.message);
       mapsProject = result.project;
       mapMutationUndo = result.undo;
       mapMutationRequest = null;
       mapMutationOriginalText = null;
+      pendingMapImageImport = null;
       if (request.kind === "add-map") selectedMapId = request.mapId;
       if (request.kind === "remove-map" && selectedMapId === request.mapId) {
         selectedMapId = result.project.mapsProject.maps[0]?.id ?? "";
@@ -7229,6 +7297,7 @@
         noteOptions={mapNoteOptions}
         busy={mapMutationBusy}
         error={mapMutationError}
+        importDestination={pendingMapImageImport?.targetPath ?? ""}
         onChange={(request) => { mapMutationRequest = request; mapMutationError = ""; }}
         onConfirm={(plan, request) => void applyMapMutation(plan, request)}
         onCancel={closeMapMutation}

@@ -115,7 +115,7 @@ function applyMutation(
     maps.push({
       id: request.mapId,
       title: request.title.trim(),
-      image: structuredClone(request.image),
+      image: cloneJson(request.image),
       canvas: { width: request.image.width, height: request.image.height },
       anchors: [],
     });

@@ -107,6 +107,21 @@ describe("guarded maps mutation planning", () => {
     expect(plan).toMatchObject({ kind: "ready", request: { x: 200, y: 120 } });
   });
 
+  it("accepts a reactive-proxy-shaped image when planning a map", () => {
+    const reactiveImage = new Proxy(image, {});
+    expect(() => structuredClone(reactiveImage)).toThrow();
+    const plan = planMapsMutation(source(), PROJECT_ID, {
+      kind: "add-map",
+      mapId: "3b63990c-55d7-4a0c-a161-1002cab46b3f",
+      title: "External",
+      image: reactiveImage,
+    });
+    expect(plan).toMatchObject({
+      kind: "ready",
+      request: { image },
+    });
+  });
+
   it("updates only recognized point fields and retains extensions", () => {
     const plan = planMapsMutation(source(), PROJECT_ID, {
       kind: "update-point",

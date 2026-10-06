@@ -9,6 +9,7 @@
     noteOptions: MapAnchorNoteOption[];
     busy: boolean;
     error: string;
+    importDestination: string;
     onChange: (request: MapsMutationRequest) => void;
     onConfirm: (plan: Extract<MapsMutationPlan, { kind: "ready" }>, request: MapsMutationRequest) => void;
     onCancel: () => void;
@@ -21,6 +22,7 @@
     noteOptions,
     busy,
     error,
+    importDestination,
     onChange,
     onConfirm,
     onCancel,
@@ -86,6 +88,10 @@
       </label>
       <p class="source"><strong>Verified project image:</strong> {request.image.path}</p>
       <p class="source">{request.image.width} × {request.image.height} · {request.image.mediaType}</p>
+      {#if importDestination}
+        <p class="import"><strong>New project copy:</strong> {importDestination}</p>
+        <p class="source">The external source will remain where it is. The new copy must not already exist.</p>
+      {/if}
     {:else if request.kind === "add-point" || request.kind === "update-point"}
       <label>
         Linked lore note
@@ -172,6 +178,7 @@
   button.primary { border-color: #4f3f59; background: #4f3f59; color: #fff; }
   button.danger { border-color: #a63d40; background: #a63d40; color: #fff; }
   .source { margin-bottom: 0.35rem; color: #6d646c; overflow-wrap: anywhere; }
+  .import { margin: 0.75rem 0 0.25rem; border: 1px solid #d9d0dc; border-radius: 0.5rem; background: #fff; padding: 0.65rem; overflow-wrap: anywhere; }
   .summary { border: 1px solid #b8d8c2; border-radius: 0.5rem; background: #f3faf5; padding: 0.65rem; }
   .problem { color: #7b2f31; }
   details { border: 1px solid #d9d0dc; border-radius: 0.5rem; background: #fff; padding: 0.65rem; }

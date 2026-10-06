@@ -10,26 +10,26 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.8c — Guarded map creation, import, and point authoring**
+**0.7.8d — Polygon authoring and guarded image replacement**
 
 ### Intended outcome
 
-Let a writer deliberately create the optional maps file, import or select one verified project-owned image, and add/move/remove point anchors through exact preview, fresh-source comparison, no-clobber writes, and one guarded Undo.
+Let a writer create and repair note-linked polygon anchors and deliberately replace a map image without silently moving geometry, deleting sources, or accepting stale data.
 
 ### Acceptance criteria
 
-- [ ] Plan one new map from a verified in-project image or an explicit create-new copy into `Maps/`, never moving or overwriting the chosen source.
-- [ ] Preview exact maps JSON and any image-copy destination before confirmation, preserve supported-version unknown fields, and require fresh semantic equivalence.
-- [x] Add, move, retarget, and remove point anchors only for uniquely identified structured notes through accessible coordinate controls and direct map placement.
-- [x] Remove map metadata without deleting its image or linked notes.
-- [x] Execute through guarded writes with one stale-sensitive in-session Undo and no daily-word credit.
-- [ ] Refuse path collisions, stale source/image bytes, ambiguous targets, different project identity, and all unsupported image states without partial writes.
-- [ ] Package-QA creation, point authoring, stale/collision refusal, exact Undo, source preservation, and writer-project restoration.
+- [ ] Add, edit, retarget, and remove polygons with three to 256 in-canvas vertices through accessible ordered controls and direct map placement.
+- [ ] Reject duplicate-adjacent, closing-duplicate, collinear, self-intersecting, stale, ambiguous-target, and unsupported polygon work without partial writes.
+- [ ] Preview an image replacement's exact source, project destination, digest, dimensions, canvas effect, and anchor consequence before confirmation.
+- [ ] Import replacement bytes with create-new/no-clobber semantics or select an already verified project image; never move, overwrite, or delete a source image.
+- [ ] Preserve or explicitly resolve existing geometry rather than silently scaling it when replacement dimensions differ.
+- [ ] Execute through exact-source guarded writes with one stale-sensitive Undo and no daily-word credit.
+- [ ] Package-QA polygon authoring, replacement, refusal, exact Undo, source preservation, and writer-project restoration.
 
 ## Next slices
 
-1. Add previewed map creation/import and point authoring with exact-source Undo.
-2. Add polygon authoring and image replacement/relocation.
+1. Add polygon authoring with explicit geometry validation and exact-source Undo.
+2. Add guarded image replacement/relocation with an explicit canvas/anchor decision.
 3. Complete portable-map regression QA and the milestone documentation gate.
 
 ## Current approval state
@@ -37,6 +37,8 @@ Let a writer deliberately create the optional maps file, import or select one ve
 The user approved all nine choices in [`MAP_FORMAT_PROPOSAL.md`](MAP_FORMAT_PROPOSAL.md) on 2026-10-05: one optional project-scoped file, project-owned static PNG/JPEG/WebP images, a stable logical image canvas, note-linked point/polygon anchors, strict mutation and replacement boundaries, explicit failures, an accessible main-pane workspace, and no geographic or continuity inference. There is no remaining decision gate for the approved version-one sequence.
 
 ## Completed checkpoint
+
+- Slice 0.7.8c is complete. A writer can now register a byte-verified PNG/JPEG/WebP already inside a world project or explicitly import one external image as a new no-clobber copy under `Maps/`. The confirmation surface names the exact project image and, for imports, the new destination plus the fact that the external source remains untouched. A narrow native picker-preview command reads only picker-authorized bounded regular non-symbolic files; import revalidates stable metadata, size, extension, and SHA-256, creates the destination exactly once, rereads and syncs it, and removes only its own exact copy if the maps write fails. The coordinator retains a copy only when the committed map already references those verified bytes. Packaged macOS QA imported a 3,512-byte 128 × 128 PNG, verified identical source/destination SHA-256, loaded the second map, preserved `0 / 200`, and used Undo to restore the maps JSON exactly while intentionally retaining the project-owned copy. A second import refused the existing destination without changing either file; an external maps edit after preview refused as stale; the fixture's JSON, original image, note, and manifest returned to their four baseline hashes; QA-only copies were moved to Trash; and Arcadia was restored. QA also found and corrected raw picker-byte handoff and a nested Svelte reactive-proxy cloning failure. The final gate has 594 passing frontend tests across eighty-eight files, zero Svelte/TypeScript diagnostics, twenty-one passing native tests, clean Rust formatting/Clippy, zero production dependency vulnerabilities, and successful web and production macOS `.app`/DMG builds.
 
 - Slice 0.7.8c's third internal checkpoint exposes guarded in-project map and point authoring. Maps can register a byte-verified PNG/JPEG/WebP already inside the selected world project; uniquely identified structured notes are the only new point targets; direct canvas placement and integer coordinate controls share the same exact preview; and existing points can be moved or retargeted. Anchor and map removal previews explicitly retain every linked note and image. Every dialog begins with Cancel focused, presents the complete proposed JSON on demand, freezes the exact maps source present when it opened, and delegates confirmation plus one-step Undo to the native exact-source executor. Supported-version unknown fields survive, map actions never edit prose or award daily words, and external watcher changes invalidate Undo or force a fresh confirmation. Packaged QA added and exactly undid a center point, changed and exactly undid an existing coordinate, inspected cancel-first anchor/map removal language, retained `0 / 200`, and restored the fixture's maps JSON, note, manifest, and image to their baseline SHA-256 values. QA found and corrected both WebKit's absent `crypto.randomUUID()` API and a Svelte reactive-proxy cloning exception; secure random-byte UUID generation and a proxy-backed planner test now cover those boundaries. The checkpoint has 589 passing frontend tests across eighty-seven files, zero Svelte/TypeScript diagnostics, eighteen passing native tests, clean Rust formatting/Clippy, and successful web and production macOS `.app` builds. External create-new image import, its collision/rollback paths, and final stale-preview package QA remain in this active slice.
 
@@ -177,7 +179,7 @@ The user approved all nine choices in [`MAP_FORMAT_PROPOSAL.md`](MAP_FORMAT_PROP
 
 ## Blockers and decision gates
 
-There is no technical blocker. Relationship version one and read-only portable maps are complete; guarded map creation/import and point authoring are the current executable work.
+There is no technical blocker. Guarded map creation/import and point authoring are complete; polygon authoring and guarded image replacement are the current executable work.
 
 ## Handoff protocol
 
