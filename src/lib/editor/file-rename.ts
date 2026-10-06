@@ -4,6 +4,8 @@ export const PROTECTED_PROJECT_FILENAMES = [
   "200-crappy-words.project.json",
   "200-crappy-words.manuscripts.json",
   "200-crappy-words.timeline.json",
+  "200-crappy-words.maps.json",
+  "200-crappy-words.continuity-review.json",
 ] as const;
 
 export type FileRenamePlan =

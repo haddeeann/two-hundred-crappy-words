@@ -152,15 +152,33 @@
     type RelationshipAuthoringRequest,
     type RelationshipPresentationSource,
   } from "$lib/relationships/presentation";
+  import ContinuityExceptionMutationDialog from "$lib/continuity-review/ContinuityExceptionMutationDialog.svelte";
   import ContinuityReviewWorkspace from "$lib/continuity-review/ContinuityReviewWorkspace.svelte";
   import { matchContinuityExceptions } from "$lib/continuity-review/exceptions";
-  import { CONTINUITY_REVIEW_FILE } from "$lib/continuity-review/format";
+  import {
+    CONTINUITY_REVIEW_FILE,
+    type ContinuityException,
+  } from "$lib/continuity-review/format";
+  import { createContinuityExceptionUuid } from "$lib/continuity-review/identity";
   import {
     loadContinuityReviewProject,
     type ContinuityReviewProjectLoadResult,
   } from "$lib/continuity-review/load";
   import { deriveContinuityReview } from "$lib/continuity-review/model";
-  import type { ContinuityReviewEvidence } from "$lib/continuity-review/types";
+  import {
+    executeContinuityExceptionMutation,
+    undoContinuityExceptionMutation,
+    type ContinuityExceptionMutationIo,
+    type ContinuityExceptionMutationUndo,
+  } from "$lib/continuity-review/mutation-execution";
+  import type {
+    ContinuityExceptionMutationPlan,
+    ContinuityExceptionMutationRequest,
+  } from "$lib/continuity-review/mutation";
+  import type {
+    ContinuityReviewEvidence,
+    ContinuityReviewFinding,
+  } from "$lib/continuity-review/types";
   import {
     findWikiLinkCompletion,
     loreCompletionCandidates,
@@ -530,6 +548,11 @@
   let continuityReviewProject = $state<ContinuityReviewProjectLoadResult>({ kind: "absent" });
   let continuityReviewLoading = $state(false);
   let continuityReviewLoadRevision = 0;
+  let continuityExceptionMutationRequest = $state<ContinuityExceptionMutationRequest | null>(null);
+  let continuityExceptionMutationOriginalText = $state<string | null>(null);
+  let continuityExceptionMutationBusy = $state(false);
+  let continuityExceptionMutationError = $state("");
+  let continuityExceptionMutationUndo = $state<ContinuityExceptionMutationUndo | null>(null);
   let mapsProject = $state<MapsProjectLoadResult>({ kind: "absent" });
   let mapsLoading = $state(false);
   let mapsLoadRevision = 0;
@@ -1275,6 +1298,11 @@
     continuityReviewLoadRevision += 1;
     continuityReviewProject = { kind: "absent" };
     continuityReviewLoading = false;
+    continuityExceptionMutationRequest = null;
+    continuityExceptionMutationOriginalText = null;
+    continuityExceptionMutationBusy = false;
+    continuityExceptionMutationError = "";
+    continuityExceptionMutationUndo = null;
     mapsLoadRevision += 1;
     mapImageLoadRevision += 1;
     mapsProject = { kind: "absent" };
@@ -1558,6 +1586,16 @@
         return;
       }
       continuityReviewProject = result;
+      if (
+        continuityExceptionMutationUndo &&
+        (
+          result.kind !== "ready" ||
+          result.text !== continuityExceptionMutationUndo.expectedText ||
+          result.fingerprint !== continuityExceptionMutationUndo.expectedFingerprint
+        )
+      ) {
+        continuityExceptionMutationUndo = null;
+      }
     } catch (cause) {
       if (
         revision !== continuityReviewLoadRevision ||
@@ -3350,6 +3388,148 @@
     continuityReviewOpen = false;
     await tick();
     await openIndexedLorePath(evidence.path, evidence.sourceRange);
+  }
+
+  function continuityExceptionMutationIo(
+    rootPath: string,
+    projectId: string,
+  ): ContinuityExceptionMutationIo {
+    return {
+      reload: () => loadContinuityReviewProject(rootPath, tauriLoreScanBackend, projectId),
+      createNew: (text) =>
+        invoke("create_continuity_review_file_new", { rootPath, newText: text }),
+      replaceAtomic: (expectedText, newText) =>
+        invoke("replace_continuity_review_file_atomic", {
+          rootPath,
+          expectedText,
+          newText,
+        }),
+      removeCreated: (expectedText) =>
+        invoke("remove_continuity_review_file_if_exact", { rootPath, expectedText }),
+    };
+  }
+
+  function beginMarkContinuityFindingIntentional(
+    finding: ContinuityReviewFinding,
+  ): void {
+    if (
+      continuityExceptionMutationBusy ||
+      projectInspection.kind !== "world-project" ||
+      (finding.severity !== "review" && finding.severity !== "contradiction")
+    ) {
+      return;
+    }
+    if (continuityReviewProject.kind !== "ready" && continuityReviewProject.kind !== "absent") {
+      appendError("Resolve the current intentional-exception file problem before adding an exception.");
+      return;
+    }
+    continuityExceptionMutationError = "";
+    continuityExceptionMutationOriginalText = continuityReviewProject.kind === "ready"
+      ? continuityReviewProject.text
+      : null;
+    continuityExceptionMutationRequest = {
+      kind: "add-exception",
+      exceptionId: createContinuityExceptionUuid(),
+      severity: finding.severity,
+      ruleId: finding.ruleId,
+      ruleVersion: finding.ruleVersion,
+      evidenceIds: finding.evidence.map(({ stableId }) => stableId),
+      explanation: "",
+    };
+  }
+
+  function beginEditContinuityException(exception: ContinuityException): void {
+    if (continuityExceptionMutationBusy || continuityReviewProject.kind !== "ready") return;
+    continuityExceptionMutationError = "";
+    continuityExceptionMutationOriginalText = continuityReviewProject.text;
+    continuityExceptionMutationRequest = {
+      kind: "update-explanation",
+      exceptionId: exception.id,
+      explanation: exception.explanation,
+    };
+  }
+
+  function beginRemoveContinuityException(exception: ContinuityException): void {
+    if (continuityExceptionMutationBusy || continuityReviewProject.kind !== "ready") return;
+    continuityExceptionMutationError = "";
+    continuityExceptionMutationOriginalText = continuityReviewProject.text;
+    continuityExceptionMutationRequest = {
+      kind: "remove-exception",
+      exceptionId: exception.id,
+    };
+  }
+
+  function closeContinuityExceptionMutation(): void {
+    if (continuityExceptionMutationBusy) return;
+    continuityExceptionMutationRequest = null;
+    continuityExceptionMutationOriginalText = null;
+    continuityExceptionMutationError = "";
+  }
+
+  async function applyContinuityExceptionMutation(
+    plan: Extract<ContinuityExceptionMutationPlan, { kind: "ready" }>,
+    request: ContinuityExceptionMutationRequest,
+  ): Promise<void> {
+    if (
+      !folderPath ||
+      projectInspection.kind !== "world-project" ||
+      continuityExceptionMutationBusy
+    ) {
+      return;
+    }
+    const rootAtStart = folderPath;
+    const projectId = projectInspection.manifest.projectId;
+    continuityExceptionMutationBusy = true;
+    continuityExceptionMutationError = "";
+    try {
+      const result = await executeContinuityExceptionMutation(
+        plan,
+        request,
+        continuityExceptionMutationIo(rootAtStart, projectId),
+      );
+      if (folderPath !== rootAtStart) {
+        throw new Error("The open project changed while the intentional-exception edit ran.");
+      }
+      if (result.kind === "failed") throw new Error(result.message);
+      continuityReviewProject = result.project;
+      continuityExceptionMutationUndo = result.undo;
+      continuityExceptionMutationRequest = null;
+      continuityExceptionMutationOriginalText = null;
+    } catch (cause) {
+      continuityExceptionMutationError = formatError(cause);
+    } finally {
+      continuityExceptionMutationBusy = false;
+    }
+  }
+
+  async function undoContinuityExceptionChange(): Promise<void> {
+    if (
+      !folderPath ||
+      projectInspection.kind !== "world-project" ||
+      !continuityExceptionMutationUndo ||
+      continuityExceptionMutationBusy
+    ) {
+      return;
+    }
+    const rootAtStart = folderPath;
+    const undo = continuityExceptionMutationUndo;
+    continuityExceptionMutationBusy = true;
+    try {
+      const result = await undoContinuityExceptionMutation(
+        undo,
+        continuityExceptionMutationIo(rootAtStart, projectInspection.manifest.projectId),
+      );
+      if (folderPath !== rootAtStart) {
+        throw new Error("The open project changed while Undo ran.");
+      }
+      if (result.kind === "failed") throw new Error(result.message);
+      continuityReviewProject = result.project;
+      continuityExceptionMutationUndo = null;
+    } catch (cause) {
+      appendError(`Could not undo the intentional-exception change: ${formatError(cause)}`);
+    } finally {
+      continuityExceptionMutationBusy = false;
+    }
   }
 
   function openMapWorkspace(): void {
@@ -6609,6 +6789,11 @@
       setWritingTools(false);
       return;
     }
+    if (continuityExceptionMutationRequest && event.key === "Escape") {
+      event.preventDefault();
+      closeContinuityExceptionMutation();
+      return;
+    }
     if (continuityReviewOpen && event.key === "Escape") {
       event.preventDefault();
       closeContinuityReviewWorkspace();
@@ -7280,12 +7465,18 @@
             staleExceptions={continuityReviewPresentation.staleExceptions}
             manuscripts={continuityReviewManuscripts}
             loading={loreIndexPhase === "indexing" || timelineLoading || manuscriptLoading || continuityReviewLoading}
+            mutationBusy={continuityExceptionMutationBusy}
+            undoLabel={continuityExceptionMutationUndo?.label ?? null}
             onClose={closeContinuityReviewWorkspace}
             onRefresh={() => void refreshContinuityReview()}
+            onUndo={() => void undoContinuityExceptionChange()}
             onSelectScope={(manuscriptId) => {
               continuityReviewScopeId = manuscriptId ?? "";
             }}
             onOpenSource={(evidence) => void openContinuityReviewSource(evidence)}
+            onMarkIntentional={beginMarkContinuityFindingIntentional}
+            onEditException={beginEditContinuityException}
+            onRemoveException={beginRemoveContinuityException}
           />
         {:else if mapOpen}
           <MapWorkspace
@@ -7605,6 +7796,21 @@
         onChange={(request) => { mapMutationRequest = request; mapMutationError = ""; }}
         onConfirm={(plan, request) => void applyMapMutation(plan, request)}
         onCancel={closeMapMutation}
+      />
+    {/if}
+    {#if continuityExceptionMutationRequest && projectInspection.kind === "world-project"}
+      <ContinuityExceptionMutationDialog
+        request={continuityExceptionMutationRequest}
+        originalText={continuityExceptionMutationOriginalText}
+        projectId={projectInspection.manifest.projectId}
+        busy={continuityExceptionMutationBusy}
+        error={continuityExceptionMutationError}
+        onChange={(request) => {
+          continuityExceptionMutationRequest = request;
+          continuityExceptionMutationError = "";
+        }}
+        onConfirm={(plan, request) => void applyContinuityExceptionMutation(plan, request)}
+        onCancel={closeContinuityExceptionMutation}
       />
     {/if}
   </main>

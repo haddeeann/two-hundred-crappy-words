@@ -3,8 +3,13 @@
     IntentionalContinuityFinding,
     StaleContinuityException,
   } from "./exceptions";
+  import type { ContinuityException } from "./format";
   import type { ContinuityReviewProjectLoadResult } from "./load";
-  import type { ContinuityReviewEvidence, ContinuityReviewModel } from "./types";
+  import type {
+    ContinuityReviewEvidence,
+    ContinuityReviewFinding,
+    ContinuityReviewModel,
+  } from "./types";
 
   export interface ContinuityReviewManuscriptOption {
     id: string;
@@ -18,10 +23,16 @@
     staleExceptions: readonly StaleContinuityException[];
     manuscripts: readonly ContinuityReviewManuscriptOption[];
     loading: boolean;
+    mutationBusy: boolean;
+    undoLabel: string | null;
     onClose: () => void;
     onRefresh: () => void;
+    onUndo: () => void;
     onSelectScope: (manuscriptId: string | null) => void;
     onOpenSource: (evidence: ContinuityReviewEvidence) => void;
+    onMarkIntentional: (finding: ContinuityReviewFinding) => void;
+    onEditException: (exception: ContinuityException) => void;
+    onRemoveException: (exception: ContinuityException) => void;
   }
 
   let {
@@ -31,10 +42,16 @@
     staleExceptions,
     manuscripts,
     loading,
+    mutationBusy,
+    undoLabel,
     onClose,
     onRefresh,
+    onUndo,
     onSelectScope,
     onOpenSource,
+    onMarkIntentional,
+    onEditException,
+    onRemoveException,
   }: Props = $props();
 
   let showSourceProblems = $state(true);
@@ -106,6 +123,9 @@
       <p>Deterministic comparisons from structured project facts. Findings are evidence to review, not automatic story truth.</p>
     </div>
     <div class="workspace-actions">
+      {#if undoLabel}
+        <button type="button" onclick={onUndo} disabled={loading || mutationBusy}>{undoLabel}</button>
+      {/if}
       <button type="button" onclick={onRefresh} disabled={loading}>
         {loading ? "Refreshing…" : "Refresh"}
       </button>
@@ -218,7 +238,16 @@
                   <p class="result-kind">{severityLabel(finding.severity)} · {finding.family}</p>
                   <h3>{finding.summary}</h3>
                 </div>
-                <span class="severity">{severityLabel(finding.severity)}</span>
+                <div class="card-actions">
+                  <span class="severity">{severityLabel(finding.severity)}</span>
+                  {#if finding.severity === "review" || finding.severity === "contradiction"}
+                    <button
+                      type="button"
+                      onclick={() => onMarkIntentional(finding)}
+                      disabled={mutationBusy || (exceptionResult.kind !== "ready" && exceptionResult.kind !== "absent")}
+                    >Mark intentional…</button>
+                  {/if}
+                </div>
               </div>
               <details>
                 <summary>Why this appeared</summary>
@@ -258,7 +287,11 @@
                   <p class="result-kind">Intentional {severityLabel(intentional.finding.severity)} · {intentional.finding.family}</p>
                   <h3>{intentional.finding.summary}</h3>
                 </div>
-                <span class="severity">Intentional</span>
+                <div class="card-actions">
+                  <span class="severity">Intentional</span>
+                  <button type="button" onclick={() => onEditException(intentional.exception)} disabled={mutationBusy}>Edit explanation…</button>
+                  <button type="button" class="danger-text" onclick={() => onRemoveException(intentional.exception)} disabled={mutationBusy}>Remove…</button>
+                </div>
               </div>
               <div class="writer-explanation">
                 <strong>Writer explanation</strong>
@@ -304,6 +337,10 @@
                 <strong>Saved writer explanation</strong>
                 <p>{stale.exception.explanation}</p>
               </div>
+              <div class="card-actions stale-actions">
+                <button type="button" onclick={() => onEditException(stale.exception)} disabled={mutationBusy}>Edit explanation…</button>
+                <button type="button" class="danger-text" onclick={() => onRemoveException(stale.exception)} disabled={mutationBusy}>Remove…</button>
+              </div>
               <details>
                 <summary>Saved evidence identities</summary>
                 <ul class="identity-list">
@@ -320,7 +357,7 @@
   {/if}
 
   <footer>
-    Review and exception matching are local and award no daily words. This read-only workspace never creates, edits, dismisses, or removes an exception or source.
+    Review and intentional-exception changes stay local and award no daily words. Exception changes never edit the underlying story sources.
   </footer>
 </section>
 
@@ -408,6 +445,28 @@
     display: flex;
     flex: 0 0 auto;
     gap: 0.5rem;
+  }
+
+  .card-actions {
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.35rem;
+  }
+
+  .card-actions button {
+    font-size: 0.72rem;
+  }
+
+  .card-actions .danger-text {
+    color: #efaaa0;
+  }
+
+  .stale-actions {
+    justify-content: flex-start;
+    margin-top: 0.65rem;
   }
 
   button,

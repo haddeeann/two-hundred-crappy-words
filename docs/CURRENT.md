@@ -10,7 +10,7 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.9d — Guarded intentional-exception authoring**
+**0.7.9d — Guarded intentional-exception authoring (complete)**
 
 ### Intended outcome
 
@@ -19,21 +19,21 @@ Let a writer mark an eligible finding intentional, revise its explanation, or re
 ### Acceptance criteria
 
 - [x] Add pure create, explanation-edit, and remove plans that preserve every supported-version unknown field and regenerate an exact complete JSON preview.
-- [ ] Execute create-new or exact replacement only after a fresh equivalent reload, verify the committed bytes, and retain one stale-sensitive Undo.
-- [ ] Expose **Mark intentional…** only for active Review or Contradiction findings, plus edit/remove actions for loaded intentional or stale exceptions.
-- [ ] Complete packaged macOS QA for create, edit, remove, Undo, stale-preview refusal, external refresh, source integrity, keyboard flow, and zero daily credit.
+- [x] Execute create-new or exact replacement only after a fresh equivalent reload, verify the committed bytes, and retain one stale-sensitive Undo.
+- [x] Expose **Mark intentional…** only for active Review or Contradiction findings, plus edit/remove actions for loaded intentional or stale exceptions.
+- [x] Complete packaged macOS QA for create, edit, remove, Undo, stale-preview refusal, external refresh, source integrity, keyboard flow, and zero daily credit.
 
-## Next slices
+## Next decision gate
 
-1. Add and fixture immutable mutation planning over an absent or exact ready exception file.
-2. Reuse the native exact JSON create/replace/remove boundary with fresh semantic equivalence and one guarded Undo.
-3. Add the cancel-first authoring dialogs and complete the milestone performance/packaged regression gate.
+The deterministic, local-first continuity-tool scope is complete. Milestone 0.7 has one deliberately separate item left: decide whether to research optional, privacy-explicit AI assistance or defer that exploration and advance to milestone 0.8 release readiness. Existing approval does not authorize networked manuscript analysis.
 
 ## Current approval state
 
 Portable maps are complete under the nine choices approved in [`MAP_FORMAT_PROPOSAL.md`](MAP_FORMAT_PROPOSAL.md) on 2026-10-05. The user approved all eight deterministic continuity-review choices in [`CONTINUITY_REVIEW_PROPOSAL.md`](CONTINUITY_REVIEW_PROPOSAL.md) on 2026-10-05. The read-only workspace and the approved optional portable exception format may proceed in the documented sequence; optional AI assistance remains outside this approval.
 
 ## Completed checkpoint
+
+- Slice 0.7.9d completes guarded portable intentional-exception authoring. Active Review and Contradiction findings can be marked intentional only with a required writer explanation; exact intentional and stale entries can revise that explanation or be removed. Every dialog starts on Cancel, traps forward and backward Tab, closes safely with Escape, and shows the complete exact JSON before and after each replacement. A fresh authoritative reload must reproduce the reviewed plan before native create-new or atomic compare-before-replace commands run; committed bytes are reread exactly, supported-version unknown fields survive, and the one retained Undo refuses any externally changed file. First-file Undo removes only its own exact created bytes. Packaged macOS QA created and removed the optional file, edited and restored an explanation, refused a removal preview after an external root-field change, preserved that unknown field on a fresh removal, restored the removed entry, refreshed an intentionally changed evidence tuple into the stale section with edit/remove actions, retained both source hashes, kept Today at `0 / 200`, verified modal focus containment and Escape, and restored Arcadia. The final gate has 643 passing frontend tests across ninety-six files, twenty-six passing native tests, zero Svelte/TypeScript diagnostics, clean Rust formatting and Clippy, zero production dependency vulnerabilities, and successful web plus production macOS `.app`/DMG builds.
 
 - Slice 0.7.9d's first checkpoint adds pure guarded intentional-exception planning without adding a filesystem command or interface. A local UUID generator supplies canonical version-four identities without relying on WebKit's absent `crypto.randomUUID()`. One immutable request can create the optional file only while adding an eligible Review or Contradiction, add a later exception, revise only one writer explanation, or remove only one saved exception. The planner deep-clones supported-version JSON, preserves unknown root and untouched exception fields, canonicalizes the evidence tuple, trims the explanation, reparses the complete proposed file through the authoritative parser, and freezes exact before/after text plus fingerprints for future consent and Undo. Missing edit targets, no-op explanations, copied IDs, duplicate match tuples, invalid bounds, malformed/invalid/newer sources, and project mismatch refuse before any write path exists. Nine focused fixtures pass; the complete gate has 638 passing frontend tests across ninety-five files, zero Svelte/TypeScript diagnostics, and a successful production web build. The next checkpoint adds the narrow native create/replace/remove commands and exact execution/Undo coordinator.
 

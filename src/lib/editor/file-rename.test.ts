@@ -47,6 +47,18 @@ describe("file-tree rename planning", () => {
     ).toMatchObject({ kind: "unavailable" });
     expect(
       plan("renamed.json", {
+        currentName: "200-crappy-words.maps.json",
+        atProjectRoot: true,
+      }),
+    ).toMatchObject({ kind: "unavailable" });
+    expect(
+      plan("renamed.json", {
+        currentName: "200-crappy-words.continuity-review.json",
+        atProjectRoot: true,
+      }),
+    ).toMatchObject({ kind: "unavailable" });
+    expect(
+      plan("renamed.json", {
         currentName: "200-crappy-words.project.json",
         atProjectRoot: false,
       }),
@@ -94,6 +106,22 @@ describe("file-tree delete planning", () => {
     expect(
       planFileDelete({
         name: "200-CRAPPY-WORDS.TIMELINE.JSON",
+        atProjectRoot: true,
+        isDirectory: false,
+        isSymlink: false,
+      }),
+    ).toMatchObject({ kind: "unavailable" });
+    expect(
+      planFileDelete({
+        name: "200-CRAPPY-WORDS.MAPS.JSON",
+        atProjectRoot: true,
+        isDirectory: false,
+        isSymlink: false,
+      }),
+    ).toMatchObject({ kind: "unavailable" });
+    expect(
+      planFileDelete({
+        name: "200-CRAPPY-WORDS.CONTINUITY-REVIEW.JSON",
         atProjectRoot: true,
         isDirectory: false,
         isSymlink: false,

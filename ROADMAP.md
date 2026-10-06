@@ -103,7 +103,7 @@ Goal: provide science-fiction-specific tools that help a complex world remain in
 - [x] Model locations, travel durations, and arrival windows without pretending fictional physics is universal.
 - [x] Visualize character and faction relationships.
 - [x] Attach project-owned maps and link lore to map locations.
-- [ ] Add deterministic continuity checks and source-linked findings.
+- [x] Add deterministic continuity checks, source-linked findings, and portable explained intentional exceptions.
 - [ ] Explore optional, privacy-explicit AI assistance only behind a separate decision gate.
 
 Specification: [`docs/milestones/0.7-continuity-tools.md`](docs/milestones/0.7-continuity-tools.md)

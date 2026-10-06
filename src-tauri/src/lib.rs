@@ -7,12 +7,15 @@ use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::Emitter;
 use tauri_plugin_fs::FsExt;
 
+mod continuity_exceptions;
 mod manuscript_merge;
 mod manuscript_split;
 mod maps;
 
 const MANUSCRIPT_STRUCTURE_FILE: &str = "200-crappy-words.manuscripts.json";
 const TIMELINE_PROJECT_FILE: &str = "200-crappy-words.timeline.json";
+const MAPS_PROJECT_FILE: &str = "200-crappy-words.maps.json";
+const CONTINUITY_REVIEW_FILE: &str = "200-crappy-words.continuity-review.json";
 const WORLD_PROJECT_MANIFEST_FILE: &str = "200-crappy-words.project.json";
 const MAX_MANUSCRIPT_STRUCTURE_BYTES: usize = 10 * 1024 * 1024;
 const MENU_NEW_FILE_ID: &str = "file-new";
@@ -478,6 +481,8 @@ fn reject_protected_project_file(path: &Path) -> Result<(), String> {
         if name.eq_ignore_ascii_case(WORLD_PROJECT_MANIFEST_FILE)
             || name.eq_ignore_ascii_case(MANUSCRIPT_STRUCTURE_FILE)
             || name.eq_ignore_ascii_case(TIMELINE_PROJECT_FILE)
+            || name.eq_ignore_ascii_case(MAPS_PROJECT_FILE)
+            || name.eq_ignore_ascii_case(CONTINUITY_REVIEW_FILE)
         {
             return Err(
                 "The app's project metadata files cannot be changed from the file tree.".into(),
@@ -563,6 +568,9 @@ pub fn run() {
             maps::remove_maps_file_if_exact,
             maps::import_map_image_new,
             maps::remove_imported_map_image_if_exact,
+            continuity_exceptions::create_continuity_review_file_new,
+            continuity_exceptions::replace_continuity_review_file_atomic,
+            continuity_exceptions::remove_continuity_review_file_if_exact,
             manuscript_merge::merge_manuscript_scenes_atomic,
             manuscript_merge::undo_manuscript_scene_merge_atomic,
             manuscript_split::split_manuscript_scene_atomic,
@@ -717,6 +725,8 @@ mod tests {
             reject_protected_project_file(Path::new(super::MANUSCRIPT_STRUCTURE_FILE)).is_err()
         );
         assert!(reject_protected_project_file(Path::new(super::TIMELINE_PROJECT_FILE)).is_err());
+        assert!(reject_protected_project_file(Path::new(super::MAPS_PROJECT_FILE)).is_err());
+        assert!(reject_protected_project_file(Path::new(super::CONTINUITY_REVIEW_FILE)).is_err());
         assert!(
             reject_protected_project_file(Path::new("200-CRAPPY-WORDS.MANUSCRIPTS.JSON")).is_err()
         );
