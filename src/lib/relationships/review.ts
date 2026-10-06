@@ -1,6 +1,7 @@
 import type { TimelineCalendar } from "$lib/timeline/format";
 import { normalizeTimelineExpression } from "$lib/timeline/normalize";
 import type { ContinuityTimeValue } from "$lib/lore/types";
+import type { CanonStatus, ContinuityCertainty } from "$lib/lore/types";
 import type {
   RelationshipAssertion,
   RelationshipEvidence,
@@ -23,6 +24,8 @@ export interface RelationshipReviewEvidence extends RelationshipEvidence {
   sourceTitle: string;
   targetNoteId: string;
   targetTitle: string;
+  effectiveCanon: CanonStatus | null;
+  certainty: ContinuityCertainty | null;
 }
 
 export interface RelationshipReviewFinding {
@@ -272,6 +275,8 @@ function evidence(assertion: RelationshipAssertion): RelationshipReviewEvidence 
     sourceTitle: assertion.source.title,
     targetNoteId: assertion.target.noteId,
     targetTitle: assertion.target.title,
+    effectiveCanon: assertion.effectiveCanon,
+    certainty: assertion.certainty,
   };
 }
 

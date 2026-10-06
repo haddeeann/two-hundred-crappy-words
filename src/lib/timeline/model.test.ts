@@ -696,6 +696,7 @@ describe("source-linked timeline derivation", () => {
           id: EVENT_ID,
           type: "event",
           title: "Before",
+          canon: "canon",
           facts: [
             timeFact("occurs-at", "2140-01-01", { certainty: "exact" }),
             participantFact(exactCharacter, { certainty: "exact" }),
@@ -720,6 +721,7 @@ describe("source-linked timeline derivation", () => {
           id: exactCharacter,
           type: "character",
           title: "Exact",
+          canon: "canon",
           facts: [characterTimeFact("born", "2150-01-01", { certainty: "exact" })],
         }),
       },

@@ -1,6 +1,6 @@
 # Deterministic continuity review proposal
 
-Status: **awaiting approval**
+Status: **approved on 2026-10-05**
 
 Last updated: 2026-10-05
 
@@ -13,9 +13,9 @@ the deterministic checks already present in 200 Crappy Words, adds two narrow
 structured-fact rules, and resolves the previously deferred portable-exception
 boundary.
 
-No implementation, project-format change, source write, or network behavior is
-authorized by this document. The decisions at the end require explicit user
-approval first.
+The user approved all eight decisions on 2026-10-05. That approval authorizes
+the implementation sequence at the end while retaining its separate guarded
+write boundary for the optional exception file.
 
 ## Existing product boundary
 
@@ -289,8 +289,7 @@ rules mean absence of a finding is not proof of continuity.
 
 ## Approval gates
 
-Implementation should begin only after explicit answers to these permanent
-choices:
+**All eight choices were explicitly approved on 2026-10-05.**
 
 1. **Initial scope:** approve aggregation of the existing source diagnostics
    and four implemented finding families plus only the two new structured-data

@@ -20,12 +20,14 @@ function note(
   type: string,
   title: string,
   facts: readonly string[] = [],
+  canon: string | null = "canon",
 ): string {
   return [
     "---",
     `id: "${noteId}"`,
     `type: "${type}"`,
     `title: "${title}"`,
+    ...(canon ? [`canon: "${canon}"`] : []),
     ...(facts.length > 0 ? ["facts:", ...facts] : []),
     "---",
   ].join("\n");
@@ -114,6 +116,7 @@ function analyze({
   originCertainty = "exact",
   journeyRouteFacts = [noteFact(id(104), "uses-route", ROUTE_ID)],
   calendars = [],
+  noteCanon = "canon",
 }: {
   durations?: readonly string[];
   departure?: string;
@@ -123,15 +126,16 @@ function analyze({
   originCertainty?: string;
   journeyRouteFacts?: readonly string[];
   calendars?: readonly TimelineCalendar[];
+  noteCanon?: string | null;
 } = {}) {
   const index = buildLoreProjectIndex([
     {
       path: "Locations/origin.md",
-      text: note(ORIGIN_ID, "location", "Origin"),
+      text: note(ORIGIN_ID, "location", "Origin", [], noteCanon),
     },
     {
       path: "Locations/destination.md",
-      text: note(DESTINATION_ID, "location", "Destination"),
+      text: note(DESTINATION_ID, "location", "Destination", [], noteCanon),
     },
     {
       path: "Routes/route.md",
@@ -139,7 +143,7 @@ function analyze({
         noteFact(id(101), "route-origin", originTarget, originCertainty),
         noteFact(id(102), "route-destination", destinationTarget),
         ...durations,
-      ]),
+      ], noteCanon),
     },
     {
       path: "Timeline/journey.md",
@@ -147,7 +151,7 @@ function analyze({
         ...journeyRouteFacts,
         departure,
         ...arrivals,
-      ]),
+      ], noteCanon),
     },
   ]);
   return deriveJourneyAnalyses(deriveTravelModel(index), calendars)[0]!;
@@ -195,7 +199,7 @@ describe("journey arrival evidence", () => {
       comparison: {
         kind: "review",
         hardContradiction: true,
-        reason: expect.stringContaining("Unique exact"),
+        reason: expect.stringContaining("Unique canon, exact"),
       },
     });
   });
@@ -211,7 +215,20 @@ describe("journey arrival evidence", () => {
       comparison: {
         kind: "review",
         hardContradiction: false,
-        reason: expect.stringContaining("non-exact"),
+        reason: expect.stringContaining("canon or certainty"),
+      },
+    });
+  });
+
+  it("keeps exact but non-canon disjoint evidence at review", () => {
+    expect(analyze({
+      arrivals: [timeFact(id(106), "ends-at", "2161-04-09")],
+      noteCanon: null,
+    })).toMatchObject({
+      kind: "computed",
+      comparison: {
+        kind: "review",
+        hardContradiction: false,
       },
     });
   });

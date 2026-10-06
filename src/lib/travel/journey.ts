@@ -341,8 +341,8 @@ function compareAuthoredArrival(
     kind: "review",
     hardContradiction,
     reason: hardContradiction
-      ? "Unique exact departure, route, duration, endpoint, and authored-arrival evidence are disjoint."
-      : "The authored arrival is disjoint from the derived window, but non-exact evidence prevents a hard contradiction.",
+      ? "Unique canon, exact departure, route, duration, endpoint, and authored-arrival evidence are disjoint."
+      : "The authored arrival is disjoint from the derived window, but canon or certainty qualifications prevent a hard contradiction.",
     authoredRange: normalized.range,
   };
 }
@@ -361,7 +361,10 @@ function allContributingClaimsExact(
       ? route.destination.claim.evidence
       : null,
     duration.candidate.claim.evidence,
-  ].every((evidence) => evidence?.certainty === "exact");
+  ].every(
+    (evidence) =>
+      evidence?.certainty === "exact" && evidence.effectiveCanon === "canon",
+  );
 }
 
 function classifyApplicability(

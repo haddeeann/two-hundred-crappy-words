@@ -494,13 +494,20 @@ function deriveCharacterAppearance(
   let presence: TimelineCharacterPresence;
   if (calculation.kind === "pre-birth") {
     age = indeterminateAge(calculation.reason, qualified);
-    const hard = participation.kind === "confirmed" && exactEvidence;
+    const hard =
+      participation.kind === "confirmed" &&
+      claimsSupportContradiction(
+        participant,
+        subject,
+        birth.fact,
+        character.canon,
+      );
     presence = {
       kind: "impossible-before-birth",
       hardContradiction: hard,
       reason: hard
-        ? "Confirmed participation is wholly before the character's exact birth evidence."
-        : "The occurrence is before the written birth range, but non-exact or potential evidence prevents a hard contradiction.",
+        ? "Confirmed participation is wholly before the character's canon, exact birth evidence."
+        : "The occurrence is before the written birth range, but canon, certainty, or participation qualifications prevent a hard contradiction.",
     };
   } else if (calculation.kind === "indeterminate") {
     age = indeterminateAge(calculation.reason, qualified);
@@ -530,6 +537,7 @@ function deriveCharacterAppearance(
       participation.kind,
       calendars,
       presence,
+      character.canon,
     );
   } else if (presence.kind !== "impossible-before-birth" && death.reason) {
     presence = uncertainPresence(death.reason);
@@ -591,6 +599,7 @@ function applyDeathBoundary(
   participation: TimelineCharacterAppearance["participation"],
   calendars: TimelineProject["calendars"],
   current: TimelineCharacterPresence,
+  characterCanon: CanonStatus | null,
 ): TimelineCharacterPresence {
   if (!subject.range || death.value.kind !== "time") return current;
   const normalized = normalizeTimelineExpression(
@@ -604,13 +613,18 @@ function applyDeathBoundary(
   }
   if (subject.range.earliest > normalized.range.latest) {
     const hard = participation === "confirmed" &&
-      claimsAreExact(participant, subject, death);
+      claimsSupportContradiction(
+        participant,
+        subject,
+        death,
+        characterCanon,
+      );
     return {
       kind: "impossible-after-death",
       hardContradiction: hard,
       reason: hard
-        ? "Confirmed participation is wholly after the character's exact death evidence."
-        : "The occurrence is after the written death range, but non-exact or potential evidence prevents a hard contradiction.",
+        ? "Confirmed participation is wholly after the character's canon, exact death evidence."
+        : "The occurrence is after the written death range, but canon, certainty, or participation qualifications prevent a hard contradiction.",
     };
   }
   if (subject.range.latest > normalized.range.earliest) {
@@ -654,6 +668,18 @@ function claimsAreExact(
     lifespan.certainty === "exact" &&
     subject.evidence.length > 0 &&
     subject.evidence.every(({ certainty }) => certainty === "exact");
+}
+
+function claimsSupportContradiction(
+  participant: ParsedContinuityFact,
+  subject: TimelineSubject,
+  lifespan: ParsedContinuityFact,
+  lifespanNoteCanon: CanonStatus | null,
+): boolean {
+  return claimsAreExact(participant, subject, lifespan) &&
+    (participant.canon ?? subject.noteCanon) === "canon" &&
+    (lifespan.canon ?? lifespanNoteCanon) === "canon" &&
+    subject.evidence.every(({ effectiveCanon }) => effectiveCanon === "canon");
 }
 
 function appearanceEvidence(

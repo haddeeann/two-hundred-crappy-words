@@ -10,30 +10,33 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.9 — Deterministic continuity-review contract**
+**0.7.9b — Read-only continuity-review workspace**
 
 ### Intended outcome
 
-Define the remaining evidence-backed continuity review so the app can find useful chronology, presence, canon, property, link, and selected-manuscript concerns without inventing truth or hiding policy.
+Expose the approved, normalized, evidence-backed continuity review in an accessible main workspace without adding persistence or changing project sources.
 
 ### Acceptance criteria
 
-- [x] Inventory the existing deterministic findings, source evidence, severities, caps, and refusal behavior before proposing overlap or new storage.
-- [x] Research relevant validation/reporting standards and current writing-tool conventions using primary sources where available.
-- [x] Draft one durable, writer-readable proposal covering initial rules, review language, source links, intentional exceptions, persistence, selected-manuscript claims, limits, and privacy.
-- [ ] Obtain explicit approval for consequential product and portable-format choices before implementation.
+- [x] Obtain explicit approval for the eight consequential product and portable-format choices.
+- [x] Normalize existing findings and source problems into one deterministic memory-only model.
+- [x] Add generic single-applicability and lifespan-order rules with stable evidence fingerprints, retired exclusion, and the shared canon/certainty gate.
+- [x] Filter selected-manuscript review only through stable bound source membership.
+- [ ] Add the accessible read-only workspace, filters, omission disclosures, and exact source navigation.
 
 ## Next slices
 
-1. Obtain explicit answers to the proposal's eight product and portable-format decisions.
-2. After approval, normalize the existing findings and implement the two narrow new rules behind the shared canon and severity gate.
-3. Add the read-only workspace before introducing the optional exception file and its guarded write path.
+1. Add the read-only review workspace while preserving the project file tree.
+2. Verify project-wide and selected-manuscript filtering, keyboard behavior, exact navigation, limits, zero writes, and zero credit.
+3. Publish the approved exception schema/parser read-only before adding its guarded write path.
 
 ## Current approval state
 
-Portable maps are complete under the nine choices approved in [`MAP_FORMAT_PROPOSAL.md`](MAP_FORMAT_PROPOSAL.md) on 2026-10-05. Deterministic continuity review has no implementation approval yet; research and contract drafting may proceed, but consequential rule, exception, and persistence choices must return to the user.
+Portable maps are complete under the nine choices approved in [`MAP_FORMAT_PROPOSAL.md`](MAP_FORMAT_PROPOSAL.md) on 2026-10-05. The user approved all eight deterministic continuity-review choices in [`CONTINUITY_REVIEW_PROPOSAL.md`](CONTINUITY_REVIEW_PROPOSAL.md) on 2026-10-05. The read-only workspace and the approved optional portable exception format may proceed in the documented sequence; optional AI assistance remains outside this approval.
 
 ## Completed checkpoint
+
+- Slice 0.7.9a implements the approved deterministic foundation without adding a visible workspace or project persistence. One memory-only model normalizes existing relationship, travel-presence, impossible-appearance, arrival-comparison, source-metadata, identity, reference, wiki-link, and timeline evidence while retaining exact source fingerprints and ranges. The two approved new rules report non-separated built-in `one-to-review` facts outside the existing relationship rule and mechanically impossible death-before-birth order. Retired evidence is excluded from ordinary findings; Contradiction now consistently requires every contributing claim to be both canon and explicitly exact, including the pre-existing timeline and travel hard-result surfaces. Stable finding identities use rule/version plus sorted fact identities. Selected-manuscript scope uses only bound scene/chapter note IDs and paths while preserving every supporting source; freeform outline metadata and prose remain non-semantic. Source problems stay distinct, missing facts remain unreported, results are stably ordered and capped, and no file, capability, dependency, daily-credit, or network behavior changed. Seven new fixtures bring the full frontend gate to 607 passing tests across ninety files with zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities.
 
 - Slice 0.7.9 research and contract drafting are complete. The inventory found stable source/fact/manuscript identities, exact navigation, guarded authoring, explicit canon/certainty, source diagnostics, versioned relationship and travel-presence findings, hard timeline/travel comparisons, deterministic limits, and the deliberately deferred portable-exception gate; it also confirmed that freeform manuscript metadata remains non-semantic. Primary research covered SHACL 1.2 result severity/focus/source/message separation, SARIF stable rule fingerprints and justified suppression, PROV source derivation, and the explicit planning/filter patterns of Plottr and Campfire. [`CONTINUITY_REVIEW_PROPOSAL.md`](CONTINUITY_REVIEW_PROPOSAL.md) recommends a unified local review that reuses existing rule IDs, adds only generic single-applicability and lifespan-order checks, reserves Contradiction for all-canon/all-exact mechanically impossible evidence, scopes a selected manuscript only through structured facts, and stores explained intentional exceptions in one optional portable project file with stale matching. No source, schema, capability, dependency, application behavior, or daily-credit behavior changed. Eight permanent choices now await user approval before implementation.
 
@@ -182,7 +185,7 @@ Portable maps are complete under the nine choices approved in [`MAP_FORMAT_PROPO
 
 ## Blockers and decision gates
 
-There is no technical blocker. Portable maps are complete. Continuity-review implementation is intentionally paused at the eight-choice product and portable-format approval gate in [`CONTINUITY_REVIEW_PROPOSAL.md`](CONTINUITY_REVIEW_PROPOSAL.md).
+There is no technical blocker. Portable maps and the approved continuity-review foundation are complete. The read-only review workspace is next; persistence begins only after that surface is verified.
 
 ## Handoff protocol
 
