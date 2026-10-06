@@ -153,6 +153,12 @@
     type RelationshipPresentationSource,
   } from "$lib/relationships/presentation";
   import ContinuityReviewWorkspace from "$lib/continuity-review/ContinuityReviewWorkspace.svelte";
+  import { matchContinuityExceptions } from "$lib/continuity-review/exceptions";
+  import { CONTINUITY_REVIEW_FILE } from "$lib/continuity-review/format";
+  import {
+    loadContinuityReviewProject,
+    type ContinuityReviewProjectLoadResult,
+  } from "$lib/continuity-review/load";
   import { deriveContinuityReview } from "$lib/continuity-review/model";
   import type { ContinuityReviewEvidence } from "$lib/continuity-review/types";
   import {
@@ -521,6 +527,9 @@
   let continuityReviewOpen = $state(false);
   let continuityReviewScopeId = $state("");
   let continuityReviewEditorSelection = { start: 0, end: 0 };
+  let continuityReviewProject = $state<ContinuityReviewProjectLoadResult>({ kind: "absent" });
+  let continuityReviewLoading = $state(false);
+  let continuityReviewLoadRevision = 0;
   let mapsProject = $state<MapsProjectLoadResult>({ kind: "absent" });
   let mapsLoading = $state(false);
   let mapsLoadRevision = 0;
@@ -780,7 +789,7 @@
       ? manuscriptProject.reconciled.structure.manuscripts.map(({ id, title }) => ({ id, title }))
       : [],
   );
-  const continuityReviewModel = $derived.by(() =>
+  const continuityReviewWholeWorldModel = $derived.by(() =>
     loreIndex && timelineModel
       ? deriveContinuityReview({
           index: loreIndex,
@@ -793,12 +802,55 @@
             manuscriptProject.kind === "ready"
               ? manuscriptProject.reconciled.structure
               : null,
-          scope: continuityReviewScopeId
-            ? { kind: "manuscript", manuscriptId: continuityReviewScopeId }
-            : { kind: "whole-world" },
+          scope: { kind: "whole-world" },
         })
       : null,
   );
+  const continuityReviewModel = $derived.by(() => {
+    if (!continuityReviewScopeId) return continuityReviewWholeWorldModel;
+    return loreIndex && timelineModel
+      ? deriveContinuityReview({
+          index: loreIndex,
+          calendars: travelCalendars,
+          relationshipFindings: relationshipReviewFindingSet,
+          travelPresenceFindings: travelPresenceFindingSet,
+          timeline: timelineModel,
+          travelAnalyses: travelJourneyAnalyses,
+          manuscript:
+            manuscriptProject.kind === "ready"
+              ? manuscriptProject.reconciled.structure
+              : null,
+          scope: { kind: "manuscript", manuscriptId: continuityReviewScopeId },
+        })
+      : null;
+  });
+  const continuityReviewExceptionMatch = $derived.by(() =>
+    continuityReviewWholeWorldModel
+      ? matchContinuityExceptions(
+          continuityReviewWholeWorldModel.findings,
+          continuityReviewProject.kind === "ready"
+            ? continuityReviewProject.continuityReviewProject.exceptions
+            : [],
+        )
+      : null,
+  );
+  const continuityReviewPresentation = $derived.by(() => {
+    if (!continuityReviewModel || !continuityReviewExceptionMatch) return null;
+    const scopedFindingIds = new Set(continuityReviewModel.findings.map(({ id }) => id));
+    const activeFindingIds = new Set(
+      continuityReviewExceptionMatch.activeFindings.map(({ id }) => id),
+    );
+    return {
+      model: {
+        ...continuityReviewModel,
+        findings: continuityReviewModel.findings.filter(({ id }) => activeFindingIds.has(id)),
+      },
+      intentionalFindings: continuityReviewExceptionMatch.intentionalFindings.filter(
+        ({ finding }) => scopedFindingIds.has(finding.id),
+      ),
+      staleExceptions: continuityReviewExceptionMatch.staleExceptions,
+    };
+  });
   const travelInspector = $derived.by(() => {
     const path = activeLorePath();
     return presentTravelInspector(
@@ -1220,6 +1272,9 @@
     continuityReviewOpen = false;
     continuityReviewScopeId = "";
     continuityReviewEditorSelection = { start: 0, end: 0 };
+    continuityReviewLoadRevision += 1;
+    continuityReviewProject = { kind: "absent" };
+    continuityReviewLoading = false;
     mapsLoadRevision += 1;
     mapImageLoadRevision += 1;
     mapsProject = { kind: "absent" };
@@ -1284,6 +1339,7 @@
       void refreshManuscriptStructure(path, session, loreIndex);
       void refreshTimelineProject(path, session);
       void refreshMapsProject(path, session);
+      void refreshContinuityReviewProject(path, session);
     } catch (cause) {
       if (session !== loreIndexSession || path !== folderPath) return;
       loreIndexPhase = "error";
@@ -1353,6 +1409,9 @@
           void refreshManuscriptStructure(path, session, loreIndex);
           void refreshTimelineProject(path, session);
           if (shouldRefreshMaps(changedPaths)) void refreshMapsProject(path, session);
+          if (changedPaths.some((changedPath) => pathsOverlap(changedPath, CONTINUITY_REVIEW_FILE))) {
+            void refreshContinuityReviewProject(path, session);
+          }
         } catch (cause) {
           if (session !== loreIndexSession || path !== folderPath) return;
           loreIndexNeedsRefresh = true;
@@ -1472,6 +1531,47 @@
       };
     } finally {
       if (revision === timelineLoadRevision) timelineLoading = false;
+    }
+  }
+
+  async function refreshContinuityReviewProject(
+    path = folderPath,
+    session = loreIndexSession,
+  ): Promise<void> {
+    if (!path) return;
+    const revision = ++continuityReviewLoadRevision;
+    continuityReviewLoading = true;
+    const expectedProjectId = projectInspection.kind === "world-project"
+      ? projectInspection.manifest.projectId
+      : null;
+    try {
+      const result = await loadContinuityReviewProject(
+        path,
+        tauriLoreScanBackend,
+        expectedProjectId,
+      );
+      if (
+        revision !== continuityReviewLoadRevision ||
+        session !== loreIndexSession ||
+        path !== folderPath
+      ) {
+        return;
+      }
+      continuityReviewProject = result;
+    } catch (cause) {
+      if (
+        revision !== continuityReviewLoadRevision ||
+        session !== loreIndexSession ||
+        path !== folderPath
+      ) {
+        return;
+      }
+      continuityReviewProject = {
+        kind: "unreadable",
+        message: `The continuity-review exception file could not be refreshed safely: ${formatError(cause)}`,
+      };
+    } finally {
+      if (revision === continuityReviewLoadRevision) continuityReviewLoading = false;
     }
   }
 
@@ -3230,6 +3330,7 @@
 
   async function refreshContinuityReview(): Promise<void> {
     await refreshLoreIndex();
+    await refreshContinuityReviewProject();
     if (
       continuityReviewScopeId &&
       !continuityReviewManuscripts.some(({ id }) => id === continuityReviewScopeId)
@@ -7171,11 +7272,14 @@
       class:has-reference={Boolean(loreReference) && !timelineOpen && !mapOpen && !continuityReviewOpen}
     >
       <div class="editor-workspace">
-        {#if continuityReviewOpen && continuityReviewModel}
+        {#if continuityReviewOpen && continuityReviewPresentation}
           <ContinuityReviewWorkspace
-            model={continuityReviewModel}
+            model={continuityReviewPresentation.model}
+            exceptionResult={continuityReviewProject}
+            intentionalFindings={continuityReviewPresentation.intentionalFindings}
+            staleExceptions={continuityReviewPresentation.staleExceptions}
             manuscripts={continuityReviewManuscripts}
-            loading={loreIndexPhase === "indexing" || timelineLoading || manuscriptLoading}
+            loading={loreIndexPhase === "indexing" || timelineLoading || manuscriptLoading || continuityReviewLoading}
             onClose={closeContinuityReviewWorkspace}
             onRefresh={() => void refreshContinuityReview()}
             onSelectScope={(manuscriptId) => {

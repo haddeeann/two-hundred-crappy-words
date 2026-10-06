@@ -394,3 +394,10 @@ Type in the app and pause. Confirm an error says the external version was not ov
 Close the development command with `Ctrl+C`. The temporary QA directory may be deleted when its contents are no longer useful.
 
 Record any mismatch in `docs/CURRENT.md` before marking milestone 0.2 complete.
+## Milestone 0.7.9c portable continuity-exception read-only checkpoint
+
+Completed successfully on macOS on 2026-10-05 using Computer Use against a freshly built production `.app` and the prior disposable continuity-review world. The root exception file contained one exact `timeline.appearance.before-birth` tuple with a time-displacement explanation and one deliberately unavailable `relationship.parent-cycle` tuple. Whole world showed the unrelated draft lifespan Review as active, moved Mara's canon/exact impossible appearance into a collapsed **Intentional findings** section, and kept the old relationship decision visible under **Stale intentional exceptions**. Expanding Intentional showed the complete writer explanation, current rule/version, and birth, occurrence, and participant source actions.
+
+Selecting the fixture manuscript removed the unrelated active Review without changing the exact intentional match. Stale exceptions remained visibly project-wide with their saved explanation and evidence identities. External replacement of one saved evidence ID refreshed automatically: Mara's Contradiction returned to Active and the saved entry became **evidence changed** rather than matching a different tuple. Restoring the exact file SHA-256 restored the intentional match automatically. The interface retained the separate unusable `located-at` source problem, read-only language, native controls, and `0 / 200` daily total throughout. No project source was written by the app; the fixture hash was restored, the folder returned to Trash, and Arcadia was reopened.
+
+The final frontend gate has 629 passing tests across ninety-three files, Svelte/TypeScript reports zero errors and warnings, the production dependency audit reports zero vulnerabilities, and web plus production macOS `.app`/DMG builds succeed.

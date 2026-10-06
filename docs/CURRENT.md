@@ -10,30 +10,32 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.9c — Portable continuity-exception format**
+**0.7.9d — Guarded intentional-exception authoring**
 
 ### Intended outcome
 
-Publish and safely load the approved optional portable exception file without yet exposing or performing project writes.
+Let a writer mark an eligible finding intentional, revise its explanation, or remove a stale/active exception through the app's established exact-preview and guarded-Undo boundary.
 
 ### Acceptance criteria
 
-- [x] Publish the version-one JSON Schema for the exact approved format, bounds, and stable-evidence tuple.
-- [x] Add a dependency-free parser that preserves supported-version unknown fields and distinguishes absent, malformed, invalid, unsupported, unsafe, unreadable, and unstable sources.
-- [x] Match active, intentional, and stale exceptions deterministically without silently retargeting evidence.
-- [ ] Surface loaded intentional and stale exceptions read-only before adding any mutation command or interface.
+- [ ] Add pure create, explanation-edit, and remove plans that preserve every supported-version unknown field and regenerate an exact complete JSON preview.
+- [ ] Execute create-new or exact replacement only after a fresh equivalent reload, verify the committed bytes, and retain one stale-sensitive Undo.
+- [ ] Expose **Mark intentional…** only for active Review or Contradiction findings, plus edit/remove actions for loaded intentional or stale exceptions.
+- [ ] Complete packaged macOS QA for create, edit, remove, Undo, stale-preview refusal, external refresh, source integrity, keyboard flow, and zero daily credit.
 
 ## Next slices
 
-1. Publish and fixture the approved exception schema and parser.
-2. Add stable, no-symlink project-root loading plus exact active/stale matching in the memory-only review.
-3. Present intentional and stale exceptions read-only; only then add guarded create/edit/remove preview, execution, and Undo.
+1. Add and fixture immutable mutation planning over an absent or exact ready exception file.
+2. Reuse the native exact JSON create/replace/remove boundary with fresh semantic equivalence and one guarded Undo.
+3. Add the cancel-first authoring dialogs and complete the milestone performance/packaged regression gate.
 
 ## Current approval state
 
 Portable maps are complete under the nine choices approved in [`MAP_FORMAT_PROPOSAL.md`](MAP_FORMAT_PROPOSAL.md) on 2026-10-05. The user approved all eight deterministic continuity-review choices in [`CONTINUITY_REVIEW_PROPOSAL.md`](CONTINUITY_REVIEW_PROPOSAL.md) on 2026-10-05. The read-only workspace and the approved optional portable exception format may proceed in the documented sequence; optional AI assistance remains outside this approval.
 
 ## Completed checkpoint
+
+- Slice 0.7.9c completes the approved portable exception format without adding any project write. Project refresh now loads the optional exception file alongside the lore index and responds to external create, edit, restore, or removal. Matching is performed against Whole world before manuscript filtering, so an exception outside the selected manuscript never becomes falsely stale; intentional findings follow the selected scope, while stale entries remain project-wide because vanished evidence cannot be assigned safely. The review visibly separates active findings, a collapsed intentional section with the full writer explanation and current exact source actions, stale exceptions with their saved rule/version/evidence identities and reason, source problems, and invalid/unavailable exception-file states. Packaged macOS QA loaded one exact appearance contradiction and one deliberately stale relationship exception, verified Whole world and manuscript scope, expanded the intentional explanation and all three evidence actions, externally changed the evidence tuple and saw the finding reactivate while the exception became stale without manual refresh, then restored the original SHA-256 and exact intentional match. Today remained `0 / 200`, the app never wrote the file, the disposable project returned to Trash, and Arcadia was restored. The final gate has 629 passing frontend tests across ninety-three files, zero Svelte/TypeScript diagnostics, zero production dependency vulnerabilities, and successful web plus production macOS `.app`/DMG builds. Guarded authoring is the next slice.
 
 - Slice 0.7.9c's portable-format checkpoint publishes the optional root `200-crappy-words.continuity-review.json` contract without creating or changing project data. The version-one JSON Schema and dependency-free parser require the matching project UUID, unique exception UUIDs, lowercase versioned rule identities, canonical sorted stable-evidence UUID tuples, and a nonblank bounded explanation while preserving every unknown supported-version field. The file is limited to 5 MiB and 1,000 exceptions; evidence, text, and diagnostics are independently bounded, and over-limit or duplicate entries are explicit invalid-source problems rather than silently truncated policy. Root loading accepts exactly one regular non-symbolic entry, stable-reads it twice, and keeps absent, malformed, invalid, newer, unsafe, unreadable, unstable, unavailable-manifest, and project-mismatch states distinct. Pure matching moves only an exact Review or Contradiction tuple into intentional findings; rule-version, evidence-set, missing-evidence, disappeared-finding, and newly ineligible changes remain visibly stale and never retarget automatically. Twenty-two focused fixtures pass; the complete gate has 629 passing frontend tests across ninety-three files, zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities. The next checkpoint loads this state with project refresh and presents intentional and stale exceptions read-only.
 
@@ -188,7 +190,7 @@ Portable maps are complete under the nine choices approved in [`MAP_FORMAT_PROPO
 
 ## Blockers and decision gates
 
-There is no technical blocker. The approved read-only review is complete. The portable exception schema/parser/loader is next; no persistence action is added until that read-only boundary is verified.
+There is no technical blocker. The portable read-only exception boundary is verified. The approved guarded create/edit/remove/Undo boundary is next.
 
 ## Handoff protocol
 

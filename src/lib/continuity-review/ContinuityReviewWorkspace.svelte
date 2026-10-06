@@ -1,4 +1,9 @@
 <script lang="ts">
+  import type {
+    IntentionalContinuityFinding,
+    StaleContinuityException,
+  } from "./exceptions";
+  import type { ContinuityReviewProjectLoadResult } from "./load";
   import type { ContinuityReviewEvidence, ContinuityReviewModel } from "./types";
 
   export interface ContinuityReviewManuscriptOption {
@@ -8,6 +13,9 @@
 
   interface Props {
     model: ContinuityReviewModel;
+    exceptionResult: ContinuityReviewProjectLoadResult;
+    intentionalFindings: readonly IntentionalContinuityFinding[];
+    staleExceptions: readonly StaleContinuityException[];
     manuscripts: readonly ContinuityReviewManuscriptOption[];
     loading: boolean;
     onClose: () => void;
@@ -18,6 +26,9 @@
 
   let {
     model,
+    exceptionResult,
+    intentionalFindings,
+    staleExceptions,
     manuscripts,
     loading,
     onClose,
@@ -49,6 +60,7 @@
   const selectedScope = $derived(
     model.scope.kind === "manuscript" ? model.scope.manuscriptId : "",
   );
+  const exceptionMessage = $derived(exceptionProjectMessage(exceptionResult));
 
   function scopeChanged(event: Event): void {
     const value = (event.currentTarget as HTMLSelectElement).value;
@@ -63,6 +75,26 @@
 
   function canonLabel(evidence: ContinuityReviewEvidence): string {
     return `${evidence.effectiveCanon ?? "canon unspecified"} · ${evidence.certainty ?? "certainty unspecified"}`;
+  }
+
+  function exceptionProjectMessage(value: ContinuityReviewProjectLoadResult): string {
+    if (value.kind === "ready") {
+      const count = value.continuityReviewProject.exceptions.length;
+      return `${count} portable intentional ${count === 1 ? "exception is" : "exceptions are"} loaded from the project file.`;
+    }
+    if (value.kind === "absent") {
+      return "No portable intentional-exception file exists for this world. Every current finding remains active, and nothing was created.";
+    }
+    if (value.kind === "invalid") {
+      return `The intentional-exception file is invalid: ${value.issues.map(({ path, message }) => `${path}: ${message}`).join(" ")} Its exceptions are disabled, and the file was not changed.`;
+    }
+    if (value.kind === "malformed") {
+      return `The intentional-exception file is not valid JSON: ${value.message} Its exceptions are disabled, and the file was not changed.`;
+    }
+    if (value.kind === "unsupported-version") {
+      return `The intentional-exception file uses newer version ${value.version}. Its exceptions are disabled, and the file was preserved untouched.`;
+    }
+    return value.message;
   }
 </script>
 
@@ -102,6 +134,14 @@
       </div>
     </fieldset>
   </section>
+
+  <p
+    class="exception-status"
+    class:problem={exceptionResult.kind !== "ready" && exceptionResult.kind !== "absent"}
+    role={exceptionResult.kind !== "ready" && exceptionResult.kind !== "absent" ? "alert" : "status"}
+  >
+    {exceptionMessage}
+  </p>
 
   {#if model.omittedFindingCount > 0 || model.omittedSourceProblemCount > 0}
     <p class="limit-notice" role="status">
@@ -199,8 +239,88 @@
     {/if}
   </section>
 
+  {#if intentionalFindings.length > 0}
+    <details class="result-section intentional-section">
+      <summary>
+        <span>
+          <span class="eyebrow">Writer-approved, still visible</span>
+          <strong>Intentional findings</strong>
+        </span>
+        <span class="section-count">{intentionalFindings.length}</span>
+      </summary>
+      <p class="section-intro">These exact Review or Contradiction findings still exist. Their portable explanations do not change or prove the underlying sources.</p>
+      <ol class="result-list">
+        {#each intentionalFindings as intentional (intentional.exception.id)}
+          <li>
+            <article class="result-card intentional">
+              <div class="card-heading">
+                <div>
+                  <p class="result-kind">Intentional {severityLabel(intentional.finding.severity)} · {intentional.finding.family}</p>
+                  <h3>{intentional.finding.summary}</h3>
+                </div>
+                <span class="severity">Intentional</span>
+              </div>
+              <div class="writer-explanation">
+                <strong>Writer explanation</strong>
+                <p>{intentional.exception.explanation}</p>
+              </div>
+              <details>
+                <summary>Why the finding still appears</summary>
+                <p>{intentional.finding.explanation}</p>
+                <p class="rule">Rule {intentional.finding.ruleId} · version {intentional.finding.ruleVersion}</p>
+              </details>
+              <div class="evidence" aria-label={`Evidence for intentional finding ${intentional.finding.summary}`}>
+                {#each intentional.finding.evidence as item (`${item.role}:${item.stableId}:${item.path}:${item.sourceRange.start}`)}
+                  <button type="button" onclick={() => onOpenSource(item)}>
+                    <strong>{item.role}</strong> · {item.title} · {item.property ?? "source"} · {canonLabel(item)} · line {item.sourceRange.line}
+                  </button>
+                {/each}
+              </div>
+            </article>
+          </li>
+        {/each}
+      </ol>
+    </details>
+  {/if}
+
+  {#if staleExceptions.length > 0}
+    <section class="result-section stale-section" aria-labelledby="stale-exceptions-heading">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Needs a writer decision</p>
+          <h2 id="stale-exceptions-heading">Stale intentional exceptions</h2>
+        </div>
+        <span>{staleExceptions.length}</span>
+      </div>
+      <p class="section-intro">These are shown project-wide because missing or changed evidence cannot always be assigned safely to the selected manuscript. Nothing was retargeted or removed.</p>
+      <ol class="result-list">
+        {#each staleExceptions as stale (stale.exception.id)}
+          <li>
+            <article class="result-card stale">
+              <p class="result-kind">Stale exception · {stale.reason.replaceAll("-", " ")}</p>
+              <h3>{stale.exception.ruleId} · version {stale.exception.ruleVersion}</h3>
+              <p>{stale.explanation}</p>
+              <div class="writer-explanation">
+                <strong>Saved writer explanation</strong>
+                <p>{stale.exception.explanation}</p>
+              </div>
+              <details>
+                <summary>Saved evidence identities</summary>
+                <ul class="identity-list">
+                  {#each stale.exception.evidenceIds as evidenceId (evidenceId)}
+                    <li><code>{evidenceId}</code></li>
+                  {/each}
+                </ul>
+              </details>
+            </article>
+          </li>
+        {/each}
+      </ol>
+    </section>
+  {/if}
+
   <footer>
-    Review is local, memory-only, and awards no daily words. Nothing here edits, dismisses, or repairs a source.
+    Review and exception matching are local and award no daily words. This read-only workspace never creates, edits, dismisses, or removes an exception or source.
   </footer>
 </section>
 
@@ -228,6 +348,7 @@
   .controls,
   .result-section,
   .limit-notice,
+  .exception-status,
   footer {
     box-sizing: border-box;
     max-width: 76rem;
@@ -329,7 +450,8 @@
 
   .controls,
   .result-section,
-  .limit-notice {
+  .limit-notice,
+  .exception-status {
     padding: 1rem;
     border: 1px solid #3c3c3c;
     border-radius: 7px;
@@ -402,6 +524,17 @@
     line-height: 1.45;
   }
 
+  .exception-status {
+    color: #b8c7ba;
+    font-size: 0.76rem;
+    line-height: 1.45;
+  }
+
+  .exception-status.problem {
+    border-color: #765044;
+    color: #e1b6a9;
+  }
+
   .section-heading {
     align-items: center;
     margin-bottom: 0.8rem;
@@ -430,8 +563,13 @@
   }
 
   .result-card.contradiction,
-  .result-card.source-problem {
+  .result-card.source-problem,
+  .result-card.stale {
     border-left-color: #a65f50;
+  }
+
+  .result-card.intentional {
+    border-left-color: #7a6ca6;
   }
 
   .result-card.review .result-kind {
@@ -439,8 +577,83 @@
   }
 
   .result-card.contradiction .result-kind,
-  .result-card.source-problem .result-kind {
+  .result-card.source-problem .result-kind,
+  .result-card.stale .result-kind {
     color: #e0a092;
+  }
+
+  .result-card.intentional .result-kind {
+    color: #b9a8e8;
+  }
+
+  .intentional-section > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: auto;
+    margin: -1rem;
+    padding: 1rem;
+    color: #f0f0f0;
+  }
+
+  .intentional-section[open] > summary {
+    margin-bottom: 0;
+  }
+
+  .intentional-section > summary strong {
+    display: block;
+    font-size: 1.05rem;
+  }
+
+  .section-count {
+    padding: 0.1rem 0.36rem;
+    border: 1px solid #505050;
+    border-radius: 999px;
+    color: #bdbdbd;
+    font-size: 0.68rem;
+  }
+
+  .section-intro {
+    color: #aaa;
+    font-size: 0.76rem;
+    line-height: 1.45;
+  }
+
+  .intentional-section .section-intro {
+    margin-top: 1rem;
+  }
+
+  .writer-explanation {
+    margin-top: 0.7rem;
+    padding: 0.65rem;
+    border: 1px solid #4c465a;
+    border-radius: 4px;
+    background: #26232c;
+    color: #d1c8e4;
+    font-size: 0.76rem;
+    line-height: 1.45;
+  }
+
+  .writer-explanation p {
+    margin: 0.3rem 0 0;
+    white-space: pre-wrap;
+  }
+
+  .result-card.stale > p:not(.result-kind) {
+    margin: 0.6rem 0 0;
+    color: #c7b2ac;
+    font-size: 0.76rem;
+    line-height: 1.45;
+  }
+
+  .identity-list {
+    margin: 0.45rem 0 0;
+    padding-left: 1.2rem;
+  }
+
+  .identity-list code {
+    overflow-wrap: anywhere;
   }
 
   details {
