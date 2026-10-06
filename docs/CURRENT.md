@@ -18,22 +18,24 @@ Define the remaining evidence-backed continuity review so the app can find usefu
 
 ### Acceptance criteria
 
-- [ ] Inventory the existing deterministic findings, source evidence, severities, caps, and refusal behavior before proposing overlap or new storage.
-- [ ] Research relevant validation/reporting standards and current writing-tool conventions using primary sources where available.
-- [ ] Draft one durable, writer-readable proposal covering initial rules, review language, source links, intentional exceptions, persistence, selected-manuscript claims, limits, and privacy.
+- [x] Inventory the existing deterministic findings, source evidence, severities, caps, and refusal behavior before proposing overlap or new storage.
+- [x] Research relevant validation/reporting standards and current writing-tool conventions using primary sources where available.
+- [x] Draft one durable, writer-readable proposal covering initial rules, review language, source links, intentional exceptions, persistence, selected-manuscript claims, limits, and privacy.
 - [ ] Obtain explicit approval for consequential product and portable-format choices before implementation.
 
 ## Next slices
 
-1. Inventory the completed continuity subsystems and their existing finding semantics.
-2. Research and draft the deterministic continuity-review proposal.
-3. Stop at the proposal's explicit product decision gate before implementation.
+1. Obtain explicit answers to the proposal's eight product and portable-format decisions.
+2. After approval, normalize the existing findings and implement the two narrow new rules behind the shared canon and severity gate.
+3. Add the read-only workspace before introducing the optional exception file and its guarded write path.
 
 ## Current approval state
 
 Portable maps are complete under the nine choices approved in [`MAP_FORMAT_PROPOSAL.md`](MAP_FORMAT_PROPOSAL.md) on 2026-10-05. Deterministic continuity review has no implementation approval yet; research and contract drafting may proceed, but consequential rule, exception, and persistence choices must return to the user.
 
 ## Completed checkpoint
+
+- Slice 0.7.9 research and contract drafting are complete. The inventory found stable source/fact/manuscript identities, exact navigation, guarded authoring, explicit canon/certainty, source diagnostics, versioned relationship and travel-presence findings, hard timeline/travel comparisons, deterministic limits, and the deliberately deferred portable-exception gate; it also confirmed that freeform manuscript metadata remains non-semantic. Primary research covered SHACL 1.2 result severity/focus/source/message separation, SARIF stable rule fingerprints and justified suppression, PROV source derivation, and the explicit planning/filter patterns of Plottr and Campfire. [`CONTINUITY_REVIEW_PROPOSAL.md`](CONTINUITY_REVIEW_PROPOSAL.md) recommends a unified local review that reuses existing rule IDs, adds only generic single-applicability and lifespan-order checks, reserves Contradiction for all-canon/all-exact mechanically impossible evidence, scopes a selected manuscript only through structured facts, and stores explained intentional exceptions in one optional portable project file with stale matching. No source, schema, capability, dependency, application behavior, or daily-credit behavior changed. Eight permanent choices now await user approval before implementation.
 
 - Slice 0.7.8d completes portable maps. **Replace image** uses the same scoped, twice-inspected PNG/JPEG/WebP selection boundary as map creation and previews the exact current image, selected source, project destination, media type, digest, displayed dimensions, logical-canvas effect, and anchor consequence. Identical verified bytes are an explicit no-op. A different image with the same aspect ratio retains the stable logical canvas and every anchor even when its displayed dimensions differ. A changed aspect ratio resets an empty map automatically, but a populated map remains blocked until the writer explicitly chooses to clear all anchors; creating a separate map remains visible as the non-destructive alternative. External bytes are copied once without clobbering, moving, overwriting, or deleting the source; a committed maps edit retains the project copy, while a failed edit rolls back only its own exact copy. The existing exact-source executor supplies stale refusal and one guarded JSON Undo; imported replacement images intentionally remain project-owned after Undo. Packaged macOS QA replaced the 128 × 128 fixture image with an external 512 × 512 image, retained both anchors on the original canvas, verified source/copy SHA-256 equality, rendered the result, preserved `0 / 200`, and restored the maps JSON exactly with Undo. The different-aspect preview disabled confirmation until its explicit two-anchor clear choice was checked, then disclosed the exact 2816 × 1762 reset; it was canceled without data loss. Selecting the current in-project bytes produced a disabled no-op. Arcadia and all four fixture hashes were restored, and the QA copy was moved to Trash. The focused gate adds four replacement/import tests; the final gate has 600 passing frontend tests across eighty-eight files, zero Svelte/TypeScript diagnostics, twenty-one passing native tests, clean Rust formatting/Clippy, zero production dependency vulnerabilities, and successful web and production macOS `.app`/DMG builds. The roadmap and milestone specification now mark portable maps complete.
 
@@ -180,7 +182,7 @@ Portable maps are complete under the nine choices approved in [`MAP_FORMAT_PROPO
 
 ## Blockers and decision gates
 
-There is no technical blocker. Portable maps are complete. Continuity-review inventory and research are executable; implementation stops at the resulting product decision gate.
+There is no technical blocker. Portable maps are complete. Continuity-review implementation is intentionally paused at the eight-choice product and portable-format approval gate in [`CONTINUITY_REVIEW_PROPOSAL.md`](CONTINUITY_REVIEW_PROPOSAL.md).
 
 ## Handoff protocol
 
