@@ -3326,6 +3326,24 @@
     }
   }
 
+  function beginAddMapPolygon(mapId: string, points: [number, number][]): void {
+    try {
+      const firstNote = mapNoteOptions[0];
+      mapMutationError = "";
+      mapMutationRequest = {
+        kind: "add-polygon",
+        mapId,
+        anchorId: createMapUuid(),
+        noteId: firstNote?.id ?? "",
+        points: points.map((point) => [...point] as [number, number]),
+      };
+      mapMutationOriginalText = mapsProject.kind === "ready" ? mapsProject.text : null;
+      pendingMapImageImport = null;
+    } catch (cause) {
+      appendError(`Could not prepare the region anchor: ${formatError(cause)}`);
+    }
+  }
+
   function beginEditMapPoint(mapId: string, anchor: MapAnchorModel): void {
     if (anchor.anchor.geometry.kind !== "point") return;
     mapMutationError = "";
@@ -3336,6 +3354,20 @@
       noteId: anchor.anchor.noteId,
       x: anchor.anchor.geometry.x,
       y: anchor.anchor.geometry.y,
+    };
+    mapMutationOriginalText = mapsProject.kind === "ready" ? mapsProject.text : null;
+    pendingMapImageImport = null;
+  }
+
+  function beginEditMapPolygon(mapId: string, anchor: MapAnchorModel): void {
+    if (anchor.anchor.geometry.kind !== "polygon") return;
+    mapMutationError = "";
+    mapMutationRequest = {
+      kind: "update-polygon",
+      mapId,
+      anchorId: anchor.anchor.id,
+      noteId: anchor.anchor.noteId,
+      points: anchor.anchor.geometry.points.map((point) => [...point] as [number, number]),
     };
     mapMutationOriginalText = mapsProject.kind === "ready" ? mapsProject.text : null;
     pendingMapImageImport = null;
@@ -7001,7 +7033,9 @@
             onOpenNote={(path) => void openMapNote(path)}
             onAddMap={() => void beginAddMap()}
             onAddPoint={beginAddMapPoint}
+            onAddPolygon={beginAddMapPolygon}
             onEditPoint={beginEditMapPoint}
+            onEditPolygon={beginEditMapPolygon}
             onRemoveAnchor={beginRemoveMapAnchor}
             onRemoveMap={beginRemoveMap}
             undoLabel={mapMutationUndo?.label ?? ""}

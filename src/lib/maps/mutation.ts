@@ -26,6 +26,20 @@ export type MapsMutationRequest =
       x: number;
       y: number;
     }
+  | {
+      kind: "add-polygon";
+      mapId: string;
+      anchorId: string;
+      noteId: string;
+      points: [number, number][];
+    }
+  | {
+      kind: "update-polygon";
+      mapId: string;
+      anchorId: string;
+      noteId: string;
+      points: [number, number][];
+    }
   | { kind: "remove-anchor"; mapId: string; anchorId: string };
 
 export type MapsMutationPlan =
@@ -145,6 +159,17 @@ function applyMutation(
     });
     return { kind: "applied", summary: "Add one note-linked point anchor." };
   }
+  if (request.kind === "add-polygon") {
+    if (map.anchors.some((value) => isRecord(value) && value.id === request.anchorId)) {
+      return unavailable("An anchor already uses that stable ID.");
+    }
+    map.anchors.push({
+      id: request.anchorId,
+      noteId: request.noteId,
+      geometry: { kind: "polygon", points: cloneJson(request.points) },
+    });
+    return { kind: "applied", summary: "Add one note-linked polygon anchor." };
+  }
 
   const anchorIndex = map.anchors.findIndex(
     (value) => isRecord(value) && value.id === request.anchorId,
@@ -159,7 +184,18 @@ function applyMutation(
   }
 
   if (!isRecord(anchor.geometry) || anchor.geometry.kind !== "point") {
-    return unavailable("Only point anchors can be changed in this authoring slice.");
+    if (request.kind !== "update-polygon" || !isRecord(anchor.geometry) || anchor.geometry.kind !== "polygon") {
+      return unavailable("The requested geometry type no longer matches this anchor.");
+    }
+    const unchanged = anchor.noteId === request.noteId &&
+      JSON.stringify(anchor.geometry.points) === JSON.stringify(request.points);
+    if (unchanged) return { kind: "unchanged", summary: "The polygon anchor is already unchanged." };
+    anchor.noteId = request.noteId;
+    anchor.geometry.points = cloneJson(request.points);
+    return { kind: "applied", summary: "Update one note-linked polygon anchor." };
+  }
+  if (request.kind !== "update-point") {
+    return unavailable("The requested geometry type no longer matches this anchor.");
   }
   const unchanged = anchor.noteId === request.noteId &&
     anchor.geometry.x === request.x && anchor.geometry.y === request.y;

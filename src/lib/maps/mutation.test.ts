@@ -170,7 +170,7 @@ describe("guarded maps mutation planning", () => {
     polygonValue.maps[0].anchors[0].geometry = { kind: "polygon", points: [[0, 0], [10, 0], [0, 10]] };
     expect(planMapsMutation(`${JSON.stringify(polygonValue)}\n`, PROJECT_ID, {
       kind: "update-point", mapId: MAP_ID, anchorId: ANCHOR_ID, noteId: NOTE_ID, x: 1, y: 1,
-    })).toMatchObject({ kind: "unavailable", reason: expect.stringContaining("Only point") });
+    })).toMatchObject({ kind: "unavailable", reason: expect.stringContaining("geometry type") });
 
     expect(planMapsMutation(source(), PROJECT_ID, {
       kind: "add-point", mapId: MAP_ID, anchorId: "b5899528-7b36-48e9-98e6-b1ef80bc093b", noteId: NOTE_ID, x: 400, y: 1,
@@ -181,5 +181,61 @@ describe("guarded maps mutation planning", () => {
     expect(planMapsMutation(source(), PROJECT_ID, {
       kind: "update-point", mapId: MAP_ID, anchorId: ANCHOR_ID, noteId: NOTE_ID, x: 10, y: 20,
     })).toEqual({ kind: "unchanged", summary: "The point anchor is already unchanged." });
+  });
+
+  it("adds and updates polygon anchors through the authoritative geometry validator", () => {
+    const polygonId = "3b63990c-55d7-4a0c-a161-1002cab46b3f";
+    const addPlan = planMapsMutation(source(), PROJECT_ID, {
+      kind: "add-polygon",
+      mapId: MAP_ID,
+      anchorId: polygonId,
+      noteId: OTHER_NOTE_ID,
+      points: [[40, 40], [200, 40], [120, 180]],
+    });
+    expect(addPlan).toMatchObject({ kind: "ready", operation: "add-polygon" });
+    if (addPlan.kind !== "ready") return;
+    expect(JSON.parse(addPlan.updatedText).maps[0].anchors[1]).toEqual({
+      id: polygonId,
+      noteId: OTHER_NOTE_ID,
+      geometry: { kind: "polygon", points: [[40, 40], [200, 40], [120, 180]] },
+    });
+
+    const updatePlan = planMapsMutation(addPlan.updatedText, PROJECT_ID, {
+      kind: "update-polygon",
+      mapId: MAP_ID,
+      anchorId: polygonId,
+      noteId: NOTE_ID,
+      points: [[50, 50], [210, 50], [130, 190]],
+    });
+    expect(updatePlan).toMatchObject({ kind: "ready", operation: "update-polygon" });
+    if (updatePlan.kind !== "ready") return;
+    expect(JSON.parse(updatePlan.updatedText).maps[0].anchors[1]).toEqual({
+      id: polygonId,
+      noteId: NOTE_ID,
+      geometry: { kind: "polygon", points: [[50, 50], [210, 50], [130, 190]] },
+    });
+  });
+
+  it("blocks invalid polygons and geometry-type races", () => {
+    const invalid = planMapsMutation(source(), PROJECT_ID, {
+      kind: "add-polygon",
+      mapId: MAP_ID,
+      anchorId: "3b63990c-55d7-4a0c-a161-1002cab46b3f",
+      noteId: OTHER_NOTE_ID,
+      points: [[0, 0], [10, 10], [20, 20]],
+    });
+    expect(invalid).toMatchObject({ kind: "blocked" });
+
+    const mismatch = planMapsMutation(source(), PROJECT_ID, {
+      kind: "update-polygon",
+      mapId: MAP_ID,
+      anchorId: ANCHOR_ID,
+      noteId: NOTE_ID,
+      points: [[0, 0], [10, 0], [0, 10]],
+    });
+    expect(mismatch).toMatchObject({
+      kind: "unavailable",
+      reason: expect.stringContaining("geometry type"),
+    });
   });
 });

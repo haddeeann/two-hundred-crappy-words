@@ -41,6 +41,8 @@
     if (value.kind === "add-map") return "Add map";
     if (value.kind === "add-point") return "Add point anchor";
     if (value.kind === "update-point") return "Edit point anchor";
+    if (value.kind === "add-polygon") return "Add region anchor";
+    if (value.kind === "update-polygon") return "Edit region anchor";
     if (value.kind === "remove-anchor") return "Remove anchor";
     return "Remove map";
   }
@@ -50,7 +52,10 @@
   }
 
   function updateNote(value: string): void {
-    if (request.kind === "add-point" || request.kind === "update-point") {
+    if (
+      request.kind === "add-point" || request.kind === "update-point" ||
+      request.kind === "add-polygon" || request.kind === "update-polygon"
+    ) {
       onChange({ ...request, noteId: value });
     }
   }
@@ -59,6 +64,34 @@
     if (request.kind !== "add-point" && request.kind !== "update-point") return;
     const parsed = Number(value);
     onChange({ ...request, [axis]: Number.isFinite(parsed) ? Math.round(parsed) : Number.NaN });
+  }
+
+  function updatePolygonCoordinate(index: number, axis: 0 | 1, value: string): void {
+    if (request.kind !== "add-polygon" && request.kind !== "update-polygon") return;
+    const parsed = Number(value);
+    const points = request.points.map((point) => [...point] as [number, number]);
+    points[index]![axis] = Number.isFinite(parsed) ? Math.round(parsed) : Number.NaN;
+    onChange({ ...request, points });
+  }
+
+  function addPolygonVertex(): void {
+    if (request.kind !== "add-polygon" && request.kind !== "update-polygon") return;
+    const last = request.points.at(-1) ?? [0, 0];
+    onChange({ ...request, points: [...request.points, [last[0], last[1]]] });
+  }
+
+  function removePolygonVertex(index: number): void {
+    if (request.kind !== "add-polygon" && request.kind !== "update-polygon") return;
+    onChange({ ...request, points: request.points.filter((_, pointIndex) => pointIndex !== index) });
+  }
+
+  function movePolygonVertex(index: number, delta: -1 | 1): void {
+    if (request.kind !== "add-polygon" && request.kind !== "update-polygon") return;
+    const destination = index + delta;
+    if (destination < 0 || destination >= request.points.length) return;
+    const points = request.points.map((point) => [...point] as [number, number]);
+    [points[index], points[destination]] = [points[destination]!, points[index]!];
+    onChange({ ...request, points });
   }
 
   function submit(): void {
@@ -92,7 +125,7 @@
         <p class="import"><strong>New project copy:</strong> {importDestination}</p>
         <p class="source">The external source will remain where it is. The new copy must not already exist.</p>
       {/if}
-    {:else if request.kind === "add-point" || request.kind === "update-point"}
+    {:else if request.kind === "add-point" || request.kind === "update-point" || request.kind === "add-polygon" || request.kind === "update-polygon"}
       <label>
         Linked lore note
         <select value={request.noteId} onchange={(event) => updateNote(event.currentTarget.value)}>
@@ -102,29 +135,68 @@
           {/each}
         </select>
       </label>
-      <div class="coordinates">
-        <label>
-          X
-          <input
-            type="number"
-            step="1"
-            value={request.x}
-            oninput={(event) => updateCoordinate("x", event.currentTarget.value)}
-            onchange={(event) => updateCoordinate("x", event.currentTarget.value)}
-          />
-        </label>
-        <label>
-          Y
-          <input
-            type="number"
-            step="1"
-            value={request.y}
-            oninput={(event) => updateCoordinate("y", event.currentTarget.value)}
-            onchange={(event) => updateCoordinate("y", event.currentTarget.value)}
-          />
-        </label>
-      </div>
-      <p class="source">Coordinates use the image’s logical pixel canvas.</p>
+      {#if request.kind === "add-point" || request.kind === "update-point"}
+        <div class="coordinates">
+          <label>
+            X
+            <input
+              type="number"
+              step="1"
+              value={request.x}
+              oninput={(event) => updateCoordinate("x", event.currentTarget.value)}
+              onchange={(event) => updateCoordinate("x", event.currentTarget.value)}
+            />
+          </label>
+          <label>
+            Y
+            <input
+              type="number"
+              step="1"
+              value={request.y}
+              oninput={(event) => updateCoordinate("y", event.currentTarget.value)}
+              onchange={(event) => updateCoordinate("y", event.currentTarget.value)}
+            />
+          </label>
+        </div>
+      {:else}
+        <fieldset>
+          <legend>Ordered region vertices</legend>
+          <ol class="vertices">
+            {#each request.points as point, index}
+              <li>
+                <span>{index + 1}</span>
+                <label>
+                  X
+                  <input
+                    aria-label={`Vertex ${index + 1} X`}
+                    type="number"
+                    step="1"
+                    value={point[0]}
+                    oninput={(event) => updatePolygonCoordinate(index, 0, event.currentTarget.value)}
+                    onchange={(event) => updatePolygonCoordinate(index, 0, event.currentTarget.value)}
+                  />
+                </label>
+                <label>
+                  Y
+                  <input
+                    aria-label={`Vertex ${index + 1} Y`}
+                    type="number"
+                    step="1"
+                    value={point[1]}
+                    oninput={(event) => updatePolygonCoordinate(index, 1, event.currentTarget.value)}
+                    onchange={(event) => updatePolygonCoordinate(index, 1, event.currentTarget.value)}
+                  />
+                </label>
+                <button type="button" aria-label={`Move vertex ${index + 1} earlier`} onclick={() => movePolygonVertex(index, -1)} disabled={index === 0}>↑</button>
+                <button type="button" aria-label={`Move vertex ${index + 1} later`} onclick={() => movePolygonVertex(index, 1)} disabled={index === request.points.length - 1}>↓</button>
+                <button type="button" class="danger-text" onclick={() => removePolygonVertex(index)}>Remove</button>
+              </li>
+            {/each}
+          </ol>
+          <button type="button" onclick={addPolygonVertex} disabled={request.points.length >= 256}>Add vertex</button>
+        </fieldset>
+      {/if}
+      <p class="source">Coordinates use the image’s logical pixel canvas. The closing edge is automatic.</p>
     {:else if request.kind === "remove-map"}
       <p>Only this map’s metadata and anchors will be removed. Its image and all linked lore notes will remain untouched.</p>
     {:else}
@@ -173,10 +245,17 @@
   input, select, button { font: inherit; }
   input, select { box-sizing: border-box; width: 100%; border: 1px solid #bfb5c2; border-radius: 0.45rem; background: #fff; color: inherit; padding: 0.52rem; }
   .coordinates label { flex: 1; }
+  fieldset { margin: 0.8rem 0; border: 1px solid #d9d0dc; border-radius: 0.5rem; padding: 0.7rem; }
+  legend { font-weight: 700; }
+  .vertices { display: grid; gap: 0.45rem; margin: 0 0 0.65rem; padding: 0; list-style: none; }
+  .vertices li { display: grid; grid-template-columns: auto minmax(5rem, 1fr) minmax(5rem, 1fr) auto auto auto; gap: 0.4rem; align-items: end; }
+  .vertices li > span { align-self: center; min-width: 1.5rem; font-weight: 700; }
+  .vertices label { margin: 0; font-size: 0.8rem; }
   button { border: 1px solid #cfc5d1; border-radius: 0.45rem; background: #fff; color: inherit; padding: 0.45rem 0.75rem; cursor: pointer; }
   button:disabled { opacity: 0.5; cursor: default; }
   button.primary { border-color: #4f3f59; background: #4f3f59; color: #fff; }
   button.danger { border-color: #a63d40; background: #a63d40; color: #fff; }
+  button.danger-text { color: #8e2020; }
   .source { margin-bottom: 0.35rem; color: #6d646c; overflow-wrap: anywhere; }
   .import { margin: 0.75rem 0 0.25rem; border: 1px solid #d9d0dc; border-radius: 0.5rem; background: #fff; padding: 0.65rem; overflow-wrap: anywhere; }
   .summary { border: 1px solid #b8d8c2; border-radius: 0.5rem; background: #f3faf5; padding: 0.65rem; }
@@ -185,4 +264,7 @@
   summary { cursor: pointer; font-weight: 700; }
   pre { max-height: 16rem; overflow: auto; margin-bottom: 0; padding: 0.6rem; background: #242127; color: #f8f5f8; font-size: 0.75rem; white-space: pre; }
   code { overflow-wrap: anywhere; }
+  @media (max-width: 650px) {
+    .vertices li { grid-template-columns: auto 1fr 1fr; }
+  }
 </style>

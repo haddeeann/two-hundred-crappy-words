@@ -16,7 +16,9 @@
     onOpenNote: (path: string) => void;
     onAddMap: () => void;
     onAddPoint: (mapId: string, x: number, y: number) => void;
+    onAddPolygon: (mapId: string, points: [number, number][]) => void;
     onEditPoint: (mapId: string, anchor: MapAnchorModel) => void;
+    onEditPolygon: (mapId: string, anchor: MapAnchorModel) => void;
     onRemoveAnchor: (mapId: string, anchor: MapAnchorModel) => void;
     onRemoveMap: (mapId: string) => void;
     undoLabel: string;
@@ -37,7 +39,9 @@
     onOpenNote,
     onAddMap,
     onAddPoint,
+    onAddPolygon,
     onEditPoint,
+    onEditPolygon,
     onRemoveAnchor,
     onRemoveMap,
     undoLabel,
@@ -48,6 +52,7 @@
   let imageUrl = $state("");
   let zoom = $state(1);
   let selectedAnchorId = $state("");
+  let polygonDraft = $state<[number, number][] | null>(null);
   const selectedMap = $derived(
     model?.maps.find(({ map }) => map.id === selectedMapId) ?? model?.maps[0] ?? null,
   );
@@ -58,6 +63,7 @@
     selectedMapId;
     zoom = 1;
     selectedAnchorId = "";
+    polygonDraft = null;
   });
 
   $effect(() => {
@@ -146,6 +152,27 @@
     );
   }
 
+  function defaultPolygon(): void {
+    if (!selectedMap) return;
+    const { width, height } = selectedMap.map.canvas;
+    onAddPolygon(selectedMap.map.id, [
+      [Math.round((width - 1) * 0.25), Math.round((height - 1) * 0.75)],
+      [Math.round((width - 1) * 0.5), Math.round((height - 1) * 0.25)],
+      [Math.round((width - 1) * 0.75), Math.round((height - 1) * 0.75)],
+    ]);
+  }
+
+  function beginPolygonDraft(): void {
+    polygonDraft = [];
+  }
+
+  function reviewPolygonDraft(): void {
+    if (!selectedMap || !polygonDraft || polygonDraft.length < 3) return;
+    const points = polygonDraft;
+    polygonDraft = null;
+    onAddPolygon(selectedMap.map.id, points);
+  }
+
   function placePoint(event: PointerEvent): void {
     if (!selectedMap || imageResult?.kind !== "ready") return;
     const overlay = event.currentTarget as SVGSVGElement;
@@ -159,6 +186,10 @@
       selectedMap.map.canvas.height - 1,
       Math.round(((event.clientY - bounds.top) / bounds.height) * selectedMap.map.canvas.height),
     ));
+    if (polygonDraft) {
+      if (polygonDraft.length < 256) polygonDraft = [...polygonDraft, [x, y]];
+      return;
+    }
     onAddPoint(selectedMap.map.id, x, y);
   }
 </script>
@@ -224,6 +255,8 @@
           <div class="map-heading-actions">
             <span>{selectedMap.anchors.length} {selectedMap.anchors.length === 1 ? "anchor" : "anchors"}</span>
             <button type="button" onclick={addPointAtCenter} disabled={imageResult?.kind !== "ready"}>Add point…</button>
+            <button type="button" onclick={defaultPolygon} disabled={imageResult?.kind !== "ready"}>Add region…</button>
+            <button type="button" onclick={beginPolygonDraft} disabled={imageResult?.kind !== "ready" || polygonDraft !== null}>Draw region on map</button>
             <button type="button" class="danger-text" onclick={() => onRemoveMap(selectedMap.map.id)}>Remove map…</button>
           </div>
         </div>
@@ -232,6 +265,15 @@
           <p class="load-message" role="status">Verifying local image bytes…</p>
         {:else if imageMessage}
           <p class="load-message problem" role="alert">{imageMessage}</p>
+        {/if}
+
+        {#if polygonDraft}
+          <div class="draft-controls" role="status">
+            <span>Region draft: {polygonDraft.length} {polygonDraft.length === 1 ? "vertex" : "vertices"}. Click the map to add vertices in order.</span>
+            <button type="button" onclick={() => { polygonDraft = polygonDraft?.slice(0, -1) ?? null; }} disabled={polygonDraft.length === 0}>Undo vertex</button>
+            <button type="button" onclick={reviewPolygonDraft} disabled={polygonDraft.length < 3}>Review region…</button>
+            <button type="button" onclick={() => { polygonDraft = null; }}>Cancel drawing</button>
+          </div>
         {/if}
 
         <div class="map-layout">
@@ -276,6 +318,14 @@
                       />
                     {/if}
                   {/each}
+                  {#if polygonDraft && polygonDraft.length > 0}
+                    <polyline class="draft" points={polygonDraft.map(([x, y]) => `${x},${y}`).join(" ")} />
+                    {#each polygonDraft as point, index}
+                      <circle class="draft-vertex" cx={point[0]} cy={point[1]} r={Math.max(5, Math.min(selectedMap.map.canvas.width, selectedMap.map.canvas.height) * 0.008)}>
+                        <title>Draft vertex {index + 1}: {point[0]}, {point[1]}</title>
+                      </circle>
+                    {/each}
+                  {/if}
                 </svg>
               </div>
             {:else if !imageLoading}
@@ -308,6 +358,8 @@
                     <div class="anchor-actions">
                       {#if anchor.anchor.geometry.kind === "point"}
                         <button type="button" onclick={() => onEditPoint(selectedMap.map.id, anchor)}>Edit point…</button>
+                      {:else}
+                        <button type="button" onclick={() => onEditPolygon(selectedMap.map.id, anchor)}>Edit region…</button>
                       {/if}
                       <button type="button" class="danger-text" onclick={() => onRemoveAnchor(selectedMap.map.id, anchor)}>Remove…</button>
                     </div>
@@ -330,7 +382,7 @@
     background: #fbfaf7;
     color: #292529;
   }
-  header, .map-heading, .anchor-heading, .map-controls, .workspace-actions, .map-heading-actions, .anchor-actions {
+  header, .map-heading, .anchor-heading, .map-controls, .workspace-actions, .map-heading-actions, .anchor-actions, .draft-controls {
     display: flex;
     align-items: center;
     gap: 0.7rem;
@@ -354,6 +406,8 @@
   .map-heading { margin: 1.1rem 0 0.7rem; }
   .map-heading h2 { margin-bottom: 0.2rem; }
   .map-heading-actions { flex-wrap: wrap; justify-content: flex-end; }
+  .draft-controls { flex-wrap: wrap; margin-bottom: 0.7rem; border: 1px solid #cbb8dc; border-radius: 0.55rem; background: #f7f1fb; padding: 0.65rem; }
+  .draft-controls span { flex: 1 1 18rem; }
   .map-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(15rem, 22rem); gap: 1rem; align-items: start; }
   .map-viewport { overflow: auto; min-height: 18rem; max-height: 68vh; border: 1px solid #cfc5d1; border-radius: 0.6rem; background: #211e22; }
   .map-viewport:focus-visible { outline: 3px solid #8a5cf5; outline-offset: 2px; }
@@ -364,6 +418,8 @@
   .map-overlay circle, .map-overlay polygon { fill: rgb(255 229 92 / 0.42); stroke: #4b2f5b; stroke-width: max(2px, 0.25%); vector-effect: non-scaling-stroke; cursor: pointer; }
   .map-overlay .problem { fill: rgb(216 75 75 / 0.35); stroke: #8e2020; stroke-dasharray: 7 4; }
   .map-overlay .selected { fill: rgb(138 92 245 / 0.52); stroke: #fff; stroke-width: max(3px, 0.4%); }
+  .map-overlay .draft { fill: rgb(138 92 245 / 0.18); stroke: #fff; stroke-width: max(3px, 0.4%); stroke-dasharray: 7 4; vector-effect: non-scaling-stroke; pointer-events: none; }
+  .map-overlay .draft-vertex { fill: #8a5cf5; stroke: #fff; stroke-width: max(2px, 0.25%); vector-effect: non-scaling-stroke; pointer-events: none; }
   .map-overlay [role="button"]:focus-visible { outline: none; stroke: #fff; stroke-width: max(4px, 0.5%); }
   .image-placeholder { min-height: 18rem; display: grid; place-items: center; color: #d5cdd8; }
   .anchor-panel { border: 1px solid #d9d0dc; border-radius: 0.6rem; background: #fff; padding: 0.8rem; max-height: 68vh; overflow: auto; }

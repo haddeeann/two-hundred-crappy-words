@@ -18,8 +18,8 @@ Let a writer create and repair note-linked polygon anchors and deliberately repl
 
 ### Acceptance criteria
 
-- [ ] Add, edit, retarget, and remove polygons with three to 256 in-canvas vertices through accessible ordered controls and direct map placement.
-- [ ] Reject duplicate-adjacent, closing-duplicate, collinear, self-intersecting, stale, ambiguous-target, and unsupported polygon work without partial writes.
+- [x] Add, edit, retarget, and remove polygons with three to 256 in-canvas vertices through accessible ordered controls and direct map placement.
+- [x] Reject fewer than three distinct vertices, a duplicated closing vertex, collinear or out-of-canvas geometry, stale sources, ambiguous targets, and unsupported polygon work without partial writes.
 - [ ] Preview an image replacement's exact source, project destination, digest, dimensions, canvas effect, and anchor consequence before confirmation.
 - [ ] Import replacement bytes with create-new/no-clobber semantics or select an already verified project image; never move, overwrite, or delete a source image.
 - [ ] Preserve or explicitly resolve existing geometry rather than silently scaling it when replacement dimensions differ.
@@ -28,15 +28,16 @@ Let a writer create and repair note-linked polygon anchors and deliberately repl
 
 ## Next slices
 
-1. Add polygon authoring with explicit geometry validation and exact-source Undo.
-2. Add guarded image replacement/relocation with an explicit canvas/anchor decision.
-3. Complete portable-map regression QA and the milestone documentation gate.
+1. Add guarded image replacement/relocation with an explicit canvas/anchor decision.
+2. Complete portable-map regression QA and the milestone documentation gate.
 
 ## Current approval state
 
 The user approved all nine choices in [`MAP_FORMAT_PROPOSAL.md`](MAP_FORMAT_PROPOSAL.md) on 2026-10-05: one optional project-scoped file, project-owned static PNG/JPEG/WebP images, a stable logical image canvas, note-linked point/polygon anchors, strict mutation and replacement boundaries, explicit failures, an accessible main-pane workspace, and no geographic or continuity inference. There is no remaining decision gate for the approved version-one sequence.
 
 ## Completed checkpoint
+
+- Slice 0.7.8d's polygon checkpoint adds guarded region creation, editing, retargeting, removal, and exact-source Undo without changing the approved map format. A writer can begin with an editable default triangle or place up to 256 ordered vertices directly on the verified map, undo draft vertices, and review the same accessible ordered X/Y controls before writing. The authoritative parser—not the interface—enforces in-canvas integer vertices, three distinct points, a non-collinear shape, and no duplicated closing point; geometry-type races, stale previews, invalid targets, and invalid shapes refuse without partial writes. Existing supported-version and unknown data survive the JSON-safe mutation path, including an unresolved polygon's original note ID. Packaged macOS QA covered invalid two-vertex refusal, vertex reordering, default and direct-map creation, editing the unresolved four-vertex region, exact Undo after each write, stale-preview refusal after an external maps edit, unchanged `0 / 200`, all four baseline fixture hashes, and Arcadia restoration. The final gate has 596 passing frontend tests across eighty-eight files, zero Svelte/TypeScript diagnostics, twenty-one passing native tests, clean Rust formatting/Clippy, zero production dependency vulnerabilities, and successful web and production macOS `.app`/DMG builds. Guarded image replacement remains active in this slice.
 
 - Slice 0.7.8c is complete. A writer can now register a byte-verified PNG/JPEG/WebP already inside a world project or explicitly import one external image as a new no-clobber copy under `Maps/`. The confirmation surface names the exact project image and, for imports, the new destination plus the fact that the external source remains untouched. A narrow native picker-preview command reads only picker-authorized bounded regular non-symbolic files; import revalidates stable metadata, size, extension, and SHA-256, creates the destination exactly once, rereads and syncs it, and removes only its own exact copy if the maps write fails. The coordinator retains a copy only when the committed map already references those verified bytes. Packaged macOS QA imported a 3,512-byte 128 × 128 PNG, verified identical source/destination SHA-256, loaded the second map, preserved `0 / 200`, and used Undo to restore the maps JSON exactly while intentionally retaining the project-owned copy. A second import refused the existing destination without changing either file; an external maps edit after preview refused as stale; the fixture's JSON, original image, note, and manifest returned to their four baseline hashes; QA-only copies were moved to Trash; and Arcadia was restored. QA also found and corrected raw picker-byte handoff and a nested Svelte reactive-proxy cloning failure. The final gate has 594 passing frontend tests across eighty-eight files, zero Svelte/TypeScript diagnostics, twenty-one passing native tests, clean Rust formatting/Clippy, zero production dependency vulnerabilities, and successful web and production macOS `.app`/DMG builds.
 
@@ -179,7 +180,7 @@ The user approved all nine choices in [`MAP_FORMAT_PROPOSAL.md`](MAP_FORMAT_PROP
 
 ## Blockers and decision gates
 
-There is no technical blocker. Guarded map creation/import and point authoring are complete; polygon authoring and guarded image replacement are the current executable work.
+There is no technical blocker. Guarded map creation/import plus point and polygon authoring are complete; guarded image replacement is the current executable work.
 
 ## Handoff protocol
 
