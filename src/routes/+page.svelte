@@ -152,6 +152,9 @@
     type RelationshipAuthoringRequest,
     type RelationshipPresentationSource,
   } from "$lib/relationships/presentation";
+  import ContinuityReviewWorkspace from "$lib/continuity-review/ContinuityReviewWorkspace.svelte";
+  import { deriveContinuityReview } from "$lib/continuity-review/model";
+  import type { ContinuityReviewEvidence } from "$lib/continuity-review/types";
   import {
     findWikiLinkCompletion,
     loreCompletionCandidates,
@@ -515,6 +518,9 @@
   let timelineLoadRevision = 0;
   let timelineOpen = $state(false);
   let timelineEditorSelection = { start: 0, end: 0 };
+  let continuityReviewOpen = $state(false);
+  let continuityReviewScopeId = $state("");
+  let continuityReviewEditorSelection = { start: 0, end: 0 };
   let mapsProject = $state<MapsProjectLoadResult>({ kind: "absent" });
   let mapsLoading = $state(false);
   let mapsLoadRevision = 0;
@@ -768,6 +774,30 @@
           travelCalendars,
         )
       : { findings: [], omittedCount: 0 },
+  );
+  const continuityReviewManuscripts = $derived(
+    manuscriptProject.kind === "ready"
+      ? manuscriptProject.reconciled.structure.manuscripts.map(({ id, title }) => ({ id, title }))
+      : [],
+  );
+  const continuityReviewModel = $derived.by(() =>
+    loreIndex && timelineModel
+      ? deriveContinuityReview({
+          index: loreIndex,
+          calendars: travelCalendars,
+          relationshipFindings: relationshipReviewFindingSet,
+          travelPresenceFindings: travelPresenceFindingSet,
+          timeline: timelineModel,
+          travelAnalyses: travelJourneyAnalyses,
+          manuscript:
+            manuscriptProject.kind === "ready"
+              ? manuscriptProject.reconciled.structure
+              : null,
+          scope: continuityReviewScopeId
+            ? { kind: "manuscript", manuscriptId: continuityReviewScopeId }
+            : { kind: "whole-world" },
+        })
+      : null,
   );
   const travelInspector = $derived.by(() => {
     const path = activeLorePath();
@@ -1187,6 +1217,9 @@
     timelineLoading = false;
     timelineOpen = false;
     timelineEditorSelection = { start: 0, end: 0 };
+    continuityReviewOpen = false;
+    continuityReviewScopeId = "";
+    continuityReviewEditorSelection = { start: 0, end: 0 };
     mapsLoadRevision += 1;
     mapImageLoadRevision += 1;
     mapsProject = { kind: "absent" };
@@ -3109,6 +3142,7 @@
     writingToolsOpen = false;
     timelineOpen = false;
     mapOpen = false;
+    continuityReviewOpen = false;
     manuscriptCorkboardId = manuscriptId;
   }
 
@@ -3138,6 +3172,7 @@
     };
     manuscriptCorkboardId = "";
     mapOpen = false;
+    continuityReviewOpen = false;
     writingToolsOpen = false;
     timelineOpen = true;
   }
@@ -3162,6 +3197,60 @@
     await openIndexedLorePath(path, range);
   }
 
+  function openContinuityReviewWorkspace(): void {
+    if (!folderPath || !continuityReviewModel) return;
+    dismissLoreCompletion();
+    continuityReviewEditorSelection = {
+      start: editorInput?.selectionStart ?? editorSelectionStart,
+      end: editorInput?.selectionEnd ?? editorSelectionEnd,
+    };
+    manuscriptCorkboardId = "";
+    timelineOpen = false;
+    mapOpen = false;
+    writingToolsOpen = false;
+    continuityReviewOpen = true;
+  }
+
+  function closeContinuityReviewWorkspace(): void {
+    continuityReviewOpen = false;
+    void tick().then(() => {
+      if (!editorInput) return;
+      const start = Math.min(
+        continuityReviewEditorSelection.start,
+        editorInput.value.length,
+      );
+      const end = Math.min(
+        continuityReviewEditorSelection.end,
+        editorInput.value.length,
+      );
+      editorInput.setSelectionRange(start, Math.max(start, end));
+      editorInput.focus();
+    });
+  }
+
+  async function refreshContinuityReview(): Promise<void> {
+    await refreshLoreIndex();
+    if (
+      continuityReviewScopeId &&
+      !continuityReviewManuscripts.some(({ id }) => id === continuityReviewScopeId)
+    ) {
+      continuityReviewScopeId = "";
+    }
+  }
+
+  async function openContinuityReviewSource(
+    evidence: ContinuityReviewEvidence,
+  ): Promise<void> {
+    if (!(await historySourceMatches(evidence.path, evidence.sourceFingerprint))) {
+      error = "That continuity source changed before it could be opened. The review is refreshing instead.";
+      await refreshContinuityReview();
+      return;
+    }
+    continuityReviewOpen = false;
+    await tick();
+    await openIndexedLorePath(evidence.path, evidence.sourceRange);
+  }
+
   function openMapWorkspace(): void {
     if (!folderPath || projectInspection.kind !== "world-project") return;
     dismissLoreCompletion();
@@ -3171,6 +3260,7 @@
     };
     manuscriptCorkboardId = "";
     timelineOpen = false;
+    continuityReviewOpen = false;
     writingToolsOpen = false;
     mapOpen = true;
     if (mapsProject.kind === "ready" && mapsProject.mapsProject.maps.length > 0) {
@@ -6418,6 +6508,11 @@
       setWritingTools(false);
       return;
     }
+    if (continuityReviewOpen && event.key === "Escape") {
+      event.preventDefault();
+      closeContinuityReviewWorkspace();
+      return;
+    }
     if (mapOpen && event.key === "Escape") {
       event.preventDefault();
       closeMapWorkspace();
@@ -6552,6 +6647,12 @@
       >New World Project</button>
 
       {#if folderPath}
+        <button
+          class="open-btn"
+          onclick={openContinuityReviewWorkspace}
+          disabled={!continuityReviewModel || loreIndexPhase === "indexing"}
+        >{loreIndexPhase === "indexing" ? "Refreshing Review…" : "Open Continuity Review"}</button>
+
         <button
           class="open-btn"
           onclick={openTimelineWorkspace}
@@ -6985,6 +7086,8 @@
         <span>
           {mapOpen
             ? "Maps"
+            : continuityReviewOpen
+            ? "Continuity review"
             : timelineOpen
             ? "Timeline"
             : manuscriptCorkboard
@@ -6999,6 +7102,15 @@
         {/if}
         {#if !focusMode}
           {#if folderPath}
+            <button
+              id="open-continuity-review-workspace"
+              type="button"
+              class="focus-mode-button"
+              aria-pressed={continuityReviewOpen}
+              disabled={!continuityReviewModel || loreIndexPhase === "indexing"}
+              title="Open the local source-linked continuity review"
+              onclick={openContinuityReviewWorkspace}
+            >{loreIndexPhase === "indexing" ? "Review…" : "Review"}</button>
             <button
               id="open-timeline-workspace"
               type="button"
@@ -7025,7 +7137,7 @@
             class:save-error={saveState.phase === "error"}
             aria-live="polite"
           >{saveStatus}</span>
-          {#if !timelineOpen && !mapOpen && !manuscriptCorkboard && activeSceneSplitAvailability.kind === "available"}
+          {#if !timelineOpen && !mapOpen && !continuityReviewOpen && !manuscriptCorkboard && activeSceneSplitAvailability.kind === "available"}
             <button
               type="button"
               class="focus-mode-button"
@@ -7034,7 +7146,7 @@
               onclick={() => void beginManuscriptSceneSplit()}
             >Split scene…</button>
           {/if}
-          {#if !timelineOpen && !mapOpen}
+          {#if !timelineOpen && !mapOpen && !continuityReviewOpen}
             <button
               type="button"
               class="focus-mode-button"
@@ -7056,10 +7168,22 @@
       class="writing-split"
       class:corkboard-mode={Boolean(manuscriptCorkboard)}
       class:focus-mode={focusMode}
-      class:has-reference={Boolean(loreReference) && !timelineOpen && !mapOpen}
+      class:has-reference={Boolean(loreReference) && !timelineOpen && !mapOpen && !continuityReviewOpen}
     >
       <div class="editor-workspace">
-        {#if mapOpen}
+        {#if continuityReviewOpen && continuityReviewModel}
+          <ContinuityReviewWorkspace
+            model={continuityReviewModel}
+            manuscripts={continuityReviewManuscripts}
+            loading={loreIndexPhase === "indexing" || timelineLoading || manuscriptLoading}
+            onClose={closeContinuityReviewWorkspace}
+            onRefresh={() => void refreshContinuityReview()}
+            onSelectScope={(manuscriptId) => {
+              continuityReviewScopeId = manuscriptId ?? "";
+            }}
+            onOpenSource={(evidence) => void openContinuityReviewSource(evidence)}
+          />
+        {:else if mapOpen}
           <MapWorkspace
             result={mapsProject}
             model={mapsModel}
@@ -7147,7 +7271,7 @@
           {/if}
         {/if}
       </div>
-      {#if loreReference && !timelineOpen && !mapOpen && !manuscriptCorkboard}
+      {#if loreReference && !timelineOpen && !mapOpen && !continuityReviewOpen && !manuscriptCorkboard}
         <LoreReferencePane
           reference={loreReference}
           onClose={() => closeLoreReference()}

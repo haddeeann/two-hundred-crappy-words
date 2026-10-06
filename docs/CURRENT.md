@@ -10,31 +10,32 @@ Novel structure is complete. The active milestone will help writers reason about
 
 ## Active slice
 
-**0.7.9b — Read-only continuity-review workspace**
+**0.7.9c — Portable continuity-exception format**
 
 ### Intended outcome
 
-Expose the approved, normalized, evidence-backed continuity review in an accessible main workspace without adding persistence or changing project sources.
+Publish and safely load the approved optional portable exception file without yet exposing or performing project writes.
 
 ### Acceptance criteria
 
-- [x] Obtain explicit approval for the eight consequential product and portable-format choices.
-- [x] Normalize existing findings and source problems into one deterministic memory-only model.
-- [x] Add generic single-applicability and lifespan-order rules with stable evidence fingerprints, retired exclusion, and the shared canon/certainty gate.
-- [x] Filter selected-manuscript review only through stable bound source membership.
-- [ ] Add the accessible read-only workspace, filters, omission disclosures, and exact source navigation.
+- [ ] Publish the version-one JSON Schema for the exact approved format, bounds, and stable-evidence tuple.
+- [ ] Add a dependency-free parser that preserves supported-version unknown fields and distinguishes absent, malformed, invalid, unsupported, unsafe, unreadable, and unstable sources.
+- [ ] Match active, intentional, and stale exceptions deterministically without silently retargeting evidence.
+- [ ] Surface loaded intentional and stale exceptions read-only before adding any mutation command or interface.
 
 ## Next slices
 
-1. Add the read-only review workspace while preserving the project file tree.
-2. Verify project-wide and selected-manuscript filtering, keyboard behavior, exact navigation, limits, zero writes, and zero credit.
-3. Publish the approved exception schema/parser read-only before adding its guarded write path.
+1. Publish and fixture the approved exception schema and parser.
+2. Add stable, no-symlink project-root loading plus exact active/stale matching in the memory-only review.
+3. Present intentional and stale exceptions read-only; only then add guarded create/edit/remove preview, execution, and Undo.
 
 ## Current approval state
 
 Portable maps are complete under the nine choices approved in [`MAP_FORMAT_PROPOSAL.md`](MAP_FORMAT_PROPOSAL.md) on 2026-10-05. The user approved all eight deterministic continuity-review choices in [`CONTINUITY_REVIEW_PROPOSAL.md`](CONTINUITY_REVIEW_PROPOSAL.md) on 2026-10-05. The read-only workspace and the approved optional portable exception format may proceed in the documented sequence; optional AI assistance remains outside this approval.
 
 ## Completed checkpoint
+
+- Slice 0.7.9b exposes the approved memory-only review in the main pane while preserving the persistent project tree. Whole world or one manuscript can be selected explicitly; source problems remain visibly separate from Contradiction, Review, and Information; all four collections have native checkbox filters and counts; omission totals remain explicit; and an empty result disclaims completeness. Every finding shows plain-language summary, expandable reason, stable rule/version, canon/certainty, all contributing evidence, and exact source actions. Navigation rereads and verifies the indexed fingerprint before leaving the review; changed evidence refuses, refreshes, and never jumps to a stale range. Escape and Return to draft restore the draft selection, no review action writes or awards daily words, and the interface describes its local-only boundary. Packaged macOS QA used a disposable world with one unusable fact, one canon/exact impossible appearance, one draft death-before-birth review, and a selected manuscript. Whole world showed all three; manuscript scope retained the source problem and appearance while excluding the unrelated lifespan review; exact navigation selected the complete `occurs-at` fact; an external source edit was refused as stale; and Today remained `0 / 200`. Visual QA corrected WebKit fieldset overlap by stacking scope and the four native filters. The disposable project was moved to Trash and Arcadia was restored. The final gate has 607 passing frontend tests across ninety files, zero Svelte/TypeScript diagnostics, twenty-one passing native tests, clean Rust formatting/Clippy, zero production dependency vulnerabilities, and successful web and production macOS `.app`/DMG builds.
 
 - Slice 0.7.9a implements the approved deterministic foundation without adding a visible workspace or project persistence. One memory-only model normalizes existing relationship, travel-presence, impossible-appearance, arrival-comparison, source-metadata, identity, reference, wiki-link, and timeline evidence while retaining exact source fingerprints and ranges. The two approved new rules report non-separated built-in `one-to-review` facts outside the existing relationship rule and mechanically impossible death-before-birth order. Retired evidence is excluded from ordinary findings; Contradiction now consistently requires every contributing claim to be both canon and explicitly exact, including the pre-existing timeline and travel hard-result surfaces. Stable finding identities use rule/version plus sorted fact identities. Selected-manuscript scope uses only bound scene/chapter note IDs and paths while preserving every supporting source; freeform outline metadata and prose remain non-semantic. Source problems stay distinct, missing facts remain unreported, results are stably ordered and capped, and no file, capability, dependency, daily-credit, or network behavior changed. Seven new fixtures bring the full frontend gate to 607 passing tests across ninety files with zero Svelte/TypeScript diagnostics, a successful production web build, and zero production dependency vulnerabilities.
 
@@ -185,7 +186,7 @@ Portable maps are complete under the nine choices approved in [`MAP_FORMAT_PROPO
 
 ## Blockers and decision gates
 
-There is no technical blocker. Portable maps and the approved continuity-review foundation are complete. The read-only review workspace is next; persistence begins only after that surface is verified.
+There is no technical blocker. The approved read-only review is complete. The portable exception schema/parser/loader is next; no persistence action is added until that read-only boundary is verified.
 
 ## Handoff protocol
 
