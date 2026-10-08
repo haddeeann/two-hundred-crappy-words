@@ -4,7 +4,15 @@ This checklist uses disposable files and is the human checkpoint for milestone 0
 
 ## Latest result
 
-Completed successfully on macOS through the Daily Draft ritual on 2026-10-06. The latest run verified lazy no-clutter preparation, first-edit creation, one dated Markdown file, daily credit, restart/resume, and collision refusal. Detailed current and historical checkpoints follow.
+Completed successfully on macOS through native-window and file-tree polish on 2026-10-08. The latest run verified hidden metadata defaults, the persisted visibility preference, native Zoom/minimize behavior, and unchanged writing state. Detailed current and historical checkpoints follow.
+
+## Milestone 0.8.1 native-window and file-tree checkpoint
+
+Completed on macOS on 2026-10-08 using Computer Use against a freshly built production `.app` and the writer's existing Arcadia folder. On first launch, the project tree retained the expanded `Daily` folder and active `2026-10-08.md` draft but omitted the existing root `.DS_Store`. Writing tools exposed a keyboard-readable **File visibility** group with an unchecked **Show hidden files** checkbox and an explicit explanation that only the tree changes.
+
+Checking the preference revealed `.DS_Store` immediately; unchecking it removed the entry immediately. The preference was then enabled, the app closed normally, and a packaged restart restored both the checked setting and visible `.DS_Store`, proving app-local persistence. It was returned to the default off state, removing `.DS_Store` again. The active draft stayed selected, Saved, byte-untouched, and at the same `532 / 200` daily credit throughout.
+
+Native window QA separately invoked macOS Zoom through the green control's standard secondary action, then clicked the still-available yellow control and successfully minimized the app to the Dock; reopening restored the same window and draft. True macOS full screen was also entered and exited with the native control. As in other macOS applications, that mode creates an operating-system Space and hides/owns the title bar rather than exposing a minimizable yellow control. No simulated traffic lights, AppKit patches, or new window permissions were added.
 
 ## Milestone 0.3.8 Daily Draft ritual checkpoint
 

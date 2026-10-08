@@ -28,6 +28,16 @@ export function sortTreeEntries<T extends Pick<FileTreeEntry, "name" | "isDirect
   });
 }
 
+export function isHiddenProjectEntry(name: string): boolean {
+  return name.startsWith(".");
+}
+
+export function hasHiddenProjectPathSegment(relativePath: string): boolean {
+  return relativePath
+    .split("/")
+    .some((segment) => isHiddenProjectEntry(segment));
+}
+
 export function reconcileTreeEntries(
   discovered: readonly FileTreeEntry[],
   existing: readonly FileTreeEntry[] = [],

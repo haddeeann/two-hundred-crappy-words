@@ -1,39 +1,40 @@
 # Current work
 
-Last updated: 2026-10-06
+Last updated: 2026-10-08
 
 ## Active milestone
 
-**0.3 — Daily practice (reopened from real use)**
+**0.8 — Release readiness**
 
-The deterministic continuity milestone is complete and optional AI remains deferred. Real daily use now takes priority: make opening the app and beginning today's words feel native, while keeping every draft an ordinary portable file.
+Daily Drafts and deterministic continuity are complete. The active milestone now hardens the local-first product for another writer to install, understand, evaluate, back up, and safely remove before publication.
 
 ## Active slice
 
-**0.3.8 — Daily Draft ritual (complete)**
+**0.8.1 — Native window and file-tree polish (complete)**
 
 ### Intended outcome
 
-Let a writer resume or begin today's ordinary date-named Markdown draft in one action, without creating empty project clutter merely by opening the app.
+Keep macOS window behavior genuinely native and keep ordinary project navigation focused on writer-owned material without making hidden files inaccessible.
 
 ### Acceptance criteria
 
-- [x] Add a visible, keyboard-accessible **Write today** action and compact humane rhythm summary whenever a folder is open.
-- [x] Resume an existing `Daily/YYYY-MM-DD.md` without changing it.
-- [x] Prepare a missing daily draft in the editor without creating either the folder or file until the first non-empty edit.
-- [x] Create the folder/file without clobbering, reject unsafe/colliding `Daily` entries, and then use the normal autosave, recovery, external-change, rename, and Trash paths.
-- [x] Keep daily drafts as ordinary Markdown, visible in the file tree and unclassified as manuscript or lore structure.
-- [x] Add focused automated coverage and packaged macOS QA for empty-open, first-write, resume, collision, restart, keyboard, and daily-credit behavior.
+- [x] Hide dot-prefixed entries such as `.DS_Store` at every visible tree level by default.
+- [x] Add a persisted, keyboard-accessible **Show hidden files** preference in Writing tools and refresh expanded folders without touching project files.
+- [x] Keep an already-open hidden file safe in the editor when visibility is turned off, while excluding its unavailable tree location from restored navigation.
+- [x] Verify native Zoom remains minimizable and retain macOS-owned full-screen behavior rather than drawing or patching traffic-light controls.
+- [x] Add focused automated coverage and packaged macOS QA, then record the next hardening slice.
 
 ## Next decision gate
 
-After the Daily Draft ritual is verified, define the first deliberate harvesting interaction: selecting material from a daily draft and choosing an existing/new scene or lore destination. Automatic semantic extraction, copying versus moving, and source traceability remain product choices; this slice will not guess them.
+The next release-readiness slices do not require product-format decisions: accessibility/zoom review, representative recovery and backup/restore tests, performance budgets, onboarding/help, identity/signing planning, privacy documentation, and the reproducible release checklist. Signing/notarization accounts, networked updates, crash reporting, and final visual identity remain explicit decision gates.
 
 ## Current approval state
 
-The user approved the Daily Draft first iteration on 2026-10-06: ordinary date-named Markdown in a `Daily` folder, one-action resume/start, no empty file from merely opening the app, a small rhythm/history surface, and harvesting deferred to the next slice. Optional AI assistance and release readiness remain deferred.
+The user moved the project into pre-publication hardening on 2026-10-08 and requested hidden operating-system files by default with a visibility setting. Daily-material harvesting is deferred until after the first hardening pass. Optional AI remains deferred. The existing native-window decision still governs: macOS owns traffic lights, Zoom, full screen, and tiling.
 
 ## Completed checkpoint
+
+- Slice 0.8.1 completes native-window and file-tree polish. The file tree now filters every dot-prefixed entry by default, including `.DS_Store` and nested tool metadata. Writing tools exposes a standard keyboard-accessible **Show hidden files** checkbox backed only by app-local `settings.json`; changing it recursively refreshes currently expanded branches, does not write or remove project data, leaves any already-open hidden document untouched, and prevents hidden selection state from being restored while the preference is off. One focused path-visibility fixture brings the full frontend gate to 649 passing tests across ninety-seven files; Svelte/TypeScript reports zero diagnostics, production web and macOS `.app`/DMG builds pass, and the production dependency audit reports zero vulnerabilities. Packaged QA proved `.DS_Store` absent by default, immediate reveal/hide, persistence across restart, unchanged saved prose and daily credit, and successful native yellow-button minimization after macOS Zoom. True full screen was separately verified as an operating-system Space that hides/owns the title bar; no custom controls or permissions were added. The next executable slice is 0.8.2, the structured accessibility, zoom, contrast, and reduced-motion audit.
 
 - Slice 0.3.8 makes the daily writing ritual a first-class path into the existing trustworthy editor. The footer now offers **Write today** beside a compact humane rhythm summary whenever a folder is open. It resumes the local-date path `Daily/YYYY-MM-DD.md` when present; when absent it opens an empty recoverable editor state labeled **Starts when you type** without touching the project. The first edit creates the regular `Daily` folder if needed and the Markdown file with create-new/no-clobber semantics, then hands the document to normal autosave, external-change protection, recovery, navigation restore, rename, Trash, indexing, and word credit. Root-file, symbolic-folder, and date-entry collisions refuse with the writer's typed text retained. Five focused planner tests bring the full frontend gate to 648 passing tests across ninety-seven files; Svelte/TypeScript reports zero diagnostics, the production web and macOS `.app`/DMG builds pass, and the production dependency audit reports zero vulnerabilities. Packaged macOS QA proved that project open and **Write today** created no path, the first eight-word sentence created exactly one dated Markdown file and credited eight words, restart restored the exact text and progress, and a root `Daily` file was refused without overwrite. Harvesting daily material remains the next product-design slice.
 
@@ -196,7 +197,7 @@ The user approved the Daily Draft first iteration on 2026-10-06: ordinary date-n
 
 ## Blockers and decision gates
 
-There is no technical blocker. Daily Drafts are complete; the next work is a product decision about deliberate harvesting semantics before implementation.
+There is no technical blocker. Slice 0.8.2 can begin with an inventory-driven keyboard, screen-reader, contrast, zoom, and reduced-motion audit; any visual-identity change remains a later decision gate.
 
 ## Handoff protocol
 

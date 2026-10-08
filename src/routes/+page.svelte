@@ -48,6 +48,8 @@
   } from "$lib/editor/recovery";
   import {
     findTreeEntry,
+    hasHiddenProjectPathSegment,
+    isHiddenProjectEntry,
     reconcileTreeEntries,
     updateTreeEntry,
     validateFileName,
@@ -409,6 +411,7 @@
 
   const STORE_FILE = "settings.json";
   const LAST_FOLDER_KEY = "lastFolder";
+  const SHOW_HIDDEN_FILES_KEY = "showHiddenFiles";
   const AUTOSAVE_DELAY_MS = 750;
   const RECOVERY_DELAY_MS = 100;
   const DAILY_PROGRESS_DELAY_MS = 100;
@@ -461,6 +464,8 @@
   let deletingFile = $state<FileTreeEntry | null>(null);
   let deleteFileBusy = $state(false);
   let deleteFileError = $state("");
+  let showHiddenFiles = $state(false);
+  let hiddenFilePreferenceBusy = $state(false);
   let adoptingWorldProject = $state(false);
   let adoptionName = $state("");
   let adoptionRoles = $state<WorldProjectFolderRole[]>([]);
@@ -5314,15 +5319,28 @@
 
   function scheduleNavigationState(): void {
     if (!folderPath || !projectStorageKey) return;
-    const selectedDirectory = projectRelativePath(
+    const selectedDirectoryCandidate = projectRelativePath(
       folderPath,
       selectedDirectoryPath || folderPath,
     );
-    const activeFileRelative =
-      activeFilePath && pendingDailyDraft?.filePath !== activeFilePath
+    const selectedDirectory =
+      selectedDirectoryCandidate !== null &&
+      (showHiddenFiles || !hasHiddenProjectPathSegment(selectedDirectoryCandidate))
+        ? selectedDirectoryCandidate
+        : "";
+    const activeFileCandidate = activeFilePath
       ? projectRelativePath(folderPath, activeFilePath)
       : null;
-    if (selectedDirectory === null || (activeFilePath && !activeFileRelative)) {
+    const activeFileRelative =
+      activeFilePath && pendingDailyDraft?.filePath !== activeFilePath
+        && activeFileCandidate !== null
+        && (showHiddenFiles || !hasHiddenProjectPathSegment(activeFileCandidate))
+      ? activeFileCandidate
+      : null;
+    if (
+      selectedDirectoryCandidate === null ||
+      (activeFilePath && activeFileCandidate === null)
+    ) {
       return;
     }
 
@@ -5419,7 +5437,9 @@
     dirPath: string,
     previous: readonly FileTreeEntry[] = [],
   ): Promise<FileTreeEntry[]> {
-    const dirEntries = await readDir(dirPath);
+    const dirEntries = (await readDir(dirPath)).filter(
+      ({ name }) => showHiddenFiles || !isHiddenProjectEntry(name),
+    );
     const discovered = await Promise.all(
       dirEntries.map(async (entry) => ({
         ...entry,
@@ -5429,6 +5449,51 @@
       })),
     );
     return reconcileTreeEntries(discovered, previous);
+  }
+
+  async function readExpandedEntries(
+    dirPath: string,
+    previous: readonly FileTreeEntry[],
+  ): Promise<FileTreeEntry[]> {
+    const refreshed = await readEntries(dirPath, previous);
+    return Promise.all(
+      refreshed.map(async (entry) => {
+        const prior = previous.find(({ path }) => path === entry.path);
+        if (!entry.isDirectory || !prior?.expanded) return entry;
+        const children = await readExpandedEntries(
+          entry.path,
+          prior.children ?? [],
+        );
+        return { ...entry, expanded: true, children };
+      }),
+    );
+  }
+
+  async function setShowHiddenFiles(visible: boolean): Promise<void> {
+    if (hiddenFilePreferenceBusy || visible === showHiddenFiles) return;
+    hiddenFilePreferenceBusy = true;
+    try {
+      const settings = await load(STORE_FILE);
+      await settings.set(SHOW_HIDDEN_FILES_KEY, visible);
+      await settings.save();
+      showHiddenFiles = visible;
+
+      if (folderPath) {
+        entries = await readExpandedEntries(folderPath, entries);
+        if (
+          selectedDirectoryPath !== folderPath &&
+          !findTreeEntry(entries, selectedDirectoryPath)
+        ) {
+          selectedDirectoryPath = folderPath;
+        }
+        scheduleNavigationState();
+      }
+      error = "";
+    } catch (cause) {
+      error = `The hidden-file preference could not be applied: ${formatError(cause)}`;
+    } finally {
+      hiddenFilePreferenceBusy = false;
+    }
   }
 
   async function refreshDirectory(path: string) {
@@ -6144,6 +6209,8 @@
       const repository = await getWorkspaceRepository();
       recentProjects = await repository.listRecent();
       const store = await load(STORE_FILE);
+      showHiddenFiles =
+        (await store.get<boolean>(SHOW_HIDDEN_FILES_KEY)) === true;
       last = (await store.get<string>(LAST_FOLDER_KEY)) ?? "";
       if (last) await loadFolder(last);
     } catch (cause) {
@@ -7157,6 +7224,25 @@
         onclick={startNewWorldProject}
         disabled={worldProjectBusy}
       >New World Project</button>
+
+      <fieldset class="file-visibility" disabled={hiddenFilePreferenceBusy}>
+        <legend>File visibility</legend>
+        <label>
+          <input
+            type="checkbox"
+            checked={showHiddenFiles}
+            onchange={(event) =>
+              void setShowHiddenFiles(
+                (event.currentTarget as HTMLInputElement).checked,
+              )}
+          />
+          Show hidden files
+        </label>
+        <p>
+          Names beginning with a period, such as <code>.DS_Store</code>, are
+          hidden by default. This setting changes only the project tree.
+        </p>
+      </fieldset>
 
       {#if folderPath}
         <button
@@ -8249,6 +8335,50 @@
   .open-btn:disabled {
     opacity: 0.5;
     cursor: default;
+  }
+
+  .file-visibility {
+    margin: 0 0 0.75rem;
+    padding: 0.65rem;
+    border: 1px solid #3c3c3c;
+    border-radius: 4px;
+    color: #b8b8b8;
+    font-size: 0.76rem;
+  }
+
+  .file-visibility legend {
+    padding: 0 0.25rem;
+    color: #d4d4d4;
+    font-weight: 600;
+  }
+
+  .file-visibility label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .file-visibility input {
+    margin: 0;
+  }
+
+  .file-visibility input:focus-visible {
+    outline: 2px solid #75beff;
+    outline-offset: 2px;
+  }
+
+  .file-visibility p {
+    margin: 0.45rem 0 0;
+    color: #999999;
+    line-height: 1.4;
+  }
+
+  .file-visibility code {
+    color: #cccccc;
+  }
+
+  .file-visibility:disabled {
+    opacity: 0.6;
   }
 
   .recent-projects,

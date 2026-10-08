@@ -9,12 +9,12 @@ Status legend: `PLANNED`, `ACTIVE`, `BLOCKED`, `COMPLETE`, `DEFERRED`.
 | Milestone | Outcome | Status |
 | --- | --- | --- |
 | 0.2 Trustworthy editor | A writer can trust the app not to lose work | COMPLETE |
-| 0.3 Daily practice | The 200-words-a-day promise is real and encouraging | ACTIVE |
+| 0.3 Daily practice | The 200-words-a-day promise is real and encouraging | COMPLETE |
 | 0.4 World projects | A folder becomes a portable, structured science-fiction world | COMPLETE |
 | 0.5 Connected lore | Manuscript and world bible can reference each other fluidly | COMPLETE |
 | 0.6 Novel structure | Scenes and chapters can be planned, reordered, and exported | COMPLETE |
 | 0.7 Continuity tools | Time, travel, relationships, and canon can be reasoned about | COMPLETE |
-| 0.8 Release readiness | The app is accessible, documented, packaged, and recoverable | PLANNED |
+| 0.8 Release readiness | The app is accessible, documented, packaged, and recoverable | ACTIVE |
 
 ## 0.2 — Trustworthy editor
 
@@ -43,7 +43,7 @@ Goal: fulfill the product's central promise with an accurate, humane daily writi
 - [x] Add writing history and gentle streak information.
 - [x] Make corrections, time-zone changes, and recovery behavior understandable.
 - [x] Make returning each day a one-action ritual with an ordinary date-named draft.
-- [ ] Let a writer deliberately harvest daily material into manuscript and lore destinations.
+- [ ] Let a writer deliberately harvest daily material into manuscript and lore destinations. *(Deferred until after the first publication hardening pass.)*
 
 Specification: [`docs/milestones/0.3-daily-practice.md`](docs/milestones/0.3-daily-practice.md)
 
@@ -114,6 +114,7 @@ Specification: [`docs/milestones/0.7-continuity-tools.md`](docs/milestones/0.7-c
 
 Goal: turn the evolving application into a dependable product someone else can install and understand.
 
+- [x] Match native window behavior and hide operating-system metadata from the project tree by default while providing an app-local visibility preference.
 - [ ] Complete keyboard, screen-reader, contrast, motion, and zoom review.
 - [ ] Test recovery, migration, and backup/restore using representative projects.
 - [ ] Establish performance budgets for launch, search, typing, save, and indexing.

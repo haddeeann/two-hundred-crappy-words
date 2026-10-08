@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   findTreeEntry,
+  hasHiddenProjectPathSegment,
+  isHiddenProjectEntry,
   reconcileTreeEntries,
   sortTreeEntries,
   updateTreeEntry,
@@ -69,5 +71,13 @@ describe("file tree", () => {
   it("accepts ordinary text and Markdown names", () => {
     expect(validateFileName("Chapter 1.md")).toBeNull();
     expect(validateFileName("notes.txt")).toBeNull();
+  });
+
+  it("identifies dot-prefixed entries and nested hidden paths", () => {
+    expect(isHiddenProjectEntry(".DS_Store")).toBe(true);
+    expect(isHiddenProjectEntry(".git")).toBe(true);
+    expect(isHiddenProjectEntry("chapter.md")).toBe(false);
+    expect(hasHiddenProjectPathSegment("Lore/.drafts/planet.md")).toBe(true);
+    expect(hasHiddenProjectPathSegment("Lore/Planets/mars.md")).toBe(false);
   });
 });

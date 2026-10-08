@@ -511,3 +511,25 @@ Why: a daily writer needs a reliable one-action place to begin, but empty dates
 should not accumulate merely because the app was opened. Ordinary Markdown keeps
 the ritual portable and inspectable, while delayed classification lets exploratory
 writing stay exploratory until the writer decides where it belongs.
+
+## D-052 — Hidden project entries are an app-local view preference
+
+- Date: 2026-10-08
+- Status: accepted
+
+The project tree hides any entry whose name begins with `.` by default, including
+operating-system metadata such as `.DS_Store` and tool-owned hidden directories.
+Writing tools provides a persisted **Show hidden files** preference. The preference
+changes only the app's tree view, never deletes, moves, rewrites, indexes, or adds
+project data, and does not force an already-open hidden file out of the editor.
+
+Native macOS window behavior remains governed by D-045. A Zoomed window is large
+and minimizable; true full screen is a separate macOS Space whose title bar and
+traffic-light availability are controlled by the operating system. The app will
+not replace or patch native controls to make full screen behave like Zoom.
+
+Why: writers should not have to navigate incidental operating-system files, but
+developers and advanced users still need an honest way to inspect every path.
+Keeping that choice app-local avoids contaminating portable projects. Preserving
+the Zoom/full-screen distinction follows the common macOS design language the user
+asked the application to retain.
