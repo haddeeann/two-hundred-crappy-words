@@ -10,19 +10,19 @@ Daily Drafts and deterministic continuity are complete. The active milestone now
 
 ## Active slice
 
-**0.8.4 — Performance budgets and large-project measurement**
+**0.8.5 — Onboarding, help, and sample project**
 
 ### Intended outcome
 
-Set honest budgets for launch, project indexing, file opening, typing, autosave, and search, then measure representative project sizes before optimizing the bundle or runtime.
+Help a first-time writer reach a useful daily draft quickly, understand the local-first project boundary, and explore structured features without needing this repository's development history.
 
 ### Acceptance criteria
 
-- [ ] Define user-centered budgets and representative small, medium, and large local fixtures before measuring.
-- [ ] Measure cold launch/readiness, initial indexing, file open, typing responsiveness, autosave completion, and search latency without manuscript telemetry.
-- [ ] Attribute the existing 712 KiB and 1.16 MiB minified chunks before choosing code splitting or another optimization.
-- [ ] Keep current parser/index limits visible and distinguish budget failures from supported hard limits.
-- [ ] Record repeatable commands and results, then run the complete gate before committing.
+- [ ] Audit the empty and first-project experience without disturbing returning writers.
+- [ ] Add concise in-app help for opening/creating a project, Write today, backups, links, structure, and continuity.
+- [ ] Design an optional sample science-fiction world that is copied locally only after explicit writer action and can be removed as an ordinary project folder.
+- [ ] Keep onboarding keyboard-accessible, dismissible, offline, and free of account or telemetry assumptions.
+- [ ] Update user documentation and run the complete automated and packaged macOS gate before committing.
 
 ## Next decision gate
 
@@ -33,6 +33,8 @@ The next release-readiness slices do not require product-format decisions: acces
 The user moved the project into pre-publication hardening on 2026-10-08 and requested hidden operating-system files by default with a visibility setting. Daily-material harvesting is deferred until after the first hardening pass. Optional AI remains deferred. The existing native-window decision still governs: macOS owns traffic lights, Zoom, full screen, and tiling.
 
 ## Completed checkpoint
+
+- Slice 0.8.4 establishes the first reproducible performance budgets and reference baseline. The permanent large fixture exercises the connected-lore combined boundary with 5,000 Markdown notes totaling about 47 MiB, then searches the resulting memory-only index; it also enforces one-frame word derivation for a 10,000-word active scene. On the reference 8 GB Apple A18 Pro Mac, indexing took 603 ms against a 2.5-second budget, unique-marker search took 31 ms against 100 ms, and word derivation took 1.8 ms against 16 ms. Packaged cold launch through a restored usable editor took a conservative 4.36 seconds including automation transport against 5 seconds. The arm64 DMG is 4,691,810 bytes against 10 MiB. [`PERFORMANCE.md`](PERFORMANCE.md) records the environment, repeatable command, budgets, supported hard-limit distinction, and privacy boundary. Build attribution shows the 1.16 MiB chunk is the already-lazy print-PDF engine and the 712 KiB chunk is the main app route; the warning remains enabled and no speculative code split was made. The complete frontend gate has 654 tests across ninety-nine files, Svelte/TypeScript reports zero diagnostics, the production web build passes, and the production dependency audit reports zero vulnerabilities. Next is 0.8.5, onboarding, help, and an optional sample project.
 
 - Slice 0.8.3 completes representative recovery and backup/restore hardening. A new cross-format integration fixture creates an ordinary world folder containing a manifest with unknown supported-version data, nested manuscript prose and structure, a Daily Markdown draft, timeline, maps, continuity exceptions, and a writer asset; physically copies it to a new path; verifies every file digest; and reloads each portable format with the same stable project UUID. A separate repository test proves an original absolute-path recovery draft cannot attach to the restored copy. The full suite's existing malformed, invalid, newer-version, unstable, mismatch, no-clobber, and recovery cases continue to prove explicit refusal without migration or partial writes. In-app backup guidance now distinguishes portable Daily Markdown from Mac-local goals and credit history; packaged macOS QA exposed that exact distinction through keyboard-accessible Project & backup info without changing the saved draft. The data and portability guides name every current portable root format, the exact macOS app-data location, and the closed-app boundary for copying private state. The complete gate has 652 passing frontend tests across ninety-eight files, twenty-six passing native tests, zero Svelte/TypeScript diagnostics, clean Rust formatting and strict Clippy, zero production dependency vulnerabilities, and successful production web plus macOS `.app`/DMG builds. The only migration limit is deliberate: version one preserves unknown fields, while newer format versions remain readable only as explicit unsupported states until a separately designed migration exists. Next is 0.8.4, performance budgets and large-project measurement.
 

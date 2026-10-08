@@ -367,6 +367,12 @@ A separate recovery repository check retained a draft under its original absolut
 
 Packaged macOS QA reopened the saved Arcadia ordinary folder, opened Writing tools, expanded the keyboard-accessible **Project & backup info** disclosure, and exposed the complete Daily/project versus Mac-local distinction in the accessibility tree. Escape closed the panel and returned focus to the Writing tools button. The draft remained saved and unchanged. The final gate has 652 passing frontend tests across ninety-eight files, twenty-six passing native tests, zero Svelte/TypeScript diagnostics, clean Rust formatting and strict Clippy, zero production dependency vulnerabilities, and successful web plus production macOS `.app`/DMG builds.
 
+## Milestone 0.8.4 performance-budget checkpoint
+
+Completed on 2026-10-08 on the reference 8 GB Apple A18 Pro Mac running macOS 26.6.2. A packaged cold launch reached the restored accessible project tree and usable editor in 4.36 seconds including Computer Use transport, below the conservative 5-second release budget. The permanent local fixture built 5,000 Markdown notes totaling about 47 MiB, indexed them in 603 ms against 2.5 seconds, and found a unique content marker in 31 ms against 100 ms. Complete word derivation for a 10,000-word active scene took 1.8 ms against one 16 ms frame. The configured autosave debounce remains 750 ms against a 1-second begin-after-idle budget; storage reread/write failures remain visible and are never concealed as timing successes.
+
+The production arm64 DMG measured 4,691,810 bytes against a 10 MiB budget. Manifest attribution confirmed that the approximately 1.16 MiB minified chunk is the print-PDF engine, already dynamically loaded only for PDF export, while the approximately 712 KiB chunk is the main app route. The build warning remains enabled. No bundle threshold was raised and no speculative code split was introduced. The complete frontend gate has 654 passing tests across ninety-nine files, Svelte/TypeScript reports zero diagnostics, the production web build passes, and the production dependency audit reports zero vulnerabilities.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:

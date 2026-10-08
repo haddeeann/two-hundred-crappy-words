@@ -171,6 +171,8 @@ Development follows the repository-backed [product roadmap](ROADMAP.md). The cur
 
 Local settings and draft-recovery behavior are documented in [`docs/DATA_AND_RECOVERY.md`](docs/DATA_AND_RECOVERY.md). Backup, move, and copy boundaries are summarized in [`docs/BACKUP_AND_PORTABILITY.md`](docs/BACKUP_AND_PORTABILITY.md).
 
+Release performance budgets, reference measurements, bundle attribution, and supported-limit boundaries are documented in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
+
 The deterministic word-count and daily-credit rules being implemented for milestone 0.3 are documented in [`docs/WORD_COUNTING.md`](docs/WORD_COUNTING.md).
 
 The daily ledger's schema, privacy boundaries, and local-date behavior are documented in [`docs/DAILY_PROGRESS.md`](docs/DAILY_PROGRESS.md).
