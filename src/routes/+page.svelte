@@ -7681,7 +7681,7 @@
             onclick={() => void goThroughLoreHistory("forward")}
           >→</button>
         </nav>{/if}
-        <span>
+        <h2 class="editor-document-heading">
           {mapOpen
             ? "Maps"
             : continuityReviewOpen
@@ -7692,7 +7692,7 @@
             ? `Corkboard · ${manuscriptCorkboard.manuscript.title}`
             : activeFile || "No file open"}
           {#if dirty}<span class="dirty-dot" aria-hidden="true">●</span>{/if}
-        </span>
+        </h2>
       </div>
       <div class="editor-statuses">
         {#if loreHistoryNotice}
@@ -8046,7 +8046,7 @@
         onConfirm={() => void confirmManuscriptSceneMerge()}
       />
     {/if}
-    <div class="practice-bar" aria-label="Writing progress">
+    <div class="practice-bar" role="region" aria-label="Writing progress">
       <div class="practice-context">
         {#if folderPath}
           <button
@@ -8770,6 +8770,16 @@
     gap: 0.65rem;
   }
 
+  .editor-document-heading {
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    font: inherit;
+    font-weight: 400;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .editor-statuses {
     min-width: 0;
     justify-content: flex-end;
@@ -9041,6 +9051,17 @@
     background-color: #353535;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    :global(*),
+    :global(*::before),
+    :global(*::after) {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
   .daily-target-button:disabled {
     opacity: 0.5;
     cursor: default;
@@ -9068,6 +9089,36 @@
   }
 
   @media (max-width: 620px) {
+    .sidebar {
+      width: 160px;
+      flex-basis: 160px;
+      padding: 0.75rem;
+    }
+
+    .editor-header {
+      align-items: stretch;
+      flex-direction: column;
+      gap: 0.45rem;
+      padding: 0.5rem 0.75rem;
+    }
+
+    .editor-statuses {
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: 0.4rem;
+    }
+
+    .practice-bar {
+      align-items: stretch;
+      flex-direction: column;
+      gap: 0.4rem;
+      padding: 0.5rem 0.75rem;
+    }
+
+    .daily-progress {
+      justify-content: flex-start;
+    }
+
     .writing-tools {
       width: min(330px, calc(100vw - 3rem));
     }

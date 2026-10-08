@@ -351,6 +351,14 @@ Completed successfully on macOS on 2026-09-27 using Computer Use against a fresh
 
 The native layout menu exposed Fill, Center, left/right/top/bottom halves, four quarters, arranged multi-window layouts, and full-screen left/right tiling. **Left** resized the app to half-screen width without crowding or clipping the fixed footer; **Return to Previous Size** restored its prior dimensions. A final quit and relaunch reopened the saved draft cleanly. The automated gate has 470 passing frontend tests across seventy-one files, fifteen passing native tests, clean Rust formatting/checks, zero Svelte/TypeScript diagnostics, successful web and production macOS `.app`/DMG builds, and zero production dependency vulnerabilities.
 
+## Milestone 0.8.2 accessibility and zoom checkpoint
+
+Completed successfully on macOS on 2026-10-08 using Computer Use against a freshly packaged production `.app` and the restored Arcadia project. The accessibility tree exposed the product document title, `Project files` level-one heading, active-document level-two heading, named project navigation, editor, and Writing progress region. Forward Tab moved from the project root through the visible tree into Review and Timeline, reverse Shift+Tab returned to Review, and the focus ring remained clearly visible. No text or project state was changed.
+
+Command–Plus enlarged the complete webview in supported 20% steps and Command–0 restored it. The first 140% pass exposed header and footer overlap at the resulting narrow effective viewport. The corrected package reduces the sidebar width, stacks the editor header and progress groups, keeps every action available, and leaves prose readable without horizontal overlap at the same zoom. The zoom permission is limited to `core:webview:allow-set-webview-zoom`; native traffic lights and window behavior remain unchanged. Representative shell normal-text pairs measured from 5.38:1 (`#999999` on `#252526`) through 11.25:1 (`#d4d4d4` on `#1e1e1e`), clearing the 4.5:1 WCAG AA threshold. The reduced-motion media query compiles into the production stylesheet and collapses animation, transition, and smooth-scroll behavior only when the operating-system preference requests it.
+
+The final gate has 650 passing frontend tests across ninety-seven files, twenty-six passing native tests, zero Svelte/TypeScript diagnostics, clean Rust formatting and strict Clippy, zero production dependency vulnerabilities, and successful web plus production macOS `.app`/DMG builds. The build's existing two large-chunk warnings remain visible for the planned performance-budget slice rather than being suppressed.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:

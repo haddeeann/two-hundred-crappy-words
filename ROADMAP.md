@@ -115,7 +115,7 @@ Specification: [`docs/milestones/0.7-continuity-tools.md`](docs/milestones/0.7-c
 Goal: turn the evolving application into a dependable product someone else can install and understand.
 
 - [x] Match native window behavior and hide operating-system metadata from the project tree by default while providing an app-local visibility preference.
-- [ ] Complete keyboard, screen-reader, contrast, motion, and zoom review.
+- [x] Complete keyboard, screen-reader, contrast, motion, and zoom review.
 - [ ] Test recovery, migration, and backup/restore using representative projects.
 - [ ] Establish performance budgets for launch, search, typing, save, and indexing.
 - [ ] Add onboarding, in-app help, sample world, and truthful user documentation.

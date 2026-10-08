@@ -533,3 +533,21 @@ developers and advanced users still need an honest way to inspect every path.
 Keeping that choice app-local avoids contaminating portable projects. Preserving
 the Zoom/full-screen distinction follows the common macOS design language the user
 asked the application to retain.
+
+## D-053 — Accessibility follows platform preferences and preserves every control
+
+- Date: 2026-10-08
+- Status: accepted
+
+The writing webview enables its supported keyboard page zoom behind only the narrow
+set-webview-zoom capability. At enlarged zoom, narrow layouts may reflow, stack, and
+reduce the project-tree width, but they do not hide writing, navigation, or progress
+actions. The active document is a real heading, persistent progress is a named
+region, and the product supplies its own document title. The app honors the
+operating-system reduced-motion preference globally and does not introduce a
+separate animation setting while the interface has no essential motion.
+
+Why: platform zoom and motion preferences are predictable, keyboard-accessible,
+and available before a writer learns application-specific controls. Reflow is a
+better accessibility trade than preserving a desktop row until its labels collide,
+and a narrowly scoped capability maintains the existing least-privilege boundary.

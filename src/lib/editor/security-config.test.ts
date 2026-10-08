@@ -61,9 +61,13 @@ describe("desktop security configuration", () => {
       minimizable: true,
       maximizable: true,
       closable: true,
+      zoomHotkeysEnabled: true,
     });
 
     const capability = readJson("src-tauri/capabilities/default.json");
+    expect(capability.permissions).toContain(
+      "core:webview:allow-set-webview-zoom",
+    );
     expect(capability.permissions).not.toEqual(
       expect.arrayContaining([
         "core:window:allow-start-dragging",
@@ -71,5 +75,12 @@ describe("desktop security configuration", () => {
         "core:window:allow-close",
       ]),
     );
+  });
+
+  it("uses the product name for the accessible document title", () => {
+    const html = readFileSync(new URL("src/app.html", repositoryRoot), "utf8");
+
+    expect(html).toContain("<title>200 Crappy Words</title>");
+    expect(html).not.toContain("Tauri + SvelteKit");
   });
 });

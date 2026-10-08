@@ -10,19 +10,19 @@ Daily Drafts and deterministic continuity are complete. The active milestone now
 
 ## Active slice
 
-**0.8.1 — Native window and file-tree polish (complete)**
+**0.8.3 — Representative recovery and backup/restore hardening**
 
 ### Intended outcome
 
-Keep macOS window behavior genuinely native and keep ordinary project navigation focused on writer-owned material without making hidden files inaccessible.
+Prove that ordinary project data, app-local state, recovery drafts, and the supported portable JSON formats can be backed up and restored without hidden developer state.
 
 ### Acceptance criteria
 
-- [x] Hide dot-prefixed entries such as `.DS_Store` at every visible tree level by default.
-- [x] Add a persisted, keyboard-accessible **Show hidden files** preference in Writing tools and refresh expanded folders without touching project files.
-- [x] Keep an already-open hidden file safe in the editor when visibility is turned off, while excluding its unavailable tree location from restored navigation.
-- [x] Verify native Zoom remains minimizable and retain macOS-owned full-screen behavior rather than drawing or patching traffic-light controls.
-- [x] Add focused automated coverage and packaged macOS QA, then record the next hardening slice.
+- [ ] Build small and representative medium project fixtures from ordinary project files plus supported portable metadata.
+- [ ] Exercise folder-level backup and restore to a new path, including project identity, structured tools, Daily drafts, and app-local state boundaries.
+- [ ] Exercise unsaved-draft recovery and representative malformed/newer portable sources without allowing partial writes.
+- [ ] Record exact limits, expected warnings, and any migration gaps revealed by the fixtures.
+- [ ] Run the complete automated and packaged macOS gates; document results before committing.
 
 ## Next decision gate
 
@@ -33,6 +33,8 @@ The next release-readiness slices do not require product-format decisions: acces
 The user moved the project into pre-publication hardening on 2026-10-08 and requested hidden operating-system files by default with a visibility setting. Daily-material harvesting is deferred until after the first hardening pass. Optional AI remains deferred. The existing native-window decision still governs: macOS owns traffic lights, Zoom, full screen, and tiling.
 
 ## Completed checkpoint
+
+- Slice 0.8.2 completes the structured accessibility and zoom audit. The packaged webview now uses Tauri's supported Command/Ctrl–Plus, Command/Ctrl–Minus, and reset zoom path behind only `core:webview:allow-set-webview-zoom`. The active document is an explicit level-two heading, Writing progress is a named region, and the HTML title is the product name instead of the starter template. A global reduced-motion media query removes incidental animation, transition, and smooth-scroll motion when requested. Packaged QA at 140% exposed and corrected header/footer collisions: the narrow effective viewport now reduces the file-tree width and stacks the header and progress groups without hiding controls or prose. Forward Tab and reverse Shift+Tab traversed the visible tree and header with a clear focus ring at enlarged zoom, then Command/Ctrl–0 restored the normal layout. Representative normal-text shell contrast ranges from 5.38:1 to 11.25:1, above the 4.5:1 WCAG AA threshold. The full gate has 650 passing frontend tests across ninety-seven files, twenty-six passing native tests, zero Svelte/TypeScript diagnostics, clean Rust formatting and strict Clippy, zero production dependency vulnerabilities, and successful web plus production macOS `.app`/DMG builds. The existing large-bundle warning is retained as evidence for the performance slice rather than suppressed. Next is 0.8.3, representative recovery and backup/restore hardening.
 
 - Slice 0.8.1 completes native-window and file-tree polish. The file tree now filters every dot-prefixed entry by default, including `.DS_Store` and nested tool metadata. Writing tools exposes a standard keyboard-accessible **Show hidden files** checkbox backed only by app-local `settings.json`; changing it recursively refreshes currently expanded branches, does not write or remove project data, leaves any already-open hidden document untouched, and prevents hidden selection state from being restored while the preference is off. One focused path-visibility fixture brings the full frontend gate to 649 passing tests across ninety-seven files; Svelte/TypeScript reports zero diagnostics, production web and macOS `.app`/DMG builds pass, and the production dependency audit reports zero vulnerabilities. Packaged QA proved `.DS_Store` absent by default, immediate reveal/hide, persistence across restart, unchanged saved prose and daily credit, and successful native yellow-button minimization after macOS Zoom. True full screen was separately verified as an operating-system Space that hides/owns the title bar; no custom controls or permissions were added. The next executable slice is 0.8.2, the structured accessibility, zoom, contrast, and reduced-motion audit.
 
