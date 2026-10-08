@@ -10,19 +10,19 @@ Daily Drafts and deterministic continuity are complete. The active milestone now
 
 ## Active slice
 
-**0.8.3 — Representative recovery and backup/restore hardening**
+**0.8.4 — Performance budgets and large-project measurement**
 
 ### Intended outcome
 
-Prove that ordinary project data, app-local state, recovery drafts, and the supported portable JSON formats can be backed up and restored without hidden developer state.
+Set honest budgets for launch, project indexing, file opening, typing, autosave, and search, then measure representative project sizes before optimizing the bundle or runtime.
 
 ### Acceptance criteria
 
-- [ ] Build small and representative medium project fixtures from ordinary project files plus supported portable metadata.
-- [ ] Exercise folder-level backup and restore to a new path, including project identity, structured tools, Daily drafts, and app-local state boundaries.
-- [ ] Exercise unsaved-draft recovery and representative malformed/newer portable sources without allowing partial writes.
-- [ ] Record exact limits, expected warnings, and any migration gaps revealed by the fixtures.
-- [ ] Run the complete automated and packaged macOS gates; document results before committing.
+- [ ] Define user-centered budgets and representative small, medium, and large local fixtures before measuring.
+- [ ] Measure cold launch/readiness, initial indexing, file open, typing responsiveness, autosave completion, and search latency without manuscript telemetry.
+- [ ] Attribute the existing 712 KiB and 1.16 MiB minified chunks before choosing code splitting or another optimization.
+- [ ] Keep current parser/index limits visible and distinguish budget failures from supported hard limits.
+- [ ] Record repeatable commands and results, then run the complete gate before committing.
 
 ## Next decision gate
 
@@ -33,6 +33,8 @@ The next release-readiness slices do not require product-format decisions: acces
 The user moved the project into pre-publication hardening on 2026-10-08 and requested hidden operating-system files by default with a visibility setting. Daily-material harvesting is deferred until after the first hardening pass. Optional AI remains deferred. The existing native-window decision still governs: macOS owns traffic lights, Zoom, full screen, and tiling.
 
 ## Completed checkpoint
+
+- Slice 0.8.3 completes representative recovery and backup/restore hardening. A new cross-format integration fixture creates an ordinary world folder containing a manifest with unknown supported-version data, nested manuscript prose and structure, a Daily Markdown draft, timeline, maps, continuity exceptions, and a writer asset; physically copies it to a new path; verifies every file digest; and reloads each portable format with the same stable project UUID. A separate repository test proves an original absolute-path recovery draft cannot attach to the restored copy. The full suite's existing malformed, invalid, newer-version, unstable, mismatch, no-clobber, and recovery cases continue to prove explicit refusal without migration or partial writes. In-app backup guidance now distinguishes portable Daily Markdown from Mac-local goals and credit history; packaged macOS QA exposed that exact distinction through keyboard-accessible Project & backup info without changing the saved draft. The data and portability guides name every current portable root format, the exact macOS app-data location, and the closed-app boundary for copying private state. The complete gate has 652 passing frontend tests across ninety-eight files, twenty-six passing native tests, zero Svelte/TypeScript diagnostics, clean Rust formatting and strict Clippy, zero production dependency vulnerabilities, and successful production web plus macOS `.app`/DMG builds. The only migration limit is deliberate: version one preserves unknown fields, while newer format versions remain readable only as explicit unsupported states until a separately designed migration exists. Next is 0.8.4, performance budgets and large-project measurement.
 
 - Slice 0.8.2 completes the structured accessibility and zoom audit. The packaged webview now uses Tauri's supported Command/Ctrl–Plus, Command/Ctrl–Minus, and reset zoom path behind only `core:webview:allow-set-webview-zoom`. The active document is an explicit level-two heading, Writing progress is a named region, and the HTML title is the product name instead of the starter template. A global reduced-motion media query removes incidental animation, transition, and smooth-scroll motion when requested. Packaged QA at 140% exposed and corrected header/footer collisions: the narrow effective viewport now reduces the file-tree width and stacks the header and progress groups without hiding controls or prose. Forward Tab and reverse Shift+Tab traversed the visible tree and header with a clear focus ring at enlarged zoom, then Command/Ctrl–0 restored the normal layout. Representative normal-text shell contrast ranges from 5.38:1 to 11.25:1, above the 4.5:1 WCAG AA threshold. The full gate has 650 passing frontend tests across ninety-seven files, twenty-six passing native tests, zero Svelte/TypeScript diagnostics, clean Rust formatting and strict Clippy, zero production dependency vulnerabilities, and successful web plus production macOS `.app`/DMG builds. The existing large-bundle warning is retained as evidence for the performance slice rather than suppressed. Next is 0.8.3, representative recovery and backup/restore hardening.
 

@@ -359,6 +359,14 @@ Commandâ€“Plus enlarged the complete webview in supported 20% steps and Commandâ
 
 The final gate has 650 passing frontend tests across ninety-seven files, twenty-six passing native tests, zero Svelte/TypeScript diagnostics, clean Rust formatting and strict Clippy, zero production dependency vulnerabilities, and successful web plus production macOS `.app`/DMG builds. The build's existing two large-chunk warnings remain visible for the planned performance-budget slice rather than being suppressed.
 
+## Milestone 0.8.3 backup and recovery checkpoint
+
+Completed on 2026-10-08 with a filesystem-level integration fixture and the complete automated gate. The fixture assembled one representative world from ordinary nested Markdown, a dated Daily draft, a manifest containing an unknown supported-version field, manuscript structure, timeline metadata, maps metadata plus a project asset, and explained continuity metadata. It copied the complete folder to a different absolute path, compared every SHA-256 digest, reparsed the manifest with the unknown field intact, and loaded all four optional portable formats from the restored root with the same project UUID. No app-local settings, workspace, practice ledger, permission scope, or recovery store appeared inside either project folder.
+
+A separate recovery repository check retained a draft under its original absolute source path and returned no draft for the same relative filename under the restored root. Existing format suites continue to cover malformed, invalid, unsupported newer, mismatched-project, unstable, and unsafe sources without mutation; existing native tests cover guarded no-clobber and rollback behavior. In-app **Project & backup info** now explicitly says dated `Daily` Markdown is included in a whole-folder backup while daily goals and credited history are Mac-local. The written guides identify `~/Library/Application Support/com.pat.two-hundred-crappy-words/` as the macOS private-state location and require the app to be closed before that optional machine-state directory is copied or restored.
+
+Packaged macOS QA reopened the saved Arcadia ordinary folder, opened Writing tools, expanded the keyboard-accessible **Project & backup info** disclosure, and exposed the complete Daily/project versus Mac-local distinction in the accessibility tree. Escape closed the panel and returned focus to the Writing tools button. The draft remained saved and unchanged. The final gate has 652 passing frontend tests across ninety-eight files, twenty-six passing native tests, zero Svelte/TypeScript diagnostics, clean Rust formatting and strict Clippy, zero production dependency vulnerabilities, and successful web plus production macOS `.app`/DMG builds.
+
 ## Start safely
 
 Create a disposable writing folder in Terminal:

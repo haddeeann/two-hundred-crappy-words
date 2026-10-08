@@ -7552,9 +7552,11 @@
           </p>
         {/if}
         <p>
-          Daily goals and history, recent locations, navigation, and recovery drafts
-          stay private to this app on this Mac. They are not part of a project-folder
-          backup. Recovery drafts are temporary safety copies, not version history.
+          Dated Markdown in <code>Daily</code> is ordinary project writing and is
+          included when you back up the whole folder. Daily goals and credited
+          history, recent locations, navigation, and recovery drafts stay private
+          to this app on this Mac. They are not part of a project-folder backup.
+          Recovery drafts are temporary safety copies, not version history.
         </p>
       </details>
 

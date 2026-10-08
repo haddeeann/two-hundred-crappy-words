@@ -7,8 +7,9 @@
 Back up the entire project folder, not only the manuscript subfolder. For a world project this includes:
 
 - `200-crappy-words.project.json`, which carries the world's stable ID, name, format version, and preferred folder roles;
-- optional `200-crappy-words.manuscripts.json` and `200-crappy-words.timeline.json` files, which carry portable manuscript structure plus shared calendar and track definitions;
+- optional `200-crappy-words.manuscripts.json`, `200-crappy-words.timeline.json`, `200-crappy-words.maps.json`, and `200-crappy-words.continuity-review.json` files, which carry portable manuscript structure, shared calendar/track definitions, map links, and explained continuity decisions;
 - Markdown and plain-text manuscript and lore files;
+- dated Markdown drafts under `Daily`, which are ordinary project writing rather than app-local practice counters;
 - structured-note frontmatter containing stable identity, canon, and typed continuity facts; and
 - images, maps, research files, and other assets the writer placed in the project.
 
@@ -24,6 +25,8 @@ The app's data directory contains personal or machine-specific state that is del
 - temporary unsaved recovery drafts and source fingerprints.
 
 Those records are private and are not transmitted by the app. A project-folder backup therefore protects the creative work but not the writing-practice history or an unsaved recovery draft. Recovery is a last line of defense, not a backup or version-control system.
+
+On macOS, this private state lives under `~/Library/Application Support/com.pat.two-hundred-crappy-words/`. It can be included in a whole-Mac backup if retaining local goals, counters, and temporary recovery state matters, but copy or restore it only while the app is closed. A project-folder backup remains independently useful without it.
 
 ## Moving a world project
 
