@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:200-crappy-words:schema:continuity-review:1",
-  "title": "200 Crappy Words continuity-review exceptions version 1",
+  "title": "Ministry of Elsewhere continuity-review exceptions version 1",
   "description": "Project-owned explanations for deterministic Review or Contradiction findings. The tested parser remains authoritative for aggregate limits, global identity, sorted evidence, exact tuple uniqueness, and unknown-field preservation.",
   "type": "object",
   "required": ["format", "formatVersion", "projectId", "exceptions"],

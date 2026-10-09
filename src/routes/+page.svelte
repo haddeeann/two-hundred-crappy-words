@@ -5260,7 +5260,7 @@
           ? "Write current text"
           : "Retry";
     const result = await message(prompt, {
-      title: "200 Crappy Words",
+      title: "Ministry of Elsewhere",
       kind: "warning",
       buttons: {
         yes: retryLabel,
@@ -8017,7 +8017,7 @@
         {:else}
           <textarea
         class="editor-input"
-        placeholder="Start writing your 200 crappy words..."
+        placeholder="Start writing today's words..."
         aria-label="Document editor"
         role="combobox"
         aria-autocomplete="list"

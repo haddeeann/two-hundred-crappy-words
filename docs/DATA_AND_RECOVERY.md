@@ -1,6 +1,6 @@
 # Data and recovery
 
-200 Crappy Words is designed as a local-first application. Its core writing workflow does not require an account or network connection.
+Ministry of Elsewhere is designed as a local-first application. Its core writing workflow does not require an account or network connection.
 
 ## Writing files
 

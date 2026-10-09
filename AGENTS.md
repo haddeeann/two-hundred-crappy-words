@@ -2,7 +2,7 @@
 
 ## Mission
 
-Build **200 Crappy Words** into a calm, local-first writing application for science-fiction novelists who want to write at least 200 words a day while keeping an interconnected world bible close at hand.
+Build **Ministry of Elsewhere** into a calm, local-first writing application for novelists who want to write a little every day while keeping an interconnected imagined world close at hand. The opinionated default daily goal remains 200 words.
 
 The writer's words are the most important data in this repository. Prefer safety, clarity, portability, and recoverability over cleverness.
 

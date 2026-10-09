@@ -423,7 +423,7 @@ Type in the app and pause. Confirm an error says the external version was not ov
 
 ## Recovery and remembered scope
 
-- With a source made read-only, type a distinctive sentence and wait for the save-failure message. Force quit **200 Crappy Words**, restore write permission, and restart the app.
+- With a source made read-only, type a distinctive sentence and wait for the save-failure message. Force quit **Ministry of Elsewhere**, restore write permission, and restart the app.
 - Confirm the chosen folder reopens without granting access again. Open the affected file and confirm the recovery dialog previews both copies. Exercise Cancel, then reopen and choose Recover draft.
 - After the recovered text saves, restart once more and confirm the stale recovery prompt is gone.
 

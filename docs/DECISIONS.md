@@ -25,7 +25,7 @@ Why: writers should be able to inspect, back up, search, and edit their work wit
 - Date: 2026-08-19
 - Status: accepted
 
-The default daily target is 200 words. A later milestone may make the target configurable, but product language and default design should retain the identity of 200 Crappy Words.
+The default daily target is 200 words. Writers may configure it, but the small concrete floor remains central to the daily-practice design even though the public product name no longer contains the number.
 
 Why: a small concrete floor reduces the emotional cost of starting and gives the product a memorable promise.
 
@@ -596,3 +596,27 @@ their own material, but they must not masquerade as personal work, clutter a cho
 project, or require special deletion semantics. Ordinary project data exercises the
 same product the writer will actually use and remains inspectable, editable,
 copyable, and removable with normal filesystem tools.
+
+## D-056 — The product is Ministry of Elsewhere
+
+- Date: 2026-10-09
+- Status: accepted
+
+The public product name is **Ministry of Elsewhere** and its approved line is
+**“Write a little every day. Build something enormous.”** The name appears in the
+application window, native dialogs, onboarding, package metadata, documentation,
+and generated-export authorship metadata. The internal npm and Rust package slug is
+`ministry-of-elsewhere`. The default daily goal remains 200 words, but the number is
+a humane practice convention rather than the public brand.
+
+Existing `200-crappy-words.*` portable project filenames, `200-crappy-words/...`
+format discriminators, and their schemas remain unchanged compatibility contracts.
+The development bundle identifier `com.pat.two-hundred-crappy-words` also remains
+temporarily unchanged so the rebrand does not hide app-local settings, daily history,
+recovery drafts, workspace state, or persisted filesystem permission scope. A final
+publisher-controlled bundle identifier requires an explicit copy-only app-data
+migration before it is adopted.
+
+Why: the new name is distinctive and emotionally memorable while leaving room for
+many kinds of imagined worlds. Product presentation can change safely; already
+written project formats and private safety state should not be churned for branding.

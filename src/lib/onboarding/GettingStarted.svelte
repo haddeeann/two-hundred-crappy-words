@@ -44,7 +44,7 @@
 <section class="getting-started" aria-labelledby="getting-started-title">
   <header>
     <div>
-      <p class="eyebrow">200 Crappy Words</p>
+      <p class="eyebrow">Ministry of Elsewhere</p>
       <h2 id="getting-started-title">A calm place to begin</h2>
       <p>Open your science-fiction world, write today, and keep its facts close at hand.</p>
     </div>

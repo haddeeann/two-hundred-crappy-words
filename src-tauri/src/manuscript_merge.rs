@@ -707,7 +707,7 @@ mod tests {
                 .unwrap()
                 .as_nanos();
             let path = std::env::temp_dir().join(format!(
-                "two-hundred-crappy-words-merge-{}-{nonce}-{}",
+                "ministry-of-elsewhere-merge-{}-{nonce}-{}",
                 std::process::id(),
                 FIXTURE_SEQUENCE.fetch_add(1, Ordering::Relaxed)
             ));

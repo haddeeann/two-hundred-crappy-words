@@ -4,7 +4,7 @@ Status: **APPROVED; implementation active**
 
 Last updated: 2026-10-01
 
-This document defines the approved portable location and travel boundary for 200 Crappy Words. The user approved all eight permanent choices on 2026-10-01. Implementation proceeds in independently verified slices; ordinary projects remain valid and are never migrated on open.
+This document defines the approved portable location and travel boundary for Ministry of Elsewhere. The user approved all eight permanent choices on 2026-10-01. Implementation proceeds in independently verified slices; ordinary projects remain valid and are never migrated on open.
 
 The central recommendation is deliberately modest: keep places, reusable route profiles, and specific journeys as separate structured Markdown notes. Reuse the approved continuity facts and timeline arithmetic instead of adding a central spatial database or a universal propulsion engine. A writer states the travel duration that is true for one route and model; the app may add that duration to a sufficiently computable departure and show an honest arrival window.
 

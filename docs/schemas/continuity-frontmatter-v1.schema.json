@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:200-crappy-words:schema:continuity-frontmatter:1",
-  "title": "200 Crappy Words structured-note frontmatter, continuity version 1",
+  "title": "Ministry of Elsewhere structured-note frontmatter, continuity version 1",
   "description": "The data shape represented by the app's documented safe YAML subset. This schema does not relax the parser's source, indentation, duplicate-key, or quoted-string rules.",
   "type": "object",
   "properties": {

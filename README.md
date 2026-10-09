@@ -1,6 +1,8 @@
-# 200 Crappy Words
+# Ministry of Elsewhere
 
-200 Crappy Words is an early-stage desktop writing app for working with plain-text files in a folder. It provides a deliberately small, dark interface: choose a folder, pick a file, and write.
+**Write a little every day. Build something enormous.**
+
+Ministry of Elsewhere is a calm, local-first desktop writing studio for novelists building imagined worlds. It keeps daily writing, long-form manuscript structure, connected lore, timelines, maps, relationships, and deterministic continuity tools close together while leaving the writer's work in ordinary files.
 
 The app now counts words and stores progress toward its default 200-word target by selected project and local calendar date. Daily-practice persistence, goals, history, corrections, and restart behavior have passed their desktop checkpoint. A writer can also explicitly turn an existing folder into a portable named world project without changing its existing material.
 

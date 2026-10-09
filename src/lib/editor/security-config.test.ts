@@ -54,7 +54,7 @@ describe("desktop security configuration", () => {
     const [window] = app.windows as Array<Record<string, unknown>>;
 
     expect(window).toMatchObject({
-      title: "200 Crappy Words",
+      title: "Ministry of Elsewhere",
       decorations: true,
       titleBarStyle: "Visible",
       resizable: true,
@@ -80,7 +80,7 @@ describe("desktop security configuration", () => {
   it("uses the product name for the accessible document title", () => {
     const html = readFileSync(new URL("src/app.html", repositoryRoot), "utf8");
 
-    expect(html).toContain("<title>200 Crappy Words</title>");
+    expect(html).toContain("<title>Ministry of Elsewhere</title>");
     expect(html).not.toContain("Tauri + SvelteKit");
   });
 });

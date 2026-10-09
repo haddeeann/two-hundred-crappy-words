@@ -848,7 +848,7 @@ mod tests {
                 .unwrap()
                 .as_nanos();
             let path = std::env::temp_dir().join(format!(
-                "two-hundred-crappy-words-split-{}-{nonce}-{}",
+                "ministry-of-elsewhere-split-{}-{nonce}-{}",
                 std::process::id(),
                 FIXTURE_SEQUENCE.fetch_add(1, Ordering::Relaxed)
             ));

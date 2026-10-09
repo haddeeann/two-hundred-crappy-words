@@ -9,7 +9,7 @@ Last updated: 2026-10-05
 This proposal defines the smallest project-wide continuity review that can help
 a writer find evidence-backed problems without treating incomplete planning,
 freeform prose, or ordinary science-fiction ambiguity as falsehood. It unifies
-the deterministic checks already present in 200 Crappy Words, adds two narrow
+the deterministic checks already present in Ministry of Elsewhere, adds two narrow
 structured-fact rules, and resolves the previously deferred portable-exception
 boundary.
 
@@ -62,7 +62,7 @@ source shape, and human-readable message. The older stable
 [SHACL Recommendation](https://www.w3.org/TR/shacl/) likewise treats validation
 as a report rather than a mutation of the input graph.
 
-200 Crappy Words should borrow that result shape, not RDF or SHACL syntax: every
+Ministry of Elsewhere should borrow that result shape, not RDF or SHACL syntax: every
 finding needs a stable versioned rule, an explicit subject, exact contributing
 sources, severity, and a plain-language explanation. Source diagnostics and
 cross-source findings remain visibly different categories.
@@ -84,7 +84,7 @@ but do not define durable identity.
 ### Provenance is useful only when it reaches the writer's source
 
 The W3C [PROV-O Recommendation](https://www.w3.org/TR/prov-o/) models results as
-derived from identifiable entities and activities. 200 Crappy Words does not
+derived from identifiable entities and activities. Ministry of Elsewhere does not
 need a provenance ontology, but it should retain the practical lesson: a
 finding is useful only if the writer can see which project sources and which
 deterministic rule produced it.

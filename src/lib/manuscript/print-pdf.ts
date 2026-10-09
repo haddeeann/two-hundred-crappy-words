@@ -150,8 +150,8 @@ async function renderPrintPdf(
   document.setTitle(input.title, { showInWindowTitleBar: true });
   document.setAuthor(metadata.author);
   document.setSubject("6 x 9 inch no-bleed print interior");
-  document.setCreator("200 Crappy Words");
-  document.setProducer("200 Crappy Words");
+  document.setCreator("Ministry of Elsewhere");
+  document.setProducer("Ministry of Elsewhere");
   document.setKeywords(["print interior", "6 x 9", "no bleed"]);
   const modifiedAt = new Date(metadata.modifiedAt);
   document.setCreationDate(modifiedAt);

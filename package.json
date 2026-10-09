@@ -1,7 +1,7 @@
 {
-  "name": "two-hundred-crappy-words",
+  "name": "ministry-of-elsewhere",
   "version": "0.1.0",
-  "description": "",
+  "description": "A calm, local-first writing studio for building enormous worlds a little every day.",
   "type": "module",
   "scripts": {
     "dev": "vite dev",

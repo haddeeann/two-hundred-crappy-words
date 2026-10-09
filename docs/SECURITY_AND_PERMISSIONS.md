@@ -1,6 +1,6 @@
 # Security and permissions
 
-200 Crappy Words is a local-first desktop application. Its current writing workflow makes no network requests and has no telemetry, account, cloud-sync, or URL-opening capability.
+Ministry of Elsewhere is a local-first desktop application. Its current writing workflow makes no network requests and has no telemetry, account, cloud-sync, or URL-opening capability.
 
 ## Webview content policy
 

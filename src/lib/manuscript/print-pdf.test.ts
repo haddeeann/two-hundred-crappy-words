@@ -61,8 +61,8 @@ describe("print-interior PDF generation", () => {
     expect(await manuscriptPrintPdfPageCount(first)).toBe(3);
     expect(document.getTitle()).toBe("The Patient Comet");
     expect(document.getAuthor()).toBe("Pat Example");
-    expect(document.getCreator()).toBe("200 Crappy Words");
-    expect(document.getProducer()).toBe("200 Crappy Words");
+    expect(document.getCreator()).toBe("Ministry of Elsewhere");
+    expect(document.getProducer()).toBe("Ministry of Elsewhere");
     expect(document.getCreationDate()?.toISOString()).toBe(new Date(MODIFIED).toISOString());
     expect(document.getModificationDate()?.toISOString()).toBe(new Date(MODIFIED).toISOString());
     expect(document.getPageCount()).toBe(3);

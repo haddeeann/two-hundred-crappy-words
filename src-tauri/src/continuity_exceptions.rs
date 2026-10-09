@@ -321,7 +321,7 @@ mod tests {
                 .expect("clock")
                 .as_nanos();
             let path = std::env::temp_dir().join(format!(
-                "two-hundred-crappy-words-continuity-review-{}-{nonce}-{}",
+                "ministry-of-elsewhere-continuity-review-{}-{nonce}-{}",
                 std::process::id(),
                 SEQUENCE.fetch_add(1, Ordering::Relaxed)
             ));

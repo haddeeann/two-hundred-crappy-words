@@ -4,7 +4,7 @@ Status: **APPROVED on 2026-09-22; version-one read-only timeline implemented and
 
 Last updated: 2026-09-22
 
-This contract defines the smallest portable timeline boundary for 200 Crappy Words. It is deliberately narrower than a general calendar engine: writer-authored facts remain beside their explanatory Markdown, one optional project file supplies shared calendar mathematics and track membership, and every derived position remains traceable to exact source facts.
+This contract defines the smallest portable timeline boundary for Ministry of Elsewhere. It is deliberately narrower than a general calendar engine: writer-authored facts remain beside their explanatory Markdown, one optional project file supplies shared calendar mathematics and track membership, and every derived position remains traceable to exact source facts.
 
 The seven permanent choices at the end of this document were approved on 2026-09-22. The version-one JSON Schema, bounded stable loader, dependency-free calendar normalization, source-linked in-memory derivation, and read-only Timeline workspace are implemented. Project-file creation and mutation remain deliberately deferred.
 

@@ -2,9 +2,9 @@
 
 ## North star
 
-**Open your science-fiction world, write 200 words today, and keep every fact about that world close at hand.**
+**Write a little every day. Build something enormous.**
 
-200 Crappy Words is a local-first desktop writing environment for people building science-fiction novels and the worlds behind them. It should help a writer return every day, lower the emotional cost of beginning, and keep lore useful while prose is being written.
+Ministry of Elsewhere is a local-first desktop writing environment for people building novels and the worlds behind them, with science fiction as its first and deepest continuity use case. It should help a writer return every day, lower the emotional cost of beginning, and keep lore useful while prose is being written.
 
 The app should not try to become a generic office suite, a competitive social network, or an encyclopedia that makes preparation feel more important than writing.
 

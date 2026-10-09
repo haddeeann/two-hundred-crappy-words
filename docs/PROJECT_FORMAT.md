@@ -2,7 +2,7 @@
 
 Status: **APPROVED** on 2026-08-21
 
-This document defines the approved first portable project format for 200 Crappy Words. The app validates and recognizes this format without writing on folder open, and creates it only through an explicit confirmed project-creation or adoption action.
+This document defines the approved first portable project format for Ministry of Elsewhere. The app validates and recognizes this format without writing on folder open, and creates it only through an explicit confirmed project-creation or adoption action.
 
 ## Design goals
 
@@ -10,7 +10,7 @@ The format should:
 
 - leave prose and lore as ordinary Markdown or plain-text files;
 - let an opted-in project keep its identity after the folder moves;
-- remain understandable and editable without 200 Crappy Words;
+- remain understandable and editable without Ministry of Elsewhere;
 - add only metadata that genuinely needs to travel with the creative work;
 - keep machine-specific, private, or temporary state out of the project;
 - never be created during an ordinary **Open Folder** flow;

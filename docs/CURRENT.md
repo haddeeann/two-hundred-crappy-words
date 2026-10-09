@@ -10,30 +10,31 @@ Daily Drafts and deterministic continuity are complete. The active milestone now
 
 ## Active slice
 
-**0.8.6 — Application identity and packaging plan**
+**0.8.6b — Visual identity review**
 
 ### Intended outcome
 
-Inventory the current product identity, versioning, icons, bundle metadata, and unsigned packaging so the writer can approve a coherent public-facing identity before irreversible signing or distribution work.
+Create reviewable icon directions derived from the approved Ministry of Elsewhere identity without replacing the current assets before the writer chooses one.
 
 ### Acceptance criteria
 
-- [x] Inventory the current app name, bundle identifier, package version, icons, installer naming, and metadata without changing them.
-- [x] Draft a short identity/versioning/signing proposal that separates no-cost local packaging from Apple Developer account decisions.
-- [x] Identify every file and reproducible command affected by an approved identity.
-- [x] Stop for approval of final product language and visual identity before changing public-facing assets or signing configuration.
+- [ ] Prepare a small, visibly distinct set of icon concepts around an understated institution for imagined worlds.
+- [ ] Check each concept at macOS icon and small favicon sizes.
+- [ ] Stop for the writer's visual choice before replacing repository assets.
 
 ## Next decision gate
 
-Final product language and visual identity are now the next explicit decision gate. Signing/notarization accounts, networked updates, crash reporting, and feedback services remain later separate gates.
+The product language gate is complete: **Ministry of Elsewhere** and “Write a little every day. Build something enormous.” are approved and implemented. Visual identity is the immediate gate. The public publisher namespace, version, minimum supported macOS, signing/notarization account, networked updates, crash reporting, and feedback services remain separate later gates.
 
-The decision packet is recorded in [`IDENTITY_AND_DISTRIBUTION_PROPOSAL.md`](IDENTITY_AND_DISTRIBUTION_PROPOSAL.md). It recommends keeping **200 Crappy Words**, using the description “A calm, local-first writing desk for science-fiction worlds,” separating the internal package slug from the friendly bundle name, beginning external beta versioning at `0.8.0-beta.1` / build `1`, exploring a writing-page-and-orbit icon, and targeting a notarized direct-download Apple Silicon beta after a separate Apple account/cost gate. The public publisher name, reverse-DNS namespace, icon direction, version, and initial platform floor await approval; no public metadata, visual asset, signing configuration, credential, or package was changed.
+The decision packet is recorded in [`IDENTITY_AND_DISTRIBUTION_PROPOSAL.md`](IDENTITY_AND_DISTRIBUTION_PROPOSAL.md). The visible app identity and internal package slug now use Ministry of Elsewhere. Existing portable `200-crappy-words` format identifiers remain stable, and the old development bundle identifier is temporarily retained to preserve app-local data until a publisher namespace and copy-only migration are approved. No icon, public identifier, version, signing configuration, credential, or published artifact changed.
 
 ## Current approval state
 
 The user moved the project into pre-publication hardening on 2026-10-08 and requested hidden operating-system files by default with a visibility setting. Daily-material harvesting is deferred until after the first hardening pass. Optional AI remains deferred. The existing native-window decision still governs: macOS owns traffic lights, Zoom, full screen, and tiling.
 
 ## Completed checkpoint
+
+- Slice 0.8.6a implements the approved **Ministry of Elsewhere** name and **“Write a little every day. Build something enormous.”** product line. The application window, native save-conflict dialog, HTML title, onboarding, README, product direction, package descriptions and slugs, generated PDF creator/producer metadata, schemas' descriptive titles, and current product/format documentation use the new identity. Existing `200-crappy-words.*` project filenames and format discriminators remain exact compatibility contracts. The bundle identifier remains `com.pat.two-hundred-crappy-words` so existing settings, daily history, workspace state, recovery drafts, and persisted filesystem scope remain reachable until a public publisher namespace and migration are approved. A fresh package produced `Ministry of Elsewhere.app` with the correct display name and `ministry-of-elsewhere` executable; it remains intentionally unsigned for release. All 665 frontend tests and 26 native tests pass, Svelte/TypeScript reports zero errors and warnings, the production build passes, Rust formatting and clippy pass, and the packaged macOS app build succeeds. Next is 0.8.6b, reviewable icon concepts; no repository icon changes occur before the writer chooses one.
 
 - Slice 0.8.6 completes the non-mutating application-identity and packaging inventory. [`IDENTITY_AND_DISTRIBUTION_PROPOSAL.md`](IDENTITY_AND_DISTRIBUTION_PROPOSAL.md) records the prototype slug leaking into the bundle/DMG, `0.1.0` placeholder versioning and starter metadata, default Tauri/Svelte artwork, Tauri's untested macOS 10.13 floor, Apple-Silicon-only evidence, absent updater/release automation, and an ad-hoc development app that fails Gatekeeper assessment. The proposal recommends retaining **200 Crappy Words**, separating the friendly product name from internal slugs, using an approved publisher-controlled bundle namespace, beginning the external beta at `0.8.0-beta.1` / build `1`, reviewing a page-and-orbit visual direction, and treating no-cost ad-hoc packaging separately from paid Developer ID signing and notarization. It lists every affected source/documentation surface, supported Tauri build forms, release verification commands, clean-Mac QA, and a manual first-beta update policy. No runtime code, public metadata, asset, bundle configuration, account, credential, or artifact changed. The next step is the explicit five-part product-language, publisher-identity, visual-direction, version, and platform-support approval gate.
 

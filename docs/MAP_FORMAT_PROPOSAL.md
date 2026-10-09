@@ -6,7 +6,7 @@ Last updated: 2026-10-05
 
 ## Purpose
 
-This proposal defines the smallest portable map boundary for 200 Crappy Words:
+This proposal defines the smallest portable map boundary for Ministry of Elsewhere:
 a writer supplies an ordinary image, the project records a stable logical
 canvas over that image, and map-owned anchors link points or regions back to
 stable lore notes. It deliberately does not turn the app into a map painter,

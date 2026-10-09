@@ -1,6 +1,6 @@
 # Product roadmap
 
-This roadmap is the durable source of truth for the intended direction of 200 Crappy Words. Detailed acceptance criteria live in `docs/milestones/`. Current execution state lives in `docs/CURRENT.md`.
+This roadmap is the durable source of truth for the intended direction of Ministry of Elsewhere. Detailed acceptance criteria live in `docs/milestones/`. Current execution state lives in `docs/CURRENT.md`.
 
 Status legend: `PLANNED`, `ACTIVE`, `BLOCKED`, `COMPLETE`, `DEFERRED`.
 

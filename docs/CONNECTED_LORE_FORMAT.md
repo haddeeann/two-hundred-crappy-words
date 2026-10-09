@@ -2,7 +2,7 @@
 
 Status: **APPROVED** on 2026-08-22
 
-This document defines the first durable meaning of wiki links and the first derived project index for 200 Crappy Words. The format is approved for implementation because writers will place this syntax in portable Markdown and because it adds one optional structured-note frontmatter field. Individual sections describe shipped behavior only after their implementation lands.
+This document defines the first durable meaning of wiki links and the first derived project index for Ministry of Elsewhere. The format is approved for implementation because writers will place this syntax in portable Markdown and because it adds one optional structured-note frontmatter field. Individual sections describe shipped behavior only after their implementation lands.
 
 ## Design goals
 

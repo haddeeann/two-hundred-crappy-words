@@ -1,6 +1,6 @@
 # Backup and portability
 
-200 Crappy Words keeps creative projects as ordinary folders. A backup tool can copy that folder without understanding the app, and another text editor can open the writing directly.
+Ministry of Elsewhere keeps creative projects as ordinary folders. A backup tool can copy that folder without understanding the app, and another text editor can open the writing directly.
 
 ## What to back up
 
@@ -46,7 +46,7 @@ A raw filesystem copy initially contains the same project ID as its source. If t
 
 If the prior location is gone or inaccessible, the new location is treated as a move and the manifest is not rewritten.
 
-Do not open and actively edit two locations that intentionally represent the same world at once. 200 Crappy Words is local-first but does not yet provide synchronization, merge, or conflict resolution between project copies.
+Do not open and actively edit two locations that intentionally represent the same world at once. Ministry of Elsewhere is local-first but does not yet provide synchronization, merge, or conflict resolution between project copies.
 
 ## Restoring a backup
 

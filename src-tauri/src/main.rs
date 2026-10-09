@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    two_hundred_crappy_words_lib::run()
+    ministry_of_elsewhere_lib::run()
 }

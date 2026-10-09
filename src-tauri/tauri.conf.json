@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "two-hundred-crappy-words",
+  "productName": "Ministry of Elsewhere",
   "version": "0.1.0",
   "identifier": "com.pat.two-hundred-crappy-words",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "200 Crappy Words",
+        "title": "Ministry of Elsewhere",
         "width": 800,
         "height": 600,
         "decorations": true,
