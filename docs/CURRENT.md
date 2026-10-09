@@ -18,20 +18,24 @@ Inventory the current product identity, versioning, icons, bundle metadata, and 
 
 ### Acceptance criteria
 
-- [ ] Inventory the current app name, bundle identifier, package version, icons, installer naming, and metadata without changing them.
-- [ ] Draft a short identity/versioning/signing proposal that separates no-cost local packaging from Apple Developer account decisions.
-- [ ] Identify every file and reproducible command affected by an approved identity.
-- [ ] Stop for approval of final product language and visual identity before changing public-facing assets or signing configuration.
+- [x] Inventory the current app name, bundle identifier, package version, icons, installer naming, and metadata without changing them.
+- [x] Draft a short identity/versioning/signing proposal that separates no-cost local packaging from Apple Developer account decisions.
+- [x] Identify every file and reproducible command affected by an approved identity.
+- [x] Stop for approval of final product language and visual identity before changing public-facing assets or signing configuration.
 
 ## Next decision gate
 
 Final product language and visual identity are now the next explicit decision gate. Signing/notarization accounts, networked updates, crash reporting, and feedback services remain later separate gates.
+
+The decision packet is recorded in [`IDENTITY_AND_DISTRIBUTION_PROPOSAL.md`](IDENTITY_AND_DISTRIBUTION_PROPOSAL.md). It recommends keeping **200 Crappy Words**, using the description “A calm, local-first writing desk for science-fiction worlds,” separating the internal package slug from the friendly bundle name, beginning external beta versioning at `0.8.0-beta.1` / build `1`, exploring a writing-page-and-orbit icon, and targeting a notarized direct-download Apple Silicon beta after a separate Apple account/cost gate. The public publisher name, reverse-DNS namespace, icon direction, version, and initial platform floor await approval; no public metadata, visual asset, signing configuration, credential, or package was changed.
 
 ## Current approval state
 
 The user moved the project into pre-publication hardening on 2026-10-08 and requested hidden operating-system files by default with a visibility setting. Daily-material harvesting is deferred until after the first hardening pass. Optional AI remains deferred. The existing native-window decision still governs: macOS owns traffic lights, Zoom, full screen, and tiling.
 
 ## Completed checkpoint
+
+- Slice 0.8.6 completes the non-mutating application-identity and packaging inventory. [`IDENTITY_AND_DISTRIBUTION_PROPOSAL.md`](IDENTITY_AND_DISTRIBUTION_PROPOSAL.md) records the prototype slug leaking into the bundle/DMG, `0.1.0` placeholder versioning and starter metadata, default Tauri/Svelte artwork, Tauri's untested macOS 10.13 floor, Apple-Silicon-only evidence, absent updater/release automation, and an ad-hoc development app that fails Gatekeeper assessment. The proposal recommends retaining **200 Crappy Words**, separating the friendly product name from internal slugs, using an approved publisher-controlled bundle namespace, beginning the external beta at `0.8.0-beta.1` / build `1`, reviewing a page-and-orbit visual direction, and treating no-cost ad-hoc packaging separately from paid Developer ID signing and notarization. It lists every affected source/documentation surface, supported Tauri build forms, release verification commands, clean-Mac QA, and a manual first-beta update policy. No runtime code, public metadata, asset, bundle configuration, account, credential, or artifact changed. The next step is the explicit five-part product-language, publisher-identity, visual-direction, version, and platform-support approval gate.
 
 - Slice 0.8.4 establishes the first reproducible performance budgets and reference baseline. The permanent large fixture exercises the connected-lore combined boundary with 5,000 Markdown notes totaling about 47 MiB, then searches the resulting memory-only index; it also enforces one-frame word derivation for a 10,000-word active scene. On the reference 8 GB Apple A18 Pro Mac, indexing took 603 ms against a 2.5-second budget, unique-marker search took 31 ms against 100 ms, and word derivation took 1.8 ms against 16 ms. Packaged cold launch through a restored usable editor took a conservative 4.36 seconds including automation transport against 5 seconds. The arm64 DMG is 4,691,810 bytes against 10 MiB. [`PERFORMANCE.md`](PERFORMANCE.md) records the environment, repeatable command, budgets, supported hard-limit distinction, and privacy boundary. Build attribution shows the 1.16 MiB chunk is the already-lazy print-PDF engine and the 712 KiB chunk is the main app route; the warning remains enabled and no speculative code split was made. The complete frontend gate has 654 tests across ninety-nine files, Svelte/TypeScript reports zero diagnostics, the production web build passes, and the production dependency audit reports zero vulnerabilities. Next is 0.8.5, onboarding, help, and an optional sample project.
 
@@ -206,7 +210,7 @@ The user moved the project into pre-publication hardening on 2026-10-08 and requ
 
 ## Blockers and decision gates
 
-There is no technical blocker. Slice 0.8.2 can begin with an inventory-driven keyboard, screen-reader, contrast, zoom, and reduced-motion audit; any visual-identity change remains a later decision gate.
+There is no technical blocker. Identity implementation is intentionally paused at the approved 0.8.6 decision boundary. The user must approve or revise the five choices in [`IDENTITY_AND_DISTRIBUTION_PROPOSAL.md`](IDENTITY_AND_DISTRIBUTION_PROPOSAL.md) before public metadata or visual assets change. Apple enrollment, signing/notarization credentials, automatic updates, crash reporting, and feedback services remain later separate gates.
 
 ## Handoff protocol
 
