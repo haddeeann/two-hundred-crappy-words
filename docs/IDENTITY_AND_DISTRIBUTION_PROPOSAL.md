@@ -26,7 +26,8 @@ This document records the current prototype identity and the remaining decisions
 | Other starter assets | None | Unused Svelte, Tauri, and Vite logo files were removed. |
 | Next development DMG name | `Ministry of Elsewhere_0.8.0_aarch64.dmg` | Friendly name, technical version, and Apple Silicon architecture are explicit. |
 | Current signing | Ad-hoc/linker signed, no Apple Team ID | Suitable only for development. `spctl --assess` rejects the built app. |
-| Notarization and stapling | None | Not ready for download by another writer. |
+| Notarization and stapling | None | Not release-ready; the early development preview requires manual macOS approval. |
+| Development-preview distribution | `13squirrels.netlify.app/ministry-of-elsewhere/` | Clearly labeled ad-hoc preview with manual macOS approval steps and a published SHA-256; not the release-ready public beta. |
 | Update mechanism | None | Appropriate for the current offline prototype; first beta can use manual updates. |
 | Tested distribution target | macOS on Apple Silicon | Windows, Linux, Intel macOS, and the Mac App Store are not tested products. |
 
@@ -100,7 +101,7 @@ Purpose: development on the current Mac and tightly controlled testing where the
 - Explicitly use ad-hoc signing when needed for Apple Silicon rather than mistaking it for publisher verification.
 - State that macOS may require the tester to approve the app in Privacy & Security.
 - Do not describe the artifact as verified, notarized, or ready for general download.
-- Do not publish this artifact as the public beta.
+- If this artifact is made reachable for early exploration, label it as a development preview, show the manual macOS approval path before download, publish its digest, and do not describe it as the release-ready public beta.
 
 This path requires no paid account and no credentials, but it creates installation friction and weakens the first-run trust experience.
 

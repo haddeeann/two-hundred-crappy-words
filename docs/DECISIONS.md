@@ -656,3 +656,27 @@ Why: numeric macOS metadata satisfies Apple's bundle-version requirements while 
 human Beta 1 label communicates maturity clearly. A narrow, tested platform promise
 is more trustworthy than inheriting Tauri's unverified macOS 10.13 default or
 claiming architectures and operating systems that have not been exercised.
+
+## D-059 — The studio site may host an explicit development preview
+
+- Date: 2026-10-09
+- Status: accepted
+
+The 13 Squirrels Studio site may make the current Apple Silicon DMG reachable before
+Developer ID enrollment only when it is presented as a **development preview**, not
+as the release-ready public beta. The page must state that the contained app is
+ad-hoc signed and not notarized, explain macOS's manual approval flow before the
+download, name the supported architecture and operating-system floor, publish the
+artifact's SHA-256 digest, and direct writers to download only from the studio host.
+
+The first hosted preview is version `0.8.0`, build `1`, for Apple Silicon on macOS 13+
+with SHA-256
+`ff646eca2f1f7413079e8bc970682d5053c301295e6594a3c6fb82d252a7f76f`.
+It is served from `13squirrels.netlify.app`; the shorter custom domain is not claimed
+until it actually serves the Netlify deployment. This exception does not waive the
+publisher namespace, app-data migration, clean-machine QA, Developer ID signing,
+notarization, stapling, and Gatekeeper verification required for the real public beta.
+
+Why: an honest early preview lets interested writers experience the product now
+without disguising macOS trust friction or weakening the definition of release
+readiness. The checksum and single named host make this temporary boundary auditable.

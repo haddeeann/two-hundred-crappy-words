@@ -8,6 +8,8 @@ Ministry of Elsewhere is a calm, local-first desktop writing studio for novelist
 
 The current pre-release is **0.8.0 Beta 1**, initially targeting Apple Silicon Macs running macOS 13 or later. It is not yet a signed or notarized public download.
 
+A clearly labeled, ad-hoc-signed development preview is available from the [Ministry of Elsewhere product page](https://13squirrels.netlify.app/ministry-of-elsewhere/). macOS requires manual approval for this preview; it will be replaced by the normal Developer ID-signed and notarized release before the public beta is considered release-ready.
+
 The app now counts words and stores progress toward its default 200-word target by selected project and local calendar date. Daily-practice persistence, goals, history, corrections, and restart behavior have passed their desktop checkpoint. A writer can also explicitly turn an existing folder into a portable named world project without changing its existing material.
 
 ## Current features
