@@ -551,3 +551,22 @@ Why: platform zoom and motion preferences are predictable, keyboard-accessible,
 and available before a writer learns application-specific controls. Reflow is a
 better accessibility trade than preserving a desktop row until its labels collide,
 and a narrowly scoped capability maintains the existing least-privilege boundary.
+
+## D-054 — Getting Started is session-dismissible, not permanently completed
+
+- Date: 2026-10-09
+- Status: accepted
+
+Getting Started appears automatically only after startup finishes without restoring
+a project. Closing it suppresses that automatic surface for the current app session
+but writes no completed or dismissed profile state. The complete offline Help
+workspace remains explicitly available at any time from the native Help menu and
+Writing tools, including while a project and unsaved draft are open. Help temporarily
+occupies the main workspace without changing editor content, selection, save state,
+daily credit, or the underlying project tools.
+
+Why: onboarding should get out of a returning writer's way without becoming a
+one-time resource they can accidentally lose. A session-only dismissal keeps startup
+calm, while permanent explicit access supports people who skip the tour initially,
+forget a workflow, or learn the application gradually. The user specifically asked
+on 2026-10-09 to make onboarding repeatable after it is closed.

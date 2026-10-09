@@ -1,6 +1,6 @@
 # Current work
 
-Last updated: 2026-10-08
+Last updated: 2026-10-09
 
 ## Active milestone
 
@@ -10,19 +10,20 @@ Daily Drafts and deterministic continuity are complete. The active milestone now
 
 ## Active slice
 
-**0.8.5 — Onboarding, help, and sample project**
+**0.8.5b — Guarded optional sample world**
 
 ### Intended outcome
 
-Help a first-time writer reach a useful daily draft quickly, understand the local-first project boundary, and explore structured features without needing this repository's development history.
+Let a writer deliberately create and explore a small science-fiction example without bundling it into their real work or risking an existing path.
 
 ### Acceptance criteria
 
-- [ ] Audit the empty and first-project experience without disturbing returning writers.
-- [ ] Add concise in-app help for opening/creating a project, Write today, backups, links, structure, and continuity.
-- [ ] Design an optional sample science-fiction world that is copied locally only after explicit writer action and can be removed as an ordinary project folder.
-- [ ] Keep onboarding keyboard-accessible, dismissible, offline, and free of account or telemetry assumptions.
-- [ ] Update user documentation and run the complete automated and packaged macOS gate before committing.
+- [ ] Offer the sample only as an explicit Getting Started action and explain that it creates ordinary editable project files.
+- [ ] Preview the sample name, destination folder, and complete bounded file list before confirmation.
+- [ ] Create every directory and file without clobbering, publish the manifest last, and roll back only files and empty directories created by a failed attempt.
+- [ ] Include a concise Daily draft, manuscript scenes, connected lore, continuity facts, and portable manuscript structure that demonstrate the core loop without becoming a giant tutorial.
+- [ ] Load the completed sample as the active project, keep its prose out of daily credit, and document how to remove or copy it.
+- [ ] Run focused tests plus the complete frontend/native/package gates and packaged macOS QA, then update the release-readiness documentation.
 
 ## Next decision gate
 
@@ -35,6 +36,8 @@ The user moved the project into pre-publication hardening on 2026-10-08 and requ
 ## Completed checkpoint
 
 - Slice 0.8.4 establishes the first reproducible performance budgets and reference baseline. The permanent large fixture exercises the connected-lore combined boundary with 5,000 Markdown notes totaling about 47 MiB, then searches the resulting memory-only index; it also enforces one-frame word derivation for a 10,000-word active scene. On the reference 8 GB Apple A18 Pro Mac, indexing took 603 ms against a 2.5-second budget, unique-marker search took 31 ms against 100 ms, and word derivation took 1.8 ms against 16 ms. Packaged cold launch through a restored usable editor took a conservative 4.36 seconds including automation transport against 5 seconds. The arm64 DMG is 4,691,810 bytes against 10 MiB. [`PERFORMANCE.md`](PERFORMANCE.md) records the environment, repeatable command, budgets, supported hard-limit distinction, and privacy boundary. Build attribution shows the 1.16 MiB chunk is the already-lazy print-PDF engine and the 712 KiB chunk is the main app route; the warning remains enabled and no speculative code split was made. The complete frontend gate has 654 tests across ninety-nine files, Svelte/TypeScript reports zero diagnostics, the production web build passes, and the production dependency audit reports zero vulnerabilities. Next is 0.8.5, onboarding, help, and an optional sample project.
+
+- Slice 0.8.5a adds a full-height offline Getting Started and Help workspace without replacing or mutating the active draft. It appears automatically only after startup has finished and no project was restored, can be dismissed for the current app session, and can always be reopened from the native Help menu or closed-by-default Writing tools. Eight concise topics cover first project actions, Daily writing, backup boundaries, connected lore, manuscripts and export, deterministic continuity, privacy/recovery, and keyboard shortcuts. Explicit Help remains available even after dismissal or while a project is open; closing restores focus to the active editor or Writing tools button. Five pure state fixtures cover delayed startup, first-run display, restored-project silence, session dismissal, and explicit reopening. The complete functional suite has 659 passing tests across one hundred files after one documented performance-budget retry, native tests pass, Svelte/TypeScript reports zero diagnostics and warnings, and production web/native checks pass. Next is 0.8.5b, guarded optional sample-world creation.
 
 - Slice 0.8.3 completes representative recovery and backup/restore hardening. A new cross-format integration fixture creates an ordinary world folder containing a manifest with unknown supported-version data, nested manuscript prose and structure, a Daily Markdown draft, timeline, maps, continuity exceptions, and a writer asset; physically copies it to a new path; verifies every file digest; and reloads each portable format with the same stable project UUID. A separate repository test proves an original absolute-path recovery draft cannot attach to the restored copy. The full suite's existing malformed, invalid, newer-version, unstable, mismatch, no-clobber, and recovery cases continue to prove explicit refusal without migration or partial writes. In-app backup guidance now distinguishes portable Daily Markdown from Mac-local goals and credit history; packaged macOS QA exposed that exact distinction through keyboard-accessible Project & backup info without changing the saved draft. The data and portability guides name every current portable root format, the exact macOS app-data location, and the closed-app boundary for copying private state. The complete gate has 652 passing frontend tests across ninety-eight files, twenty-six passing native tests, zero Svelte/TypeScript diagnostics, clean Rust formatting and strict Clippy, zero production dependency vulnerabilities, and successful production web plus macOS `.app`/DMG builds. The only migration limit is deliberate: version one preserves unknown fields, while newer format versions remain readable only as explicit unsupported states until a separately designed migration exists. Next is 0.8.4, performance budgets and large-project measurement.
 

@@ -93,6 +93,8 @@
     type DailyProgressRecords,
   } from "$lib/practice/daily-ledger";
   import PracticeHistory from "$lib/practice/PracticeHistory.svelte";
+  import GettingStarted from "$lib/onboarding/GettingStarted.svelte";
+  import { shouldShowGettingStarted } from "$lib/onboarding/state";
   import { correctDailyProgressRecord } from "$lib/practice/correction";
   import {
     DAILY_DRAFT_DIRECTORY,
@@ -466,6 +468,9 @@
   let deleteFileError = $state("");
   let showHiddenFiles = $state(false);
   let hiddenFilePreferenceBusy = $state(false);
+  let startupComplete = $state(false);
+  let gettingStartedOpen = $state(false);
+  let gettingStartedDismissedForSession = $state(false);
   let adoptingWorldProject = $state(false);
   let adoptionName = $state("");
   let adoptionRoles = $state<WorldProjectFolderRole[]>([]);
@@ -990,6 +995,14 @@
   const currentLoreConnections = $derived(
     activeLoreConnections(loreIndex, activeLorePath()),
   );
+  const gettingStartedVisible = $derived(
+    shouldShowGettingStarted({
+      startupComplete,
+      hasProject: Boolean(folderPath),
+      explicitlyOpen: gettingStartedOpen,
+      dismissedForSession: gettingStartedDismissedForSession,
+    }),
+  );
   const continuityInspector = $derived.by(() => {
     const path = activeLorePath();
     return presentContinuityInspector(
@@ -1236,12 +1249,13 @@
       try {
         unlisteners.push(await listen("menu-new-file", startNewFile));
         unlisteners.push(await listen("menu-open-folder", () => void openFolder()));
+        unlisteners.push(await listen("menu-getting-started", openGettingStarted));
         if (disposed) unlisteners.forEach((unlisten) => unlisten());
         else stopListening = unlisteners;
       } catch (cause) {
         unlisteners.forEach((unlisten) => unlisten());
         if (!disposed) {
-          appendError(`The File menu could not be connected: ${formatError(cause)}`);
+          appendError(`The application menus could not be connected: ${formatError(cause)}`);
         }
       }
     })();
@@ -5842,6 +5856,34 @@
     newWorldProjectNameInput?.select();
   }
 
+  function openGettingStarted(): void {
+    gettingStartedDismissedForSession = false;
+    gettingStartedOpen = true;
+  }
+
+  function closeGettingStarted(): void {
+    gettingStartedOpen = false;
+    gettingStartedDismissedForSession = true;
+    void tick().then(() => {
+      if (activeFilePath) editorInput?.focus({ preventScroll: true });
+      else writingToolsButton?.focus({ preventScroll: true });
+    });
+  }
+
+  async function openFolderFromGettingStarted(): Promise<void> {
+    await openFolder();
+    if (!folderPath) return;
+    gettingStartedOpen = false;
+    gettingStartedDismissedForSession = true;
+  }
+
+  async function createProjectFromGettingStarted(): Promise<void> {
+    gettingStartedOpen = false;
+    gettingStartedDismissedForSession = true;
+    setWritingTools(true);
+    await startNewWorldProject();
+  }
+
   function cancelNewWorldProject() {
     if (newWorldProjectBusy) return;
     creatingWorldProject = false;
@@ -6221,6 +6263,8 @@
         ];
       }
       error = `The last folder could not be reopened. Choose Open Folder to select it again: ${formatError(cause)}`;
+    } finally {
+      startupComplete = true;
     }
   });
 
@@ -7221,6 +7265,11 @@
 
       <button
         class="open-btn"
+        onclick={openGettingStarted}
+      >Getting Started &amp; Help</button>
+
+      <button
+        class="open-btn"
         onclick={startNewWorldProject}
         disabled={worldProjectBusy}
       >New World Project</button>
@@ -7684,7 +7733,9 @@
           >→</button>
         </nav>{/if}
         <h2 class="editor-document-heading">
-          {mapOpen
+          {gettingStartedVisible
+            ? "Getting Started"
+            : mapOpen
             ? "Maps"
             : continuityReviewOpen
             ? "Continuity review"
@@ -7768,10 +7819,17 @@
       class="writing-split"
       class:corkboard-mode={Boolean(manuscriptCorkboard)}
       class:focus-mode={focusMode}
-      class:has-reference={Boolean(loreReference) && !timelineOpen && !mapOpen && !continuityReviewOpen}
+      class:has-reference={Boolean(loreReference) && !gettingStartedVisible && !timelineOpen && !mapOpen && !continuityReviewOpen}
     >
       <div class="editor-workspace">
-        {#if continuityReviewOpen && continuityReviewPresentation}
+        {#if gettingStartedVisible}
+          <GettingStarted
+            hasProject={Boolean(folderPath)}
+            onClose={closeGettingStarted}
+            onOpenFolder={() => void openFolderFromGettingStarted()}
+            onCreateProject={() => void createProjectFromGettingStarted()}
+          />
+        {:else if continuityReviewOpen && continuityReviewPresentation}
           <ContinuityReviewWorkspace
             model={continuityReviewPresentation.model}
             exceptionResult={continuityReviewProject}
@@ -7880,7 +7938,7 @@
           {/if}
         {/if}
       </div>
-      {#if loreReference && !timelineOpen && !mapOpen && !continuityReviewOpen && !manuscriptCorkboard}
+      {#if loreReference && !gettingStartedVisible && !timelineOpen && !mapOpen && !continuityReviewOpen && !manuscriptCorkboard}
         <LoreReferencePane
           reference={loreReference}
           onClose={() => closeLoreReference()}
@@ -7890,7 +7948,7 @@
         />
       {/if}
     </div>
-    {#if currentLoreConnections && !focusMode}
+    {#if currentLoreConnections && !focusMode && !gettingStartedVisible}
       <LoreConnections
         connections={currentLoreConnections}
         onOpen={(item) => void openLoreConnection(item)}

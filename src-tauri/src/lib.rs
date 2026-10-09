@@ -20,8 +20,10 @@ const WORLD_PROJECT_MANIFEST_FILE: &str = "200-crappy-words.project.json";
 const MAX_MANUSCRIPT_STRUCTURE_BYTES: usize = 10 * 1024 * 1024;
 const MENU_NEW_FILE_ID: &str = "file-new";
 const MENU_OPEN_FOLDER_ID: &str = "file-open-folder";
+const MENU_GETTING_STARTED_ID: &str = "help-getting-started";
 const MENU_NEW_FILE_EVENT: &str = "menu-new-file";
 const MENU_OPEN_FOLDER_EVENT: &str = "menu-open-folder";
+const MENU_GETTING_STARTED_EVENT: &str = "menu-getting-started";
 
 fn app_menu(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
     let menu = Menu::default(app)?;
@@ -33,6 +35,14 @@ fn app_menu(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
             (submenu.text().ok()?.as_str() == "File").then(|| submenu.clone())
         })
         .ok_or_else(|| tauri::Error::AssetNotFound("the default File menu".into()))?;
+    let help_menu = menu
+        .items()?
+        .into_iter()
+        .find_map(|item| {
+            let submenu = item.as_submenu()?;
+            (submenu.text().ok()?.as_str() == "Help").then(|| submenu.clone())
+        })
+        .ok_or_else(|| tauri::Error::AssetNotFound("the default Help menu".into()))?;
 
     let new_file = MenuItem::with_id(
         app,
@@ -50,6 +60,16 @@ fn app_menu(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
     )?;
     let separator = PredefinedMenuItem::separator(app)?;
     file_menu.prepend_items(&[&new_file, &open_folder, &separator])?;
+
+    let getting_started = MenuItem::with_id(
+        app,
+        MENU_GETTING_STARTED_ID,
+        "Getting Started",
+        true,
+        None::<&str>,
+    )?;
+    let help_separator = PredefinedMenuItem::separator(app)?;
+    help_menu.prepend_items(&[&getting_started, &help_separator])?;
 
     Ok(menu)
 }
@@ -548,6 +568,9 @@ pub fn run() {
             }
             MENU_OPEN_FOLDER_ID => {
                 let _ = app.emit(MENU_OPEN_FOLDER_EVENT, ());
+            }
+            MENU_GETTING_STARTED_ID => {
+                let _ = app.emit(MENU_GETTING_STARTED_EVENT, ());
             }
             _ => {}
         })
