@@ -6,6 +6,8 @@
 
 Ministry of Elsewhere is a calm, local-first desktop writing studio for novelists building imagined worlds. It keeps daily writing, long-form manuscript structure, connected lore, timelines, maps, relationships, and deterministic continuity tools close together while leaving the writer's work in ordinary files.
 
+The current pre-release is **0.8.0 Beta 1**, initially targeting Apple Silicon Macs running macOS 13 or later. It is not yet a signed or notarized public download.
+
 The app now counts words and stores progress toward its default 200-word target by selected project and local calendar date. Daily-practice persistence, goals, history, corrections, and restart behavior have passed their desktop checkpoint. A writer can also explicitly turn an existing folder into a portable named world project without changing its existing material.
 
 ## Current features

@@ -1,10 +1,10 @@
 # Application identity and distribution proposal
 
-Status: **PARTIALLY APPROVED — product and visual identity implemented; distribution identity pending**
+Status: **PARTIALLY APPROVED — product, visual, version, and platform identity implemented; publisher identity pending**
 
 Last reviewed: 2026-10-09
 
-This document records the current prototype identity and the remaining decisions for the first macOS beta. The user approved **Ministry of Elsewhere** and the line **“Write a little every day. Build something enormous.”** on 2026-10-09, then selected the **Cartographic Portal** visual direction. The visible name, internal package slug, source artwork, platform icons, and favicon are implemented; publisher identity, versioning, signing, and publication remain gated.
+This document records the current prototype identity and the remaining decisions for the first macOS beta. The user approved **Ministry of Elsewhere** and the line **“Write a little every day. Build something enormous.”** on 2026-10-09, selected the **Cartographic Portal** visual direction, and approved **0.8.0 Beta 1**, build `1`, for Apple Silicon on macOS 13+. Those surfaces are implemented; publisher identity, signing, and publication remain gated.
 
 ## Current inventory
 
@@ -14,17 +14,17 @@ This document records the current prototype identity and the remaining decisions
 | Tauri `productName` | `Ministry of Elsewhere` | Approved friendly bundle name. |
 | Rust and npm package names | `ministry-of-elsewhere` | Approved internal slug; the repository directory may retain its historical name locally. |
 | Tauri bundle identifier | `com.pat.two-hundred-crappy-words` | Temporarily preserved so existing app-local history, recovery, settings, and permissions remain available; the publisher namespace has not been approved. |
-| Tauri, Rust, and npm version | `0.1.0` | Consistent but not an intentional beta version policy. |
+| Tauri, Rust, and npm version | `0.8.0` | Approved and implemented for Beta 1. |
 | Rust description and author | Accurate product description; `you` | Description corrected; public author/publisher remains pending. |
 | npm description | Accurate product description | Implemented. |
 | License | MIT in `package.json` and repository `LICENSE` | Already explicit. |
 | macOS app name | `Ministry of Elsewhere` | Generated from the approved Tauri product name. |
-| macOS minimum system version | `10.13` | Tauri default, not a tested support promise. |
+| macOS minimum system version | `13.0` | Approved initial support floor; clean-machine testing remains release-candidate QA. |
 | macOS architecture | Apple Silicon (`arm64`) only | Built and exercised on the current Mac; Intel has not been built or tested. |
 | macOS icon | Cartographic Portal | Approved source and generated desktop icon set are implemented. |
 | Browser/favicon icon | Cartographic Portal | Derived from the same approved source and implemented. |
 | Other starter assets | None | Unused Svelte, Tauri, and Vite logo files were removed. |
-| Next development DMG name | `Ministry of Elsewhere_0.1.0_aarch64.dmg` | Friendly name implemented; version remains a placeholder until approved. |
+| Next development DMG name | `Ministry of Elsewhere_0.8.0_aarch64.dmg` | Friendly name, technical version, and Apple Silicon architecture are explicit. |
 | Current signing | Ad-hoc/linker signed, no Apple Team ID | Suitable only for development. `spctl --assess` rejects the built app. |
 | Notarization and stapling | None | Not ready for download by another writer. |
 | Update mechanism | None | Appropriate for the current offline prototype; first beta can use manual updates. |
@@ -34,7 +34,7 @@ The current build contains no entitlements file, provisioning profile, custom `I
 
 ## Proposed first-beta identity
 
-The product-language portion is approved. Remaining sections distinguish recommendations from completed decisions.
+The product-language, version, and initial platform portions are approved. Remaining sections distinguish recommendations from completed decisions.
 
 ### Product language
 
@@ -62,10 +62,11 @@ Do not ship `com.pat.two-hundred-crappy-words` as the public identifier. Keep it
 
 ### Version policy
 
-Recommended first external beta:
+Approved first external beta:
 
 ```text
-Marketing version: 0.8.0-beta.1
+Release label:     0.8.0 Beta 1
+Technical version: 0.8.0
 macOS bundle build: 1
 Git tag:            v0.8.0-beta.1
 ```
@@ -77,7 +78,7 @@ Use Semantic Versioning while the product is pre-1.0:
 - increment the patch version for a stable pre-1.0 corrective release;
 - keep the macOS bundle build as a monotonically increasing integer, independent of the marketing label.
 
-The roadmap milestone and app version do not have to remain coupled forever. `0.8.0-beta.1` is recommended only because it honestly describes the present pre-release maturity and gives the first beta an understandable baseline.
+Apple's `CFBundleShortVersionString` requires a numeric period-separated release version, so the packaged app uses `0.8.0`; **Beta 1** is the human release label and `v0.8.0-beta.1` is the planned publication tag. The tag will be created only for an intentionally published candidate. The roadmap milestone and app version do not have to remain coupled forever.
 
 ### Icon direction — approved and implemented
 
@@ -120,10 +121,10 @@ The Mac App Store is not the recommended first channel. Its sandbox and review m
 
 ### Architecture and operating-system support
 
-Recommended first beta support statement:
+Approved first beta support statement:
 
 - **Required:** macOS on Apple Silicon.
-- **Minimum macOS:** choose and test a real floor before publishing; recommend macOS 13 or later as a manageable initial support window rather than inheriting Tauri's untested `10.13` default.
+- **Minimum macOS:** macOS 13 or later, explicitly configured rather than inheriting Tauri's untested `10.13` default.
 - **Optional before wider beta:** add and test Tauri's `universal-apple-darwin` target on an Intel Mac or a suitable clean test environment.
 - **Not yet supported:** Windows and Linux distributions, despite generated icon assets and Tauri's theoretical targets.
 
@@ -201,10 +202,10 @@ Before public packaging, approve or revise the remaining decisions:
 1. **Approved and implemented:** use **Ministry of Elsewhere** and “Write a little every day. Build something enormous.”
 2. Supply the intended public publisher name and a durable reverse-DNS namespace for the bundle identifier.
 3. **Approved and implemented:** use the Cartographic Portal icon direction.
-4. Use `0.8.0-beta.1` with build `1` for the first external beta.
-5. Target a notarized direct-download Apple Silicon beta, with macOS 13+ as the proposed initial support floor; defer the App Store, automatic updates, Intel, Windows, and Linux until separately tested and approved.
+4. **Approved and implemented:** label the first external beta **0.8.0 Beta 1**, package it as version `0.8.0` with build `1`, and reserve `v0.8.0-beta.1` for its eventual release tag.
+5. **Approved and implemented:** target a notarized direct-download Apple Silicon beta with macOS 13+ as the initial support floor; defer the App Store, automatic updates, Intel, Windows, and Linux until separately tested and approved.
 
-The next coherent slice resolves the public publisher name/namespace, version, and supported macOS floor before implementing the bundle-identifier migration and beta metadata. Paid enrollment, credential creation, signing, notarization, and publication remain later explicit gates.
+The remaining identity slice resolves the public publisher name/namespace and designs the bundle-identifier migration. Paid enrollment, credential creation, signing, notarization, tagging, and publication remain later explicit gates.
 
 ## References
 

@@ -14,26 +14,28 @@ Daily Drafts and deterministic continuity are complete. The active milestone now
 
 ### Intended outcome
 
-Resolve the durable publisher namespace, first-beta version, and tested macOS support floor before changing the bundle identifier or release metadata.
+Resolve the durable publisher namespace before changing the bundle identifier. The first-beta version and tested macOS support floor are now approved and implemented.
 
 ### Acceptance criteria
 
 - [ ] Supply the intended public publisher name and a controlled reverse-DNS namespace.
-- [ ] Confirm `0.8.0-beta.1` with macOS build `1` or revise the first-beta version.
-- [ ] Confirm Apple Silicon and macOS 13+ as the initial tested support boundary or revise it.
+- [x] Confirm **0.8.0 Beta 1**, with technical/marketing version `0.8.0` and macOS build `1`.
+- [x] Confirm Apple Silicon and macOS 13+ as the initial support boundary; retain clean-machine testing in release-candidate QA.
 - [ ] Design the copy-only app-data migration before replacing the development bundle identifier.
 
 ## Next decision gate
 
-The product and visual identity gates are complete: **Ministry of Elsewhere**, “Write a little every day. Build something enormous.”, and the **Cartographic Portal** are approved and implemented. The public publisher namespace, version, and minimum supported macOS are the immediate gate. Signing/notarization account enrollment, networked updates, crash reporting, and feedback services remain separate later gates.
+The product identity, visual identity, version, build number, architecture, and operating-system floor are complete: **Ministry of Elsewhere**, “Write a little every day. Build something enormous.”, the **Cartographic Portal**, **0.8.0 Beta 1** / build `1`, and Apple Silicon on macOS 13+. The public publisher namespace is the remaining identity gate. Signing/notarization account enrollment, networked updates, crash reporting, and feedback services remain separate later gates.
 
-The decision packet is recorded in [`IDENTITY_AND_DISTRIBUTION_PROPOSAL.md`](IDENTITY_AND_DISTRIBUTION_PROPOSAL.md). The visible app identity, internal package slug, reviewed source artwork, desktop icon set, and favicon now use Ministry of Elsewhere and its Cartographic Portal. Existing portable `200-crappy-words` format identifiers remain stable, and the old development bundle identifier is temporarily retained to preserve app-local data until a publisher namespace and copy-only migration are approved. No public identifier, version, signing configuration, credential, or published artifact changed.
+The decision packet is recorded in [`IDENTITY_AND_DISTRIBUTION_PROPOSAL.md`](IDENTITY_AND_DISTRIBUTION_PROPOSAL.md). The visible app identity, internal package slug, reviewed source artwork, desktop icon set, favicon, version, build number, and tested support floor now carry the approved first-beta metadata. Existing portable `200-crappy-words` format identifiers remain stable, and the old development bundle identifier is temporarily retained to preserve app-local data until a publisher namespace and copy-only migration are approved. No public identifier, signing configuration, credential, Git release tag, or published artifact changed.
 
 ## Current approval state
 
 The user moved the project into pre-publication hardening on 2026-10-08 and requested hidden operating-system files by default with a visibility setting. Daily-material harvesting is deferred until after the first hardening pass. Optional AI remains deferred. The existing native-window decision still governs: macOS owns traffic lights, Zoom, full screen, and tiling.
 
 ## Completed checkpoint
+
+- Slice 0.8.6c's version/platform checkpoint implements the approved **0.8.0 Beta 1** identity as technical and macOS marketing version `0.8.0`, numeric bundle build `1`, and an explicit macOS 13.0 floor. npm, Rust, Tauri, and lockfile metadata agree. A fresh packaged app reports `CFBundleShortVersionString` `0.8.0`, `CFBundleVersion` `1`, `LSMinimumSystemVersion` `13.0`, and an arm64 Mach-O executable. The initial distribution boundary is Apple Silicon only; an actual macOS 13 clean-machine run remains part of future release-candidate QA, and Intel, Windows, and Linux remain unclaimed. “Beta 1” remains the human release label and the eventual Git tag will be `v0.8.0-beta.1`, because Apple's `CFBundleShortVersionString` requires a numeric period-separated release version. The development bundle identifier remains unchanged pending a publisher-controlled namespace and copy-only private-state migration. All 665 frontend tests pass after the contention-sensitive performance fixture was rerun in isolation, all 26 native tests pass, Svelte/TypeScript reports zero errors and warnings, Rust formatting and strict Clippy pass, and the production web and macOS app builds succeed. No tag or release artifact has been published. Next is the publisher namespace decision and migration design that complete 0.8.6c.
 
 - Slice 0.8.6b implements the user-selected **Cartographic Portal** visual identity. The reviewed 1024 px source and its prompt/regeneration notes live under `assets/brand/`; Tauri-generated PNG, ICNS, ICO, and Windows tile assets replace the placeholder set; the browser favicon uses the same mark; and unused Svelte, Tauri, and Vite logo files are removed. The pale doorway, blue destination, and flowing contour lines remain clear at 128 px and reduce to a recognizable silhouette at 32 px. Generated mobile assets were deliberately discarded because mobile is not a tested target. A fresh `Ministry of Elsewhere.app` build contains an `icon.icns` byte-for-byte identical to the reviewed generated bundle asset and names it in `CFBundleIconFile`. All 665 frontend tests pass after one isolated retry of the timing-sensitive performance budget following a concurrent-run miss; Svelte/TypeScript reports zero errors and warnings; and the production web and macOS app builds succeed. Next is 0.8.6c, the public publisher/version/platform gate.
 

@@ -636,3 +636,23 @@ mobile assets are not retained while mobile remains an untested, unsupported tar
 Why: the portal makes “Elsewhere” immediate, while the map-like lines represent the
 writer organizing and approaching an imagined world. The mark remains recognizable
 at 32 px without lettering, a mascot, or genre-specific machinery.
+
+## D-058 — Beta 1 targets Apple Silicon on macOS 13+
+
+- Date: 2026-10-09
+- Status: accepted
+
+The first external release is **0.8.0 Beta 1**. npm, Rust, Tauri, and the macOS
+`CFBundleShortVersionString` use the numeric technical version `0.8.0`; the macOS
+`CFBundleVersion` is `1`; and the eventual release tag is `v0.8.0-beta.1`. The tag
+is not created until a verified candidate is intentionally published.
+
+The initial supported distribution is Apple Silicon on macOS 13 or later. Intel
+macOS, Windows, and Linux remain unsupported until separately built and tested. The
+development bundle identifier remains unchanged until a publisher-controlled
+reverse-DNS namespace and copy-only app-data migration are approved.
+
+Why: numeric macOS metadata satisfies Apple's bundle-version requirements while the
+human Beta 1 label communicates maturity clearly. A narrow, tested platform promise
+is more trustworthy than inheriting Tauri's unverified macOS 10.13 default or
+claiming architectures and operating systems that have not been exercised.
