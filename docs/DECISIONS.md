@@ -620,3 +620,19 @@ migration before it is adopted.
 Why: the new name is distinctive and emotionally memorable while leaving room for
 many kinds of imagined worlds. Product presentation can change safely; already
 written project formats and private safety state should not be churned for branding.
+
+## D-057 — The Cartographic Portal is the application mark
+
+- Date: 2026-10-09
+- Status: accepted
+
+The application icon is a pale arched doorway opening onto a muted blue landscape,
+surrounded by dark terrain and flowing pale contour lines. The product owner selected
+this Cartographic Portal from three visible concepts. Its reviewed 1024 px raster
+source, generation prompt, and icon-regeneration command live under `assets/brand/`.
+The Tauri desktop icon set and browser favicon derive from that source. Generated
+mobile assets are not retained while mobile remains an untested, unsupported target.
+
+Why: the portal makes “Elsewhere” immediate, while the map-like lines represent the
+writer organizing and approaching an imagined world. The mark remains recognizable
+at 32 px without lettering, a mascot, or genre-specific machinery.

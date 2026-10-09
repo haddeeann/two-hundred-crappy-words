@@ -1,10 +1,10 @@
 # Application identity and distribution proposal
 
-Status: **PARTIALLY APPROVED — product name implemented; visual and distribution identity pending**
+Status: **PARTIALLY APPROVED — product and visual identity implemented; distribution identity pending**
 
 Last reviewed: 2026-10-09
 
-This document records the current prototype identity and the remaining decisions for the first macOS beta. The user approved **Ministry of Elsewhere** and the line **“Write a little every day. Build something enormous.”** on 2026-10-09. The visible name and internal package slug are implemented; icons, publisher identity, versioning, signing, and publication remain gated.
+This document records the current prototype identity and the remaining decisions for the first macOS beta. The user approved **Ministry of Elsewhere** and the line **“Write a little every day. Build something enormous.”** on 2026-10-09, then selected the **Cartographic Portal** visual direction. The visible name, internal package slug, source artwork, platform icons, and favicon are implemented; publisher identity, versioning, signing, and publication remain gated.
 
 ## Current inventory
 
@@ -21,9 +21,9 @@ This document records the current prototype identity and the remaining decisions
 | macOS app name | `Ministry of Elsewhere` | Generated from the approved Tauri product name. |
 | macOS minimum system version | `10.13` | Tauri default, not a tested support promise. |
 | macOS architecture | Apple Silicon (`arm64`) only | Built and exercised on the current Mac; Intel has not been built or tested. |
-| macOS icon | Default Tauri mark | Placeholder, propagated to the generated platform icon set. |
-| Browser/favicon icon | Default Svelte mark | Placeholder and unrelated to the app icon. |
-| Other starter assets | `static/svelte.svg`, `static/vite.svg` | Unused starter identity remains in the repository. |
+| macOS icon | Cartographic Portal | Approved source and generated desktop icon set are implemented. |
+| Browser/favicon icon | Cartographic Portal | Derived from the same approved source and implemented. |
+| Other starter assets | None | Unused Svelte, Tauri, and Vite logo files were removed. |
 | Next development DMG name | `Ministry of Elsewhere_0.1.0_aarch64.dmg` | Friendly name implemented; version remains a placeholder until approved. |
 | Current signing | Ad-hoc/linker signed, no Apple Team ID | Suitable only for development. `spctl --assess` rejects the built app. |
 | Notarization and stapling | None | Not ready for download by another writer. |
@@ -79,18 +79,15 @@ Use Semantic Versioning while the product is pre-1.0:
 
 The roadmap milestone and app version do not have to remain coupled forever. `0.8.0-beta.1` is recommended only because it honestly describes the present pre-release maturity and gives the first beta an understandable baseline.
 
-### Icon direction
+### Icon direction — approved and implemented
 
-The earlier writing-orbit concept is superseded by the approved name. The next step is to review a small set of concepts built around **an understated institution for imagined worlds**.
+The approved **Cartographic Portal** uses a pale arched doorway opening onto a blue landscape, with dark topographic lines flowing toward it. It presents worldbuilding as crossing from mapped knowledge into somewhere not yet known.
 
-- Favor a strong, restrained symbol such as an impossible doorway, archival seal, or mapped portal rather than lettering or a literal government building.
-- Preserve a connection to writing or catalogued worlds without making the icon genre-specific.
-- A restrained ink/charcoal base with one warm violet or starlight accent can relate to the interface without turning a native window utility into branding.
-- The silhouette must remain recognizable in monochrome and at 16–32 px.
-- The macOS artwork should follow Apple's current rounded-square app-icon conventions, with safe margins and no tiny lettering.
-- The favicon should be derived from the same simplified mark rather than retaining a framework logo.
-
-No generated artwork should be adopted until the user chooses a direction from visible concepts.
+- The 1024 px reviewed source lives at `assets/brand/ministry-of-elsewhere-icon-source.png` with its prompt and regeneration instructions.
+- Tauri-generated PNG, ICNS, ICO, and Windows tile assets replace the framework placeholders.
+- The favicon derives from the same mark.
+- Review at 128 px preserves the doorway, landscape, and contour lines; at 32 px the mark remains a recognizable pale portal over dark terrain.
+- No mobile assets are retained or claimed while mobile remains unsupported.
 
 ## Packaging and trust plan
 
@@ -145,12 +142,12 @@ Use manually downloaded, signed releases for the first beta. The app has no upda
 - `package.json` and `package-lock.json`: matching app version and accurate description while retaining the internal slug.
 - `src/app.html`: retain the friendly title and replace the starter favicon.
 
-### Visual assets
+### Visual assets — complete
 
-- One reviewed high-resolution source artwork file in a documented repository location.
-- `src-tauri/icons/*`: regenerate every Tauri platform size from that source with the Tauri icon command.
-- `static/favicon.png`: derive a small, legible webview icon from the same mark.
-- `static/svelte.svg` and `static/vite.svg`: remove if confirmed unused.
+- One reviewed high-resolution source artwork file in a documented repository location. *(Complete.)*
+- `src-tauri/icons/*`: regenerate every configured desktop platform size from that source with the Tauri icon command. *(Complete.)*
+- `static/favicon.png`: derive a small, legible webview icon from the same mark. *(Complete.)*
+- Remove confirmed-unused Svelte, Tauri, and Vite starter artwork. *(Complete.)*
 
 ### Distribution configuration and documentation
 
@@ -203,11 +200,11 @@ Before public packaging, approve or revise the remaining decisions:
 
 1. **Approved and implemented:** use **Ministry of Elsewhere** and “Write a little every day. Build something enormous.”
 2. Supply the intended public publisher name and a durable reverse-DNS namespace for the bundle identifier.
-3. Review and choose an icon direction derived from the new identity.
+3. **Approved and implemented:** use the Cartographic Portal icon direction.
 4. Use `0.8.0-beta.1` with build `1` for the first external beta.
 5. Target a notarized direct-download Apple Silicon beta, with macOS 13+ as the proposed initial support floor; defer the App Store, automatic updates, Intel, Windows, and Linux until separately tested and approved.
 
-The next coherent slice is visual identity: create reviewable icon concepts before replacing any asset. Bundle-identifier migration, paid enrollment, credential creation, signing, notarization, and publication remain later explicit gates.
+The next coherent slice resolves the public publisher name/namespace, version, and supported macOS floor before implementing the bundle-identifier migration and beta metadata. Paid enrollment, credential creation, signing, notarization, and publication remain later explicit gates.
 
 ## References
 

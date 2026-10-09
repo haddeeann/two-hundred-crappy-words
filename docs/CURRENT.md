@@ -10,29 +10,32 @@ Daily Drafts and deterministic continuity are complete. The active milestone now
 
 ## Active slice
 
-**0.8.6b — Visual identity review**
+**0.8.6c — Public beta identity gate**
 
 ### Intended outcome
 
-Create reviewable icon directions derived from the approved Ministry of Elsewhere identity without replacing the current assets before the writer chooses one.
+Resolve the durable publisher namespace, first-beta version, and tested macOS support floor before changing the bundle identifier or release metadata.
 
 ### Acceptance criteria
 
-- [ ] Prepare a small, visibly distinct set of icon concepts around an understated institution for imagined worlds.
-- [ ] Check each concept at macOS icon and small favicon sizes.
-- [ ] Stop for the writer's visual choice before replacing repository assets.
+- [ ] Supply the intended public publisher name and a controlled reverse-DNS namespace.
+- [ ] Confirm `0.8.0-beta.1` with macOS build `1` or revise the first-beta version.
+- [ ] Confirm Apple Silicon and macOS 13+ as the initial tested support boundary or revise it.
+- [ ] Design the copy-only app-data migration before replacing the development bundle identifier.
 
 ## Next decision gate
 
-The product language gate is complete: **Ministry of Elsewhere** and “Write a little every day. Build something enormous.” are approved and implemented. Visual identity is the immediate gate. The public publisher namespace, version, minimum supported macOS, signing/notarization account, networked updates, crash reporting, and feedback services remain separate later gates.
+The product and visual identity gates are complete: **Ministry of Elsewhere**, “Write a little every day. Build something enormous.”, and the **Cartographic Portal** are approved and implemented. The public publisher namespace, version, and minimum supported macOS are the immediate gate. Signing/notarization account enrollment, networked updates, crash reporting, and feedback services remain separate later gates.
 
-The decision packet is recorded in [`IDENTITY_AND_DISTRIBUTION_PROPOSAL.md`](IDENTITY_AND_DISTRIBUTION_PROPOSAL.md). The visible app identity and internal package slug now use Ministry of Elsewhere. Existing portable `200-crappy-words` format identifiers remain stable, and the old development bundle identifier is temporarily retained to preserve app-local data until a publisher namespace and copy-only migration are approved. No icon, public identifier, version, signing configuration, credential, or published artifact changed.
+The decision packet is recorded in [`IDENTITY_AND_DISTRIBUTION_PROPOSAL.md`](IDENTITY_AND_DISTRIBUTION_PROPOSAL.md). The visible app identity, internal package slug, reviewed source artwork, desktop icon set, and favicon now use Ministry of Elsewhere and its Cartographic Portal. Existing portable `200-crappy-words` format identifiers remain stable, and the old development bundle identifier is temporarily retained to preserve app-local data until a publisher namespace and copy-only migration are approved. No public identifier, version, signing configuration, credential, or published artifact changed.
 
 ## Current approval state
 
 The user moved the project into pre-publication hardening on 2026-10-08 and requested hidden operating-system files by default with a visibility setting. Daily-material harvesting is deferred until after the first hardening pass. Optional AI remains deferred. The existing native-window decision still governs: macOS owns traffic lights, Zoom, full screen, and tiling.
 
 ## Completed checkpoint
+
+- Slice 0.8.6b implements the user-selected **Cartographic Portal** visual identity. The reviewed 1024 px source and its prompt/regeneration notes live under `assets/brand/`; Tauri-generated PNG, ICNS, ICO, and Windows tile assets replace the placeholder set; the browser favicon uses the same mark; and unused Svelte, Tauri, and Vite logo files are removed. The pale doorway, blue destination, and flowing contour lines remain clear at 128 px and reduce to a recognizable silhouette at 32 px. Generated mobile assets were deliberately discarded because mobile is not a tested target. A fresh `Ministry of Elsewhere.app` build contains an `icon.icns` byte-for-byte identical to the reviewed generated bundle asset and names it in `CFBundleIconFile`. All 665 frontend tests pass after one isolated retry of the timing-sensitive performance budget following a concurrent-run miss; Svelte/TypeScript reports zero errors and warnings; and the production web and macOS app builds succeed. Next is 0.8.6c, the public publisher/version/platform gate.
 
 - Slice 0.8.6a implements the approved **Ministry of Elsewhere** name and **“Write a little every day. Build something enormous.”** product line. The application window, native save-conflict dialog, HTML title, onboarding, README, product direction, package descriptions and slugs, generated PDF creator/producer metadata, schemas' descriptive titles, and current product/format documentation use the new identity. Existing `200-crappy-words.*` project filenames and format discriminators remain exact compatibility contracts. The bundle identifier remains `com.pat.two-hundred-crappy-words` so existing settings, daily history, workspace state, recovery drafts, and persisted filesystem scope remain reachable until a public publisher namespace and migration are approved. A fresh package produced `Ministry of Elsewhere.app` with the correct display name and `ministry-of-elsewhere` executable; it remains intentionally unsigned for release. All 665 frontend tests and 26 native tests pass, Svelte/TypeScript reports zero errors and warnings, the production build passes, Rust formatting and clippy pass, and the packaged macOS app build succeeds. Next is 0.8.6b, reviewable icon concepts; no repository icon changes occur before the writer chooses one.
 
