@@ -11,12 +11,14 @@
 
   interface Props {
     hasProject: boolean;
+    suspended?: boolean;
     onClose: () => void;
     onOpenFolder: () => void;
     onCreateProject: () => void;
+    onCreateSample: () => void;
   }
 
-  let { hasProject, onClose, onOpenFolder, onCreateProject }: Props = $props();
+  let { hasProject, suspended = false, onClose, onOpenFolder, onCreateProject, onCreateSample }: Props = $props();
   let topic = $state<HelpTopic>("start");
 
   const topics: ReadonlyArray<{ id: HelpTopic; label: string }> = [
@@ -31,7 +33,7 @@
   ];
 
   function handleKeydown(event: KeyboardEvent): void {
-    if (event.key !== "Escape") return;
+    if (suspended || event.defaultPrevented || event.key !== "Escape") return;
     event.preventDefault();
     onClose();
   }
@@ -68,6 +70,7 @@
         <div class="start-actions">
           <button type="button" class="primary" onclick={onOpenFolder}>Open a folder…</button>
           <button type="button" onclick={onCreateProject}>Create a world project…</button>
+          <button type="button" onclick={onCreateSample}>Explore the sample world…</button>
         </div>
         {#if hasProject}
           <p class="note">A project is already open. These actions are optional; closing Help returns to it unchanged.</p>
@@ -79,6 +82,7 @@
           </ol>
         {/if}
         <p class="note">You can close this now and reopen it at any time from <strong>Help → Getting Started</strong> or Writing tools.</p>
+        <p class="note">The optional sample is created as a separate ordinary folder only after you choose its location and confirm every path.</p>
       {:else if topic === "daily"}
         <h3>Daily writing</h3>
         <p><strong>Write today</strong> opens <code>Daily/YYYY-MM-DD.md</code>. A missing dated file is created only after the first non-empty edit.</p>

@@ -7,6 +7,7 @@
     readDir,
     readFile,
     readTextFile,
+    remove,
     watch,
     writeFile,
     writeTextFile,
@@ -94,7 +95,14 @@
   } from "$lib/practice/daily-ledger";
   import PracticeHistory from "$lib/practice/PracticeHistory.svelte";
   import GettingStarted from "$lib/onboarding/GettingStarted.svelte";
+  import SampleProjectDialog from "$lib/onboarding/SampleProjectDialog.svelte";
   import { shouldShowGettingStarted } from "$lib/onboarding/state";
+  import {
+    executeSampleProject,
+    planSampleProject,
+    SAMPLE_PROJECT_FOLDER,
+    type SampleProjectPlan,
+  } from "$lib/onboarding/sample-project";
   import { correctDailyProgressRecord } from "$lib/practice/correction";
   import {
     DAILY_DRAFT_DIRECTORY,
@@ -471,6 +479,10 @@
   let startupComplete = $state(false);
   let gettingStartedOpen = $state(false);
   let gettingStartedDismissedForSession = $state(false);
+  let sampleProjectPlan = $state<Extract<SampleProjectPlan, { kind: "ready" }> | null>(null);
+  let sampleProjectRootPath = $state("");
+  let sampleProjectBusy = $state(false);
+  let sampleProjectError = $state("");
   let adoptingWorldProject = $state(false);
   let adoptionName = $state("");
   let adoptionRoles = $state<WorldProjectFolderRole[]>([]);
@@ -687,6 +699,7 @@
   const worldProjectBusy = $derived(
     adoptionBusy ||
       newWorldProjectBusy ||
+      sampleProjectBusy ||
       structuredNoteBusy ||
       renameFileBusy ||
       deleteFileBusy ||
@@ -5884,6 +5897,101 @@
     await startNewWorldProject();
   }
 
+  async function beginSampleProject(): Promise<void> {
+    if (worldProjectBusy) return;
+    error = "";
+    sampleProjectError = "";
+    try {
+      const parentPath = await open({
+        ...folderDialogOptions,
+        title: "Choose where to create the sample world",
+      });
+      if (!parentPath) return;
+      const plan = planSampleProject({
+        parentEntries: await readEntries(parentPath),
+        projectId: crypto.randomUUID(),
+      });
+      if (plan.kind === "blocked") {
+        error = `Nothing was changed. “${plan.folderName}” already exists in the selected location. Choose another location or rename that folder first.`;
+        return;
+      }
+      sampleProjectRootPath = await join(parentPath, plan.folderName);
+      sampleProjectPlan = plan;
+    } catch (cause) {
+      error = `Could not prepare the sample world: ${formatError(cause)}`;
+    }
+  }
+
+  function cancelSampleProject(): void {
+    if (sampleProjectBusy) return;
+    sampleProjectPlan = null;
+    sampleProjectRootPath = "";
+    sampleProjectError = "";
+  }
+
+  async function confirmSampleProject(): Promise<void> {
+    const plan = sampleProjectPlan;
+    const rootPath = sampleProjectRootPath;
+    if (!plan || !rootPath || sampleProjectBusy) return;
+
+    await navigate(async () => {
+      sampleProjectBusy = true;
+      sampleProjectError = "";
+      try {
+        const result = await executeSampleProject(plan, {
+          createRoot: async () => {
+            await mkdir(rootPath);
+          },
+          createDirectory: async (relativePath) => {
+            await mkdir(await join(rootPath, relativePath));
+          },
+          createFile: async (relativePath, text) => {
+            await writeTextFile(await join(rootPath, relativePath), text, {
+              createNew: true,
+            });
+          },
+          createManifest: async (text) => {
+            await writeTextFile(
+              await join(rootPath, WORLD_PROJECT_MANIFEST_FILE),
+              text,
+              { createNew: true },
+            );
+          },
+          removeFile: async (relativePath) => {
+            await remove(await join(rootPath, relativePath));
+          },
+          removeDirectory: async (relativePath) => {
+            await remove(await join(rootPath, relativePath));
+          },
+          removeRoot: async () => {
+            await remove(rootPath);
+          },
+        });
+        if (result.kind === "failed") {
+          const retained = result.retainedPaths.length
+            ? ` Left for inspection: ${result.retainedPaths.join(", ")}.`
+            : " All files and empty folders created by this attempt were removed.";
+          const rollback = result.rollbackIssues.length
+            ? ` Cleanup details: ${result.rollbackIssues.join("; ")}.`
+            : "";
+          sampleProjectError = `Creation stopped at ${result.failedAt}: ${result.message}.${retained}${rollback}`;
+          return;
+        }
+
+        sampleProjectBusy = false;
+        cancelSampleProject();
+        gettingStartedOpen = false;
+        gettingStartedDismissedForSession = true;
+        setWritingTools(false);
+        await loadFolder(rootPath);
+      } catch (cause) {
+        sampleProjectError = `Could not create ${SAMPLE_PROJECT_FOLDER}: ${formatError(cause)}`;
+      } finally {
+        sampleProjectBusy = false;
+      }
+    });
+  }
+
   function cancelNewWorldProject() {
     if (newWorldProjectBusy) return;
     creatingWorldProject = false;
@@ -7825,9 +7933,11 @@
         {#if gettingStartedVisible}
           <GettingStarted
             hasProject={Boolean(folderPath)}
+            suspended={Boolean(sampleProjectPlan)}
             onClose={closeGettingStarted}
             onOpenFolder={() => void openFolderFromGettingStarted()}
             onCreateProject={() => void createProjectFromGettingStarted()}
+            onCreateSample={() => void beginSampleProject()}
           />
         {:else if continuityReviewOpen && continuityReviewPresentation}
           <ContinuityReviewWorkspace
@@ -7954,6 +8064,16 @@
         onOpen={(item) => void openLoreConnection(item)}
         onOpenMention={(mention) => void openLoreMention(mention)}
         onCreateMissing={(item) => void createMissingLoreNote(item)}
+      />
+    {/if}
+    {#if sampleProjectPlan}
+      <SampleProjectDialog
+        destination={sampleProjectRootPath}
+        paths={sampleProjectPlan.paths}
+        busy={sampleProjectBusy}
+        error={sampleProjectError}
+        onCancel={cancelSampleProject}
+        onConfirm={() => void confirmSampleProject()}
       />
     {/if}
     {#if loreRenameSourcePath && loreRenamePlan}

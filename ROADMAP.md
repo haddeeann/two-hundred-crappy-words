@@ -118,7 +118,7 @@ Goal: turn the evolving application into a dependable product someone else can i
 - [x] Complete keyboard, screen-reader, contrast, motion, and zoom review.
 - [x] Test recovery, migration, and backup/restore using representative projects.
 - [x] Establish performance budgets for launch, search, typing, save, and indexing.
-- [ ] Add onboarding, in-app help, sample world, and truthful user documentation.
+- [x] Add onboarding, in-app help, sample world, and truthful user documentation.
 - [ ] Create application identity, icons, signing plan, and platform packaging.
 - [ ] Add a privacy statement and explicit data-location documentation.
 - [ ] Define beta feedback, crash-reporting policy, and release checklist without enabling telemetry by default.

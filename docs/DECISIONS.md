@@ -570,3 +570,29 @@ one-time resource they can accidentally lose. A session-only dismissal keeps sta
 calm, while permanent explicit access supports people who skip the tour initially,
 forget a workflow, or learn the application gradually. The user specifically asked
 on 2026-10-09 to make onboarding repeatable after it is closed.
+
+## D-055 — The sample world is an explicit ordinary project
+
+- Date: 2026-10-09
+- Status: accepted
+
+The optional sample is never bundled into a writer's current project and is not
+created merely by viewing or dismissing onboarding. Getting Started asks the writer
+to choose a parent folder, then previews the fixed destination and every bounded path
+before a cancel-first confirmation. Creation uses one fresh world-project UUID, a
+new root, create-new content files, and a manifest published last. Failure cleanup
+removes only known files and empty directories created by that attempt and reports
+anything it cannot safely remove.
+
+The sample itself is a small original science-fiction world named **The Quiet
+Signal**. Its ordinary Markdown and portable JSON demonstrate Daily writing,
+separate scene files, a chapter overview, wiki links, structured lore, explicit
+continuity facts, and manuscript order. It earns no daily credit during creation,
+contains no hidden tutorial database, and explains that removal means moving the
+complete sample folder to Trash.
+
+Why: examples are valuable when a first-time writer wants to explore before risking
+their own material, but they must not masquerade as personal work, clutter a chosen
+project, or require special deletion semantics. Ordinary project data exercises the
+same product the writer will actually use and remains inspectable, editable,
+copyable, and removable with normal filesystem tools.

@@ -26,6 +26,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Block remote scripts and network origins in the packaged webview
 - Display filesystem errors in the interface
 - Open a calm offline Getting Started and Help workspace automatically when no project can be restored, dismiss it for the session, and reopen it at any time from the native **Help** menu or Writing tools
+- Deliberately create the optional **The Quiet Signal** sample from Getting Started after choosing a parent folder and reviewing every path; the sample is an ordinary editable world project and never overwrites an existing destination
 - Show the active document's live word count
 - Track and locally persist gross-positive writing progress toward 200 words by project and date
 - Change a project's daily goal while keeping 200 as the default
@@ -109,7 +110,6 @@ The app now counts words and stores progress toward its default 200-word target 
 - The first importer intentionally maps only immediate Markdown and one level of chapter folders; deeper folders remain visible as skipped and require later manual structure tools
 - The editor is intended for text files and does not provide rich-text or Markdown preview features
 - Distribution signing, notarization, and a finished installer are deferred to release readiness
-- The optional sample world is not included yet; Getting Started currently opens an existing folder or the guarded new-project flow
 
 ## Tech stack
 
