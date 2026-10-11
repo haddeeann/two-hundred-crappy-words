@@ -1,6 +1,6 @@
 # Current work
 
-Last updated: 2026-10-09
+Last updated: 2026-10-11
 
 ## Active milestone
 
@@ -34,6 +34,8 @@ The decision packet is recorded in [`IDENTITY_AND_DISTRIBUTION_PROPOSAL.md`](IDE
 The user moved the project into pre-publication hardening on 2026-10-08 and requested hidden operating-system files by default with a visibility setting. Daily-material harvesting is deferred until after the first hardening pass. Optional AI remains deferred. The existing native-window decision still governs: macOS owns traffic lights, Zoom, full screen, and tiling.
 
 ## Completed checkpoint
+
+- The Writing tools dock now has an explicit information hierarchy instead of one flat mixture of controls. **Start**, **Workspaces**, **Project**, **Project details**, **Manuscript**, and **Practice** group related work; short descriptions explain each group; action buttons use a consistent right-arrow treatment; and a visible key explains that buttons open or begin something while chevron rows expand information in place. Existing progressive disclosures, project safety boundaries, and keyboard behavior remain intact. The focused UI pass is verified at narrow laptop-dock width, with exact screen-reader button names, 665 passing frontend tests, zero Svelte/TypeScript diagnostics, and a successful production build. The public publisher namespace and copy-only app-data migration remain the active 0.8.6c gate.
 
 - The 13 Squirrels Studio site now presents Ministry of Elsewhere as a second product and offers the verified **0.8.0 Beta 1** Apple Silicon DMG as an explicitly labeled development preview. The dedicated responsive page uses the Cartographic Portal identity, explains the daily-writing/worldbuilding/manuscript path, states the local-first boundary, names macOS 13+, provides the SHA-256 digest, and gives accurate manual approval instructions. The broader studio privacy page now distinguishes Ministry's project files and Mac-local private state from Vela's services and names Netlify's ordinary hosting boundary. The hosted 8,385,731-byte DMG was rebuilt from commit `f415c7e` with an ad-hoc signature, mounted, signature-checked, metadata-checked, downloaded back from Netlify, and matched to SHA-256 `ff646eca2f1f7413079e8bc970682d5053c301295e6594a3c6fb82d252a7f76f`. It is deliberately not described as Developer ID signed, notarized, or release-ready. The working public host is `13squirrels.netlify.app`; `13squirrels.com` currently serves a separate lander and remains a future domain-attachment task. The publisher namespace and copy-only app-data migration remain the active 0.8.6c gate.
 

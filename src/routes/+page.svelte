@@ -7359,7 +7359,7 @@
       <header class="writing-tools-header">
         <div>
           <h2>Writing tools</h2>
-          <p>Lore, continuity, manuscript planning, and project settings</p>
+          <p>Open a workspace or expand details about this project.</p>
         </div>
         <button
           type="button"
@@ -7371,110 +7371,116 @@
         >×</button>
       </header>
 
-      <button
-        class="open-btn"
-        onclick={openGettingStarted}
-      >Getting Started &amp; Help</button>
+      <p class="writing-tools-guide">
+        <strong>Buttons</strong> open something or begin an action.
+        <strong>Chevron rows</strong> reveal details here.
+      </p>
 
-      <button
-        class="open-btn"
-        onclick={startNewWorldProject}
-        disabled={worldProjectBusy}
-      >New World Project</button>
+      <section class="tools-group" aria-labelledby="tools-start-heading">
+        <header class="tools-group-heading">
+          <h3 id="tools-start-heading">Start</h3>
+          <p>Help and project shortcuts.</p>
+        </header>
 
-      <fieldset class="file-visibility" disabled={hiddenFilePreferenceBusy}>
-        <legend>File visibility</legend>
-        <label>
-          <input
-            type="checkbox"
-            checked={showHiddenFiles}
-            onchange={(event) =>
-              void setShowHiddenFiles(
-                (event.currentTarget as HTMLInputElement).checked,
-              )}
-          />
-          Show hidden files
-        </label>
-        <p>
-          Names beginning with a period, such as <code>.DS_Store</code>, are
-          hidden by default. This setting changes only the project tree.
-        </p>
-      </fieldset>
+        <button
+          class="open-btn tools-action"
+          onclick={openGettingStarted}
+        >Getting Started &amp; Help<span class="tools-action-arrow" aria-hidden="true">→</span></button>
+
+        <button
+          class="open-btn tools-action"
+          onclick={startNewWorldProject}
+          disabled={worldProjectBusy}
+        >New World Project<span class="tools-action-arrow" aria-hidden="true">→</span></button>
+
+        {#if recentProjects.length > 0}
+          <details class="recent-projects tools-disclosure">
+            <summary>Recent projects</summary>
+            <ul>
+              {#each recentProjects as project (project.projectKey)}
+                <li class:unavailable={unavailableRecentKeys.includes(project.projectKey)}>
+                  <button
+                    class="recent-project-open"
+                    onclick={() => openRecentProject(project)}
+                    disabled={worldProjectBusy}
+                    title={`Open ${project.name} from ${project.path}`}
+                  >
+                    <span>{project.name}</span>
+                    <small>
+                      {project.kind === "world-project" ? "World project" : "Folder"}
+                      {unavailableRecentKeys.includes(project.projectKey)
+                        ? " · unavailable"
+                        : ""}
+                    </small>
+                  </button>
+                  <button
+                    class="recent-project-remove"
+                    onclick={() => forgetRecentProject(project)}
+                    disabled={worldProjectBusy}
+                    aria-label={`Remove ${project.name} from recent projects`}
+                    title="Remove shortcut only; project files stay untouched"
+                  >×</button>
+                </li>
+              {/each}
+            </ul>
+            {#if unavailableRecentKeys.length > 0}
+              <p class="form-hint">
+                If a world moved, use Open Folder to reconnect it by project ID.
+              </p>
+            {/if}
+          </details>
+        {/if}
+      </section>
 
       {#if folderPath}
-        <button
-          class="open-btn"
-          onclick={openContinuityReviewWorkspace}
-          disabled={!continuityReviewModel || loreIndexPhase === "indexing"}
-        >{loreIndexPhase === "indexing" ? "Refreshing Review…" : "Open Continuity Review"}</button>
+        <section class="tools-group" aria-labelledby="tools-workspaces-heading">
+          <header class="tools-group-heading">
+            <h3 id="tools-workspaces-heading">Workspaces</h3>
+            <p>Focused views that replace the editor until you return.</p>
+          </header>
 
-        <button
-          class="open-btn"
-          onclick={openTimelineWorkspace}
-          disabled={!timelineModel || timelineLoading}
-        >{timelineLoading ? "Refreshing Timeline…" : "Open Timeline"}</button>
+          <button
+            class="open-btn tools-action"
+            onclick={openContinuityReviewWorkspace}
+            disabled={!continuityReviewModel || loreIndexPhase === "indexing"}
+          >{loreIndexPhase === "indexing" ? "Refreshing Review…" : "Open Continuity Review"}<span class="tools-action-arrow" aria-hidden="true">→</span></button>
+
+          <button
+            class="open-btn tools-action"
+            onclick={openTimelineWorkspace}
+            disabled={!timelineModel || timelineLoading}
+          >{timelineLoading ? "Refreshing Timeline…" : "Open Timeline"}<span class="tools-action-arrow" aria-hidden="true">→</span></button>
+
+          {#if projectInspection.kind === "world-project"}
+            <button
+              class="open-btn tools-action"
+              onclick={openMapWorkspace}
+              disabled={mapsLoading}
+            >{mapsLoading ? "Refreshing Maps…" : "Open Maps"}<span class="tools-action-arrow" aria-hidden="true">→</span></button>
+          {/if}
+        </section>
       {/if}
 
-      {#if projectInspection.kind === "world-project"}
-        <button
-          class="open-btn"
-          onclick={openMapWorkspace}
-          disabled={mapsLoading}
-        >{mapsLoading ? "Refreshing Maps…" : "Open Maps"}</button>
-      {/if}
-
-    {#if recentProjects.length > 0}
-      <details class="recent-projects">
-        <summary>Recent projects</summary>
-        <ul>
-          {#each recentProjects as project (project.projectKey)}
-            <li class:unavailable={unavailableRecentKeys.includes(project.projectKey)}>
-              <button
-                class="recent-project-open"
-                onclick={() => openRecentProject(project)}
-                disabled={worldProjectBusy}
-                title={`Open ${project.name} from ${project.path}`}
-              >
-                <span>{project.name}</span>
-                <small>
-                  {project.kind === "world-project" ? "World project" : "Folder"}
-                  {unavailableRecentKeys.includes(project.projectKey)
-                    ? " · unavailable"
-                    : ""}
-                </small>
-              </button>
-              <button
-                class="recent-project-remove"
-                onclick={() => forgetRecentProject(project)}
-                disabled={worldProjectBusy}
-                aria-label={`Remove ${project.name} from recent projects`}
-                title="Remove shortcut only; project files stay untouched"
-              >×</button>
-            </li>
-          {/each}
-        </ul>
-        {#if unavailableRecentKeys.length > 0}
-          <p class="form-hint">
-            If a world moved, use Open Folder to reconnect it by project ID.
-          </p>
-        {/if}
-      </details>
-    {/if}
+      <section class="tools-group" aria-labelledby="tools-project-heading">
+        <header class="tools-group-heading">
+          <h3 id="tools-project-heading">Project</h3>
+          <p>Create notes and adjust this project's local view.</p>
+        </header>
 
     {#if projectInspection.kind === "world-project"}
       <button
-        class="open-btn"
+        class="open-btn tools-action"
         onclick={startStructuredNote}
         disabled={worldProjectBusy}
-      >New Note from Template</button>
+      >New Note from Template<span class="tools-action-arrow" aria-hidden="true">→</span></button>
     {/if}
 
     {#if folderPath && projectInspection.kind === "ordinary"}
       <button
-        class="open-btn"
+        class="open-btn tools-action"
         onclick={startWorldProjectAdoption}
         disabled={worldProjectBusy}
-      >Make World Project</button>
+      >Make World Project<span class="tools-action-arrow" aria-hidden="true">→</span></button>
     {/if}
 
     {#if creatingWorldProject}
@@ -7687,8 +7693,27 @@
       </form>
     {/if}
 
+      <fieldset class="file-visibility" disabled={hiddenFilePreferenceBusy}>
+        <legend>File visibility</legend>
+        <label>
+          <input
+            type="checkbox"
+            checked={showHiddenFiles}
+            onchange={(event) =>
+              void setShowHiddenFiles(
+                (event.currentTarget as HTMLInputElement).checked,
+              )}
+          />
+          Show hidden files
+        </label>
+        <p>
+          Names beginning with a period, such as <code>.DS_Store</code>, are
+          hidden by default. This setting changes only the project tree.
+        </p>
+      </fieldset>
+
     {#if folderPath}
-      <details class="project-info">
+      <details class="project-info tools-disclosure">
         <summary>Project & backup info</summary>
         {#if projectInspection.kind === "world-project"}
           <p>
@@ -7716,6 +7741,15 @@
           Recovery drafts are temporary safety copies, not version history.
         </p>
       </details>
+    {/if}
+      </section>
+
+    {#if folderPath}
+      <section class="tools-group" aria-labelledby="tools-details-heading">
+        <header class="tools-group-heading">
+          <h3 id="tools-details-heading">Project details</h3>
+          <p>Expand a row to inspect information without leaving the editor.</p>
+        </header>
 
       <LoreIndexStatus
         phase={loreIndexPhase}
@@ -7755,12 +7789,20 @@
         presentation={travelInspector}
         onOpenSource={(path, range) => void openTravelSource(path, range)}
       />
+      </section>
+
+      <section class="tools-group" aria-labelledby="tools-manuscript-heading">
+        <header class="tools-group-heading">
+          <h3 id="tools-manuscript-heading">Manuscript</h3>
+          <p>Structure, plan, and export the book.</p>
+        </header>
+
       {#if manuscriptProject.kind === "absent" && loreIndexPhase === "ready"}
         <button
-          class="open-btn manuscript-create"
+          class="open-btn tools-action manuscript-create"
           onclick={() => void startManuscriptCreation()}
           disabled={worldProjectBusy}
-        >Create manuscript structure</button>
+        >Create manuscript structure<span class="tools-action-arrow" aria-hidden="true">→</span></button>
       {:else if manuscriptProject.kind !== "absent"}
         <ManuscriptOutline
           result={manuscriptProject}
@@ -7786,14 +7828,21 @@
           onUndoRepair={() => void undoLastManuscriptChange()}
         />
       {/if}
+      </section>
     {/if}
 
       {#if folderPath}
-        <PracticeHistory
-          records={dailyRecordsByDate}
-          todayKey={activeDailyDateKey}
-          onCorrect={correctDailyProgress}
-        />
+        <section class="tools-group" aria-labelledby="tools-practice-heading">
+          <header class="tools-group-heading">
+            <h3 id="tools-practice-heading">Practice</h3>
+            <p>Your writing rhythm and recorded daily totals.</p>
+          </header>
+          <PracticeHistory
+            records={dailyRecordsByDate}
+            todayKey={activeDailyDateKey}
+            onCorrect={correctDailyProgress}
+          />
+        </section>
       {/if}
     </section>
 
@@ -8452,6 +8501,56 @@
     line-height: 1.35;
   }
 
+  .writing-tools-guide {
+    margin: 0 0 0.95rem;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid #3c3c3c;
+    border-radius: 4px;
+    background: #202020;
+    color: #a8a8a8;
+    font-size: 0.72rem;
+    line-height: 1.45;
+  }
+
+  .writing-tools-guide strong {
+    color: #d4d4d4;
+    font-weight: 600;
+  }
+
+  .tools-group {
+    padding: 0.9rem 0;
+    border-top: 1px solid #3c3c3c;
+  }
+
+  .tools-group:first-of-type {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .tools-group-heading {
+    margin-bottom: 0.55rem;
+  }
+
+  .tools-group-heading h3,
+  .tools-group-heading p {
+    margin: 0;
+  }
+
+  .tools-group-heading h3 {
+    color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .tools-group-heading p {
+    margin-top: 0.18rem;
+    color: #8f8f8f;
+    font-size: 0.69rem;
+    line-height: 1.4;
+  }
+
   .writing-tools-close {
     flex: 0 0 auto;
     width: 1.8rem;
@@ -8500,6 +8599,24 @@
     font-family: inherit;
     font-size: 0.85rem;
     cursor: pointer;
+  }
+
+  .tools-action {
+    position: relative;
+    padding-right: 2rem;
+    text-align: left;
+  }
+
+  .tools-action-arrow {
+    position: absolute;
+    top: 50%;
+    right: 0.65rem;
+    color: #929292;
+    transform: translateY(-50%);
+  }
+
+  .tools-action:disabled .tools-action-arrow {
+    display: none;
   }
 
   .open-btn:hover:not(:disabled) {
@@ -8566,6 +8683,17 @@
     margin: 0 0 0.75rem;
     color: #b8b8b8;
     font-size: 0.76rem;
+  }
+
+  .tools-disclosure {
+    padding: 0.15rem 0.5rem;
+    border: 1px solid #3c3c3c;
+    border-radius: 4px;
+    background: #202020;
+  }
+
+  .tools-disclosure[open] {
+    padding-bottom: 0.5rem;
   }
 
   .recent-projects summary,
