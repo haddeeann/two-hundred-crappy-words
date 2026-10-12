@@ -113,7 +113,7 @@
     </header>
 
     {#if presentation.builtInSections.length === 0}
-      <p class="empty">No built-in relationship facts connect this note yet.</p>
+      <p class="empty">No relationship facts connect this note yet. Add one when a bond, rivalry, membership, or ownership should remain findable across the world; prose alone is still valid.</p>
     {:else}
       {@render sections(presentation.builtInSections)}
     {/if}

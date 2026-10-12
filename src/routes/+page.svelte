@@ -8340,6 +8340,11 @@
         </header>
 
       {#if manuscriptProject.kind === "absent" && loreIndexPhase === "ready"}
+        <p class="tools-teaching">
+          Manuscript structure is the book's reading order. Create it when you are
+          ready to arrange scene files into chapters; Daily drafts and lore stay
+          where they are.
+        </p>
         <button
           class="open-btn tools-action manuscript-create"
           onclick={() => void startManuscriptCreation()}
@@ -9259,6 +9264,16 @@
     color: #8f8f8f;
     font-size: 0.69rem;
     line-height: 1.4;
+  }
+
+  .tools-teaching {
+    margin: 0 0 0.55rem;
+    padding: 0.6rem 0.65rem;
+    border-left: 2px solid #6a9955;
+    background: #202820;
+    color: #b9c8b9;
+    font-size: 0.72rem;
+    line-height: 1.5;
   }
 
   .writing-tools-close {

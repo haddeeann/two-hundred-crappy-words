@@ -40,7 +40,7 @@
     <section aria-labelledby="outgoing-heading">
       <h2 id="outgoing-heading">Outgoing links</h2>
       {#if outgoing.length === 0}
-        <p class="empty">No wiki links in this note.</p>
+        <p class="empty">No wiki links in this note. Link a name with <code>[[</code> when opening that world detail beside the draft would save you a search.</p>
       {:else}
         <ul>
           {#each outgoing as item (item.key)}

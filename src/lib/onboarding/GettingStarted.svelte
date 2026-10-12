@@ -2,6 +2,7 @@
   type HelpTopic =
     | "start"
     | "daily"
+    | "worldbuilding"
     | "projects"
     | "links"
     | "structure"
@@ -24,6 +25,7 @@
   const topics: ReadonlyArray<{ id: HelpTopic; label: string }> = [
     { id: "start", label: "Getting started" },
     { id: "daily", label: "Daily writing" },
+    { id: "worldbuilding", label: "What goes where" },
     { id: "projects", label: "Projects & backups" },
     { id: "links", label: "Connected lore" },
     { id: "structure", label: "Manuscripts & export" },
@@ -89,6 +91,17 @@
         <p><strong>Write today</strong> opens <code>Daily/YYYY-MM-DD.md</code>. A missing dated file is created only after the first non-empty edit.</p>
         <p>Only words added during active editing earn today’s credit. Deleting or revising never removes credit already earned, and a missed day never erases an earlier rhythm.</p>
         <p><strong>Close the desk</strong> safely finishes pending saves and offers an optional private note for the next session. It does not quit the app or change a project file.</p>
+      {:else if topic === "worldbuilding"}
+        <h3>Build the world when the story asks</h3>
+        <p>You do not need to fill every category before writing. A blank lore folder is not unfinished homework. Create a world detail when you expect to reuse it, keep it consistent, or understand it more clearly.</p>
+        <dl class="concepts">
+          <div><dt>Daily drafts</dt><dd>A low-pressure place to write today. Keep the material there, move it later, or select a useful detail and choose <strong>Remember…</strong>.</dd></div>
+          <div><dt>Lore</dt><dd>Reusable knowledge about someone, somewhere, an event, a group, a technology, a people, a spacecraft, or a route. A character note becomes useful when their choices, desires, appearance, history, or relationships need to stay available across scenes.</dd></div>
+          <div><dt>Manuscript</dt><dd>The reading order of the book: chapters and scene files. Planning summaries help you shape prose but stay out of the exported novel.</dd></div>
+          <div><dt>Timeline</dt><dd>The order events happen in the world, which may differ from the order readers encounter them. Begin with a few meaningful events; exact dates are optional.</dd></div>
+          <div><dt>Continuity</dt><dd>Explicit facts ME can compare, such as when an event occurs or who is connected to whom. Add them only when comparison would help; ordinary prose remains valid without them.</dd></div>
+        </dl>
+        <p class="note">Nothing has to be copied out of a Daily draft immediately. The first useful habit is writing; organizing is a separate, deliberate review.</p>
       {:else if topic === "projects"}
         <h3>Projects and backups</h3>
         <p>An ordinary folder works immediately. A world project adds a small visible identity file and optional folders for manuscript and lore.</p>
@@ -143,6 +156,31 @@
     gap: 1rem;
     max-width: 64rem;
     margin: 0 auto 2rem;
+  }
+
+  .concepts {
+    display: grid;
+    gap: 0.8rem;
+  }
+
+  .concepts div {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.8rem;
+    border: 1px solid #3d3d3d;
+    border-radius: 0.5rem;
+    background: #252525;
+  }
+
+  .concepts dt {
+    color: #fff;
+    font-weight: 700;
+  }
+
+  .concepts dd {
+    margin: 0;
+    color: #c2c2c2;
+    line-height: 1.5;
   }
 
   header h2,

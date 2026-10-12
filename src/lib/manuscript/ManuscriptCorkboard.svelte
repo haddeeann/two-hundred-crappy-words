@@ -307,7 +307,7 @@
   {#if blocks.length === 0}
     <div class="empty-board">
       <h2>No chapters or scenes yet</h2>
-      <p>The corkboard will reflect items added to the manuscript structure.</p>
+      <p>The corkboard is a view of reading order, not a place that absorbs loose writing automatically. Add chapters or scene files to the manuscript structure when you are ready to shape material into a book.</p>
     </div>
   {:else}
     <div class="board-sections">

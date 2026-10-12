@@ -774,3 +774,25 @@ Why: the useful creative act is remembering an event, not completing a database
 transaction. Independent notes make interruption harmless, while a second explicit
 date review preserves source-linked chronology without coupling several file writes
 or creating a parallel beginner-only timeline.
+
+## D-064 — Contextual teaching follows the state of the work
+
+- Date: 2026-10-12
+- Status: accepted
+
+Short explanations live in naturally empty or first-use states and disappear when
+the writer creates the relevant content. ME does not persist a global “learned” flag
+for lore, manuscript, timeline, relationships, or continuity, and it does not turn
+worldbuilding into a required checklist. Guidance that is useful after content exists
+belongs in the repeatable Getting Started and Help surface instead.
+
+The core vocabulary is taught by purpose: Daily drafts are today's low-pressure
+writing, lore is reusable world knowledge, manuscript structure is reading order,
+timeline is chronological order, and continuity facts are details the app can compare
+or trace. Empty categories are valid. Organizing Daily material remains a separate,
+deliberate review rather than an obligation at the end of every writing session.
+
+Why: content-dependent teaching can be dismissed simply by continuing the work or
+leaving the surface, cannot become stale app-local onboarding state, and remains
+available to an experienced writer only when it is relevant. The full guide stays
+reopenable for intentional relearning.

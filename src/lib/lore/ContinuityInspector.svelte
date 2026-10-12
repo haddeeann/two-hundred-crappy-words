@@ -76,7 +76,9 @@
 
     {#if presentation.facts.length === 0}
       <p class="empty">
-        No valid typed facts in this note. Ordinary prose remains fully usable.
+        No valid typed facts in this note. Add one only when ME should compare or
+        trace a detail such as a date, place, participant, or relationship. Ordinary
+        prose remains fully usable.
       </p>
     {:else}
       <ol class="facts">

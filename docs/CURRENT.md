@@ -12,27 +12,27 @@ worldbuilding software. Daily writing remains the center of gravity.
 
 ## Active slice
 
-**0.9.5 — Contextual teaching**
+**0.9.6 — Personal goals and challenges**
 
 ### Intended outcome
 
-Teach the next useful action where it becomes relevant without turning the product
-into a checklist or forcing a new writer to learn worldbuilding vocabulary first.
+Keep the writer's personal daily rhythm separate from optional, named challenges
+whose date window and target are explicit and encouraging.
 
 ### Acceptance criteria
 
-- [ ] Improve empty and first-use states with one or two sentences and one useful action.
-- [ ] Distinguish Daily drafts, lore, manuscript planning, timelines, and continuity in plain language.
-- [ ] Let contextual guidance be dismissed for the current moment without claiming permanent learning.
-- [ ] Keep the complete Getting Started guide repeatable through Help and Writing tools.
-- [ ] Preserve keyboard, screen-reader, enlarged-zoom, save, and recovery behavior.
+- [ ] Keep the personal daily target independently editable, with 200 as the default.
+- [ ] Let a writer create and edit an optional named challenge with its own daily target, `validFrom`, and inclusive `validTo`.
+- [ ] Show future challenge dates as potential participation without fabricating credited words or completions.
+- [ ] Preserve completed days and best rhythm when a day is missed; use neutral, non-shaming language.
+- [ ] Keep challenge state local, project-scoped, recoverable, and separate from portable manuscript and lore files.
 
 ## Next decision gate
 
-Inventory the existing empty states and teaching copy before adding any new app-local
-dismissal state. Prefer guidance that disappears naturally once the writer has useful
-content. A stored dismissal is justified only where the same optional explanation
-would otherwise interrupt an experienced writer repeatedly.
+Define the smallest versioned challenge record and its interaction with the existing
+daily ledger before building UI. A challenge may interpret existing project-local
+daily credit inside its inclusive date window, but it must not rewrite the personal
+goal, invent participation for future dates, or create a second word-count ledger.
 
 ## Current approval state
 
@@ -45,6 +45,19 @@ the user asked ME to finish all locally completable work; the ordered local trac
 external evidence gates now live in `ROADMAP.md`.
 
 ## Completed checkpoint
+
+- Slice 0.9.5 completes **Contextual teaching**. Getting Started now includes a
+  repeatable **What goes where** topic that explains Daily drafts, lore, manuscript
+  reading order, chronological timelines, and explicit continuity facts in plain
+  language. It makes empty categories valid and separates writing from later
+  organization. Empty timeline, relationship, continuity, link, and manuscript
+  states now explain when each tool becomes useful and offer an existing next action
+  where one is safe. Guidance follows the current content instead of storing a
+  brittle global learned or dismissal flag. Packaged macOS QA verified the ninth Help
+  topic, the full concept article, accessible labels, and readable laptop layout in
+  the exact production bundle. All 678 frontend tests across 104 files pass,
+  Svelte/TypeScript reports zero errors and warnings, and production web plus macOS
+  `.app` builds succeed. Next is 0.9.6, personal goals and challenges.
 
 - Slice 0.9.4 completes **Guided timeline**. The existing source-linked Timeline
   workspace now offers **Build your first timeline**, beginning with three optional

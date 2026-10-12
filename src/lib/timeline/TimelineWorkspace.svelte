@@ -176,7 +176,8 @@
   {#if model.calendarGroups.length === 0}
     <section class="empty-panel">
       <h2>Chronology</h2>
-      <p>No computable dates yet. Eligible notes remain visible under Needs time.</p>
+      <p>No computable dates yet. Start with events that matter; exact dates and a complete calendar can wait. Eligible notes remain visible under Needs time.</p>
+      {#if guideAvailable}<button type="button" class="primary" onclick={onStartGuide}>Begin with three moments</button>{/if}
     </section>
   {:else}
     {#each model.calendarGroups as group (group.axis)}
