@@ -390,6 +390,22 @@ A separate recovery repository check retained a draft under its original absolut
 
 Packaged macOS QA reopened the saved Arcadia ordinary folder, opened Writing tools, expanded the keyboard-accessible **Project & backup info** disclosure, and exposed the complete Daily/project versus Mac-local distinction in the accessibility tree. Escape closed the panel and returned focus to the Writing tools button. The draft remained saved and unchanged. The final gate has 652 passing frontend tests across ninety-eight files, twenty-six passing native tests, zero Svelte/TypeScript diagnostics, clean Rust formatting and strict Clippy, zero production dependency vulnerabilities, and successful web plus production macOS `.app`/DMG builds.
 
+## Milestone 0.9.6 personal goals and challenges checkpoint
+
+Completed on 2026-10-12 using Computer Use against the exact freshly built production
+`.app`. Writing tools → Practice began with a plain-language distinction between the
+personal daily goal and an optional challenge. The first packaged pass exposed a
+numeric-input coercion bug that made submission appear inert; the raw-input boundary
+was corrected and the package rebuilt before acceptance.
+
+The corrected build created **October Draft** with a 5,000-word total and the default
+October 12–31 inclusive window. The challenge displayed `0 / 5,000 words`, `0 writing
+days so far`, exact accessible dates, Edit and Remove actions, and an accessible
+progress value. World Home showed the same calm challenge summary while the personal
+daily display remained `0 / 200`; no project file or second ledger was created. The
+final gate has 686 passing frontend tests across 105 files, zero Svelte/TypeScript
+diagnostics, and successful production web plus macOS `.app` builds.
+
 ## Milestone 0.8.4 performance-budget checkpoint
 
 Completed on 2026-10-08 on the reference 8 GB Apple A18 Pro Mac running macOS 26.6.2. A packaged cold launch reached the restored accessible project tree and usable editor in 4.36 seconds including Computer Use transport, below the conservative 5-second release budget. The permanent local fixture built 5,000 Markdown notes totaling about 47 MiB, indexed them in 603 ms against 2.5 seconds, and found a unique content marker in 31 ms against 100 ms. Complete word derivation for a 10,000-word active scene took 1.8 ms against one 16 ms frame. The configured autosave debounce remains 750 ms against a 1-second begin-after-idle budget; storage reread/write failures remain visible and are never concealed as timing successes.

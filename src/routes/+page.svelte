@@ -94,6 +94,14 @@
     type DailyProgressRecords,
   } from "$lib/practice/daily-ledger";
   import PracticeHistory from "$lib/practice/PracticeHistory.svelte";
+  import PracticeChallenge from "$lib/practice/PracticeChallenge.svelte";
+  import {
+    createWritingChallenge,
+    WritingChallengeRepository,
+    writingChallengeProgress,
+    type WritingChallenge,
+    type WritingChallengeDraft,
+  } from "$lib/practice/challenge";
   import GettingStarted from "$lib/onboarding/GettingStarted.svelte";
   import SampleProjectDialog from "$lib/onboarding/SampleProjectDialog.svelte";
   import WorldHome from "$lib/ritual/WorldHome.svelte";
@@ -574,6 +582,9 @@
   let completionMessage = $state("");
   let dailyProgressError = $state("");
   let correctingDailyProgress = $state(false);
+  let writingChallenge = $state<WritingChallenge | null>(null);
+  let writingChallengeBusy = $state(false);
+  let writingChallengeError = $state("");
   let pendingDailyDraft = $state<{
     rootPath: string;
     directoryPath: string;
@@ -1040,6 +1051,27 @@
       summarizeStreaks(dailyRecordsByDate, activeDailyDateKey),
     ),
   );
+  const writingChallengeHomeLabel = $derived.by(() => {
+    if (!writingChallenge) return "";
+    const progress = writingChallengeProgress(
+      writingChallenge,
+      dailyRecordsByDate,
+      activeDailyDateKey,
+    );
+    if (progress.status === "upcoming") {
+      const [year, month, day] = writingChallenge.validFrom.split("-").map(Number);
+      const start = new Intl.DateTimeFormat(undefined, {
+        month: "short",
+        day: "numeric",
+        year: year === new Date().getFullYear() ? undefined : "numeric",
+      }).format(new Date(year, month - 1, day, 12));
+      return `${writingChallenge.name} · begins ${start} · ${progress.availableDays} ${progress.availableDays === 1 ? "day" : "days"} available`;
+    }
+    const amount = `${progress.creditedWords.toLocaleString()} / ${writingChallenge.target.toLocaleString()} words`;
+    if (progress.status === "complete") return `${writingChallenge.name} · reached · ${amount}`;
+    if (progress.status === "ended") return `${writingChallenge.name} · window ended · ${amount}`;
+    return `${writingChallenge.name} · ${amount}`;
+  });
   const activeIsTodayDraft = $derived.by(() => {
     if (!folderPath || !activeFilePath) return false;
     return (
@@ -1232,6 +1264,7 @@
   let dailyRepositoriesPromise: Promise<{
     progress: DailyProgressRepository;
     goal: DailyGoalRepository;
+    challenge: WritingChallengeRepository;
   }> | null = null;
   let workspaceRepositoryPromise: Promise<WorkspaceRepository> | null = null;
   let navigationRevision = 0;
@@ -1264,6 +1297,7 @@
     }).then((store) => ({
       progress: new DailyProgressRepository(store),
       goal: new DailyGoalRepository(store),
+      challenge: new WritingChallengeRepository(store),
     }));
     return dailyRepositoriesPromise;
   }
@@ -1274,6 +1308,10 @@
 
   function getDailyGoalRepository(): Promise<DailyGoalRepository> {
     return getDailyRepositories().then(({ goal }) => goal);
+  }
+
+  function getWritingChallengeRepository(): Promise<WritingChallengeRepository> {
+    return getDailyRepositories().then(({ challenge }) => challenge);
   }
 
   function dailyProgressWriter(record: DailyProgressRecord) {
@@ -5971,16 +6009,19 @@
     const storageKey = inspectedProject.storageKey;
     let projectRecords: DailyProgressRecords = {};
     let projectTarget = DEFAULT_DAILY_TARGET;
+    let projectChallenge: WritingChallenge | null = null;
     let progressLoadError = "";
     try {
       const repositories = await getDailyRepositories();
       if (inspectedProject.kind === "world-project") {
         await repositories.progress.copyProject(path, storageKey);
         await repositories.goal.copyProject(path, storageKey);
+        await repositories.challenge.copyProject(path, storageKey);
       }
-      [projectRecords, projectTarget] = await Promise.all([
+      [projectRecords, projectTarget, projectChallenge] = await Promise.all([
         repositories.progress.getProject(storageKey),
         repositories.goal.get(storageKey),
+        repositories.challenge.get(storageKey),
       ]);
     } catch (cause) {
       progressLoadError = `The folder opened, but its daily progress could not be loaded: ${formatError(cause)}`;
@@ -6052,6 +6093,9 @@
     activeCompletedTarget = dailyContext.completedTarget;
     practiceState = beginDailyPractice(restoredContent, dailyContext.creditedWords);
     dailyTarget = projectTarget;
+    writingChallenge = projectChallenge;
+    writingChallengeBusy = false;
+    writingChallengeError = "";
     editingDailyTarget = false;
     dailyTargetInput = "";
     completionMessage = "";
@@ -7756,6 +7800,41 @@
     }
   }
 
+  async function saveWritingChallenge(
+    draft: WritingChallengeDraft,
+  ): Promise<boolean> {
+    if (!folderPath || !projectStorageKey || writingChallengeBusy) return false;
+    writingChallengeBusy = true;
+    writingChallengeError = "";
+    try {
+      const next = createWritingChallenge(draft, writingChallenge);
+      await (await getWritingChallengeRepository()).set(projectStorageKey, next);
+      writingChallenge = next;
+      return true;
+    } catch (cause) {
+      writingChallengeError = `The challenge could not be stored: ${formatError(cause)}`;
+      return false;
+    } finally {
+      writingChallengeBusy = false;
+    }
+  }
+
+  async function removeWritingChallenge(): Promise<boolean> {
+    if (!folderPath || !projectStorageKey || writingChallengeBusy) return false;
+    writingChallengeBusy = true;
+    writingChallengeError = "";
+    try {
+      await (await getWritingChallengeRepository()).clear(projectStorageKey);
+      writingChallenge = null;
+      return true;
+    } catch (cause) {
+      writingChallengeError = `The challenge could not be removed: ${formatError(cause)}`;
+      return false;
+    } finally {
+      writingChallengeBusy = false;
+    }
+  }
+
   async function correctDailyProgress(
     dateKey: string,
     correctedWords: number,
@@ -8278,8 +8357,8 @@
         <p>
           Dated Markdown in <code>Daily</code> is ordinary project writing and is
           included when you back up the whole folder. Daily goals and credited
-          history, recent locations, navigation, and recovery drafts stay private
-          to this app on this Mac. They are not part of a project-folder backup.
+          history, optional challenges, recent locations, navigation, and recovery
+          drafts stay private to this app on this Mac. They are not part of a project-folder backup.
           Recovery drafts are temporary safety copies, not version history.
         </p>
       </details>
@@ -8382,8 +8461,17 @@
         <section class="tools-group" aria-labelledby="tools-practice-heading">
           <header class="tools-group-heading">
             <h3 id="tools-practice-heading">Practice</h3>
-            <p>Your writing rhythm and recorded daily totals.</p>
+            <p>Your personal rhythm, optional challenges, and recorded daily totals.</p>
           </header>
+          <PracticeChallenge
+            challenge={writingChallenge}
+            records={dailyRecordsByDate}
+            todayKey={activeDailyDateKey}
+            busy={writingChallengeBusy}
+            error={writingChallengeError}
+            onSave={saveWritingChallenge}
+            onRemove={removeWritingChallenge}
+          />
           <PracticeHistory
             records={dailyRecordsByDate}
             todayKey={activeDailyDateKey}
@@ -8691,6 +8779,7 @@
             })}
             progressLabel={dailyWordsLabel}
             rhythmLabel={dailyRhythmLabel}
+            challengeLabel={writingChallengeHomeLabel}
             resumeLabel={activeFile || null}
             nextSessionNote={nextSessionNote}
             canCreateLore={projectInspection.kind === "world-project"}

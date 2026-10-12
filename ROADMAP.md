@@ -14,8 +14,8 @@ Status legend: `PLANNED`, `ACTIVE`, `BLOCKED`, `COMPLETE`, `DEFERRED`.
 | 0.5 Connected lore | Manuscript and world bible can reference each other fluidly | COMPLETE |
 | 0.6 Novel structure | Scenes and chapters can be planned, reordered, and exported | COMPLETE |
 | 0.7 Continuity tools | Time, travel, relationships, and canon can be reasoned about | COMPLETE |
-| 0.8 Release readiness | The app is accessible, documented, packaged, and recoverable | DEFERRED |
-| 0.9 Guided worldbuilding | Daily writing naturally grows into an understandable, connected world | ACTIVE |
+| 0.8 Release readiness | The app is accessible, documented, packaged, and recoverable | ACTIVE |
+| 0.9 Guided worldbuilding | Daily writing naturally grows into an understandable, connected world | COMPLETE |
 
 ## Completion plan
 
@@ -179,7 +179,7 @@ practice rather than a collection of specialist tools.
 - [x] Replace template-first lore creation with plain-language guided choices.
 - [x] Add a beginner-friendly timeline path anchored in a few meaningful events.
 - [x] Teach concepts in context while keeping the complete learning guide repeatable.
-- [ ] Separate the personal daily target from optional date-bounded writing challenges.
+- [x] Separate the personal daily target from optional date-bounded writing challenges.
 - [ ] Evaluate optional AI assistance only after deterministic workflows identify a useful, privacy-explicit job.
 
 Specification: [`docs/milestones/0.9-guided-worldbuilding.md`](docs/milestones/0.9-guided-worldbuilding.md)

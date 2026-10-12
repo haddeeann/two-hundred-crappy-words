@@ -796,3 +796,25 @@ Why: content-dependent teaching can be dismissed simply by continuing the work o
 leaving the surface, cannot become stale app-local onboarding state, and remains
 available to an experienced writer only when it is relevant. The full guide stays
 reopenable for intentional relearning.
+
+## D-065 — Challenges read the daily ledger without becoming the daily goal
+
+- Date: 2026-10-12
+- Status: accepted
+
+The personal daily goal remains the ordinary everyday rhythm, independently editable
+with 200 as its default. A project may also have one optional app-local writing
+challenge with a stable ID, name, total-word target, `validFrom`, and inclusive
+`validTo`. Challenge progress sums the existing credited daily totals inside that
+window. It does not rewrite daily targets, completion records, or project files and
+does not maintain a second word-count ledger.
+
+An upcoming challenge shows its date window and available days with zero progress
+unless actual credited records already exist inside that future window. An active or
+ended challenge reports only recorded words and participating days. Missing days are
+not materialized, labeled failed, or subtracted from any rhythm. Editing or removing
+the challenge leaves all daily history intact.
+
+Why: a 200-word daily practice and a 50,000-word month answer different questions.
+Keeping them separate lets a writer choose a gentle daily floor while occasionally
+joining a larger bounded effort, without corrupting the history that both views use.

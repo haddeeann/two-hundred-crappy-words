@@ -90,6 +90,7 @@
         <p><strong>World Home</strong> is the beginning of the daily rhythm: write today, continue the last open file, remember a world detail, or open manuscript planning.</p>
         <p><strong>Write today</strong> opens <code>Daily/YYYY-MM-DD.md</code>. A missing dated file is created only after the first non-empty edit.</p>
         <p>Only words added during active editing earn today’s credit. Deleting or revising never removes credit already earned, and a missed day never erases an earlier rhythm.</p>
+        <p>Your personal daily goal is the everyday pace; 200 is only the starting default. Writing tools → Practice can also hold one optional challenge with a separate total and an inclusive first and final day. A challenge reads the same credited history and never replaces the daily goal.</p>
         <p><strong>Close the desk</strong> safely finishes pending saves and offers an optional private note for the next session. It does not quit the app or change a project file.</p>
       {:else if topic === "worldbuilding"}
         <h3>Build the world when the story asks</h3>
@@ -105,7 +106,7 @@
       {:else if topic === "projects"}
         <h3>Projects and backups</h3>
         <p>An ordinary folder works immediately. A world project adds a small visible identity file and optional folders for manuscript and lore.</p>
-        <p>Back up the complete project folder. It includes Daily drafts, prose, lore, maps, and portable planning metadata. Goals, credited history, recent locations, permission scopes, and temporary recovery drafts remain private to this app on this Mac.</p>
+        <p>Back up the complete project folder. It includes Daily drafts, prose, lore, maps, and portable planning metadata. Goals, challenges, credited history, recent locations, permission scopes, and temporary recovery drafts remain private to this app on this Mac.</p>
       {:else if topic === "links"}
         <h3>Connected lore</h3>
         <p>Type <code>[[</code> in Markdown to link a character, place, technology, or other note. Completion, search, outgoing links, and backlinks are derived locally without creating a private lore database.</p>

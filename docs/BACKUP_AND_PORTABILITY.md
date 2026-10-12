@@ -19,14 +19,14 @@ The manifest contains no prose, account credential, absolute path, daily history
 
 The app's data directory contains personal or machine-specific state that is deliberately absent from project backups:
 
-- daily goals, credited totals, completion records, rhythms, and correction audits;
+- daily goals, optional writing challenges, credited totals, completion records, rhythms, and correction audits;
 - recent locations, the last opened folder, selected directory, expanded folders, active file, and the optional bounded note for the next writing session;
 - native-picker permission scopes; and
 - temporary unsaved recovery drafts and source fingerprints.
 
 Those records are private and are not transmitted by the app. A project-folder backup therefore protects the creative work but not the writing-practice history or an unsaved recovery draft. Recovery is a last line of defense, not a backup or version-control system.
 
-On macOS, this private state lives under `~/Library/Application Support/com.pat.two-hundred-crappy-words/`. It can be included in a whole-Mac backup if retaining local goals, counters, and temporary recovery state matters, but copy or restore it only while the app is closed. A project-folder backup remains independently useful without it.
+On macOS, this private state lives under `~/Library/Application Support/com.pat.two-hundred-crappy-words/`. It can be included in a whole-Mac backup if retaining local goals, challenges, counters, and temporary recovery state matters, but copy or restore it only while the app is closed. A project-folder backup remains independently useful without it.
 
 ## Moving a world project
 

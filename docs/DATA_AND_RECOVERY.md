@@ -46,7 +46,7 @@ Recovery is a last line of defense, not a backup system. Writers should still ba
 
 ## Daily progress
 
-The app-data directory also contains `daily-progress.json`. It stores versioned word-credit counters by selected project identity and local calendar date, without manuscript text. Valid world projects use their stable manifest UUID, so a move does not split their local history; ordinary folders remain path-identified. Its schema, privacy boundaries, and date behavior are documented in [`DAILY_PROGRESS.md`](DAILY_PROGRESS.md).
+The app-data directory also contains `daily-progress.json`. It stores versioned word-credit counters by selected project identity and local calendar date, plus the personal daily goal and an optional named challenge with a total and inclusive date window, without manuscript text. Valid world projects use their stable manifest UUID, so a move does not split their local history or challenge; ordinary folders remain path-identified. Its schema, privacy boundaries, and date behavior are documented in [`DAILY_PROGRESS.md`](DAILY_PROGRESS.md).
 
 ## Backup boundary
 

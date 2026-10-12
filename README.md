@@ -38,6 +38,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Show the active document's live word count
 - Track and locally persist gross-positive writing progress toward 200 words by project and date
 - Change a project's daily goal while keeping 200 as the default
+- Add an optional named, date-bounded writing challenge without changing the personal daily goal
 - Acknowledge the first goal completion of the day without interrupting typing
 - Review recorded writing days and gentle current/best rhythm information
 - Correct a mistaken daily total while retaining a private local audit

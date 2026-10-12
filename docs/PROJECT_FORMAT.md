@@ -24,7 +24,7 @@ The existing app establishes these compatibility constraints:
 - A folder chosen through the native picker receives recursive runtime filesystem scope; the app has no static whole-filesystem grant.
 - Any folder can be opened and edited without project metadata.
 - The last folder and persisted permission scopes live in Tauri's app-data directory.
-- Daily goals, progress, completion records, and correction audits are app-local and currently keyed by an absolute folder path.
+- Daily goals, optional challenges, progress, completion records, and correction audits are app-local and keyed by project identity.
 - Recovery drafts are app-local and keyed by the absolute source-file path because they protect a particular disk revision.
 - Tree expansion, selected directory, and active document are remembered app-locally as safe project-relative paths. Cursor and scroll state remain in memory only.
 - File creation validates portable names and uses create-new semantics so a stale view cannot truncate an existing file.
@@ -90,7 +90,7 @@ The app may tolerate and preserve unknown fields in a supported manifest version
 
 Version 1 does not store timestamps, absolute paths, usernames, device names, recent files, cursor positions, daily history, recovery text, indexes, caches, or telemetry.
 
-It also does not store the daily goal. The goal is a personal practice preference and remains beside daily history in private app-local data. This avoids changing a version-controlled creative project every time a writer adjusts their current routine.
+It also does not store the daily goal or optional writing challenge. Both are personal practice preferences and remain beside daily history in private app-local data. This avoids changing a version-controlled creative project every time a writer adjusts their current routine.
 
 ## Portable and app-local boundaries
 

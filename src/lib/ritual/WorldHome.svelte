@@ -4,6 +4,7 @@
     dateLabel: string;
     progressLabel: string;
     rhythmLabel: string;
+    challengeLabel: string;
     resumeLabel: string | null;
     nextSessionNote: string;
     canCreateLore: boolean;
@@ -20,6 +21,7 @@
     dateLabel,
     progressLabel,
     rhythmLabel,
+    challengeLabel,
     resumeLabel,
     nextSessionNote,
     canCreateLore,
@@ -70,6 +72,10 @@
       </div>
       <p>{rhythmLabel}</p>
     </div>
+
+    {#if challengeLabel}
+      <p class="challenge-progress" aria-label="Writing challenge progress">{challengeLabel}</p>
+    {/if}
 
     <div class="secondary-actions" aria-label="Worldbuilding paths">
       <button type="button" disabled={busy || !canCreateLore} onclick={onRemember}>
@@ -241,6 +247,12 @@
     border-top: 1px solid #383838;
     border-bottom: 1px solid #383838;
     color: #b8b8b8;
+    font-size: 0.82rem;
+  }
+
+  .challenge-progress {
+    margin: -0.9rem 0 1.5rem;
+    color: #9fcba4;
     font-size: 0.82rem;
   }
 

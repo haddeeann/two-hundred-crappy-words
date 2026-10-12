@@ -19,6 +19,15 @@ A corrected record also contains an append-only list of its previous total, corr
 
 The same file stores an optional whole-number goal for each selected project. The default remains 200 words. Goals must be from 1 through 100,000 words; the upper bound prevents accidental or corrupted values while leaving ample room for unusual practices.
 
+The same file may store one optional versioned writing challenge for each project
+identity: a stable challenge ID, writer-supplied name, whole-number total target,
+inclusive `validFrom` and `validTo` local dates, and created/updated timestamps. A
+challenge does not create a second ledger or change the personal daily goal. Its
+progress is derived from the existing credited totals whose date keys fall inside
+the inclusive window. Future dates create no zero-word records and no fictional
+participation; they only describe time that remains available. Removing a challenge
+leaves every daily record untouched.
+
 It does **not** contain manuscript text, recovery drafts, individual keystrokes, or telemetry. Creative files remain ordinary files in the selected project folder.
 
 An ordinary folder continues to use its absolute path as a deliberately local identity. Renaming or moving an ordinary folder therefore starts a new local progress identity; the old history remains in the ledger and is not silently reassigned.
@@ -37,7 +46,7 @@ The word-credit rules are documented in [`WORD_COUNTING.md`](WORD_COUNTING.md). 
 
 Progress writes are debounced briefly, serialized by project and date, and flushed during safe navigation and normal window closing. A persistence failure never blocks manuscript saving; the app displays a separate warning that the writing is safe but progress could not be stored.
 
-Records are retained for history and streak views. History shows recorded dates rather than manufacturing zero-word entries for missing dates. A completion remains earned after a later target change; consecutive completed local dates form a rhythm, and yesterday's rhythm remains current while today is still open. No automatic pruning or remote synchronization occurs in this milestone. Schema migration and user-facing correction/export behavior must be defined before the ledger format changes incompatibly.
+Records are retained for history, streak, and challenge views. History shows recorded dates rather than manufacturing zero-word entries for missing dates. A completion remains earned after a later target change; consecutive completed local dates form a rhythm, and yesterday's rhythm remains current while today is still open. Challenge windows likewise never label an absent day a failure or erase earlier work. No automatic pruning or remote synchronization occurs in this milestone. Schema migration and user-facing correction/export behavior must be defined before the ledger format changes incompatibly.
 
 ## Corrections
 

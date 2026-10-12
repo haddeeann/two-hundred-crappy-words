@@ -4,35 +4,35 @@ Last updated: 2026-10-12
 
 ## Active milestone
 
-**0.9 — Guided worldbuilding**
+**0.8 — Release readiness**
 
-Release hardening is paused at its publisher-identity gate while the product's next
-phase makes worldbuilding approachable to a writer who has never used specialist
-worldbuilding software. Daily writing remains the center of gravity.
+Guided worldbuilding is complete. Release hardening has resumed for every task that
+can be finished honestly inside the repository while publisher identity, Apple
+credentials, clean-machine evidence, beta feedback, and launch approval stay external.
 
 ## Active slice
 
-**0.9.6 — Personal goals and challenges**
+**0.8.7 — Privacy, diagnostics, and release operations**
 
 ### Intended outcome
 
-Keep the writer's personal daily rhythm separate from optional, named challenges
-whose date window and target are explicit and encouraging.
+Finish the local product and operator material needed to make a development preview
+understandable, diagnosable, reproducibly packaged, and safely replaceable.
 
 ### Acceptance criteria
 
-- [ ] Keep the personal daily target independently editable, with 200 as the default.
-- [ ] Let a writer create and edit an optional named challenge with its own daily target, `validFrom`, and inclusive `validTo`.
-- [ ] Show future challenge dates as potential participation without fabricating credited words or completions.
-- [ ] Preserve completed days and best rhythm when a day is missed; use neutral, non-shaming language.
-- [ ] Keep challenge state local, project-scoped, recoverable, and separate from portable manuscript and lore files.
+- [ ] Publish a plain-language privacy statement and exact data-location reference that match the implementation.
+- [ ] Provide a user-controlled diagnostic export that contains no manuscript, lore, recovery text, paths, or hidden identifiers.
+- [ ] Document beta feedback and crash-reporting policy without enabling telemetry or automatic upload.
+- [ ] Make packaging, release verification, rollback, uninstall, and manual update instructions reproducible.
+- [ ] Leave publisher namespace, app-data migration execution, signing/notarization, clean-Mac testing, beta evidence, and launch approval visibly external.
 
 ## Next decision gate
 
-Define the smallest versioned challenge record and its interaction with the existing
-daily ledger before building UI. A challenge may interpret existing project-local
-daily credit inside its inclusive date window, but it must not rewrite the personal
-goal, invent participation for future dates, or create a second word-count ledger.
+Define a minimal content-free diagnostic schema before adding its export action.
+Machine facts must be allowlisted and reviewed rather than obtained from a general
+log dump; absolute paths, project names/IDs, file names, prose, history totals,
+recovery contents, permission scopes, and account/network data are excluded.
 
 ## Current approval state
 
@@ -45,6 +45,22 @@ the user asked ME to finish all locally completable work; the ordered local trac
 external evidence gates now live in `ROADMAP.md`.
 
 ## Completed checkpoint
+
+- Slice 0.9.6 completes **Personal goals and challenges** and closes guided
+  worldbuilding. The independently editable personal daily goal still defaults to
+  200. Writing tools → Practice now offers one optional project-local challenge with
+  a stable ID, writer name, total-word target, first day, and inclusive final day.
+  It derives progress from the existing credited ledger instead of changing the
+  daily goal or creating a second counter. Upcoming windows remain at zero until
+  real credit exists; missing days are never manufactured or called failures; edits
+  and removal leave history untouched. Active progress appears calmly on World Home,
+  and Help plus the data/backup references explain the boundary. Packaged QA caught
+  and corrected numeric-input coercion, then created an October challenge, verified
+  `0 / 5,000` alongside the unchanged personal `0 / 200`, inclusive dates, accessible
+  names, and readable layout. All 686 frontend tests across 105 files pass,
+  Svelte/TypeScript reports zero errors and warnings, and production web plus macOS
+  `.app` builds succeed. Milestone 0.9 is complete; local 0.8 work resumes at privacy,
+  content-free diagnostics, and release operations.
 
 - Slice 0.9.5 completes **Contextual teaching**. Getting Started now includes a
   repeatable **What goes where** topic that explains Daily drafts, lore, manuscript
