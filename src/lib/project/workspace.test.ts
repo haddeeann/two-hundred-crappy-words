@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  createDailyRitualState,
   createProjectNavigationState,
   createRecentProject,
   isSafeProjectRelativePath,
@@ -62,6 +63,31 @@ describe("workspace path safety", () => {
 });
 
 describe("workspace repository", () => {
+  it("stores a bounded private note for the next writing session", async () => {
+    const backend = new MemoryBackend();
+    const repository = new WorkspaceRepository(backend);
+    await repository.rememberProject(recent(2));
+    const state = createDailyRitualState({
+      projectKey: "project:2",
+      nextSessionNote: "  Let Mara hear the signal.  ",
+      now: NOW,
+    });
+
+    await repository.setDailyRitual(state);
+
+    expect(await new WorkspaceRepository(backend).getDailyRitual("project:2"))
+      .toEqual({
+        version: 1,
+        projectKey: "project:2",
+        nextSessionNote: "Let Mara hear the signal.",
+        closedAt: NOW.toISOString(),
+      });
+    expect(() => createDailyRitualState({
+      projectKey: "project:2",
+      nextSessionNote: "x".repeat(601),
+    })).toThrow(/600 characters/);
+  });
+
   it("updates a moved world by stable key without duplicating it", async () => {
     const backend = new MemoryBackend();
     const repository = new WorkspaceRepository(backend);
@@ -126,6 +152,13 @@ describe("workspace repository", () => {
       now: NOW,
     });
     await repository.setNavigation(state);
+    await repository.setDailyRitual(
+      createDailyRitualState({
+        projectKey: "project:2",
+        nextSessionNote: "Continue the chapter.",
+        now: NOW,
+      }),
+    );
 
     expect(await new WorkspaceRepository(backend).getNavigation("project:2"))
       .toEqual({
@@ -135,6 +168,7 @@ describe("workspace repository", () => {
     await repository.removeProject("project:2");
     expect(await repository.listRecent()).toEqual([]);
     expect(await repository.getNavigation("project:2")).toBeNull();
+    expect(await repository.getDailyRitual("project:2")).toBeNull();
   });
 
   it("ignores malformed stored entries and traversal state", async () => {
@@ -150,9 +184,18 @@ describe("workspace repository", () => {
         updatedAt: NOW.toISOString(),
       },
     });
+    backend.values.set("dailyRitualStates", {
+      "project:1": {
+        version: 1,
+        projectKey: "project:1",
+        nextSessionNote: "x".repeat(601),
+        closedAt: NOW.toISOString(),
+      },
+    });
     const repository = new WorkspaceRepository(backend);
 
     expect(await repository.listRecent()).toHaveLength(1);
     expect(await repository.getNavigation("project:1")).toBeNull();
+    expect(await repository.getDailyRitual("project:1")).toBeNull();
   });
 });

@@ -96,6 +96,8 @@
   import PracticeHistory from "$lib/practice/PracticeHistory.svelte";
   import GettingStarted from "$lib/onboarding/GettingStarted.svelte";
   import SampleProjectDialog from "$lib/onboarding/SampleProjectDialog.svelte";
+  import WorldHome from "$lib/ritual/WorldHome.svelte";
+  import CloseTheDesk from "$lib/ritual/CloseTheDesk.svelte";
   import { shouldShowGettingStarted } from "$lib/onboarding/state";
   import {
     executeSampleProject,
@@ -149,6 +151,7 @@
     restoreProjectNavigation,
   } from "$lib/project/navigation-restore";
   import {
+    createDailyRitualState,
     createProjectNavigationState,
     createRecentProject,
     projectRelativePath,
@@ -479,6 +482,12 @@
   let startupComplete = $state(false);
   let gettingStartedOpen = $state(false);
   let gettingStartedDismissedForSession = $state(false);
+  let worldHomeOpen = $state(false);
+  let closeDeskOpen = $state(false);
+  let nextSessionNote = $state("");
+  let closeDeskNote = $state("");
+  let closeDeskBusy = $state(false);
+  let closeDeskError = $state("");
   let sampleProjectPlan = $state<Extract<SampleProjectPlan, { kind: "ready" }> | null>(null);
   let sampleProjectRootPath = $state("");
   let sampleProjectBusy = $state(false);
@@ -962,6 +971,9 @@
   const practicePresentation = $derived(
     presentPractice(practiceState, dailyTarget),
   );
+  const dailyWordsLabel = $derived(
+    `${practiceState.dailyWords} / ${dailyTarget}`,
+  );
   const dailyRhythmLabel = $derived(
     formatStreakSummary(
       summarizeStreaks(dailyRecordsByDate, activeDailyDateKey),
@@ -1015,6 +1027,9 @@
       explicitlyOpen: gettingStartedOpen,
       dismissedForSession: gettingStartedDismissedForSession,
     }),
+  );
+  const currentProjectName = $derived(
+    folderPath ? projectDisplayName(folderPath, projectInspection) : "this world",
   );
   const continuityInspector = $derived.by(() => {
     const path = activeLorePath();
@@ -5686,6 +5701,15 @@
       progressLoadError = `The folder opened, but its daily progress could not be loaded: ${formatError(cause)}`;
     }
     const dailyContext = resolveDailyProgress(projectRecords);
+    let restoredNextSessionNote = "";
+    let ritualLoadError = "";
+    try {
+      restoredNextSessionNote =
+        (await (await getWorkspaceRepository()).getDailyRitual(storageKey))
+          ?.nextSessionNote ?? "";
+    } catch (cause) {
+      ritualLoadError = `The folder opened, but its private return note could not be loaded: ${formatError(cause)}`;
+    }
 
     let restoredSelectedDirectoryPath = path;
     let restoredFile: FileTreeEntry | null = null;
@@ -5746,6 +5770,12 @@
     editingDailyTarget = false;
     dailyTargetInput = "";
     completionMessage = "";
+    nextSessionNote = restoredNextSessionNote;
+    closeDeskNote = restoredNextSessionNote;
+    closeDeskError = "";
+    closeDeskBusy = false;
+    closeDeskOpen = false;
+    worldHomeOpen = true;
     lastDailyProgressFailure = null;
     dailyProgressError = progressLoadError;
     error = [
@@ -5754,6 +5784,7 @@
         : "",
       copyResolution.warning,
       navigationLoadError,
+      ritualLoadError,
     ]
       .filter(Boolean)
       .join(" ");
@@ -5870,6 +5901,8 @@
   }
 
   function openGettingStarted(): void {
+    worldHomeOpen = false;
+    closeDeskOpen = false;
     gettingStartedDismissedForSession = false;
     gettingStartedOpen = true;
   }
@@ -5881,6 +5914,94 @@
       if (activeFilePath) editorInput?.focus({ preventScroll: true });
       else writingToolsButton?.focus({ preventScroll: true });
     });
+  }
+
+  function openWorldHome(): void {
+    if (!folderPath) return;
+    dismissLoreCompletion();
+    manuscriptCorkboardId = "";
+    timelineOpen = false;
+    mapOpen = false;
+    continuityReviewOpen = false;
+    gettingStartedOpen = false;
+    closeDeskOpen = false;
+    writingToolsOpen = false;
+    writingLayout = transitionWritingLayout(writingLayout, { kind: "exit-focus" });
+    worldHomeOpen = true;
+  }
+
+  function resumeFromWorldHome(): void {
+    worldHomeOpen = false;
+    void tick().then(() => editorInput?.focus({ preventScroll: true }));
+  }
+
+  async function rememberFromWorldHome(): Promise<void> {
+    if (projectInspection.kind !== "world-project") return;
+    worldHomeOpen = false;
+    setWritingTools(true);
+    await startStructuredNote();
+  }
+
+  function planFromWorldHome(): void {
+    worldHomeOpen = false;
+    setWritingTools(true);
+    void tick().then(() =>
+      document.getElementById("tools-manuscript-heading")?.scrollIntoView({
+        block: "start",
+      }),
+    );
+  }
+
+  async function beginCloseTheDesk(): Promise<void> {
+    if (!folderPath || closeDeskBusy) return;
+    closeDeskBusy = true;
+    closeDeskError = "";
+    try {
+      if (!(await prepareToLeave())) return;
+      closeDeskNote = nextSessionNote;
+      dismissLoreCompletion();
+      manuscriptCorkboardId = "";
+      timelineOpen = false;
+      mapOpen = false;
+      continuityReviewOpen = false;
+      gettingStartedOpen = false;
+      worldHomeOpen = false;
+      writingToolsOpen = false;
+      writingLayout = transitionWritingLayout(writingLayout, { kind: "exit-focus" });
+      closeDeskOpen = true;
+    } catch (cause) {
+      closeDeskError = `The desk could not close safely: ${formatError(cause)}`;
+    } finally {
+      closeDeskBusy = false;
+    }
+  }
+
+  async function finishCloseTheDesk(): Promise<void> {
+    if (!projectStorageKey || closeDeskBusy) return;
+    closeDeskBusy = true;
+    closeDeskError = "";
+    try {
+      const state = createDailyRitualState({
+        projectKey: projectStorageKey,
+        nextSessionNote: closeDeskNote,
+      });
+      await (await getWorkspaceRepository()).setDailyRitual(state);
+      nextSessionNote = state.nextSessionNote;
+      closeDeskNote = state.nextSessionNote;
+      closeDeskOpen = false;
+      worldHomeOpen = true;
+    } catch (cause) {
+      closeDeskError = `The note for next time could not be saved: ${formatError(cause)}`;
+    } finally {
+      closeDeskBusy = false;
+    }
+  }
+
+  function returnFromCloseTheDesk(): void {
+    if (closeDeskBusy) return;
+    closeDeskOpen = false;
+    closeDeskError = "";
+    void tick().then(() => editorInput?.focus({ preventScroll: true }));
   }
 
   async function openFolderFromGettingStarted(): Promise<void> {
@@ -6680,6 +6801,8 @@
     timelineOpen = false;
     mapOpen = false;
     continuityReviewOpen = false;
+    worldHomeOpen = false;
+    closeDeskOpen = false;
   }
 
   async function startDailyDraft(): Promise<void> {
@@ -6920,7 +7043,12 @@
     entry: FileTreeEntry,
     recordHistory = true,
   ): Promise<boolean> {
-    if (entry.path === activeFilePath) return true;
+    if (entry.path === activeFilePath) {
+      showDraftEditor();
+      await tick();
+      editorInput?.focus({ preventScroll: true });
+      return true;
+    }
     const historyOrigin = recordHistory
       ? captureLoreNavigationLocation()
       : null;
@@ -6965,6 +7093,7 @@
         error = `Could not open ${entry.name}: ${e}`;
       }
     });
+    if (opened) showDraftEditor();
     if (opened && historyOrigin) recordLoreNavigation(historyOrigin);
     return opened;
   }
@@ -7892,6 +8021,10 @@
         <h2 class="editor-document-heading">
           {gettingStartedVisible
             ? "Getting Started"
+            : closeDeskOpen
+            ? "Close the desk"
+            : worldHomeOpen
+            ? currentProjectName
             : mapOpen
             ? "Maps"
             : continuityReviewOpen
@@ -7911,6 +8044,15 @@
         {#if !focusMode}
           {#if folderPath}
             <button
+              type="button"
+              class="focus-mode-button"
+              aria-pressed={worldHomeOpen}
+              title="Open this world’s home"
+              onclick={openWorldHome}
+            >Home</button>
+          {/if}
+          {#if folderPath && !worldHomeOpen && !closeDeskOpen && !gettingStartedVisible}
+            <button
               id="open-continuity-review-workspace"
               type="button"
               class="focus-mode-button"
@@ -7929,17 +8071,19 @@
               onclick={openTimelineWorkspace}
             >{timelineLoading ? "Timeline…" : "Timeline"}</button>
           {/if}
-          <button
-            type="button"
-            class="focus-mode-button writing-tools-button"
-            aria-expanded={writingToolsOpen}
-            aria-controls="writing-tools-panel"
-            title={writingToolsOpen ? "Close writing tools" : "Open lore, continuity, manuscript, and project tools"}
-            onclick={() => setWritingTools(!writingToolsOpen)}
-            bind:this={writingToolsButton}
-          >{writingToolsOpen ? "Close tools" : "Writing tools"}</button>
+          {#if !worldHomeOpen && !closeDeskOpen}
+            <button
+              type="button"
+              class="focus-mode-button writing-tools-button"
+              aria-expanded={writingToolsOpen}
+              aria-controls="writing-tools-panel"
+              title={writingToolsOpen ? "Close writing tools" : "Open lore, continuity, manuscript, and project tools"}
+              onclick={() => setWritingTools(!writingToolsOpen)}
+              bind:this={writingToolsButton}
+            >{writingToolsOpen ? "Close tools" : "Writing tools"}</button>
+          {/if}
         {/if}
-        {#if activeFile}
+        {#if activeFile && !worldHomeOpen && !closeDeskOpen && !gettingStartedVisible}
           <span
             class="save-status"
             class:save-error={saveState.phase === "error"}
@@ -7964,6 +8108,14 @@
             >{focusMode ? "Exit focus" : "Focus"}</button>
           {/if}
         {/if}
+        {#if folderPath && !worldHomeOpen && !closeDeskOpen && !gettingStartedVisible}
+          <button
+            type="button"
+            class="focus-mode-button close-desk-button"
+            disabled={closeDeskBusy || worldProjectBusy}
+            onclick={() => void beginCloseTheDesk()}
+          >{closeDeskBusy ? "Saving…" : "Close the desk"}</button>
+        {/if}
       </div>
     </div>
     {#if error || dailyProgressError}
@@ -7976,7 +8128,7 @@
       class="writing-split"
       class:corkboard-mode={Boolean(manuscriptCorkboard)}
       class:focus-mode={focusMode}
-      class:has-reference={Boolean(loreReference) && !gettingStartedVisible && !timelineOpen && !mapOpen && !continuityReviewOpen}
+      class:has-reference={Boolean(loreReference) && !gettingStartedVisible && !worldHomeOpen && !closeDeskOpen && !timelineOpen && !mapOpen && !continuityReviewOpen}
     >
       <div class="editor-workspace">
         {#if gettingStartedVisible}
@@ -7987,6 +8139,38 @@
             onOpenFolder={() => void openFolderFromGettingStarted()}
             onCreateProject={() => void createProjectFromGettingStarted()}
             onCreateSample={() => void beginSampleProject()}
+          />
+        {:else if closeDeskOpen}
+          <CloseTheDesk
+            projectName={currentProjectName}
+            progressLabel={dailyWordsLabel}
+            documentLabel={activeFile || null}
+            note={closeDeskNote}
+            busy={closeDeskBusy}
+            error={closeDeskError}
+            onNote={(note) => (closeDeskNote = note)}
+            onFinish={() => void finishCloseTheDesk()}
+            onReturn={returnFromCloseTheDesk}
+          />
+        {:else if worldHomeOpen && folderPath}
+          <WorldHome
+            projectName={currentProjectName}
+            dateLabel={new Date().toLocaleDateString(undefined, {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            })}
+            progressLabel={dailyWordsLabel}
+            rhythmLabel={dailyRhythmLabel}
+            resumeLabel={activeFile || null}
+            nextSessionNote={nextSessionNote}
+            canCreateLore={projectInspection.kind === "world-project"}
+            busy={worldProjectBusy || dailyDraftCreating}
+            onWriteToday={() => void startDailyDraft()}
+            onResume={resumeFromWorldHome}
+            onRemember={() => void rememberFromWorldHome()}
+            onPlan={planFromWorldHome}
+            onLearn={openGettingStarted}
           />
         {:else if continuityReviewOpen && continuityReviewPresentation}
           <ContinuityReviewWorkspace
@@ -8097,7 +8281,7 @@
           {/if}
         {/if}
       </div>
-      {#if loreReference && !gettingStartedVisible && !timelineOpen && !mapOpen && !continuityReviewOpen && !manuscriptCorkboard}
+      {#if loreReference && !gettingStartedVisible && !worldHomeOpen && !closeDeskOpen && !timelineOpen && !mapOpen && !continuityReviewOpen && !manuscriptCorkboard}
         <LoreReferencePane
           reference={loreReference}
           onClose={() => closeLoreReference()}
@@ -8107,7 +8291,7 @@
         />
       {/if}
     </div>
-    {#if currentLoreConnections && !focusMode && !gettingStartedVisible}
+    {#if currentLoreConnections && !focusMode && !gettingStartedVisible && !worldHomeOpen && !closeDeskOpen}
       <LoreConnections
         connections={currentLoreConnections}
         onOpen={(item) => void openLoreConnection(item)}

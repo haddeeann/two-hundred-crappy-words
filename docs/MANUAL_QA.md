@@ -4,7 +4,30 @@ This checklist uses disposable files and is the human checkpoint for milestone 0
 
 ## Latest result
 
-Completed successfully on macOS through native-window and file-tree polish on 2026-10-08. The latest run verified hidden metadata defaults, the persisted visibility preference, native Zoom/minimize behavior, and unchanged writing state. Detailed current and historical checkpoints follow.
+Completed successfully on macOS through the daily-rhythm foundation on 2026-10-11. The latest run verified World Home, retained-file resume, the guarded Close the desk landing, and unchanged project content. Detailed current and historical checkpoints follow.
+
+## 0.9.1 daily-rhythm checkpoint
+
+Completed on macOS on 2026-10-11 against a freshly packaged app and the writer's
+existing ordinary Arcadia folder. Startup presented World Home with the correct
+project name, local date, daily total, rhythm, today's lazy-created draft action,
+and the restored `2026-10-11.md` as a separate Continue action. The ordinary folder
+truthfully disabled structured lore creation while leaving manuscript planning and
+the repeatable learning guide available. Continue revealed the exact retained saved
+draft, focused the editor, and exposed Home plus Close the desk without reloading or
+editing the file.
+
+Close the desk entered only after the save guard completed. Its accessible summary
+reported `323 / 200`, the exact last-open file, and that files were saved before the
+page opened; the optional reminder explicitly stated that it stays private to ME and
+does not change project files. Return to writing restored the editor. The reminder
+was deliberately left empty and Finish was not invoked against the writer's real
+workspace, while repository fixtures cover bounded persistence, malformed-state
+refusal, and cleanup with a removed recent shortcut. The packaged screens retained
+the native macOS title bar and remained vertically scrollable at the exercised
+laptop window size. No project file or private return note changed. The final gate
+has 666 passing frontend tests across 101 files, zero Svelte/TypeScript diagnostics,
+and successful production web and macOS app builds.
 
 ## Milestone 0.8.1 native-window and file-tree checkpoint
 

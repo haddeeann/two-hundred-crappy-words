@@ -4,36 +4,61 @@ Last updated: 2026-10-11
 
 ## Active milestone
 
-**0.8 — Release readiness**
+**0.9 — Guided worldbuilding**
 
-Daily Drafts and deterministic continuity are complete. The active milestone now hardens the local-first product for another writer to install, understand, evaluate, back up, and safely remove before publication.
+Release hardening is paused at its publisher-identity gate while the product's next
+phase makes worldbuilding approachable to a writer who has never used specialist
+worldbuilding software. Daily writing remains the center of gravity.
 
 ## Active slice
 
-**0.8.6c — Public beta identity gate**
+**0.9.2 — Remember from writing**
 
 ### Intended outcome
 
-Resolve the durable publisher namespace before changing the bundle identifier. The first-beta version and tested macOS support floor are now approved and implemented.
+Let a writer deliberately turn selected prose into a candidate world detail without
+silently classifying, moving, or rewriting their words.
 
 ### Acceptance criteria
 
-- [ ] Supply the intended public publisher name and a controlled reverse-DNS namespace.
-- [x] Confirm **0.8.0 Beta 1**, with technical/marketing version `0.8.0` and macOS build `1`.
-- [x] Confirm Apple Silicon and macOS 13+ as the initial support boundary; retain clean-machine testing in release-candidate QA.
-- [ ] Design the copy-only app-data migration before replacing the development bundle identifier.
+- [ ] Offer “Remember…” only for an intentional editor selection.
+- [ ] Ask the writer what the detail represents instead of guessing.
+- [ ] Preview the exact source, destination, and effect before writing.
+- [ ] Preserve source prose and use no-clobber guarded note creation/linking.
+- [ ] Refuse stale, ambiguous, or colliding state without changing project files.
 
 ## Next decision gate
 
-The product identity, visual identity, version, build number, architecture, and operating-system floor are complete: **Ministry of Elsewhere**, “Write a little every day. Build something enormous.”, the **Cartographic Portal**, **0.8.0 Beta 1** / build `1`, and Apple Silicon on macOS 13+. The public publisher namespace is the remaining identity gate. Signing/notarization account enrollment, networked updates, crash reporting, and feedback services remain separate later gates.
-
-The decision packet is recorded in [`IDENTITY_AND_DISTRIBUTION_PROPOSAL.md`](IDENTITY_AND_DISTRIBUTION_PROPOSAL.md). The visible app identity, internal package slug, reviewed source artwork, desktop icon set, favicon, version, build number, and tested support floor now carry the approved first-beta metadata. Existing portable `200-crappy-words` format identifiers remain stable, and the old development bundle identifier is temporarily retained to preserve app-local data until a publisher namespace and copy-only migration are approved. No public identifier, signing configuration, credential, Git release tag, or published artifact changed.
+The next product decision is the exact first “Remember…” behavior: whether version
+one creates a new structured note only, or may also connect to one existing uniquely
+resolved note. Both paths must keep the original prose unchanged and require an
+explicit review before any project write. Optional AI remains outside this gate.
 
 ## Current approval state
 
-The user moved the project into pre-publication hardening on 2026-10-08 and requested hidden operating-system files by default with a visibility setting. Daily-material harvesting is deferred until after the first hardening pass. Optional AI remains deferred. The existing native-window decision still governs: macOS owns traffic lights, Zoom, full screen, and tiling.
+The user approved the complete Guided worldbuilding direction and the Arrive → Write
+→ Close the desk daily rhythm on 2026-10-11. Release readiness 0.8 is deferred, not
+complete: its publisher namespace, app-data migration, signing/notarization,
+telemetry-policy, and final release-candidate gates remain. Optional AI remains
+deferred behind a separate privacy, key, cost, and consent decision.
 
 ## Completed checkpoint
+
+- Slice 0.9.1 establishes the daily rhythm foundation. Opening a project now lands
+  on World Home while retaining the recovered/restored active file underneath. The
+  writer can open today's lazy-created Markdown, resume the retained file, begin a
+  structured lore note, reach manuscript planning, or reopen the separate learning
+  guide. **Close the desk** first runs the existing pending-save/conflict guard,
+  summarizes the session, and optionally saves a bounded per-project return note in
+  private `workspace.json`; it neither quits the app nor changes a project file.
+  Project-tree file activation bypasses Home directly, and the ordinary editor,
+  Daily credit, recovery, navigation, and native Quit paths remain intact. The next
+  slice is selected-prose **Remember…** with explicit writer classification and
+  preview-before-write semantics. The complete frontend gate has 666 passing tests
+  across 101 files, Svelte/TypeScript reports zero errors and warnings, the production
+  web build succeeds, and a fresh packaged macOS app passed visual and accessibility
+  inspection of World Home, retained-file resume, and Close the desk without changing
+  project content or private return-note state.
 
 - The Writing tools dock now has an explicit information hierarchy instead of one flat mixture of controls. **Start**, **Workspaces**, **Project**, **Project details**, **Manuscript**, and **Practice** group related work; short descriptions explain each group; action buttons use a consistent right-arrow treatment; and a visible key explains that buttons open or begin something while chevron rows expand information in place. Existing progressive disclosures, project safety boundaries, and keyboard behavior remain intact. The focused UI pass is verified at narrow laptop-dock width, with exact screen-reader button names, 665 passing frontend tests, zero Svelte/TypeScript diagnostics, and a successful production build. The public publisher namespace and copy-only app-data migration remain the active 0.8.6c gate.
 

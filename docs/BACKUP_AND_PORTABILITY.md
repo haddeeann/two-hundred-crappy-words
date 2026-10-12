@@ -20,7 +20,7 @@ The manifest contains no prose, account credential, absolute path, daily history
 The app's data directory contains personal or machine-specific state that is deliberately absent from project backups:
 
 - daily goals, credited totals, completion records, rhythms, and correction audits;
-- recent locations, the last opened folder, selected directory, expanded folders, and active file;
+- recent locations, the last opened folder, selected directory, expanded folders, active file, and the optional bounded note for the next writing session;
 - native-picker permission scopes; and
 - temporary unsaved recovery drafts and source fingerprints.
 

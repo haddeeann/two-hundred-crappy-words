@@ -682,3 +682,29 @@ notarization, stapling, and Gatekeeper verification required for the real public
 Why: an honest early preview lets interested writers experience the product now
 without disguising macOS trust friction or weakening the definition of release
 readiness. The checksum and single named host make this temporary boundary auditable.
+
+## D-060 — Guided worldbuilding begins and ends with the writing day
+
+- Date: 2026-10-11
+- Status: accepted
+
+The primary experience follows three distinct moments: **Arrive** at World Home,
+**Write** in ordinary files with contextual worldbuilding nearby, and **Close the
+desk** after pending work is safely resolved. Opening a project may place World Home
+over the restored editor, but it does not clear, reload, or replace the restored
+file; one action resumes it, and one action opens today's Daily draft. Close the desk
+is an optional application landing, not Quit, and cannot bypass the established
+save, external-change, or recovery guard.
+
+A bounded “note for next time” is private app-local state keyed by the same project
+identity as navigation. It never becomes manuscript or lore and is removed with the
+recent-project shortcut. The full Getting Started surface remains a separate,
+repeatable learning guide. Later contextual teaching may be dismissed, but the app
+does not make learning a required checklist or declare a writer permanently onboarded.
+
+Why: a new worldbuilding user needs a clear daily path more than a dashboard of
+specialist modules. Preserving the underlying restored draft keeps the ritual calm
+without taxing an experienced writer, while a private return note helps reconstruct
+creative context without polluting portable source files. The user approved the
+Arrive → Write → Close the desk model after reviewing the three visible concepts on
+2026-10-11.

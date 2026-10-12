@@ -14,7 +14,8 @@ Status legend: `PLANNED`, `ACTIVE`, `BLOCKED`, `COMPLETE`, `DEFERRED`.
 | 0.5 Connected lore | Manuscript and world bible can reference each other fluidly | COMPLETE |
 | 0.6 Novel structure | Scenes and chapters can be planned, reordered, and exported | COMPLETE |
 | 0.7 Continuity tools | Time, travel, relationships, and canon can be reasoned about | COMPLETE |
-| 0.8 Release readiness | The app is accessible, documented, packaged, and recoverable | ACTIVE |
+| 0.8 Release readiness | The app is accessible, documented, packaged, and recoverable | DEFERRED |
+| 0.9 Guided worldbuilding | Daily writing naturally grows into an understandable, connected world | ACTIVE |
 
 ## 0.2 — Trustworthy editor
 
@@ -124,6 +125,26 @@ Goal: turn the evolving application into a dependable product someone else can i
 - [ ] Define beta feedback, crash-reporting policy, and release checklist without enabling telemetry by default.
 
 Specification: [`docs/milestones/0.8-release-readiness.md`](docs/milestones/0.8-release-readiness.md)
+
+Release readiness remains substantially complete but is deliberately paused before
+the publisher-namespace, signing, notarization, telemetry-policy, and final
+release-candidate gates. Those tasks resume after the writer has used and approved
+the guided experience.
+
+## 0.9 — Guided worldbuilding
+
+Goal: make daily writing, worldbuilding, and planning feel like one approachable
+practice rather than a collection of specialist tools.
+
+- [x] Establish an Arrive → Write → Close the desk daily rhythm without weakening safe resume.
+- [ ] Turn selected prose into an explicit, reviewable “remember this” workflow.
+- [ ] Replace template-first lore creation with plain-language guided choices.
+- [ ] Add a beginner-friendly timeline path anchored in a few meaningful events.
+- [ ] Teach concepts in context while keeping the complete learning guide repeatable.
+- [ ] Separate the personal daily target from optional date-bounded writing challenges.
+- [ ] Evaluate optional AI assistance only after deterministic workflows identify a useful, privacy-explicit job.
+
+Specification: [`docs/milestones/0.9-guided-worldbuilding.md`](docs/milestones/0.9-guided-worldbuilding.md)
 
 ## Ideas parking lot
 

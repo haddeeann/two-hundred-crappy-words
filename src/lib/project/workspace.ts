@@ -2,6 +2,8 @@ export const WORKSPACE_STORE_FILE = "workspace.json";
 export const MAX_RECENT_PROJECTS = 12;
 const RECENT_PROJECTS_KEY = "recentProjects";
 const NAVIGATION_STATES_KEY = "navigationStates";
+const DAILY_RITUAL_STATES_KEY = "dailyRitualStates";
+export const MAX_NEXT_SESSION_NOTE_LENGTH = 600;
 
 export interface WorkspaceBackend {
   get<T>(key: string): Promise<T | undefined>;
@@ -25,6 +27,37 @@ export interface ProjectNavigationState {
   activeFile: string | null;
   expandedDirectories: string[];
   updatedAt: string;
+}
+
+export interface DailyRitualState {
+  version: 1;
+  projectKey: string;
+  nextSessionNote: string;
+  closedAt: string;
+}
+
+export function createDailyRitualState({
+  projectKey,
+  nextSessionNote,
+  now = new Date(),
+}: {
+  projectKey: string;
+  nextSessionNote: string;
+  now?: Date;
+}): DailyRitualState {
+  if (!projectKey) throw new RangeError("A project key is required.");
+  const note = nextSessionNote.trim();
+  if (note.length > MAX_NEXT_SESSION_NOTE_LENGTH) {
+    throw new RangeError(
+      `A note for next time must be ${MAX_NEXT_SESSION_NOTE_LENGTH} characters or fewer.`,
+    );
+  }
+  return {
+    version: 1,
+    projectKey,
+    nextSessionNote: note,
+    closedAt: now.toISOString(),
+  };
 }
 
 export function createRecentProject({
@@ -149,12 +182,17 @@ export class WorkspaceRepository {
       ].slice(0, MAX_RECENT_PROJECTS);
       const retainedKeys = new Set(recent.map((entry) => entry.projectKey));
       const navigation = await this.readNavigationStates();
+      const rituals = await this.readDailyRitualStates();
       for (const key of Object.keys(navigation)) {
         if (!retainedKeys.has(key)) delete navigation[key];
+      }
+      for (const key of Object.keys(rituals)) {
+        if (!retainedKeys.has(key)) delete rituals[key];
       }
 
       await this.backend.set(RECENT_PROJECTS_KEY, recent);
       await this.backend.set(NAVIGATION_STATES_KEY, navigation);
+      await this.backend.set(DAILY_RITUAL_STATES_KEY, rituals);
       await this.backend.save();
     });
   }
@@ -168,9 +206,12 @@ export class WorkspaceRepository {
         (entry) => entry.projectKey !== projectKey,
       );
       const navigation = await this.readNavigationStates();
+      const rituals = await this.readDailyRitualStates();
       delete navigation[projectKey];
+      delete rituals[projectKey];
       await this.backend.set(RECENT_PROJECTS_KEY, recent);
       await this.backend.set(NAVIGATION_STATES_KEY, navigation);
+      await this.backend.set(DAILY_RITUAL_STATES_KEY, rituals);
       await this.backend.save();
     });
   }
@@ -191,6 +232,24 @@ export class WorkspaceRepository {
       const navigation = await this.readNavigationStates();
       navigation[state.projectKey] = structuredClone(state);
       await this.backend.set(NAVIGATION_STATES_KEY, navigation);
+      await this.backend.save();
+    });
+  }
+
+  async getDailyRitual(projectKey: string): Promise<DailyRitualState | null> {
+    await this.operations;
+    const rituals = await this.readDailyRitualStates();
+    return rituals[projectKey] ?? null;
+  }
+
+  setDailyRitual(state: DailyRitualState): Promise<void> {
+    if (!isDailyRitualState(state)) {
+      return Promise.reject(new RangeError("The daily ritual state is invalid."));
+    }
+    return this.enqueue(async () => {
+      const rituals = await this.readDailyRitualStates();
+      rituals[state.projectKey] = structuredClone(state);
+      await this.backend.set(DAILY_RITUAL_STATES_KEY, rituals);
       await this.backend.save();
     });
   }
@@ -228,6 +287,21 @@ export class WorkspaceRepository {
         (entry): entry is [string, ProjectNavigationState] =>
           isProjectNavigationState(entry[1]) &&
           entry[0] === entry[1].projectKey,
+      ),
+    );
+  }
+
+  private async readDailyRitualStates(): Promise<
+    Record<string, DailyRitualState>
+  > {
+    const stored = await this.backend.get<unknown>(DAILY_RITUAL_STATES_KEY);
+    if (!stored || typeof stored !== "object" || Array.isArray(stored)) {
+      return {};
+    }
+    return Object.fromEntries(
+      Object.entries(stored).filter(
+        (entry): entry is [string, DailyRitualState] =>
+          isDailyRitualState(entry[1]) && entry[0] === entry[1].projectKey,
       ),
     );
   }
@@ -270,6 +344,19 @@ function isProjectNavigationState(
         typeof path === "string" && isSafeProjectRelativePath(path, false),
     ) &&
     isIsoDate(state.updatedAt)
+  );
+}
+
+function isDailyRitualState(value: unknown): value is DailyRitualState {
+  if (!value || typeof value !== "object") return false;
+  const state = value as Partial<DailyRitualState>;
+  return (
+    state.version === 1 &&
+    typeof state.projectKey === "string" &&
+    state.projectKey.length > 0 &&
+    typeof state.nextSessionNote === "string" &&
+    state.nextSessionNote.length <= MAX_NEXT_SESSION_NOTE_LENGTH &&
+    isIsoDate(state.closedAt)
   );
 }
 

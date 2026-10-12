@@ -85,8 +85,10 @@
         <p class="note">The optional sample is created as a separate ordinary folder only after you choose its location and confirm every path.</p>
       {:else if topic === "daily"}
         <h3>Daily writing</h3>
+        <p><strong>World Home</strong> is the beginning of the daily rhythm: write today, continue the last open file, remember a world detail, or open manuscript planning.</p>
         <p><strong>Write today</strong> opens <code>Daily/YYYY-MM-DD.md</code>. A missing dated file is created only after the first non-empty edit.</p>
         <p>Only words added during active editing earn today’s credit. Deleting or revising never removes credit already earned, and a missed day never erases an earlier rhythm.</p>
+        <p><strong>Close the desk</strong> safely finishes pending saves and offers an optional private note for the next session. It does not quit the app or change a project file.</p>
       {:else if topic === "projects"}
         <h3>Projects and backups</h3>
         <p>An ordinary folder works immediately. A world project adds a small visible identity file and optional folders for manuscript and lore.</p>
