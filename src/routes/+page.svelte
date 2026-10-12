@@ -100,7 +100,15 @@
   import CloseTheDesk from "$lib/ritual/CloseTheDesk.svelte";
   import RememberSelectionDialog from "$lib/ritual/RememberSelectionDialog.svelte";
   import GuidedLoreDialog from "$lib/ritual/GuidedLoreDialog.svelte";
+  import GuidedTimelineDialog from "$lib/ritual/GuidedTimelineDialog.svelte";
   import { buildGuidedLoreSections } from "$lib/ritual/guided-lore";
+  import {
+    guidedTimelineDateRequest,
+    initialGuidedTimelineAnchors,
+    type GuidedTimelineAnchorKey,
+    type GuidedTimelineAnchorProgress,
+    type GuidedTimelineDateDraft,
+  } from "$lib/ritual/guided-timeline";
   import {
     captureRememberSelection,
     createRememberedStructuredNote,
@@ -271,9 +279,12 @@
     undoContinuityMutation,
     type ContinuityMutationUndo,
   } from "$lib/lore/continuity-execution";
-  import type {
-    ContinuityMutationPlan,
-    ContinuityMutationRequest,
+  import {
+    planContinuityMutation,
+    previewContinuityMutation,
+    type ContinuityMutationPreview,
+    type ContinuityMutationPlan,
+    type ContinuityMutationRequest,
   } from "$lib/lore/continuity-mutation";
   import ManuscriptCorkboard from "$lib/manuscript/ManuscriptCorkboard.svelte";
   import ManuscriptCompileDialog from "$lib/manuscript/ManuscriptCompileDialog.svelte";
@@ -387,6 +398,7 @@
     type TimelineProjectLoadResult,
   } from "$lib/timeline/load";
   import { deriveTimelineModel } from "$lib/timeline/model";
+  import { normalizeTimelineExpression } from "$lib/timeline/normalize";
   import TravelInspector from "$lib/travel/TravelInspector.svelte";
   import { deriveJourneyAnalyses } from "$lib/travel/journey";
   import { deriveTravelModel } from "$lib/travel/model";
@@ -523,6 +535,18 @@
   let structuredNoteAnswers = $state<Record<string, string>>({});
   let structuredNoteBusy = $state(false);
   let structuredNoteError = $state("");
+  let timelineGuideOpen = $state(false);
+  let timelineGuidePhase = $state<"events" | "dates">("events");
+  let timelineGuideAnchors = $state<GuidedTimelineAnchorProgress[]>(initialGuidedTimelineAnchors());
+  let timelineGuideDestinations = $state<StructuredNoteDestination[]>([]);
+  let timelineGuideBusy = $state(false);
+  let timelineGuideError = $state("");
+  let timelineGuideMutationPreview = $state<{
+    anchorKey: GuidedTimelineAnchorKey;
+    plan: ContinuityMutationPlan;
+    request: ContinuityMutationRequest;
+    exact: ContinuityMutationPreview;
+  } | null>(null);
   let rememberSelection = $state<RememberSelectionSnapshot | null>(null);
   let rememberSourceAbsolutePath = "";
   let rememberType = $state<StructuredNoteType>("character");
@@ -744,6 +768,7 @@
       sampleProjectBusy ||
       structuredNoteBusy ||
       Boolean(creatingStructuredNote) ||
+      timelineGuideBusy ||
       rememberBusy ||
       Boolean(rememberSelection) ||
       renameFileBusy ||
@@ -1394,6 +1419,13 @@
     loreRenameBusy = false;
     loreRenameError = "";
     loreRenameReturnFilePath = "";
+    timelineGuideOpen = false;
+    timelineGuidePhase = "events";
+    timelineGuideAnchors = initialGuidedTimelineAnchors();
+    timelineGuideDestinations = [];
+    timelineGuideBusy = false;
+    timelineGuideError = "";
+    timelineGuideMutationPreview = null;
     loreNavigationHistory.clear();
     loreHistoryRevision += 1;
     restoringLoreHistory = false;
@@ -3438,6 +3470,223 @@
       editorInput.setSelectionRange(start, Math.max(start, end));
       editorInput.focus();
     });
+  }
+
+  async function startGuidedTimeline(): Promise<void> {
+    if (projectInspection.kind !== "world-project" || timelineGuideBusy) return;
+    timelineGuideBusy = true;
+    timelineGuideError = "";
+    try {
+      timelineGuideDestinations = await discoverStructuredNoteDestinations({
+        entries,
+        folders: projectInspection.manifest.folders,
+        rootLabel: projectInspection.manifest.name,
+        isUsableDirectory: async (relativePath) =>
+          (await resolveRealProjectDirectory(relativePath)) !== null,
+      });
+      const preferred = projectInspection.manifest.folders.timeline;
+      if (preferred) {
+        timelineGuideDestinations = [
+          ...timelineGuideDestinations.filter(({ relativePath }) => relativePath === preferred),
+          ...timelineGuideDestinations.filter(({ relativePath }) => relativePath !== preferred),
+        ];
+      }
+      timelineGuidePhase = "events";
+      timelineGuideAnchors = initialGuidedTimelineAnchors();
+      timelineGuideMutationPreview = null;
+      timelineGuideOpen = true;
+    } catch (cause) {
+      timelineGuideError = `Could not prepare the timeline guide: ${formatError(cause)}`;
+    } finally {
+      timelineGuideBusy = false;
+    }
+  }
+
+  function updateTimelineGuideAnchor(
+    key: GuidedTimelineAnchorKey,
+    update: (current: GuidedTimelineAnchorProgress) => GuidedTimelineAnchorProgress,
+  ): void {
+    timelineGuideAnchors = timelineGuideAnchors.map((current) =>
+      current.key === key ? update(current) : current,
+    );
+    timelineGuideError = "";
+  }
+
+  function skipGuidedTimelineAnchor(key: GuidedTimelineAnchorKey): void {
+    if (timelineGuideBusy) return;
+    updateTimelineGuideAnchor(key, (current) => ({ ...current, status: "skipped" }));
+  }
+
+  async function createGuidedTimelineEvent(
+    key: GuidedTimelineAnchorKey,
+    title: string,
+    summary: string,
+    fileNameValue: string,
+    destination: string,
+  ): Promise<boolean> {
+    if (
+      timelineGuideBusy ||
+      projectInspection.kind !== "world-project" ||
+      !folderPath
+    ) return false;
+    const titleIssue = validateProjectName(title);
+    if (titleIssue) {
+      timelineGuideError = `Title ${titleIssue.slice("name ".length)}`;
+      return false;
+    }
+    if (summary.trim().length > 2_000) {
+      timelineGuideError = "The event summary must be 2,000 characters or fewer.";
+      return false;
+    }
+    const fileName = fileNameValue.trim();
+    const fileNameIssue = validateStructuredNoteFileName(fileName);
+    if (fileNameIssue) {
+      timelineGuideError = fileNameIssue;
+      return false;
+    }
+    if (!timelineGuideDestinations.some(({ relativePath }) => relativePath === destination)) {
+      timelineGuideError = "Choose an available project folder for this event.";
+      return false;
+    }
+
+    timelineGuideBusy = true;
+    timelineGuideError = "";
+    try {
+      const destinationPath = await resolveRealProjectDirectory(destination);
+      if (!destinationPath) {
+        timelineGuideError = "That project folder moved, disappeared, or became a symbolic link. Nothing was written.";
+        return false;
+      }
+      const absolutePath = await join(destinationPath, fileName);
+      const noteId = crypto.randomUUID();
+      const note = createStructuredNote({
+        id: noteId,
+        type: "event",
+        title,
+        sectionContent: summary.trim() ? { Summary: summary.trim() } : {},
+      });
+      await writeTextFile(absolutePath, note, { createNew: true });
+      await refreshDirectory(destinationPath);
+      const relativePath = destination ? `${destination}/${fileName}` : fileName;
+      updateTimelineGuideAnchor(key, (current) => ({
+        ...current,
+        status: "created",
+        title: title.trim(),
+        path: relativePath,
+        absolutePath,
+        noteId,
+        dateStatus: "pending",
+      }));
+      await refreshLoreIndex(folderPath);
+      return true;
+    } catch (cause) {
+      timelineGuideError = `Could not create the event note. No existing file was changed: ${formatError(cause)}`;
+      return false;
+    } finally {
+      timelineGuideBusy = false;
+    }
+  }
+
+  function beginGuidedTimelineDates(): void {
+    timelineGuideMutationPreview = null;
+    timelineGuideError = "";
+    timelineGuidePhase = "dates";
+  }
+
+  function leaveGuidedTimelineDateUnknown(key: GuidedTimelineAnchorKey): void {
+    if (timelineGuideBusy) return;
+    timelineGuideMutationPreview = null;
+    updateTimelineGuideAnchor(key, (current) => ({ ...current, dateStatus: "unknown" }));
+  }
+
+  async function previewGuidedTimelineDate(
+    key: GuidedTimelineAnchorKey,
+    draft: GuidedTimelineDateDraft,
+  ): Promise<void> {
+    const anchor = timelineGuideAnchors.find((candidate) => candidate.key === key);
+    if (!anchor || anchor.status !== "created" || timelineGuideBusy) return;
+    timelineGuideMutationPreview = null;
+    timelineGuideError = "";
+    try {
+      const sourceText = await readTextFile(anchor.absolutePath);
+      const indexed = loreIndex?.documents.get(anchor.path);
+      if (!indexed || indexed.id !== anchor.noteId || indexed.fingerprint !== fingerprintContent(sourceText)) {
+        timelineGuideError = "This event changed or has not finished indexing. Refresh the timeline and review it again; nothing was written.";
+        return;
+      }
+      if (indexed.facts.some(({ property }) => property === "occurs-at")) {
+        timelineGuideError = "This event already has a date. Use its advanced continuity tools to review or edit that fact.";
+        return;
+      }
+      const request = guidedTimelineDateRequest(anchor.noteId, crypto.randomUUID(), draft);
+      const dateValue = request.operation === "add-fact" ? request.draft.value : null;
+      if (dateValue?.kind === "time") {
+        const normalized = normalizeTimelineExpression(
+          dateValue.calendar,
+          dateValue.expression,
+          timelineProject.kind === "ready" ? timelineProject.timeline.calendars : [],
+        );
+        if (
+          normalized.kind === "non-computable" &&
+          normalized.code !== "unknown-calendar"
+        ) {
+          timelineGuideError = normalized.reason;
+          return;
+        }
+      }
+      const plan = planContinuityMutation(sourceText, request);
+      if (plan.kind === "unavailable") {
+        timelineGuideError = plan.reason;
+        return;
+      }
+      timelineGuideMutationPreview = {
+        anchorKey: key,
+        plan,
+        request,
+        exact: previewContinuityMutation(plan),
+      };
+    } catch (cause) {
+      timelineGuideError = formatError(cause);
+    }
+  }
+
+  async function confirmGuidedTimelineDate(): Promise<void> {
+    const preview = timelineGuideMutationPreview;
+    if (!preview || timelineGuideBusy) return;
+    const anchor = timelineGuideAnchors.find(({ key }) => key === preview.anchorKey);
+    if (!anchor) return;
+    timelineGuideBusy = true;
+    timelineGuideError = "";
+    const result = await executeContinuityMutation(
+      anchor.absolutePath,
+      preview.plan,
+      preview.request,
+      { read: readTextFile, write: (path, text) => writeTextFile(path, text) },
+    );
+    timelineGuideBusy = false;
+    if (result.kind === "failed") {
+      timelineGuideError = result.message;
+      timelineGuideMutationPreview = null;
+      return;
+    }
+    if (activeFilePath === anchor.absolutePath) {
+      content = result.plan.updatedText;
+      persistedContent = result.plan.updatedText;
+      persistedContentByPath.set(anchor.absolutePath, result.plan.updatedText);
+      saveState = createSaveState();
+      practiceState = beginDailyPractice(result.plan.updatedText, practiceState.dailyWords);
+    }
+    updateLoreSourceAfterSave(anchor.absolutePath, result.plan.updatedText);
+    updateTimelineGuideAnchor(preview.anchorKey, (current) => ({ ...current, dateStatus: "linked" }));
+    timelineGuideMutationPreview = null;
+    await refreshTimelineProject();
+  }
+
+  async function finishGuidedTimeline(): Promise<void> {
+    timelineGuideOpen = false;
+    timelineGuideMutationPreview = null;
+    await refreshLoreIndex();
+    openTimelineWorkspace();
   }
 
   async function openTimelineSource(
@@ -8191,6 +8440,42 @@
     />
   {/if}
 
+  {#if timelineGuideOpen}
+    <GuidedTimelineDialog
+      phase={timelineGuidePhase}
+      anchors={timelineGuideAnchors}
+      destinations={timelineGuideDestinations}
+      calendars={timelineProject.kind === "ready" ? timelineProject.timeline.calendars : []}
+      busy={timelineGuideBusy}
+      error={timelineGuideError}
+      preview={timelineGuideMutationPreview
+        ? {
+            anchorKey: timelineGuideMutationPreview.anchorKey,
+            before: timelineGuideMutationPreview.exact.before,
+            after: timelineGuideMutationPreview.exact.after,
+            firstLine: timelineGuideMutationPreview.exact.firstLine,
+          }
+        : null}
+      onCreate={createGuidedTimelineEvent}
+      onSkip={skipGuidedTimelineAnchor}
+      onBeginDates={beginGuidedTimelineDates}
+      onLeaveUnknown={leaveGuidedTimelineDateUnknown}
+      onPreviewDate={(key, draft) => void previewGuidedTimelineDate(key, draft)}
+      onClearPreview={() => {
+        timelineGuideMutationPreview = null;
+        timelineGuideError = "";
+      }}
+      onConfirmDate={() => void confirmGuidedTimelineDate()}
+      onFinish={() => void finishGuidedTimeline()}
+      onClose={() => {
+        if (!timelineGuideBusy) {
+          timelineGuideOpen = false;
+          timelineGuideMutationPreview = null;
+        }
+      }}
+    />
+  {/if}
+
   {#if rememberSelection}
     <RememberSelectionDialog
       snapshot={rememberSelection}
@@ -8465,8 +8750,10 @@
             presenceOmittedCount={travelPresenceFindingSet.omittedCount}
             calendars={travelCalendars}
             loading={timelineLoading}
+            guideAvailable={projectInspection.kind === "world-project"}
             onClose={closeTimelineWorkspace}
             onRefresh={() => void refreshTimelineProject()}
+            onStartGuide={() => void startGuidedTimeline()}
             onOpenSource={(path, range) => void openTimelineSource(path, range)}
           />
         {:else if manuscriptCorkboard}

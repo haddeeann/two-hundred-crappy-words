@@ -749,3 +749,28 @@ part of manuscript planning rather than the beginner lore chooser.
 Why: “Which template?” asks a new writer to understand ME's storage model before they
 can describe their world. “Is this someone or somewhere?” is answerable immediately,
 while ordinary Markdown and advanced tools remain intact underneath.
+
+## D-063 — A first timeline grows from independent event notes
+
+- Date: 2026-10-12
+- Status: accepted
+
+The beginner timeline guide starts with three optional anchors: where the story
+begins, one important earlier event, and one approaching deadline. Each chosen anchor
+is created as an ordinary stable-ID event note in its own guarded, no-clobber write.
+Only after the writer has created or skipped the anchors does ME offer a separate
+review for adding an `occurs-at` fact to each chosen note. Cancelling or partially
+finishing either phase leaves every completed note useful and does not imply rollback
+across files.
+
+Dates remain source-owned continuity facts in the event notes. Gregorian exact and
+approximate dates, named fictional-calendar expressions, and deliberately unknown
+dates all use the existing timeline semantics. Unknown means the event remains
+visible under Needs time; ME does not invent a placeholder date. The optional shared
+timeline file remains reserved for calendars and track membership and is not created
+merely because the guide ran.
+
+Why: the useful creative act is remembering an event, not completing a database
+transaction. Independent notes make interruption harmless, while a second explicit
+date review preserves source-linked chronology without coupling several file writes
+or creating a parallel beginner-only timeline.

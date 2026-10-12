@@ -177,7 +177,7 @@ practice rather than a collection of specialist tools.
 - [x] Establish an Arrive → Write → Close the desk daily rhythm without weakening safe resume.
 - [x] Turn selected prose into an explicit, reviewable “remember this” workflow.
 - [x] Replace template-first lore creation with plain-language guided choices.
-- [ ] Add a beginner-friendly timeline path anchored in a few meaningful events.
+- [x] Add a beginner-friendly timeline path anchored in a few meaningful events.
 - [ ] Teach concepts in context while keeping the complete learning guide repeatable.
 - [ ] Separate the personal daily target from optional date-bounded writing challenges.
 - [ ] Evaluate optional AI assistance only after deterministic workflows identify a useful, privacy-explicit job.

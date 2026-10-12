@@ -24,8 +24,10 @@
     presenceOmittedCount: number;
     calendars: readonly TimelineCalendar[];
     loading: boolean;
+    guideAvailable: boolean;
     onClose: () => void;
     onRefresh: () => void;
+    onStartGuide: () => void;
     onOpenSource: (path: string, range: SourceRange | null) => void;
   }
 
@@ -37,8 +39,10 @@
     presenceOmittedCount,
     calendars,
     loading,
+    guideAvailable,
     onClose,
     onRefresh,
+    onStartGuide,
     onOpenSource,
   }: Props = $props();
 
@@ -145,6 +149,7 @@
       <p>Chronological evidence from event, scene, and chapter notes. Narrative order remains separate.</p>
     </div>
     <div class="workspace-actions">
+      <button type="button" onclick={onStartGuide} disabled={!guideAvailable} title={guideAvailable ? "Create a few source-linked event anchors" : "Create or adopt a world project to use the guided timeline"}>Build your first timeline</button>
       <button type="button" onclick={onRefresh} disabled={loading}>
         {loading ? "Refreshing…" : "Refresh"}
       </button>
@@ -459,8 +464,13 @@
   }
 
   header {
+    flex-direction: column;
     max-width: 76rem;
     margin: 0 auto 1.4rem;
+  }
+
+  header > div:first-child {
+    width: 100%;
   }
 
   h1,
@@ -507,7 +517,9 @@
 
   .workspace-actions {
     display: flex;
-    flex: 0 0 auto;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
     gap: 0.5rem;
   }
 

@@ -12,28 +12,27 @@ worldbuilding software. Daily writing remains the center of gravity.
 
 ## Active slice
 
-**0.9.4 — Guided timeline**
+**0.9.5 — Contextual teaching**
 
 ### Intended outcome
 
-Give a writer who has never built a timeline a small, useful beginning without
-requiring a calendar system or complete chronology.
+Teach the next useful action where it becomes relevant without turning the product
+into a checklist or forcing a new writer to learn worldbuilding vocabulary first.
 
 ### Acceptance criteria
 
-- [ ] Begin with story start, one important prior event, and one approaching deadline.
-- [ ] Let the writer skip any anchor and use exact, approximate, fictional, or unknown dates.
-- [ ] Preview the portable, source-linked timeline changes before writing.
-- [ ] Reuse the existing advanced timeline rather than creating parallel data.
-- [ ] Preserve stale-source, validation, and no-clobber protections.
+- [ ] Improve empty and first-use states with one or two sentences and one useful action.
+- [ ] Distinguish Daily drafts, lore, manuscript planning, timelines, and continuity in plain language.
+- [ ] Let contextual guidance be dismissed for the current moment without claiming permanent learning.
+- [ ] Keep the complete Getting Started guide repeatable through Help and Writing tools.
+- [ ] Preserve keyboard, screen-reader, enlarged-zoom, save, and recovery behavior.
 
 ## Next decision gate
 
-The first implementation should extend the existing version-one timeline file and
-event-note model rather than invent a second format. The remaining design question is
-whether the three-anchor guide writes event notes plus the timeline file in one
-reviewed transaction, or creates event notes first and then offers an explicit
-timeline-linking review. No project write may occur before that boundary is resolved.
+Inventory the existing empty states and teaching copy before adding any new app-local
+dismissal state. Prefer guidance that disappears naturally once the writer has useful
+content. A stored dismissal is justified only where the same optional explanation
+would otherwise interrupt an experienced writer repeatedly.
 
 ## Current approval state
 
@@ -46,6 +45,23 @@ the user asked ME to finish all locally completable work; the ordered local trac
 external evidence gates now live in `ROADMAP.md`.
 
 ## Completed checkpoint
+
+- Slice 0.9.4 completes **Guided timeline**. The existing source-linked Timeline
+  workspace now offers **Build your first timeline**, beginning with three optional
+  anchors: where the story starts, one important earlier event, and one approaching
+  deadline. Each chosen anchor previews its exact ordinary Markdown destination and
+  is created independently through the stable-ID, real-directory, create-new writer;
+  skips and interruption leave completed notes useful. Only after every anchor is
+  created or skipped does a separate review offer exact Gregorian, approximate
+  Gregorian, fictional-calendar, or deliberately unknown dates. Each chosen date
+  shows the exact frontmatter diff and uses the existing fingerprint-guarded
+  `occurs-at` mutation; unknown dates remain honestly visible in Needs time. The
+  shared timeline file is neither required nor created, so no parallel beginner data
+  exists. Packaged QA created one anchor, skipped two, applied an exact date, verified
+  the portable source, and followed its evidence into the chronological Timeline;
+  it also caught and corrected a crowded header layout. All 678 frontend tests across
+  104 files pass, Svelte/TypeScript reports zero errors and warnings, and production
+  web plus macOS `.app` builds succeed. Next is 0.9.5, contextual teaching.
 
 - Slice 0.9.3 completes **Guided lore creation**. World Home and Writing tools now
   open one keyboard-contained **Add to your world** review instead of a template-first
