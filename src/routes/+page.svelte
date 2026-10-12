@@ -98,6 +98,14 @@
   import SampleProjectDialog from "$lib/onboarding/SampleProjectDialog.svelte";
   import WorldHome from "$lib/ritual/WorldHome.svelte";
   import CloseTheDesk from "$lib/ritual/CloseTheDesk.svelte";
+  import RememberSelectionDialog from "$lib/ritual/RememberSelectionDialog.svelte";
+  import {
+    captureRememberSelection,
+    createRememberedStructuredNote,
+    MAX_REMEMBER_SELECTION_LENGTH,
+    validateRememberSelectionSnapshot,
+    type RememberSelectionSnapshot,
+  } from "$lib/ritual/remember-selection";
   import { shouldShowGettingStarted } from "$lib/onboarding/state";
   import {
     executeSampleProject,
@@ -515,6 +523,18 @@
   let structuredNoteError = $state("");
   let structuredNoteTitleInput = $state<HTMLInputElement>();
   let structuredNoteFileNameInput = $state<HTMLInputElement>();
+  let rememberSelection = $state<RememberSelectionSnapshot | null>(null);
+  let rememberSourceAbsolutePath = "";
+  let rememberType = $state<StructuredNoteType>("character");
+  let rememberTitle = $state("");
+  let rememberSummary = $state("");
+  let rememberConsistency = $state("");
+  let rememberFileName = $state("");
+  let rememberFileNameTouched = $state(false);
+  let rememberDestination = $state("");
+  let rememberDestinations = $state<StructuredNoteDestination[]>([]);
+  let rememberBusy = $state(false);
+  let rememberError = $state("");
   let navigationPromise: Promise<void> | null = null;
   let forcedSave: { path: string; revision: number } | null = null;
   let lastSaveFailure: SaveFailure | null = null;
@@ -705,11 +725,26 @@
     activeFilePath !== "" && hasUnsavedChanges(saveState),
   );
   const focusMode = $derived(writingLayout.mode === "focus");
+  const canRememberEditorSelection = $derived(
+    projectInspection.kind === "world-project" &&
+      Boolean(activeFilePath) &&
+      !worldHomeOpen &&
+      !closeDeskOpen &&
+      !timelineOpen &&
+      !mapOpen &&
+      !continuityReviewOpen &&
+      editorSelectionEnd > editorSelectionStart &&
+      editorSelectionEnd <= content.length &&
+      content.slice(editorSelectionStart, editorSelectionEnd).trim().length > 0 &&
+      editorSelectionEnd - editorSelectionStart <= MAX_REMEMBER_SELECTION_LENGTH,
+  );
   const worldProjectBusy = $derived(
     adoptionBusy ||
       newWorldProjectBusy ||
       sampleProjectBusy ||
       structuredNoteBusy ||
+      rememberBusy ||
+      Boolean(rememberSelection) ||
       renameFileBusy ||
       deleteFileBusy ||
       Boolean(deletingFile) ||
@@ -6395,6 +6430,222 @@
     }
   }
 
+  function defaultRememberTitle(selectedText: string): string {
+    return selectedText.trim().replace(/\s+/g, " ").slice(0, 100).trim();
+  }
+
+  function selectDefaultRememberDestination(): void {
+    const preferred =
+      projectInspection.kind === "world-project"
+        ? projectInspection.manifest.folders[
+            STRUCTURED_NOTE_TEMPLATES[rememberType].defaultRole
+          ]
+        : undefined;
+    rememberDestination =
+      preferred &&
+      rememberDestinations.some(
+        (destination) => destination.relativePath === preferred,
+      )
+        ? preferred
+        : "";
+  }
+
+  async function beginRememberSelection(): Promise<void> {
+    if (
+      projectInspection.kind !== "world-project" ||
+      !canRememberEditorSelection ||
+      worldProjectBusy ||
+      !folderPath ||
+      !activeFilePath
+    ) {
+      return;
+    }
+
+    const sourcePath = projectRelativePath(folderPath, activeFilePath);
+    if (!sourcePath) {
+      error = "That source is outside the open project. Nothing was written.";
+      return;
+    }
+    const capture = captureRememberSelection({
+      sourcePath,
+      content,
+      selectionStart: editorSelectionStart,
+      selectionEnd: editorSelectionEnd,
+    });
+    if (capture.kind === "refused") {
+      error = capture.reason;
+      return;
+    }
+
+    rememberBusy = true;
+    rememberError = "";
+    try {
+      rememberDestinations = await discoverStructuredNoteDestinations({
+        entries,
+        folders: projectInspection.manifest.folders,
+        rootLabel: projectInspection.manifest.name,
+        isUsableDirectory: async (relativePath) =>
+          (await resolveRealProjectDirectory(relativePath)) !== null,
+      });
+      rememberSelection = capture.snapshot;
+      rememberSourceAbsolutePath = activeFilePath;
+      rememberType = "character";
+      rememberTitle = defaultRememberTitle(capture.snapshot.selectedText);
+      rememberSummary = "";
+      rememberConsistency = "";
+      rememberFileName = suggestStructuredNoteFileName(
+        rememberTitle,
+        rememberType,
+      );
+      rememberFileNameTouched = false;
+      selectDefaultRememberDestination();
+    } catch (cause) {
+      error = `Could not prepare Remember: ${formatError(cause)}`;
+      resetRememberSelection();
+    } finally {
+      rememberBusy = false;
+    }
+  }
+
+  function resetRememberSelection(): void {
+    rememberSelection = null;
+    rememberSourceAbsolutePath = "";
+    rememberType = "character";
+    rememberTitle = "";
+    rememberSummary = "";
+    rememberConsistency = "";
+    rememberFileName = "";
+    rememberFileNameTouched = false;
+    rememberDestination = "";
+    rememberDestinations = [];
+    rememberBusy = false;
+    rememberError = "";
+  }
+
+  function cancelRememberSelection(): void {
+    if (!rememberBusy) resetRememberSelection();
+  }
+
+  function setRememberType(type: StructuredNoteType): void {
+    rememberType = type;
+    if (!rememberFileNameTouched) {
+      rememberFileName = suggestStructuredNoteFileName(rememberTitle, type);
+    }
+    selectDefaultRememberDestination();
+    rememberError = "";
+  }
+
+  function setRememberTitle(title: string): void {
+    rememberTitle = title;
+    if (!rememberFileNameTouched) {
+      rememberFileName = suggestStructuredNoteFileName(title, rememberType);
+    }
+    rememberError = "";
+  }
+
+  async function confirmRememberSelection(): Promise<void> {
+    const snapshot = rememberSelection;
+    if (
+      !snapshot ||
+      rememberBusy ||
+      projectInspection.kind !== "world-project" ||
+      !folderPath
+    ) {
+      return;
+    }
+
+    const titleIssue = validateProjectName(rememberTitle);
+    if (titleIssue) {
+      rememberError = `Name ${titleIssue.slice("name ".length)}`;
+      return;
+    }
+    const fileName = rememberFileName.trim();
+    const fileNameIssue = validateStructuredNoteFileName(fileName);
+    if (fileNameIssue) {
+      rememberError = fileNameIssue;
+      return;
+    }
+    if (
+      !rememberDestinations.some(
+        (destination) => destination.relativePath === rememberDestination,
+      )
+    ) {
+      rememberError = "Choose an available project folder for this note.";
+      return;
+    }
+
+    rememberBusy = true;
+    rememberError = "";
+    let createdEntry: FileTreeEntry | null = null;
+    try {
+      await navigate(async () => {
+        if (
+          activeFilePath !== rememberSourceAbsolutePath ||
+          projectRelativePath(folderPath, activeFilePath) !== snapshot.sourcePath
+        ) {
+          rememberError =
+            "The source file changed. Nothing was written; select the words again.";
+          return;
+        }
+
+        const currentSource = await readTextFile(rememberSourceAbsolutePath);
+        const currentRelativePath = projectRelativePath(
+          folderPath,
+          rememberSourceAbsolutePath,
+        );
+        if (!currentRelativePath) {
+          rememberError =
+            "The source file is no longer inside this project. Nothing was written.";
+          return;
+        }
+        const staleIssue = validateRememberSelectionSnapshot(snapshot, {
+          sourcePath: currentRelativePath,
+          content: currentSource,
+        });
+        if (staleIssue) {
+          rememberError = staleIssue;
+          return;
+        }
+
+        const destinationPath = await resolveRealProjectDirectory(
+          rememberDestination,
+        );
+        if (!destinationPath) {
+          rememberError =
+            "That project folder moved, disappeared, or became a symbolic link. Nothing was written.";
+          return;
+        }
+
+        const path = await join(destinationPath, fileName);
+        const note = createRememberedStructuredNote({
+          id: crypto.randomUUID(),
+          type: rememberType,
+          title: rememberTitle,
+          summary: rememberSummary,
+          consistency: rememberConsistency,
+        });
+        await writeTextFile(path, note, { createNew: true });
+        await refreshDirectory(destinationPath);
+        await refreshLoreIndex(folderPath);
+        createdEntry = {
+          name: fileName,
+          path,
+          isDirectory: false,
+          isFile: true,
+          isSymlink: false,
+          expanded: false,
+          children: null,
+        };
+        resetRememberSelection();
+      });
+      if (createdEntry) await openFile(createdEntry);
+    } catch (cause) {
+      rememberError = `Could not create note. No existing file was changed: ${formatError(cause)}`;
+    } finally {
+      rememberBusy = false;
+    }
+  }
+
   async function confirmWorldProjectAdoption() {
     if (
       !folderPath ||
@@ -7997,6 +8248,42 @@
     </nav>
   </aside>
 
+  {#if rememberSelection}
+    <RememberSelectionDialog
+      snapshot={rememberSelection}
+      type={rememberType}
+      title={rememberTitle}
+      summary={rememberSummary}
+      consistency={rememberConsistency}
+      fileName={rememberFileName}
+      destination={rememberDestination}
+      destinations={rememberDestinations}
+      busy={rememberBusy}
+      error={rememberError}
+      onType={setRememberType}
+      onTitle={setRememberTitle}
+      onSummary={(value) => {
+        rememberSummary = value;
+        rememberError = "";
+      }}
+      onConsistency={(value) => {
+        rememberConsistency = value;
+        rememberError = "";
+      }}
+      onFileName={(value) => {
+        rememberFileName = value;
+        rememberFileNameTouched = true;
+        rememberError = "";
+      }}
+      onDestination={(value) => {
+        rememberDestination = value;
+        rememberError = "";
+      }}
+      onConfirm={() => void confirmRememberSelection()}
+      onCancel={cancelRememberSelection}
+    />
+  {/if}
+
   <div class="divider" hidden={focusMode}></div>
 
   <main class="editor">
@@ -8089,6 +8376,15 @@
             class:save-error={saveState.phase === "error"}
             aria-live="polite"
           >{saveStatus}</span>
+          {#if canRememberEditorSelection}
+            <button
+              type="button"
+              class="focus-mode-button"
+              title="Create a reviewed world note from the selected words"
+              disabled={worldProjectBusy}
+              onclick={() => void beginRememberSelection()}
+            >Remember…</button>
+          {/if}
           {#if !timelineOpen && !mapOpen && !continuityReviewOpen && !manuscriptCorkboard && activeSceneSplitAvailability.kind === "available"}
             <button
               type="button"

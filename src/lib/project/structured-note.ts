@@ -212,10 +212,12 @@ export function createStructuredNote({
   id,
   type,
   title,
+  sectionContent = {},
 }: {
   id: string;
   type: StructuredNoteType;
   title: string;
+  sectionContent?: Readonly<Record<string, string>>;
 }): string {
   const idIssue = validateProjectId(id);
   if (idIssue) throw new RangeError(idIssue);
@@ -229,8 +231,12 @@ export function createStructuredNote({
 
   const sections = template.prompts
     .map(
-      ({ heading, prompt }) =>
-        `## ${heading}\n\n<!-- ${prompt} Delete this comment whenever you like. -->`,
+      ({ heading, prompt }) => {
+        const content = sectionContent[heading]?.trim();
+        return content
+          ? `## ${heading}\n\n${content}`
+          : `## ${heading}\n\n<!-- ${prompt} Delete this comment whenever you like. -->`;
+      },
     )
     .join("\n\n");
 

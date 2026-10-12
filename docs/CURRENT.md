@@ -1,6 +1,6 @@
 # Current work
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Active milestone
 
@@ -12,27 +12,27 @@ worldbuilding software. Daily writing remains the center of gravity.
 
 ## Active slice
 
-**0.9.2 — Remember from writing**
+**0.9.3 — Guided lore creation**
 
 ### Intended outcome
 
-Let a writer deliberately turn selected prose into a candidate world detail without
-silently classifying, moving, or rewriting their words.
+Make a first character, place, event, or other world detail feel like answering a few
+useful writing questions rather than choosing and editing a storage template.
 
 ### Acceptance criteria
 
-- [ ] Offer “Remember…” only for an intentional editor selection.
-- [ ] Ask the writer what the detail represents instead of guessing.
-- [ ] Preview the exact source, destination, and effect before writing.
-- [ ] Preserve source prose and use no-clobber guarded note creation/linking.
-- [ ] Refuse stale, ambiguous, or colliding state without changing project files.
+- [ ] Lead with a plain-language choice about what the writer wants to remember.
+- [ ] Give every supported lore kind a short set of optional, useful prompts.
+- [ ] Keep storage details available without making them the first decision.
+- [ ] Create the same ordinary structured Markdown and stable note identity.
+- [ ] Preserve the existing destination, validation, and no-clobber protections.
 
 ## Next decision gate
 
-The next product decision is the exact first “Remember…” behavior: whether version
-one creates a new structured note only, or may also connect to one existing uniquely
-resolved note. Both paths must keep the original prose unchanged and require an
-explicit review before any project write. Optional AI remains outside this gate.
+No product decision blocks the first implementation. Use the approved Remember
+language and progressive disclosure as the baseline, with all guided answers
+optional. Advanced frontmatter and continuity facts remain available after creation;
+they do not become onboarding requirements. Optional AI remains outside this gate.
 
 ## Current approval state
 
@@ -40,9 +40,30 @@ The user approved the complete Guided worldbuilding direction and the Arrive →
 → Close the desk daily rhythm on 2026-10-11. Release readiness 0.8 is deferred, not
 complete: its publisher namespace, app-data migration, signing/notarization,
 telemetry-policy, and final release-candidate gates remain. Optional AI remains
-deferred behind a separate privacy, key, cost, and consent decision.
+deferred behind a separate privacy, key, cost, and consent decision. On 2026-10-12,
+the user asked ME to finish all locally completable work; the ordered local track and
+external evidence gates now live in `ROADMAP.md`.
 
 ## Completed checkpoint
+
+- Slice 0.9.2 completes **Remember from writing**. A non-empty editor selection of at
+  most 2,000 characters exposes one contextual **Remember…** action. Its
+  keyboard-contained review freezes and displays the exact selected words and source,
+  asks the writer to choose the detail type, seeds an editable name, offers optional
+  description and consistency prompts, and previews the exact new Markdown path plus
+  the promise not to edit or link the source. Confirmation saves pending source work,
+  rereads and fingerprints the source, revalidates the real destination, and uses a
+  create-new write; path changes, source changes, invalid input, unavailable folders,
+  and collisions leave project files unchanged. Version one deliberately creates a
+  new note only. The generated note uses the existing stable identity and portable
+  template, opens through ordinary guarded navigation, and earns no Daily credit.
+  The completion roadmap now distinguishes locally finishable engineering from
+  publisher, Apple-credential, clean-Mac, beta-feedback, and launch-decision gates.
+  All 670 frontend tests across 102 files pass, Svelte/TypeScript reports zero errors
+  and warnings, production web and macOS application builds succeed, and packaged
+  macOS QA covered visual/accessibility semantics, exact-source creation, untouched
+  source prose, no-clobber collision refusal, and stale-source refusal. Next is 0.9.3,
+  guided lore creation.
 
 - Slice 0.9.1 establishes the daily rhythm foundation. Opening a project now lands
   on World Home while retaining the recovered/restored active file underneath. The

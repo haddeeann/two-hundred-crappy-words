@@ -17,6 +17,44 @@ Status legend: `PLANNED`, `ACTIVE`, `BLOCKED`, `COMPLETE`, `DEFERRED`.
 | 0.8 Release readiness | The app is accessible, documented, packaged, and recoverable | DEFERRED |
 | 0.9 Guided worldbuilding | Daily writing naturally grows into an understandable, connected world | ACTIVE |
 
+## Completion plan
+
+The remaining work is intentionally divided into two tracks so product work does
+not appear blocked by distribution credentials or hardware that are not available
+inside this repository.
+
+### Finish locally
+
+Complete these slices in order, verifying and checkpointing each coherent change:
+
+1. **0.9.2 — Remember from writing:** turn an intentional prose selection into a
+   reviewed new lore note while leaving the source untouched.
+2. **0.9.3 — Guided lore creation:** replace template-first creation with short,
+   plain-language prompts for each kind of world detail.
+3. **0.9.4 — Guided timeline:** offer a beginner path through a story start, an
+   important earlier event, and an approaching deadline.
+4. **0.9.5 — Contextual teaching:** explain the next useful action at the moment it
+   becomes relevant, while keeping Help repeatable.
+5. **0.9.6 — Personal goals and challenges:** keep a personal daily rhythm separate
+   from optional, inclusive date-bounded challenges.
+6. **Resume 0.8 — Release readiness:** complete local privacy and data-location
+   documentation, content-free diagnostics, feedback/crash policy, reproducible
+   packaging, release checklist, rollback instructions, and manual update guidance.
+
+### Close with external evidence
+
+These gates cannot be truthfully completed by code alone:
+
+- approve a publisher-controlled reverse-DNS namespace after the legal publisher
+  identity is confirmed, then exercise the copy-only app-data migration;
+- obtain Apple Developer credentials, Developer ID sign the release candidate,
+  notarize and staple it, and verify Gatekeeper acceptance;
+- install, launch, write, back up, restore, and uninstall on a clean supported Mac;
+- incorporate real beta-writer feedback and make the human launch decision.
+
+Until those gates pass, downloadable builds remain clearly labeled development
+previews rather than a notarized public release.
+
 ## 0.2 — Trustworthy editor
 
 Goal: make the existing editor safe enough for meaningful writing before expanding its scope.
@@ -137,7 +175,7 @@ Goal: make daily writing, worldbuilding, and planning feel like one approachable
 practice rather than a collection of specialist tools.
 
 - [x] Establish an Arrive → Write → Close the desk daily rhythm without weakening safe resume.
-- [ ] Turn selected prose into an explicit, reviewable “remember this” workflow.
+- [x] Turn selected prose into an explicit, reviewable “remember this” workflow.
 - [ ] Replace template-first lore creation with plain-language guided choices.
 - [ ] Add a beginner-friendly timeline path anchored in a few meaningful events.
 - [ ] Teach concepts in context while keeping the complete learning guide repeatable.

@@ -708,3 +708,23 @@ without taxing an experienced writer, while a private return note helps reconstr
 creative context without polluting portable source files. The user approved the
 Arrive → Write → Close the desk model after reviewing the three visible concepts on
 2026-10-11.
+
+## D-061 — Remember creates a reviewed new note before it connects existing lore
+
+- Date: 2026-10-12
+- Status: accepted
+
+The first **Remember…** workflow begins only from an intentional, non-empty editor
+selection. The writer chooses what the selected detail represents, reviews the exact
+selected words, new Markdown destination, and effect, and then explicitly confirms a
+no-clobber creation. The selected prose remains byte-for-byte unchanged. ME does not
+silently classify, move, replace, link, or transmit it.
+
+Version one creates a new structured note only. Connecting to existing lore is
+deferred until ME can present one unique, unambiguous target for the same explicit
+review. A changed source selection, changed source content, unavailable destination,
+or filename collision refuses the operation without changing any project file.
+
+Why: a selected phrase such as a character name is enough to begin remembering, but
+not enough evidence for software to decide identity. New-note creation makes the
+writer's intent visible and guarded now without disguising a guess as knowledge.
