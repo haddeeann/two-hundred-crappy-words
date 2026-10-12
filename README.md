@@ -76,6 +76,7 @@ The app now counts words and stores progress toward its default 200-word target 
 - Suggest a bounded set of exact unlinked title or alias mentions from eligible prose, with source context, side-reference navigation, and session-only dismissal
 - Preview and safely rename stable-ID lore notes while leaving still-valid links alone and showing every exact path-link repair before confirmation
 - Select intentional prose and use **Remember…** to review its exact source, choose what it represents, and create a new portable lore note without moving, linking, or rewriting the source
+- Create lore through plain-language choices and a few optional writing questions, with filename and project folder available under File details rather than required up front
 - Recheck every rename source, refuse existing destinations, roll back completed link edits on failure, and keep mechanical changes out of daily writing credit
 - Move Back and Forward through a bounded session-only history of editor targets and verified side references, restoring exact selections when their sources remain unchanged
 - Skip changed, moved, or unavailable history destinations explicitly, discard a forward branch after new navigation, and clear the trail on project replacement or restart

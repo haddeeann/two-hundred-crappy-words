@@ -12,27 +12,28 @@ worldbuilding software. Daily writing remains the center of gravity.
 
 ## Active slice
 
-**0.9.3 — Guided lore creation**
+**0.9.4 — Guided timeline**
 
 ### Intended outcome
 
-Make a first character, place, event, or other world detail feel like answering a few
-useful writing questions rather than choosing and editing a storage template.
+Give a writer who has never built a timeline a small, useful beginning without
+requiring a calendar system or complete chronology.
 
 ### Acceptance criteria
 
-- [ ] Lead with a plain-language choice about what the writer wants to remember.
-- [ ] Give every supported lore kind a short set of optional, useful prompts.
-- [ ] Keep storage details available without making them the first decision.
-- [ ] Create the same ordinary structured Markdown and stable note identity.
-- [ ] Preserve the existing destination, validation, and no-clobber protections.
+- [ ] Begin with story start, one important prior event, and one approaching deadline.
+- [ ] Let the writer skip any anchor and use exact, approximate, fictional, or unknown dates.
+- [ ] Preview the portable, source-linked timeline changes before writing.
+- [ ] Reuse the existing advanced timeline rather than creating parallel data.
+- [ ] Preserve stale-source, validation, and no-clobber protections.
 
 ## Next decision gate
 
-No product decision blocks the first implementation. Use the approved Remember
-language and progressive disclosure as the baseline, with all guided answers
-optional. Advanced frontmatter and continuity facts remain available after creation;
-they do not become onboarding requirements. Optional AI remains outside this gate.
+The first implementation should extend the existing version-one timeline file and
+event-note model rather than invent a second format. The remaining design question is
+whether the three-anchor guide writes event notes plus the timeline file in one
+reviewed transaction, or creates event notes first and then offers an explicit
+timeline-linking review. No project write may occur before that boundary is resolved.
 
 ## Current approval state
 
@@ -45,6 +46,25 @@ the user asked ME to finish all locally completable work; the ordered local trac
 external evidence gates now live in `ROADMAP.md`.
 
 ## Completed checkpoint
+
+- Slice 0.9.3 completes **Guided lore creation**. World Home and Writing tools now
+  open one keyboard-contained **Add to your world** review instead of a template-first
+  inline form. Eight plain-language choices—someone, somewhere, something that
+  happened, a group, a technology, a people or species, a spacecraft, and a journey
+  or route—each reveal four or five concise optional questions. Character guidance
+  covers role, desire, difficulty, consistency, and connections; the other kinds use
+  equally short domain-appropriate prompts. Changing kind resets incompatible draft
+  answers and moves the default destination safely. Filename and folder remain under
+  progressive **File details**, while the exact created path stays visible. Answers
+  are individually bounded, grouped into the existing template sections, and passed
+  through the same validated stable-ID, real-directory, create-new Markdown writer;
+  blank answers leave ordinary optional template comments rather than inventing
+  facts. Advanced continuity remains available after creation. All 674 frontend tests
+  across 103 files pass, Svelte/TypeScript reports zero errors and warnings, the
+  production web and macOS application builds succeed, and packaged macOS QA covered
+  all choice semantics, dynamic place prompts, optional-answer creation, exact
+  destination, portable output, and unchanged Daily credit. Next is 0.9.4, guided
+  timeline.
 
 - Slice 0.9.2 completes **Remember from writing**. A non-empty editor selection of at
   most 2,000 characters exposes one contextual **Remember…** action. Its

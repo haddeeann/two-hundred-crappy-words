@@ -99,6 +99,8 @@
   import WorldHome from "$lib/ritual/WorldHome.svelte";
   import CloseTheDesk from "$lib/ritual/CloseTheDesk.svelte";
   import RememberSelectionDialog from "$lib/ritual/RememberSelectionDialog.svelte";
+  import GuidedLoreDialog from "$lib/ritual/GuidedLoreDialog.svelte";
+  import { buildGuidedLoreSections } from "$lib/ritual/guided-lore";
   import {
     captureRememberSelection,
     createRememberedStructuredNote,
@@ -148,7 +150,6 @@
   import {
     createStructuredNote,
     STRUCTURED_NOTE_TEMPLATES,
-    STRUCTURED_NOTE_TYPES,
     suggestStructuredNoteFileName,
     validateStructuredNoteFileName,
     type StructuredNoteType,
@@ -519,10 +520,9 @@
   let structuredNoteFileNameTouched = $state(false);
   let structuredNoteDestination = $state("");
   let structuredNoteDestinations = $state<StructuredNoteDestination[]>([]);
+  let structuredNoteAnswers = $state<Record<string, string>>({});
   let structuredNoteBusy = $state(false);
   let structuredNoteError = $state("");
-  let structuredNoteTitleInput = $state<HTMLInputElement>();
-  let structuredNoteFileNameInput = $state<HTMLInputElement>();
   let rememberSelection = $state<RememberSelectionSnapshot | null>(null);
   let rememberSourceAbsolutePath = "";
   let rememberType = $state<StructuredNoteType>("character");
@@ -743,6 +743,7 @@
       newWorldProjectBusy ||
       sampleProjectBusy ||
       structuredNoteBusy ||
+      Boolean(creatingStructuredNote) ||
       rememberBusy ||
       Boolean(rememberSelection) ||
       renameFileBusy ||
@@ -6282,6 +6283,7 @@
         });
       structuredNoteType = "character";
       structuredNoteTitle = "";
+      structuredNoteAnswers = {};
       structuredNoteFileName = suggestStructuredNoteFileName(
         "",
         structuredNoteType,
@@ -6289,8 +6291,6 @@
       structuredNoteFileNameTouched = false;
       selectDefaultStructuredNoteDestination();
       creatingStructuredNote = true;
-      await tick();
-      structuredNoteTitleInput?.focus();
     } catch (cause) {
       error = `Could not prepare note creation: ${formatError(cause)}`;
     } finally {
@@ -6306,6 +6306,7 @@
     structuredNoteFileNameTouched = false;
     structuredNoteDestination = "";
     structuredNoteDestinations = [];
+    structuredNoteAnswers = {};
     structuredNoteBusy = false;
     structuredNoteError = "";
   }
@@ -6333,6 +6334,7 @@
 
   function setStructuredNoteType(type: StructuredNoteType) {
     structuredNoteType = type;
+    structuredNoteAnswers = {};
     if (!structuredNoteFileNameTouched) {
       structuredNoteFileName = suggestStructuredNoteFileName(
         structuredNoteTitle,
@@ -6366,16 +6368,12 @@
     const titleIssue = validateProjectName(structuredNoteTitle);
     if (titleIssue) {
       structuredNoteError = `Title ${titleIssue.slice("name ".length)}`;
-      await tick();
-      structuredNoteTitleInput?.focus();
       return;
     }
     const fileName = structuredNoteFileName.trim();
     const fileNameIssue = validateStructuredNoteFileName(fileName);
     if (fileNameIssue) {
       structuredNoteError = fileNameIssue;
-      await tick();
-      structuredNoteFileNameInput?.focus();
       return;
     }
     if (
@@ -6408,6 +6406,10 @@
           id: crypto.randomUUID(),
           type: structuredNoteType,
           title: structuredNoteTitle,
+          sectionContent: buildGuidedLoreSections(
+            structuredNoteType as Parameters<typeof buildGuidedLoreSections>[0],
+            structuredNoteAnswers,
+          ),
         });
         await writeTextFile(path, note, { createNew: true });
         await refreshDirectory(destinationPath);
@@ -7852,7 +7854,7 @@
         class="open-btn tools-action"
         onclick={startStructuredNote}
         disabled={worldProjectBusy}
-      >New Note from Template<span class="tools-action-arrow" aria-hidden="true">→</span></button>
+      >Create world detail<span class="tools-action-arrow" aria-hidden="true">→</span></button>
     {/if}
 
     {#if folderPath && projectInspection.kind === "ordinary"}
@@ -7928,95 +7930,6 @@
             type="button"
             onclick={cancelNewWorldProject}
             disabled={newWorldProjectBusy}
-          >Cancel</button>
-        </div>
-      </form>
-    {/if}
-
-    {#if creatingStructuredNote}
-      <form
-        class="project-adoption"
-        aria-label="Create structured Markdown note"
-        onsubmit={(event) => {
-          event.preventDefault();
-          void confirmStructuredNote();
-        }}
-      >
-        <label for="structured-note-type">Template</label>
-        <select
-          id="structured-note-type"
-          aria-label="Note template"
-          value={structuredNoteType}
-          onchange={(event) =>
-            setStructuredNoteType(
-              (event.currentTarget as HTMLSelectElement)
-                .value as StructuredNoteType,
-            )}
-          disabled={structuredNoteBusy}
-        >
-          {#each STRUCTURED_NOTE_TYPES as type}
-            <option value={type}>{STRUCTURED_NOTE_TEMPLATES[type].label}</option>
-          {/each}
-        </select>
-        <label for="structured-note-title">Title</label>
-        <input
-          id="structured-note-title"
-          class="new-file-input"
-          aria-label="Structured note title"
-          value={structuredNoteTitle}
-          oninput={(event) =>
-            setStructuredNoteTitle(
-              (event.currentTarget as HTMLInputElement).value,
-            )}
-          bind:this={structuredNoteTitleInput}
-          disabled={structuredNoteBusy}
-        />
-        <label for="structured-note-file-name">Markdown file name</label>
-        <input
-          id="structured-note-file-name"
-          class="new-file-input"
-          aria-label="Structured note file name"
-          value={structuredNoteFileName}
-          oninput={(event) => {
-            structuredNoteFileName = (
-              event.currentTarget as HTMLInputElement
-            ).value;
-            structuredNoteFileNameTouched = true;
-            structuredNoteError = "";
-          }}
-          bind:this={structuredNoteFileNameInput}
-          disabled={structuredNoteBusy}
-        />
-        <label for="structured-note-destination">Project folder</label>
-        <select
-          id="structured-note-destination"
-          aria-label="Structured note project folder"
-          value={structuredNoteDestination}
-          onchange={(event) => {
-            structuredNoteDestination = (
-              event.currentTarget as HTMLSelectElement
-            ).value;
-            structuredNoteError = "";
-          }}
-          disabled={structuredNoteBusy}
-        >
-          {#each structuredNoteDestinations as destination}
-            <option value={destination.relativePath}>{destination.label}</option>
-          {/each}
-        </select>
-        <p class="form-hint">
-          Creates an ordinary Markdown file. Template comments are optional and safe to delete.
-        </p>
-        {#if structuredNoteError}
-          <p class="error" role="alert">{structuredNoteError}</p>
-        {/if}
-        <div class="adoption-actions">
-          <button type="submit" disabled={structuredNoteBusy}
-            >{structuredNoteBusy ? "Creating…" : "Create note"}</button>
-          <button
-            type="button"
-            onclick={cancelStructuredNote}
-            disabled={structuredNoteBusy}
           >Cancel</button>
         </div>
       </form>
@@ -8247,6 +8160,36 @@
       {/if}
     </nav>
   </aside>
+
+  {#if creatingStructuredNote}
+    <GuidedLoreDialog
+      type={structuredNoteType}
+      title={structuredNoteTitle}
+      answers={structuredNoteAnswers}
+      fileName={structuredNoteFileName}
+      destination={structuredNoteDestination}
+      destinations={structuredNoteDestinations}
+      busy={structuredNoteBusy}
+      error={structuredNoteError}
+      onType={setStructuredNoteType}
+      onTitle={setStructuredNoteTitle}
+      onAnswer={(id, value) => {
+        structuredNoteAnswers = { ...structuredNoteAnswers, [id]: value };
+        structuredNoteError = "";
+      }}
+      onFileName={(value) => {
+        structuredNoteFileName = value;
+        structuredNoteFileNameTouched = true;
+        structuredNoteError = "";
+      }}
+      onDestination={(value) => {
+        structuredNoteDestination = value;
+        structuredNoteError = "";
+      }}
+      onConfirm={() => void confirmStructuredNote()}
+      onCancel={cancelStructuredNote}
+    />
+  {/if}
 
   {#if rememberSelection}
     <RememberSelectionDialog
@@ -9305,18 +9248,6 @@
     border: 0;
   }
 
-  .project-adoption select {
-    width: 100%;
-    box-sizing: border-box;
-    margin: 0 0 0.65rem;
-    padding: 0.45rem;
-    border: 1px solid #4b4b4b;
-    border-radius: 4px;
-    background-color: #292929;
-    color: #d4d4d4;
-    font: inherit;
-  }
-
   .form-hint {
     margin: 0 0 0.65rem;
     color: #a8a8a8;
@@ -9355,8 +9286,7 @@
   }
 
   .adoption-actions button:focus-visible,
-  .folder-choice input:focus-visible,
-  .project-adoption select:focus-visible {
+  .folder-choice input:focus-visible {
     outline: 2px solid #75beff;
     outline-offset: 2px;
   }

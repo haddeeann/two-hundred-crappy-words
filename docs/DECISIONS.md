@@ -728,3 +728,24 @@ or filename collision refuses the operation without changing any project file.
 Why: a selected phrase such as a character name is enough to begin remembering, but
 not enough evidence for software to decide identity. New-note creation makes the
 writer's intent visible and guarded now without disguising a guess as knowledge.
+
+## D-062 — Lore creation asks writing questions before storage questions
+
+- Date: 2026-10-12
+- Status: accepted
+
+Creating lore begins with eight plain-language choices: someone, somewhere,
+something that happened, a group, a technology, a people or species, a spacecraft,
+or a journey or route. Each choice offers a short set of optional writing questions.
+The writer may answer none, some, or all of them. Filename and folder remain
+available under progressive File details, and the exact destination remains visible
+before confirmation.
+
+The workflow still creates the existing stable-ID structured Markdown. It does not
+add a second lore format, require continuity metadata, infer missing facts, or hide
+the guarded real-directory and create-new checks. Scene and chapter creation remain
+part of manuscript planning rather than the beginner lore chooser.
+
+Why: “Which template?” asks a new writer to understand ME's storage model before they
+can describe their world. “Is this someone or somewhere?” is answerable immediately,
+while ordinary Markdown and advanced tools remain intact underneath.
