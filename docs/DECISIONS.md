@@ -818,3 +818,24 @@ the challenge leaves all daily history intact.
 Why: a 200-word daily practice and a 50,000-word month answer different questions.
 Keeping them separate lets a writer choose a gentle daily floor while occasionally
 joining a larger bounded effort, without corrupting the history that both views use.
+
+## D-066 — Diagnostics are a reviewed allowlist, never a log bundle
+
+- Date: 2026-10-12
+- Status: accepted
+
+A diagnostic export is created only on explicit request, shows its complete JSON
+before Save As, and is never uploaded by the app. Version one allowlists the app and
+Tauri versions plus coarse enumerated states for the current surface, project kind,
+save state, and optional derived workspaces. It explicitly excludes creative text,
+filenames, paths, project names and IDs, practice totals, recovery contents,
+permission scopes, general logs, locale, and account or network information.
+
+The product ships no analytics or automatic crash uploader. A writer may manually
+attach the reviewed diagnostic to a support request; native crash logs and screenshots
+remain separate evidence that may contain sensitive material and require manual
+redaction.
+
+Why: a general log archive is difficult for a writer to audit and can capture paths
+or prose incidentally. A small typed allowlist answers basic version/state questions
+while making the privacy claim testable and keeping transmission outside the app.

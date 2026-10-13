@@ -122,6 +122,7 @@
       {:else if topic === "privacy"}
         <h3>Privacy and recovery</h3>
         <p>The core app is offline and sends no manuscript, analytics, or crash report anywhere. Recovery drafts are temporary app-local safety copies for unsaved work—not version history and not a replacement for backups.</p>
+        <p><strong>Help → Export Content-Free Diagnostics…</strong> previews an optional local report before Save As. It includes no writing, filenames, paths, project identity, totals, recovery text, permission scopes, or logs, and ME never uploads it.</p>
         <p>When a source changes outside the app, autosave refuses to overwrite it and asks the writer how to proceed.</p>
       {:else}
         <h3>Keyboard shortcuts</h3>

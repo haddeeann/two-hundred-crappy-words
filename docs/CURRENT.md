@@ -1,38 +1,37 @@
 # Current work
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Active milestone
 
-**0.8 — Release readiness**
+**0.8 — Release readiness (external evidence gates)**
 
-Guided worldbuilding is complete. Release hardening has resumed for every task that
-can be finished honestly inside the repository while publisher identity, Apple
-credentials, clean-machine evidence, beta feedback, and launch approval stay external.
+Guided worldbuilding and the repository-local release-readiness work are complete.
+Public release remains blocked on publisher identity, Apple credentials,
+clean-machine evidence, beta feedback, and the publisher's launch approval.
 
 ## Active slice
 
-**0.8.7 — Privacy, diagnostics, and release operations**
+**External public-release evidence**
 
 ### Intended outcome
 
-Finish the local product and operator material needed to make a development preview
-understandable, diagnosable, reproducibly packaged, and safely replaceable.
+Turn the verified development preview into a publisher-owned, notarized release
+candidate and validate it outside the development machine.
 
 ### Acceptance criteria
 
-- [ ] Publish a plain-language privacy statement and exact data-location reference that match the implementation.
-- [ ] Provide a user-controlled diagnostic export that contains no manuscript, lore, recovery text, paths, or hidden identifiers.
-- [ ] Document beta feedback and crash-reporting policy without enabling telemetry or automatic upload.
-- [ ] Make packaging, release verification, rollback, uninstall, and manual update instructions reproducible.
-- [ ] Leave publisher namespace, app-data migration execution, signing/notarization, clean-Mac testing, beta evidence, and launch approval visibly external.
+- [ ] Confirm the legal publisher identity and approve its reverse-DNS namespace.
+- [ ] Implement and exercise the copy-only app-data migration from the historical development identifier.
+- [ ] Developer ID sign, notarize, staple, and Gatekeeper-check the exact release candidate.
+- [ ] Complete install, write, restart, backup/restore, update, and uninstall testing on a clean supported Mac.
+- [ ] Incorporate real beta-writer feedback and obtain explicit publisher launch approval.
 
 ## Next decision gate
 
-Define a minimal content-free diagnostic schema before adding its export action.
-Machine facts must be allowlisted and reviewed rather than obtained from a general
-log dump; absolute paths, project names/IDs, file names, prose, history totals,
-recovery contents, permission scopes, and account/network data are excluded.
+Confirm the legal publisher name and status before choosing the permanent bundle
+identifier. That decision authorizes the copy-only app-data migration design; it
+does not authorize signing accounts, automatic updates, telemetry, or launch.
 
 ## Current approval state
 
@@ -42,9 +41,29 @@ complete: its publisher namespace, app-data migration, signing/notarization,
 telemetry-policy, and final release-candidate gates remain. Optional AI remains
 deferred behind a separate privacy, key, cost, and consent decision. On 2026-10-12,
 the user asked ME to finish all locally completable work; the ordered local track and
-external evidence gates now live in `ROADMAP.md`.
+external evidence gates now live in `ROADMAP.md`. Slice 0.8.7 completed every
+remaining repository-local release task on 2026-10-13.
 
 ## Completed checkpoint
+
+- Slice 0.8.7 completes **Privacy, diagnostics, and release operations**. A public
+  plain-language privacy statement and exact data-location reference now match the
+  no-account, no-telemetry, no-automatic-upload implementation. Help and Writing
+  tools offer a user-initiated, fully previewed diagnostic JSON whose typed allowlist
+  contains only app/runtime versions and coarse session states; it excludes creative
+  text, filenames, paths, project names/IDs, totals, recovery text, permission scopes,
+  and logs. The beta/crash policy, reproducible development-preview script, release
+  checklist, manual update, rollback, and uninstall instructions preserve the line
+  between local evidence and a public release. The top-level **Review** action is now
+  **Continuity**, with explicit help and empty-state language explaining that only
+  writer-added structured facts are compared and ordinary prose is not judged.
+  Packaged macOS QA verified the native Help action, exact preview, initial Save As
+  focus, forward/backward focus containment, Escape, native Save As, parsed JSON, and
+  absence of the active project name/path/filename, word totals, and sampled prose.
+  The fresh ad-hoc-signed arm64 `.app` passes strict signature verification. All 688
+  frontend tests across 106 files pass, Svelte/TypeScript reports zero errors and
+  warnings, and all 26 native tests pass. The only remaining 0.8 work is external
+  publisher, Apple, clean-Mac, beta, and launch evidence.
 
 - Slice 0.9.6 completes **Personal goals and challenges** and closes guided
   worldbuilding. The independently editable personal daily goal still defaults to
@@ -331,7 +350,13 @@ external evidence gates now live in `ROADMAP.md`.
 
 ## Blockers and decision gates
 
-There is no technical blocker. Identity implementation is intentionally paused at the approved 0.8.6 decision boundary. The user must approve or revise the five choices in [`IDENTITY_AND_DISTRIBUTION_PROPOSAL.md`](IDENTITY_AND_DISTRIBUTION_PROPOSAL.md) before public metadata or visual assets change. Apple enrollment, signing/notarization credentials, automatic updates, crash reporting, and feedback services remain later separate gates.
+Repository-local work has no remaining technical blocker. Public release is blocked
+on evidence that cannot be produced honestly by this checkout: confirmed legal
+publisher identity and namespace, Apple Developer credentials, migration rehearsal,
+Developer ID signing/notarization/stapling, clean-Mac testing, real beta feedback,
+and explicit launch approval. Automatic updates, hosted crash reporting, and optional
+AI remain unapproved separate product and privacy gates rather than implied release
+tasks.
 
 ## Handoff protocol
 

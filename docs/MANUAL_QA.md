@@ -486,3 +486,29 @@ Completed successfully on macOS on 2026-10-05 using Computer Use against a fresh
 A second pass edited only the writer explanation through complete before/after previews; Undo restored the original bytes. A removal preview was then left open while an unknown root field was added externally. Confirmation refused with **changed after preview** and wrote nothing; live refresh invalidated the older Undo. A fresh removal preserved the external unknown field and changed only the exception array, while its Undo restored the exact entry. Replacing one saved evidence identity externally reactivated the finding and moved the saved entry into Stale with working edit/remove actions; restoring the identity returned the exact Intentional match. The Mara and Arrival source SHA-256 values remained `c9665878be1e009f632b105ac2fb108b806c78f9834d015a4230460fa8cf2260` and `4b0ff09f2805820c4d28cd8dabb403e97178ed4d67662666224bc94a39b4fe23`. The final build kept Cancel as initial focus, trapped Shift+Tab and Tab inside the modal, canceled with Escape, retained `0 / 200`, and reopened Arcadia afterward.
 
 The final frontend gate has 643 passing tests across ninety-six files, Svelte/TypeScript reports zero errors and warnings, twenty-six native tests pass, Rust formatting and strict Clippy are clean, the production dependency audit reports zero vulnerabilities, and web plus production macOS `.app`/DMG builds succeed.
+
+## Milestone 0.8.7 privacy, diagnostics, and release-operations checkpoint
+
+Completed successfully on macOS on 2026-10-13 using Computer Use against a freshly
+built production `.app` and the writer's restored Arcadia folder. The former top-level
+**Review** action appeared as **Continuity** with the accessible help text “Compare
+explicit world facts and open their sources.” Opening it explained that ME compares
+only explicit facts added to world notes, does not judge ordinary prose, and—when no
+finding existed—stated exactly what the empty result meant and how facts can be added
+only when useful.
+
+The native Help menu exposed **Export Content-Free Diagnostics…**. Its modal showed
+the complete JSON, stated every excluded data class and the no-upload boundary, put
+initial focus on Save As, kept Tab and Shift+Tab inside its two actions, and closed
+safely with Escape. Native Save As wrote a disposable JSON file whose key set matched
+the version-one allowlist. Parsing and value inspection found no active project name,
+absolute path, filename, daily totals, or sampled prose. The report's privacy flags
+all remained false and `uploadedAutomatically` remained false. The active project
+and writing were not changed.
+
+The final gate has 688 passing frontend tests across 106 files, zero Svelte/TypeScript
+diagnostics, and 26 passing native tests. The fresh Apple Silicon `.app` was explicitly
+ad-hoc signed for development and passed strict deep signature verification. The full
+DMG bundling command reached a fresh application bundle but its separate DMG wrapper
+step failed on this host; the release checklist intentionally treats DMG creation as
+a later artifact step and the reproducible `.app` verifier uses `--bundles app`.

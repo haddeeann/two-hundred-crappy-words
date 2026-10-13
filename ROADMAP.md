@@ -14,7 +14,7 @@ Status legend: `PLANNED`, `ACTIVE`, `BLOCKED`, `COMPLETE`, `DEFERRED`.
 | 0.5 Connected lore | Manuscript and world bible can reference each other fluidly | COMPLETE |
 | 0.6 Novel structure | Scenes and chapters can be planned, reordered, and exported | COMPLETE |
 | 0.7 Continuity tools | Time, travel, relationships, and canon can be reasoned about | COMPLETE |
-| 0.8 Release readiness | The app is accessible, documented, packaged, and recoverable | ACTIVE |
+| 0.8 Release readiness | The app is accessible, documented, packaged, and recoverable | BLOCKED |
 | 0.9 Guided worldbuilding | Daily writing naturally grows into an understandable, connected world | COMPLETE |
 
 ## Completion plan
@@ -158,16 +158,17 @@ Goal: turn the evolving application into a dependable product someone else can i
 - [x] Test recovery, migration, and backup/restore using representative projects.
 - [x] Establish performance budgets for launch, search, typing, save, and indexing.
 - [x] Add onboarding, in-app help, sample world, and truthful user documentation.
-- [ ] Create application identity, icons, signing plan, and platform packaging.
-- [ ] Add a privacy statement and explicit data-location documentation.
-- [ ] Define beta feedback, crash-reporting policy, and release checklist without enabling telemetry by default.
+- [x] Create the product identity, icons, versioned macOS bundle, signing plan, and reproducible development-preview packaging.
+- [x] Add a privacy statement and explicit data-location documentation.
+- [x] Define beta feedback, crash-reporting policy, content-free diagnostics, and a release checklist without enabling telemetry by default.
+- [ ] Confirm the publisher namespace, migrate private app data, Developer ID sign/notarize/staple, test on a clean Mac, incorporate beta evidence, and approve launch.
 
 Specification: [`docs/milestones/0.8-release-readiness.md`](docs/milestones/0.8-release-readiness.md)
 
-Release readiness remains substantially complete but is deliberately paused before
-the publisher-namespace, signing, notarization, telemetry-policy, and final
-release-candidate gates. Those tasks resume after the writer has used and approved
-the guided experience.
+All repository-local release-readiness work is complete. The milestone is blocked
+only on external publisher identity, private-data migration execution, Apple
+signing/notarization, clean-Mac testing, beta evidence, and launch approval. Until
+those gates pass, builds remain development previews rather than public releases.
 
 ## 0.9 — Guided worldbuilding
 

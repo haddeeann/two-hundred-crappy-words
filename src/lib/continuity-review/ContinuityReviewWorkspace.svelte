@@ -120,7 +120,7 @@
     <div>
       <p class="eyebrow">Local, source-linked review</p>
       <h1 id="continuity-review-heading">Continuity review</h1>
-      <p>Deterministic comparisons from structured project facts. Findings are evidence to review, not automatic story truth.</p>
+      <p>ME compares explicit facts you added to world notes, then links every finding back to its source. It does not judge or interpret ordinary prose.</p>
     </div>
     <div class="workspace-actions">
       {#if undoLabel}
@@ -226,7 +226,7 @@
     {#if visibleFindings.length === 0}
       <div class="empty">
         <p>No active findings match these filters.</p>
-        <p>An empty review is not proof of complete continuity: optional facts, untracked prose, and bounded rules remain outside the result.</p>
+        <p>That means the currently visible structured facts produced nothing to inspect. Keep writing, or add facts when a comparison would help; ordinary prose and optional untracked details stay outside this review.</p>
       </div>
     {:else}
       <ol class="result-list">

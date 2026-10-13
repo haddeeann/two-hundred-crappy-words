@@ -21,9 +21,11 @@ const MAX_MANUSCRIPT_STRUCTURE_BYTES: usize = 10 * 1024 * 1024;
 const MENU_NEW_FILE_ID: &str = "file-new";
 const MENU_OPEN_FOLDER_ID: &str = "file-open-folder";
 const MENU_GETTING_STARTED_ID: &str = "help-getting-started";
+const MENU_EXPORT_DIAGNOSTICS_ID: &str = "help-export-diagnostics";
 const MENU_NEW_FILE_EVENT: &str = "menu-new-file";
 const MENU_OPEN_FOLDER_EVENT: &str = "menu-open-folder";
 const MENU_GETTING_STARTED_EVENT: &str = "menu-getting-started";
+const MENU_EXPORT_DIAGNOSTICS_EVENT: &str = "menu-export-diagnostics";
 
 fn app_menu(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
     let menu = Menu::default(app)?;
@@ -68,8 +70,15 @@ fn app_menu(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
         true,
         None::<&str>,
     )?;
+    let export_diagnostics = MenuItem::with_id(
+        app,
+        MENU_EXPORT_DIAGNOSTICS_ID,
+        "Export Content-Free Diagnostics…",
+        true,
+        None::<&str>,
+    )?;
     let help_separator = PredefinedMenuItem::separator(app)?;
-    help_menu.prepend_items(&[&getting_started, &help_separator])?;
+    help_menu.prepend_items(&[&getting_started, &export_diagnostics, &help_separator])?;
 
     Ok(menu)
 }
@@ -571,6 +580,9 @@ pub fn run() {
             }
             MENU_GETTING_STARTED_ID => {
                 let _ = app.emit(MENU_GETTING_STARTED_EVENT, ());
+            }
+            MENU_EXPORT_DIAGNOSTICS_ID => {
+                let _ = app.emit(MENU_EXPORT_DIAGNOSTICS_EVENT, ());
             }
             _ => {}
         })

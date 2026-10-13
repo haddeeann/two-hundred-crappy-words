@@ -17,6 +17,7 @@
   import { listen } from "@tauri-apps/api/event";
   import { load } from "@tauri-apps/plugin-store";
   import { getCurrentWindow } from "@tauri-apps/api/window";
+  import { getTauriVersion, getVersion } from "@tauri-apps/api/app";
   import {
     createSaveState,
     createRecoveredSaveState,
@@ -94,6 +95,11 @@
     type DailyProgressRecords,
   } from "$lib/practice/daily-ledger";
   import PracticeHistory from "$lib/practice/PracticeHistory.svelte";
+  import DiagnosticExportDialog from "$lib/release/DiagnosticExportDialog.svelte";
+  import {
+    createDiagnosticSnapshot,
+    serializeDiagnosticSnapshot,
+  } from "$lib/release/diagnostics";
   import PracticeChallenge from "$lib/practice/PracticeChallenge.svelte";
   import {
     createWritingChallenge,
@@ -585,6 +591,10 @@
   let writingChallenge = $state<WritingChallenge | null>(null);
   let writingChallengeBusy = $state(false);
   let writingChallengeError = $state("");
+  let diagnosticExportOpen = $state(false);
+  let diagnosticExportContent = $state("");
+  let diagnosticExportBusy = $state(false);
+  let diagnosticExportError = $state("");
   let pendingDailyDraft = $state<{
     rootPath: string;
     directoryPath: string;
@@ -1377,6 +1387,7 @@
         unlisteners.push(await listen("menu-new-file", startNewFile));
         unlisteners.push(await listen("menu-open-folder", () => void openFolder()));
         unlisteners.push(await listen("menu-getting-started", openGettingStarted));
+        unlisteners.push(await listen("menu-export-diagnostics", () => void beginDiagnosticExport()));
         if (disposed) unlisteners.forEach((unlisten) => unlisten());
         else stopListening = unlisteners;
       } catch (cause) {
@@ -6245,6 +6256,88 @@
     });
   }
 
+  async function beginDiagnosticExport(): Promise<void> {
+    if (diagnosticExportBusy) return;
+    diagnosticExportError = "";
+    try {
+      const [appVersion, tauriVersion] = await Promise.all([
+        getVersion(),
+        getTauriVersion(),
+      ]);
+      const unavailable = (kind: string): "absent" | "ready" | "unavailable" =>
+        kind === "absent" ? "absent" : kind === "ready" ? "ready" : "unavailable";
+      const activeSurface = gettingStartedVisible
+        ? "help"
+        : worldHomeOpen
+          ? "home"
+          : closeDeskOpen
+            ? "close-desk"
+            : timelineOpen
+              ? "timeline"
+              : mapOpen
+                ? "maps"
+                : continuityReviewOpen
+                  ? "continuity-review"
+                  : "editor";
+      const documentState = !activeFilePath
+        ? "none"
+        : saveState.phase === "clean"
+          ? "saved"
+          : saveState.phase === "dirty"
+            ? "unsaved"
+            : saveState.phase === "saving"
+              ? "saving"
+              : "save-error";
+      diagnosticExportContent = serializeDiagnosticSnapshot(
+        createDiagnosticSnapshot({
+          generatedAt: new Date(),
+          appVersion,
+          tauriVersion,
+          projectState: folderPath ? projectInspection.kind : "none",
+          activeSurface,
+          documentState,
+          loreIndexState: loreIndexPhase,
+          manuscriptState: unavailable(manuscriptProject.kind),
+          timelineState: unavailable(timelineProject.kind),
+          mapsState: unavailable(mapsProject.kind),
+        }),
+      );
+      writingToolsOpen = false;
+      diagnosticExportOpen = true;
+    } catch (cause) {
+      appendError(`The diagnostic preview could not be prepared: ${formatError(cause)}`);
+    }
+  }
+
+  function closeDiagnosticExport(): void {
+    if (diagnosticExportBusy) return;
+    diagnosticExportOpen = false;
+    diagnosticExportContent = "";
+    diagnosticExportError = "";
+  }
+
+  async function saveDiagnosticExport(): Promise<void> {
+    if (!diagnosticExportOpen || diagnosticExportBusy || !diagnosticExportContent) return;
+    diagnosticExportBusy = true;
+    diagnosticExportError = "";
+    try {
+      const destination = await save({
+        title: "Save content-free diagnostics",
+        defaultPath: `ministry-of-elsewhere-diagnostics-${localDateKey()}.json`,
+        filters: [{ name: "JSON document", extensions: ["json"] }],
+      });
+      if (!destination) return;
+      await writeTextFile(destination, diagnosticExportContent);
+      diagnosticExportOpen = false;
+      diagnosticExportContent = "";
+      diagnosticExportError = "";
+    } catch (cause) {
+      diagnosticExportError = `The diagnostic file could not be saved: ${formatError(cause)}`;
+    } finally {
+      diagnosticExportBusy = false;
+    }
+  }
+
   function openWorldHome(): void {
     if (!folderPath) return;
     dismissLoreCompletion();
@@ -8099,6 +8192,11 @@
 
         <button
           class="open-btn tools-action"
+          onclick={() => void beginDiagnosticExport()}
+        >Export content-free diagnostics<span class="tools-action-arrow" aria-hidden="true">→</span></button>
+
+        <button
+          class="open-btn tools-action"
           onclick={startNewWorldProject}
           disabled={worldProjectBusy}
         >New World Project<span class="tools-action-arrow" aria-hidden="true">→</span></button>
@@ -8666,9 +8764,9 @@
               class="focus-mode-button"
               aria-pressed={continuityReviewOpen}
               disabled={!continuityReviewModel || loreIndexPhase === "indexing"}
-              title="Open the local source-linked continuity review"
+              title="Compare explicit world facts and open their sources"
               onclick={openContinuityReviewWorkspace}
-            >{loreIndexPhase === "indexing" ? "Review…" : "Review"}</button>
+            >{loreIndexPhase === "indexing" ? "Continuity…" : "Continuity"}</button>
             <button
               id="open-timeline-workspace"
               type="button"
@@ -8927,6 +9025,15 @@
         error={sampleProjectError}
         onCancel={cancelSampleProject}
         onConfirm={() => void confirmSampleProject()}
+      />
+    {/if}
+    {#if diagnosticExportOpen}
+      <DiagnosticExportDialog
+        content={diagnosticExportContent}
+        busy={diagnosticExportBusy}
+        error={diagnosticExportError}
+        onSave={() => void saveDiagnosticExport()}
+        onCancel={closeDiagnosticExport}
       />
     {/if}
     {#if loreRenameSourcePath && loreRenamePlan}

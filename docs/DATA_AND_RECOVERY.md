@@ -53,3 +53,13 @@ The app-data directory also contains `daily-progress.json`. It stores versioned 
 Backing up an entire world-project folder protects the creative files—including dated Markdown under `Daily`—the project manifest, optional manuscript structure, timeline, maps, and continuity-review files, structured-note metadata, and writer-owned assets in that folder. It does not include `settings.json`, `workspace.json`, `.persisted-scope`, `daily-progress.json`, or `recovery.json`. In particular, recovery drafts are temporary local safety copies and must not be treated as version history or the only copy of writing.
 
 See [`BACKUP_AND_PORTABILITY.md`](BACKUP_AND_PORTABILITY.md) for move, copy, and restore guidance.
+
+## Content-free diagnostics
+
+Help and Writing tools can prepare a versioned diagnostic JSON only after the writer
+asks. The complete proposed file is visible before a native Save As dialog. Its
+allowlist contains application/Tauri versions and coarse labels for project, surface,
+save, lore-index, manuscript, timeline, and map states. It intentionally contains no
+creative text, filenames, paths, project names or IDs, practice totals, recovery
+text, permission scopes, general logs, locale, or account/network data. Saving is
+local and the app has no upload path. See the public [`../PRIVACY.md`](../PRIVACY.md).
