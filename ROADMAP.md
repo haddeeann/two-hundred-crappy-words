@@ -181,6 +181,7 @@ practice rather than a collection of specialist tools.
 - [x] Add a beginner-friendly timeline path anchored in a few meaningful events.
 - [x] Teach concepts in context while keeping the complete learning guide repeatable.
 - [x] Separate the personal daily target from optional date-bounded writing challenges.
+- [x] Make fact authoring the primary writing action while keeping review workspaces and project navigation visibly secondary.
 - [ ] Evaluate optional AI assistance only after deterministic workflows identify a useful, privacy-explicit job.
 
 Specification: [`docs/milestones/0.9-guided-worldbuilding.md`](docs/milestones/0.9-guided-worldbuilding.md)

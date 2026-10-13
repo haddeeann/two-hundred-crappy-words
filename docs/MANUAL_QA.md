@@ -4,7 +4,7 @@ This checklist uses disposable files and is the human checkpoint for milestone 0
 
 ## Latest result
 
-Completed successfully on macOS through the daily-rhythm foundation on 2026-10-11. The latest run verified World Home, retained-file resume, the guarded Close the desk landing, and unchanged project content. Detailed current and historical checkpoints follow.
+Completed successfully on macOS through writing-first continuity polish on 2026-10-13. The latest run verified the World overview label, one primary Add fact action, quieter secondary controls, the guarded fact-source dialog, ordinary-folder setup path, and unchanged project content. Detailed current and historical checkpoints follow.
 
 ## 0.9.1 daily-rhythm checkpoint
 
@@ -512,3 +512,23 @@ ad-hoc signed for development and passed strict deep signature verification. The
 DMG bundling command reached a fresh application bundle but its separate DMG wrapper
 step failed on this host; the release checklist intentionally treats DMG creation as
 a later artifact step and the reproducible `.app` verifier uses `--bundles app`.
+
+## Milestone 0.9.7 writing-first continuity checkpoint
+
+Completed successfully on macOS on 2026-10-13 using Computer Use against a freshly
+built production `.app` and the writer's unchanged Arcadia folder. The project
+landing page exposed the level-two heading **World overview · arcadia**. Continuing
+to the Daily draft produced one visually emphasized **Add fact…** action; Writing
+tools, Focus, and Close the desk used neutral secondary styling, while Home,
+Continuity review, and Timeline no longer competed in the header.
+
+From ordinary Daily prose, Add fact opened a keyboard-contained **What is this fact
+about?** dialog explaining that facts belong to lore notes and review is derived. The
+empty ordinary-folder path offered **Make this a world project…** instead of ending
+at Cancel. Tab and Shift+Tab remained inside the dialog and Escape changed no file.
+Writing tools contained **World overview** with “Open this project's landing page”
+help, and retained Continuity review and Timeline under Workspaces. An attempted
+disposable-project picker exercise was cancelled before selection; Arcadia remained
+open, saved, and unchanged. All 688 frontend tests across 106 files pass,
+Svelte/TypeScript reports zero errors and warnings, the production app build passes,
+and the freshly ad-hoc-signed app satisfies strict deep signature verification.

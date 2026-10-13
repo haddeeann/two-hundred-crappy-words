@@ -45,6 +45,7 @@
     requestedSourcePath?: string | null;
     requestRevision?: number;
     idPrefix?: string;
+    addRequest?: number;
   }
 
   type EditorMode = "add" | "edit";
@@ -62,6 +63,7 @@
     requestedSourcePath = null,
     requestRevision = 0,
     idPrefix = "continuity",
+    addRequest = 0,
   }: Props = $props();
   let canonChoice = $state("");
   let editorMode = $state<EditorMode | null>(null);
@@ -97,6 +99,7 @@
   let previewHeading = $state<HTMLElement>();
   let authoringHeading = $state<HTMLElement>();
   let handledRequestKey = $state("");
+  let handledAddRequest = $state(0);
 
   const ready = $derived(context.kind === "ready" ? context : null);
   const relationshipScope = $derived(scope === "relationships");
@@ -133,6 +136,17 @@
 
   $effect(() => {
     canonChoice = context.kind === "ready" ? (context.noteCanon ?? "") : "";
+  });
+
+  $effect(() => {
+    if (
+      relationshipScope ||
+      !ready ||
+      addRequest <= 0 ||
+      addRequest === handledAddRequest
+    ) return;
+    handledAddRequest = addRequest;
+    void beginAdd();
   });
 
   $effect(() => {

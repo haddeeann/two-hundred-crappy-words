@@ -839,3 +839,27 @@ redaction.
 Why: a general log archive is difficult for a writer to audit and can capture paths
 or prose incidentally. A small typed allowlist answers basic version/state questions
 while making the privacy claim testable and keeping transmission outside the app.
+
+## D-067 — Fact authoring leads the writing view; review remains secondary
+
+- Date: 2026-10-13
+- Status: accepted
+
+The writing header presents one primary **Add fact…** action. A fact is not stored in
+a separate continuity database: it belongs to one ordinary structured lore note.
+When that note is active, authoring opens directly. From prose, the writer first
+chooses which uniquely identified lore note owns the fact. If the required project or
+note does not exist, the same flow offers the existing guarded project-adoption and
+guided world-detail creation paths before opening fact authoring.
+
+Continuity review and Timeline are secondary workspaces under Writing tools rather
+than peer actions beside the draft. The project landing page is named **World
+overview**, removed from the writing action row, and described as the current
+project's landing page. Opening another project remains File → Open Folder….
+Secondary writing controls use a neutral visual treatment; primary color is reserved
+for Add fact.
+
+Why: while drafting, the frequent creative act is recording knowledge, not auditing
+it. A single calm primary action makes the source-owned model discoverable without
+turning continuity warnings, navigation, and utilities into competing calls to
+action.

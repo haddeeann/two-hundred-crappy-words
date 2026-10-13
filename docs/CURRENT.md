@@ -46,6 +46,24 @@ remaining repository-local release task on 2026-10-13.
 
 ## Completed checkpoint
 
+- Slice 0.9.7 completes **Writing-first continuity and calmer action hierarchy**.
+  The writing header now has one emphasized **Add fact…** action instead of equal
+  Home, Continuity-review, Timeline, and tools buttons. An active structured lore
+  note opens its fact authoring directly; prose first asks what the fact is about and
+  offers an existing uniquely identified lore note. A world project with no source
+  note can create the first world detail, while an ordinary folder can enter the
+  existing guarded Make World Project flow and continue through note creation to the
+  fact form. Facts remain source-owned Markdown; no second knowledge database was
+  added. Continuity review and Timeline remain under secondary Writing tools. The
+  project landing page is now consistently named **World overview**, appears there
+  rather than in the writing action row, and explicitly distinguishes itself from
+  File → Open Folder…. Other writing controls use neutral styling while Add fact
+  retains the sole primary treatment. Packaged macOS QA verified the calmer header,
+  World overview heading and tool placement, the explanatory source dialog,
+  ordinary-folder adoption escape hatch, focus containment, Escape cancellation,
+  unchanged Arcadia content, and strict ad-hoc bundle verification. All 688 frontend
+  tests across 106 files pass and Svelte/TypeScript reports zero errors and warnings.
+
 - Slice 0.8.7 completes **Privacy, diagnostics, and release operations**. A public
   plain-language privacy statement and exact data-location reference now match the
   no-account, no-telemetry, no-automatic-upload implementation. Help and Writing

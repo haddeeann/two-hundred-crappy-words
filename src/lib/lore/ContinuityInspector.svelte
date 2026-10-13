@@ -23,6 +23,7 @@
       request: ContinuityMutationRequest,
     ) => Promise<boolean>;
     onUndoAuthoring: () => Promise<void>;
+    addFactRequest?: number;
   }
 
   let {
@@ -35,14 +36,24 @@
     onOpenReference,
     onConfirmAuthoring,
     onUndoAuthoring,
+    addFactRequest = 0,
   }: Props = $props();
+
+  let expanded = $state(false);
+  let handledAddFactRequest = $state(0);
+
+  $effect(() => {
+    if (addFactRequest <= 0 || addFactRequest === handledAddFactRequest) return;
+    handledAddFactRequest = addFactRequest;
+    expanded = true;
+  });
 
   function openFactReference(fact: ContinuityFactPresentation): void {
     if (fact.reference.kind === "resolved") onOpenReference(fact.reference.path);
   }
 </script>
 
-<details class="continuity-inspector">
+<details class="continuity-inspector" bind:open={expanded}>
   <summary>{presentation.summary}</summary>
   {#if presentation.kind === "no-active-note"}
     <p class="empty">Open a Markdown note to inspect its canon and typed facts.</p>
@@ -141,6 +152,7 @@
       undoLabel={authoringUndoLabel}
       onConfirm={onConfirmAuthoring}
       onUndo={onUndoAuthoring}
+      addRequest={addFactRequest}
     />
     <p class="privacy">
       Derived and edited locally in this project. Nothing is sent anywhere.

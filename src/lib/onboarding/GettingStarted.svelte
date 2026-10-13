@@ -87,7 +87,7 @@
         <p class="note">The optional sample is created as a separate ordinary folder only after you choose its location and confirm every path.</p>
       {:else if topic === "daily"}
         <h3>Daily writing</h3>
-        <p><strong>World Home</strong> is the beginning of the daily rhythm: write today, continue the last open file, remember a world detail, or open manuscript planning.</p>
+        <p><strong>World overview</strong> is this project’s landing page and the beginning of the daily rhythm: write today, continue the last open file, remember a world detail, or open manuscript planning. To open a different project, use File → Open Folder….</p>
         <p><strong>Write today</strong> opens <code>Daily/YYYY-MM-DD.md</code>. A missing dated file is created only after the first non-empty edit.</p>
         <p>Only words added during active editing earn today’s credit. Deleting or revising never removes credit already earned, and a missed day never erases an earlier rhythm.</p>
         <p>Your personal daily goal is the everyday pace; 200 is only the starting default. Writing tools → Practice can also hold one optional challenge with a separate total and an inclusive first and final day. A challenge reads the same credited history and never replaces the daily goal.</p>
@@ -117,6 +117,7 @@
         <p>Export rechecks every source before creating Markdown, plain text, EPUB, or a print-interior PDF. Planning titles and notes stay out of the exported book.</p>
       {:else if topic === "continuity"}
         <h3>Continuity tools</h3>
+        <p><strong>Add fact…</strong> in the writing header is the normal starting point. A fact belongs to a lore note—the person, place, event, group, technology, spacecraft, or route it describes. If prose is open, ME first asks which lore note should own the fact; if none exists, it offers the project and world-detail setup needed to create one.</p>
         <p>Timeline, relationships, travel, maps, and Continuity review derive evidence from explicit project facts. Findings link back to their sources and never silently repair creative work.</p>
         <p>A contradiction can be marked intentional only with a writer explanation. Missing information remains visible as uncertainty rather than being guessed.</p>
       {:else if topic === "privacy"}

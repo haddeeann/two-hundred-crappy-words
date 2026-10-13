@@ -193,6 +193,7 @@
   } from "$lib/project/workspace";
   import LoreIndexStatus from "$lib/lore/LoreIndexStatus.svelte";
   import ContinuityInspector from "$lib/lore/ContinuityInspector.svelte";
+  import ContinuityFactSourceDialog from "$lib/lore/ContinuityFactSourceDialog.svelte";
   import LoreCompletion from "$lib/lore/LoreCompletion.svelte";
   import LoreConnections from "$lib/lore/LoreConnections.svelte";
   import LoreQuickOpen from "$lib/lore/LoreQuickOpen.svelte";
@@ -644,6 +645,10 @@
   let continuityAuthoringNotice = $state("");
   let continuityAuthoringNoticePath = $state("");
   let continuityAuthoringUndo = $state<ContinuityMutationUndo | null>(null);
+  let continuityFactSourceDialogOpen = $state(false);
+  let continuityFactAuthoringRequest = $state(0);
+  let addFactAfterStructuredNote = false;
+  let addFactAfterProjectAdoption = false;
   let relationshipAuthoringRequest = $state<RelationshipAuthoringRequest | null>(null);
   let relationshipAuthoringRevision = 0;
   let manuscriptProject = $state<ManuscriptProjectLoadResult>({ kind: "absent" });
@@ -1153,6 +1158,30 @@
         saveState.phase !== "error",
     ),
   );
+  const continuityFactSources = $derived.by(() => {
+    if (!loreIndex) return [];
+    const duplicateIds = new Set(
+      loreIndex.issues
+        .filter(({ kind }) => kind === "duplicate-note-id")
+        .map(({ id }) => id),
+    );
+    return [...loreIndex.documents.values()]
+      .filter(
+        (document) =>
+          Boolean(document.id) &&
+          !duplicateIds.has(document.id!) &&
+          document.parseIssues.every(({ kind }) => kind !== "frontmatter-malformed"),
+      )
+      .map((document) => ({
+        path: document.path,
+        title: document.title,
+        noteType: document.type,
+      }))
+      .sort(
+        (left, right) =>
+          left.title.localeCompare(right.title) || left.path.localeCompare(right.path),
+      );
+  });
   const visibleContinuityNotice = $derived(
     continuityAuthoringNoticePath === activeFilePath ? continuityAuthoringNotice : "",
   );
@@ -6190,6 +6219,7 @@
 
   function cancelWorldProjectAdoption() {
     if (adoptionBusy) return;
+    addFactAfterProjectAdoption = false;
     adoptingWorldProject = false;
     adoptionName = "";
     adoptionRoles = [];
@@ -6350,6 +6380,45 @@
     writingToolsOpen = false;
     writingLayout = transitionWritingLayout(writingLayout, { kind: "exit-focus" });
     worldHomeOpen = true;
+  }
+
+  function openActiveContinuityAuthoring(): void {
+    if (focusMode) setWritingFocus(false);
+    writingToolsOpen = true;
+    void tick().then(() => {
+      continuityFactAuthoringRequest += 1;
+    });
+  }
+
+  function beginAddContinuityFact(): void {
+    if (!folderPath || loreIndexPhase === "indexing") return;
+    if (continuityAuthoring.kind === "ready") {
+      openActiveContinuityAuthoring();
+      return;
+    }
+    continuityFactSourceDialogOpen = true;
+  }
+
+  async function chooseContinuityFactSource(relativePath: string): Promise<void> {
+    continuityFactSourceDialogOpen = false;
+    if (!(await openIndexedLorePath(relativePath, null))) return;
+    openActiveContinuityAuthoring();
+  }
+
+  function createWorldDetailForContinuityFact(): void {
+    continuityFactSourceDialogOpen = false;
+    addFactAfterStructuredNote = true;
+    void startStructuredNote();
+  }
+
+  function adoptProjectForContinuityFact(): void {
+    continuityFactSourceDialogOpen = false;
+    addFactAfterProjectAdoption = true;
+    void startWorldProjectAdoption();
+  }
+
+  function cancelContinuityFactSource(): void {
+    continuityFactSourceDialogOpen = false;
   }
 
   function resumeFromWorldHome(): void {
@@ -6699,6 +6768,7 @@
 
   function cancelStructuredNote() {
     if (structuredNoteBusy) return;
+    addFactAfterStructuredNote = false;
     resetStructuredNote();
   }
 
@@ -6810,7 +6880,13 @@
         };
         resetStructuredNote();
       });
-      if (createdEntry) await openFile(createdEntry);
+      if (createdEntry) {
+        const opened = await openFile(createdEntry);
+        if (opened && addFactAfterStructuredNote) {
+          addFactAfterStructuredNote = false;
+          openActiveContinuityAuthoring();
+        }
+      }
     } catch (cause) {
       structuredNoteError = `Could not create note. No existing file was changed: ${formatError(cause)}`;
     } finally {
@@ -7044,6 +7120,7 @@
     }
 
     adoptionBusy = true;
+    let adopted = false;
     try {
       await navigate(async () => {
         let plan;
@@ -7091,9 +7168,15 @@
         }
 
         await loadFolder(adoptingFolderPath);
+        adopted = true;
       });
     } finally {
       adoptionBusy = false;
+    }
+    if (adopted && addFactAfterProjectAdoption) {
+      addFactAfterProjectAdoption = false;
+      addFactAfterStructuredNote = true;
+      await startStructuredNote();
     }
   }
 
@@ -8190,6 +8273,14 @@
           onclick={openGettingStarted}
         >Getting Started &amp; Help<span class="tools-action-arrow" aria-hidden="true">→</span></button>
 
+        {#if folderPath}
+          <button
+            class="open-btn tools-action"
+            onclick={openWorldHome}
+            title="Open this project’s landing page"
+          >World overview<span class="tools-action-arrow" aria-hidden="true">→</span></button>
+        {/if}
+
         <button
           class="open-btn tools-action"
           onclick={() => void beginDiagnosticExport()}
@@ -8490,6 +8581,7 @@
         onOpenReference={(path) => void openContinuityReference(path)}
         onConfirmAuthoring={confirmContinuityAuthoring}
         onUndoAuthoring={undoLastContinuityAuthoring}
+        addFactRequest={continuityFactAuthoringRequest}
       />
       <RelationshipInspector
         presentation={relationshipInspector}
@@ -8631,6 +8723,18 @@
     />
   {/if}
 
+  {#if continuityFactSourceDialogOpen}
+    <ContinuityFactSourceDialog
+      sources={continuityFactSources}
+      canCreateWorldDetail={projectInspection.kind === "world-project"}
+      canMakeWorldProject={projectInspection.kind === "ordinary"}
+      onChoose={(path) => void chooseContinuityFactSource(path)}
+      onCreate={createWorldDetailForContinuityFact}
+      onMakeWorldProject={adoptProjectForContinuityFact}
+      onCancel={cancelContinuityFactSource}
+    />
+  {/if}
+
   {#if timelineGuideOpen}
     <GuidedTimelineDialog
       phase={timelineGuidePhase}
@@ -8730,7 +8834,7 @@
             : closeDeskOpen
             ? "Close the desk"
             : worldHomeOpen
-            ? currentProjectName
+            ? `World overview · ${currentProjectName}`
             : mapOpen
             ? "Maps"
             : continuityReviewOpen
@@ -8748,34 +8852,14 @@
           <span class="history-notice" role="status" aria-live="polite">{loreHistoryNotice}</span>
         {/if}
         {#if !focusMode}
-          {#if folderPath}
+          {#if folderPath && !worldHomeOpen && !closeDeskOpen && !gettingStartedVisible && !timelineOpen && !mapOpen && !continuityReviewOpen && !manuscriptCorkboard}
             <button
               type="button"
-              class="focus-mode-button"
-              aria-pressed={worldHomeOpen}
-              title="Open this world’s home"
-              onclick={openWorldHome}
-            >Home</button>
-          {/if}
-          {#if folderPath && !worldHomeOpen && !closeDeskOpen && !gettingStartedVisible}
-            <button
-              id="open-continuity-review-workspace"
-              type="button"
-              class="focus-mode-button"
-              aria-pressed={continuityReviewOpen}
-              disabled={!continuityReviewModel || loreIndexPhase === "indexing"}
-              title="Compare explicit world facts and open their sources"
-              onclick={openContinuityReviewWorkspace}
-            >{loreIndexPhase === "indexing" ? "Continuity…" : "Continuity"}</button>
-            <button
-              id="open-timeline-workspace"
-              type="button"
-              class="focus-mode-button"
-              aria-pressed={timelineOpen}
-              disabled={!timelineModel || timelineLoading}
-              title="Open the source-linked timeline workspace"
-              onclick={openTimelineWorkspace}
-            >{timelineLoading ? "Timeline…" : "Timeline"}</button>
+              class="focus-mode-button primary-writing-action"
+              disabled={loreIndexPhase === "indexing" || worldProjectBusy}
+              title="Add a source-linked fact to a lore note"
+              onclick={beginAddContinuityFact}
+            >{loreIndexPhase === "indexing" ? "Preparing facts…" : "Add fact…"}</button>
           {/if}
           {#if !worldHomeOpen && !closeDeskOpen}
             <button
@@ -8783,7 +8867,7 @@
               class="focus-mode-button writing-tools-button"
               aria-expanded={writingToolsOpen}
               aria-controls="writing-tools-panel"
-              title={writingToolsOpen ? "Close writing tools" : "Open lore, continuity, manuscript, and project tools"}
+              title={writingToolsOpen ? "Close writing tools" : "Open secondary writing and project tools"}
               onclick={() => setWritingTools(!writingToolsOpen)}
               bind:this={writingToolsButton}
             >{writingToolsOpen ? "Close tools" : "Writing tools"}</button>
@@ -10037,16 +10121,16 @@
   .focus-mode-button {
     flex: 0 0 auto;
     padding: 0.28rem 0.5rem;
-    border: 1px solid #4d6252;
+    border: 1px solid #474747;
     border-radius: 4px;
-    background: #29322b;
-    color: #b8d8bd;
+    background: #292929;
+    color: #c5c5c5;
     font: inherit;
     cursor: pointer;
   }
 
   .focus-mode-button:hover {
-    background: #344038;
+    background: #353535;
   }
 
   .focus-mode-button:focus-visible {
@@ -10055,9 +10139,20 @@
   }
 
   .writing-tools-button[aria-expanded="true"] {
-    border-color: #5c7f63;
-    background: #344038;
-    color: #d4ead7;
+    border-color: #5b5b5b;
+    background: #383838;
+    color: #ececec;
+  }
+
+  .focus-mode-button.primary-writing-action {
+    border-color: #68856e;
+    background: #304035;
+    color: #edf6ef;
+    font-weight: 650;
+  }
+
+  .focus-mode-button.primary-writing-action:hover:not(:disabled) {
+    background: #3a4d40;
   }
 
   .app-alerts {
